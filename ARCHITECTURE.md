@@ -1,6 +1,6 @@
 # open-immerse v2 架构规格（ARCHITECTURE）
 
-状态：v0.3，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。v0.3 并入 Wisdom 2026-10-30 17:32 批准的 Markdown 阅读方案（Loom，[docs/design/md-reader.md](./docs/design/md-reader.md)）：新增 `markdown` 切片（§4.5），译文改为按区块存 Markdown（§8.1.1）。
+状态：v0.3，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。v0.3 并入 Wisdom 2026-10-30 17:32 批准的 Markdown 阅读方案（Loom，[docs/design/md-reader.md](./docs/design/md-reader.md)）：新增 `markdown` 切片（§4.5），译文改为按区块存 Markdown（§8.1.1）；同日并入 Loom 对译文区块四项风险的结论（§8.1.1，§16）。
 同级规格：[PRD.md](./PRD.md)（做什么）、[RULES.md](./RULES.md)（怎么协作）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；本文只规定 UI 代码放在哪、依赖谁，不规定长什么样。
 本文与 `docs/architecture/0x_*_草案.md` 冲突时以本文为准，差异逐条列在 [docs/v2-gap-and-changes.md](./docs/v2-gap-and-changes.md)。本文中的目录、接口、协议均为**拟议设计**，M1 起按本文落地；落地前不代表已存在。
 
@@ -135,7 +135,7 @@ Q3 的要求是映射到 5 层与 14 个切片；Q4 决定新增 `formula-source
 | `formula-source` | `arxiv-id`（校验）、`fetch-policy`（状态转移：限流与冷却）、`archive-limits`、`align-policy`（失败条件） | `resolveArxivSource`、`alignSource` | 无（来源标注由 reader 显示，开关在 settings） | `arxiv-http-client`、`sqlite-source-cache`、`node-gunzip` |
 | `quality` | `evaluation-status`（状态转移：verdict 规范化）、`scoring-coverage`（失败条件：未评分不得算已核验，Q1）、`low-score-routing`、`deployment-recommendation`（Q9） | `evaluateRegions`；`pure.ts`：`recommendEvaluatorDeployment` | 无（设置页属于 settings） | `worker-quality-evaluator` |
 | `repair` | `repair-plan`（权限：是否允许补救）、`budget-ledger`（计价）、`repair-limits`（失败条件） | `runRepair`、`getBudgetStatus` | 无（入口在 reader） | `openai-compatible-multimodal` |
-| `translation` | `placeholder`、`integrity-check`（校验、失败条件）、`markdown-restore`（校验：占位还原后公式与片段表一致）、`block-status`（状态转移：success / failed / retranslating）、`adopted-version`（采用哪个版本）、`cache-key` | `translatePage`、`retranslateBlock`、`getBlocks`、`polishTranslation`、事件 `onBlockChanged` | 无（译文由 reader 渲染） | `providers/<vendor>`、`sqlite-translation-store` |
+| `translation` | `placeholder`、`integrity-check`（校验、失败条件）、`markdown-restore`（校验：占位还原后公式与片段表一致）、`block-scope`（哪些块是翻译块）、`block-status`（状态转移：success / failed / retranslating）、`adopted-version`（采用哪个版本）、`cache-key`（含公式决定摘要） | `translatePage`、`retranslateBlock`、`getBlocks`、`polishTranslation`、事件 `onBlockChanged` | 无（译文由 reader 渲染） | `providers/<vendor>`、`sqlite-translation-store` |
 | `markdown` | `html-policy`（校验：原始 HTML 一律屏蔽）、`math-syntax`（失败条件：不可信命令、超长公式）、`link-resolve`（失败条件：not_found / ambiguous / outside_vault）、`vault-path-policy`（权限：越界、符号链接）、`vault-limits`（失败条件：文件数、单文件大小）、`watch-debounce`（状态转移）、`nav-history`（状态转移）、`write-capability`（权限：v2 恒为只读） | `render`、`openFile`、`openVault`、`readFile`、`listRecent`、`close`、`getCapabilities`、事件 `onFileEvent`；`pure.ts`：`renderMarkdown`、`navigate` | `ui/md-file-page.tsx`、`ui/vault-page.tsx`、`file-tree`、`outline-panel`、`reload-toast`、`editor-slot`；共享渲染组件在 `ui-kit/src/markdown/`（§4.5.4） | `node-md-file-reader`、`node-vault-scanner`、`node-file-watcher`、`sqlite-md-recent-store`、`vault-asset-registrar` |
 | `reader` | `pairing`、`scroll-sync`、`viewport-mapping`（纯几何，经 `pure.ts` 在 renderer 运行） | `pure.ts` | `pdf-page-canvas`、`readout-pane`（译文块交给 ui-kit 的 `MarkdownView`）、`formula-view`、`selection-toolbar` | 无（数据经 `window.oi`） |
 | `notes` | `anchor-match`（失败条件：无法唯一重定位）、`note`（校验）、`markdown-export` | `createNote`、`reanchorNotes`、`exportNotes`、`getNotesByIds`（§4.4 预留）；读笔记时随结果返回正文的 `MdDocument` | `ui/notes-panel.tsx`（正文交给 `MarkdownView`） | `sqlite-notes-repository` |
@@ -171,11 +171,21 @@ export interface TranslationSeam {
   // 译文区块（§8.1.1）：每块带 core 已解析好的 MdDocument，reader 不再解析 Markdown
   getBlocks(input: Readonly<{ documentId: DocumentId; revisionId: PageRevisionId; sourceBlockIds?: readonly BlockId[] }>):
     Promise<Result<readonly TranslationBlockView[], GetBlocksError>>;
+  // Ok 只表示「已受理」，不表示重译成功；状态变化只经 onBlockChanged 推送（§8.1.1）
   retranslateBlock(input: Readonly<{ documentId: DocumentId; revisionId: PageRevisionId; sourceBlockId: BlockId }>):
-    Promise<Result<{ jobId: JobId }, TranslatePageError>>;
+    Promise<Result<Readonly<{ version: number }>, RetranslateBlockError>>;
 }
-// TranslationBlockView = { block: StoredTranslationBlock; doc: MdDocument | null }（类型在 contracts，§4.1）
+// 事件 translation.onBlockChanged → TranslationBlockChanged
+// TranslationBlockView = {                       （类型在 contracts，§4.1；显示规则见 §8.1.1）
+//   display: 'current' | 'retranslating' | 'previous_with_failure' | 'never_succeeded' | 'pending';
+//   shown: StoredTranslationBlock | null;   // 要显示的 success 版本
+//   latest: StoredTranslationBlock;         // 最新版本：状态与 failureKind 取自这里
+//   doc: MdDocument | null }                // shown.markdown 的解析结果
+// TranslationBlockChanged = { documentId; revisionId; sourceBlockId; status; version; failureKind }（普通数据，§8.1.1）
 // GetBlocksError = { code: 'revision_stale'; currentRevisionId: PageRevisionId }
+// RetranslateBlockError = TranslatePageError
+//   | { code: 'block_not_translatable' }   // 表格、图、独立公式不是翻译块（§8.1.1）
+//   | { code: 'already_retranslating'; version: number }
 export declare function createTranslationSeam(deps: TranslationDeps): TranslationSeam; // deps 只含端口，由装配根注入
 ```
 
@@ -294,7 +304,7 @@ packages/features/<name>/
 | `contracts/src/document.ts` | `ContentBlock`、`AcceptedPageRevision`、`SourceAudit` |
 | `contracts/src/formula.ts` | `FormulaCandidate`、`FormulaDecision` |
 | `contracts/src/evaluation.ts` | `EvaluationResult`（scored / error / unavailable / not-run） |
-| `contracts/src/translation.ts` | `StoredTranslationBlock`（译文区块记录，取代草案 02 的 `TranslationRecord`，§8.1.1）、`TranslationBlockView`、受保护片段表 |
+| `contracts/src/translation.ts` | `StoredTranslationBlock`（译文区块记录，取代草案 02 的 `TranslationRecord`，§8.1.1）、`TranslationBlockView`、`TranslationBlockChanged`、受保护片段表 |
 | `contracts/src/markdown.ts` | `MdDocument`、`MdBlock`、`MdInline`、`MdHeading`、`MdImageRef`、`ResolvedLink`、`VaultTree`、`MdFileEvent`、`MdCapabilities`、`MdError`；预留的 `WriteFileInput` / `WriteFileResult` / `MdEdit`（§4.5.7）。形状以 [Loom 方案](./docs/design/md-reader.md) §3.3 为起点 |
 | `contracts/src/latex-policy.ts` | KaTeX 安全选项的**唯一一份**常量（`KATEX_SAFE_OPTIONS`）、单个公式字符上限、不可信命令清单；只有数据，不 import `katex`。`formula`、`markdown`、`ui-kit` 都从这里读（§4.5.5） |
 | `contracts/src/anchor.ts` | `ContentAnchor`（笔记、问答、语音共用；写作预留，§4.4） |
@@ -337,7 +347,7 @@ packages/features/<name>/
 | `formula-source` | arXiv 源码校准公式：编号与版本识别、源码下载缓存、TeX 解析、与版面区域对齐、对齐失败回落（Q4，§7.6） | `domain/arxiv-id.ts` · `domain/fetch-policy.ts`（间隔、超时、冷却）· `domain/archive-limits.ts`（解包安全上限）· `domain/tar-reader.ts`（纯 tar 读取，gunzip 经端口注入）· `domain/tex-units.ts`（TeX → 公式单元）· `domain/macro-table.ts`（导言区宏 → KaTeX 宏，带展开上限）· `domain/source-align.ts`（词序列对齐与覆盖率）· `domain/align-policy.ts`（逐公式核对与回落判定）· `application/use-cases/resolve-arxiv-source.ts` · `application/use-cases/align-source.ts` · `application/ports/arxiv-source-client.ts` · `application/ports/source-cache.ts` · `application/ports/gunzip.ts` · `adapters/arxiv-http-client.ts` · `adapters/node-gunzip.ts` · `adapters/sqlite-source-cache.ts` |
 | `quality` | 质量评估端口、结果规范化、全路径评分不变式、部署推荐 | `domain/evaluation-status.ts`（verdict → 规范状态）· `domain/scoring-coverage.ts`（每个识别候选必须有评估记录，Q1）· `domain/low-score-routing.ts`（阈值按类别与 `evaluatorVersion`）· `domain/deployment-recommendation.ts`（本机 / 远程推荐，Q9）· `application/ports/quality-evaluator.ts` · `application/use-cases/evaluate-regions.ts` · `application/use-cases/reevaluate-pending.ts`（评分服务恢复后补评）· `adapters/worker-quality-evaluator.ts`（唯一实现：经 worker-client 提交 `evaluate` 作业） |
 | `repair` | 低分 / 不确定区域的多模态补救、预算账本 | `domain/repair-plan.ts` · `domain/budget-ledger.ts`（预留 / 结算 / 上限）· `domain/repair-limits.ts`（次数、并发、超时上限）· `application/use-cases/run-repair.ts` · `application/ports/multimodal-provider.ts` · `adapters/openai-compatible-multimodal.ts` |
-| `translation` | 自然语言翻译、占位保护、完整性校验、Markdown 还原、译文区块记录（D6，§8.1.1）、润色、缓存 | `domain/placeholder.ts`（抽取与恢复）· `domain/integrity-check.ts`（公式占位 / 数字 / 引用）· `domain/markdown-restore.ts`（占位还原为 `$…$` / `$$…$$`、模型文字中的 `$`、`<`、`[[` 转义、还原后公式与片段表逐个比对）· `domain/block-status.ts`（success / failed / retranslating 状态转移）· `domain/adopted-version.ts`（显示哪个版本）· `domain/cache-key.ts`（§8.1.1 的键组成）· `domain/segmenter.ts` · `application/use-cases/translate-page.ts` · `application/use-cases/retranslate-block.ts` · `application/use-cases/get-blocks.ts`（经 `markdown` 的 seam 解析出 `MdDocument`）· `application/use-cases/polish-translation.ts` · `application/ports/translation-provider.ts` · `application/ports/translation-store.ts` · `adapters/sqlite-translation-store.ts`（表前缀 `tr_`）· `adapters/providers/<vendor>.ts`（一家一个文件） |
+| `translation` | 自然语言翻译、占位保护、完整性校验、Markdown 还原、译文区块记录（D6，§8.1.1）、润色、缓存 | `domain/placeholder.ts`（抽取与恢复）· `domain/integrity-check.ts`（公式占位 / 数字 / 引用）· `domain/markdown-restore.ts`（占位还原为 `$…$` / `$$…$$`、模型文字中的 `$`、`<`、`[[` 转义、还原后公式与片段表逐个比对）· `domain/block-scope.ts`（按块类型判定是否为翻译块，§8.1.1）· `domain/block-status.ts`（success / failed / retranslating 状态转移）· `domain/adopted-version.ts`（显示哪个版本）· `domain/cache-key.ts`（§8.1.1 的键组成与公式决定摘要 `formulaDigest`）· `domain/segmenter.ts` · `application/use-cases/translate-page.ts` · `application/use-cases/retranslate-block.ts` · `application/use-cases/get-blocks.ts`（经 `markdown` 的 seam 解析出 `MdDocument`）· `application/use-cases/polish-translation.ts` · `application/ports/translation-provider.ts` · `application/ports/translation-store.ts` · `adapters/sqlite-translation-store.ts`（表前缀 `tr_`）· `adapters/providers/<vendor>.ts`（一家一个文件） |
 | `markdown` | Markdown 解析为块级 AST、公式与 HTML 安全规则、单个 `.md` 与文件夹（笔记库）只读阅读、wikilink 与相对链接解析、文件监视、编辑接口预留（§4.5） | 文件清单见 §4.5.2 |
 | `reader` | PDF 显示、页面虚拟化、对照跳转、裁图显示（仅 renderer） | `domain/pairing.ts`（块配对与跟随；译文块按 `sourceBlockId` 对齐）· `domain/scroll-sync.ts` · `domain/viewport-mapping.ts` · `ui/pdf-page-canvas.tsx` · `ui/page-virtualizer.ts` · `ui/readout-pane.tsx`（每个译文块一个 ui-kit `MarkdownView`，按块状态显示）· `ui/formula-view.tsx` · `ui/selection-toolbar.tsx` · `ui/hooks/use-document-session.ts` |
 | `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `application/use-cases/get-notes-by-ids.ts`（按 ID 批量只读，写作预留，§4.4） · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx`（正文用 ui-kit `MarkdownView`） |
@@ -446,7 +456,7 @@ export interface WritingSeam {
 
 ### 4.5 Markdown 阅读（`markdown` 切片）
 
-决定：Wisdom 2026-10-30 17:32 批准 Loom 的 Markdown 阅读方案，并入 v2 M0–M8。方案原文（含页面地图、组件、逐屏规格、线框图）在 [docs/design/md-reader.md](./docs/design/md-reader.md)，界面细节以该文为准；本节只规定切片、seam、规则落点、安全与存储。验收是 PRD AC-30–AC-55（对应方案的 MD-01–MD-26），里程碑见 PRD §8。
+决定：Wisdom 2026-10-30 17:32 批准 Loom 的 Markdown 阅读方案，并入 v2 M0–M8。方案原文（含页面地图、组件、逐屏规格、线框图）在 [docs/design/md-reader.md](./docs/design/md-reader.md)，界面细节以该文为准；本节只规定切片、seam、规则落点、安全与存储。验收是 PRD AC-30–AC-56（对应方案的 MD-01–MD-26 与 Loom 2026-10-30 补充的 MD-27），译文区块另有 AC-57、AC-58，里程碑见 PRD §8。
 
 #### 4.5.1 已定事项与落点
 
@@ -522,7 +532,7 @@ export interface WritingSeam {
 | 场景 | 谁调用解析 | UI 拿到什么 | 里程碑 |
 | --- | --- | --- | --- |
 | 单个 `.md`、笔记库 | `markdown` 用例 `readFile` | `MdDocument` | M2（单文件）、M3（笔记库） |
-| 译文 | `translation` 用例 `getBlocks`：读出 `StoredTranslationBlock`，经 `markdown` 的 seam 解析 `success` 块的 `markdown` 字段 | 每块 `{ block, doc }`；reader 按 `sourceBlockId` 对齐 | M4 |
+| 译文 | `translation` 用例 `getBlocks`：读出 `StoredTranslationBlock`，经 `markdown` 的 seam 解析要显示的 `success` 版本的 `markdown` 字段 | 每块 `{ display, shown, latest, doc }`；reader 按 `sourceBlockId` 对齐，按 `display` 选样式 | M4 |
 | 笔记 | `notes` 用例读笔记时解析正文 | 笔记 + `MdDocument` | M5 |
 | 问答回答 | `qa` 用例在流式输出时调用 `splitStreaming` | 事件载荷：新闭合的 `MdBlock[]` + 未闭合尾部文本（UI 按原文样式显示）；结束时给完整 `MdDocument` | M5 |
 
@@ -883,7 +893,17 @@ flowchart LR
 
 #### 8.1.1 译文区块记录（D6）
 
-决定（Wisdom 2026-10-30 17:27，17:32 修订；Loom 方案 D6 以 2026-10-30 再次确认的版本为准）：译文**按段落分块**存储，不存成整篇 `.md`，也不按整页存。每个原文段落级文本块的每个译文版本一条记录：分块单位就是采用版本中带稳定块号的文本块（正文段落、标题、图表题注、脚注）。正文字段是 Markdown，其余是结构化字段。左右对照、点击互跳、单块重译、缓存都以这个块为单位。`translatePage` 只是按页提交任务的入口，结果仍然按块落库。
+决定（Wisdom 2026-10-30 17:27，17:32 修订；Loom 方案 D6 以 2026-10-30 再次确认的版本为准）：译文**按段落分块**存储，不存成整篇 `.md`，也不按整页存。每个原文段落级文本块的每个译文版本一条记录：分块单位就是采用版本中带稳定块号的文本块。正文字段是 Markdown，其余是结构化字段。左右对照、点击互跳、单块重译、缓存都以这个块为单位。`translatePage` 只是按页提交任务的入口，结果仍然按块落库。
+
+**哪些块是翻译块**（Loom 2026-10-30 结论；`block-scope.ts` 是唯一判定处，PRD AC-58）：
+
+| 块类型 | 是否翻译块 | 显示 |
+| --- | --- | --- |
+| 正文段落、标题、图表题注、脚注、列表项、引用块 | 是 | 译文栏显示该块的 `markdown` |
+| 表格、图 | 否 | 原文裁图；只有它们的题注是翻译块 |
+| 独立公式 | 否 | 走公式回退链（§7.5），不进翻译 |
+
+列表项、引用块、标题的层级与标记由 JSON 模型的块类型给出，`markdown` 只存块内文字，不带 `- `、`> `、`#` 这类标记（见写入流程第 3 步）。
 
 ```ts
 // packages/contracts/src/translation.ts —— 拟议；字段以方案 §3.3.2 为起点
@@ -891,13 +911,16 @@ type StoredTranslationBlock = Readonly<{
   documentId: DocumentId;
   revisionId: PageRevisionId;            // 规格补充：绑定采用版本；重解析后内容不变的块按 cacheKey 复用
   sourceBlockId: BlockId;                // 对齐键：左右对照、点击互跳、滚动同步
+  blockKind: 'paragraph' | 'heading' | 'caption' | 'footnote' | 'list_item' | 'quote'; // 规格补充；进缓存键
   version: number;                       // 同一区块的译文版本号，重译 +1
   status: 'success' | 'failed' | 'retranslating';
+  failureKind: 'check_failed' | 'network' | 'model_error' | null; // 规格补充；只有 failed 才有值，供「重译未成功」的原因提示
   markdown: string | null;               // 只有 success 才有值
   formatVersion: 'oi-md/1';
   model: Readonly<{ providerId: string; modelId: string }>;
   targetLang: 'zh-CN';                   // 规格补充
   cacheKey: string;
+  formulaDigest: string;                 // 规格补充：写入时的公式决定摘要，读取时与当前比对（见「缓存键」）
   check: Readonly<{ result: 'passed' | 'failed' | 'not_run'; codes: readonly string[] }>;
   updatedAt: string;                     // ISO 8601
 }>;
@@ -907,17 +930,25 @@ type StoredTranslationBlock = Readonly<{
 
 **写入流程**（全部在 `translation` core，顺序固定）：
 
-1. 抽取：原文区块 → 占位文本（`⟦fN⟧`）+ 受保护片段表（公式 LaTeX、编号、引用）+ 片段表哈希（v1 审查 §4.9）。
-2. 完整性校验 `integrity-check.ts`：占位符的数量、顺序、对应关系与原文 100% 一致，数字与引用一致（AC-03）。不过 → 写一条 `failed` 记录，`markdown` 为 `null`，`check.codes` 记原因。
-3. 还原 `markdown-restore.ts`：先用 CommonMark 的反斜杠转义处理模型文字中的 `$`、`<`、`&` 与 `[[`（模型生成的 HTML 因此只会显示为文字），再把占位符还原为片段表里的 LaTeX：行内写 `$…$`，行间写独占一行的 `$$…$$`。顺序不能反：先还原再转义会把公式里的符号也转义掉。
+1. 抽取：原文区块 → 占位文本（`⟦fN⟧`）+ 受保护片段表（公式、编号、引用；每个公式片段带当前采用版本的显示决定，见「缓存键」）+ 公式决定摘要 `formulaDigest`（v1 审查 §4.9）。
+2. 完整性校验 `integrity-check.ts`：占位符的数量、顺序、对应关系与原文 100% 一致，数字与引用一致（AC-03）。不过 → 写一条 `failed` 记录，`failureKind = 'check_failed'`，`markdown` 为 `null`，`check.codes` 记原因。请求本身失败（网络、超时）记 `network`，服务商返回错误或无法解析的输出记 `model_error`，同样不写 `markdown`。
+3. 还原 `markdown-restore.ts`：先用 CommonMark 的反斜杠转义处理模型文字中的 `$`、`<`、`&`、`[[`，以及行首的 `#`、`>`、`-`、`+`、`*`、`数字.` / `数字)`（模型生成的 HTML 因此只会显示为文字，块内文字也不会被解析成标题、列表或引用），再把占位符还原为片段表里的 LaTeX：行内写 `$…$`，行间写独占一行的 `$$…$$`。顺序不能反：先还原再转义会把公式里的符号也转义掉。
 4. 复核：经 `markdown` 的 seam 调 `extractMath(markdown)`，得到的公式序列必须与片段表逐个相等；`renderMarkdown(markdown, 'translation')` 不得出现 `html_blocked` 节点。任一不过 → `failed`（`math_mismatch` / `html_leak`）。
 5. 通过 → `success`，写入 `markdown`，`check.result = 'passed'`。存储与读出逐字节一致（AC-48）。
 
 **状态与显示版本**（`block-status.ts`、`adopted-version.ts`）：
 
-- 重译时先写一条新版本 `retranslating`，旧的 `success` 版本照常显示；新版本结束后转为 `success` 或 `failed`。状态转移只在 core。
-- 显示规则：有 `success` 版本就显示最新的 `success`；没有时显示最新版本（`failed` 显示原文 + 「翻译未通过校验」+「重译」，`retranslating` 显示骨架）。
-- 规格补充（方案未覆盖）：重译失败而旧 `success` 还在时，继续显示旧版本，并在块上标「重译未通过校验」。具体怎么标由 Loom 定（待 Loom）。
+- 重译时先写一条新版本 `retranslating`，旧的 `success` 版本照常显示；新版本结束后转为 `success` 或 `failed`。状态转移只在 core。同一块已有 `retranslating` 版本时，`retranslateBlock` 返回 `already_retranslating`，不排第二个任务。
+- `retranslateBlock` 的 `Result` 只表示受理与否。每次状态转移后 core 发 `translation.onBlockChanged`（`{ documentId, revisionId, sourceBlockId, status, version, failureKind }`，普通数据）；UI 收到后用 `getBlocks({ sourceBlockIds: [id] })` 取该块。UI 不根据调用返回、计时或任务事件推断块状态（RULES §5 第 13 项）。
+- 显示规则（`adopted-version.ts`）：有 `success` 版本就显示最新的 `success`；没有时显示最新版本（`failed` 显示原文 + 「翻译未通过校验」+「重译」，`retranslating` 显示骨架）。
+- 重译失败（最新版本 `failed`，但还有更早的 `success`）时的界面，按 Loom 2026-10-30 结论（PRD AC-56，对应 MD-27）：
+  - 正文照常显示上一版 `success`；块左侧 2px 标记线，颜色用 `--oi-reader-warn`；块末一行次要文字「重译未成功，仍显示上一版 · 重试」。
+  - 「重试」是次级文字按钮，调 `retranslateBlock`；悬停显示原因，取自 `failureKind`：校验未通过 / 网络 / 模型错误。规格补充（待 Loom 确认）：键盘聚焦到「重试」时同样显示原因。
+  - 不弹 toast、弹窗或全局横幅。
+  - 重试期间提示行显示「正在重译…」，「重试」禁用；成功后标记线与提示行消失，显示新版本；再次失败回到上面的样子。
+  - 从未成功的块：显示原文 + 「翻译未通过校验」+「重译」。
+  - 无障碍：提示行 `role="status"`；「重试」可用键盘聚焦，焦点环用 `--oi-reader-focus`；状态不只靠颜色区分（标记线之外还有提示文字）。两个 Token 由 Loom 定义（DESIGN.md，待 Loom 产出）。
+  - 以上是 reader UI 的样式；「显示哪个版本、要不要失败提示」由 core 判定：`getBlocks` 每块返回 `display`（`current` 正常、`retranslating` 显示上一版并提示「正在重译…」、`previous_with_failure` 重译失败仍显示上一版、`never_succeeded` 从未成功、`pending` 没有可显示的版本且正在翻译，显示骨架），UI 只按它选样式。
 
 **缓存键**（`cache-key.ts`）= 下列字段规范化后的 SHA-256：
 
@@ -926,12 +957,27 @@ type StoredTranslationBlock = Readonly<{
 | `formatVersion`（`oi-md/1`） | 方言变了，旧正文不能直接用 |
 | 占位协议版本与公式切块版本 | v1 事故教训：缺这两项会显示旧公式（v1 审查 §4.18） |
 | 原文区块占位文本的哈希 | 原文变了就重译 |
-| 受保护片段表哈希 | 公式决策变了（例如 arXiv 源码替换了 LaTeX）就重译 |
+| 区块类型 `blockKind` | 规格补充：标题、列表项等的提示词或还原可能不同；重解析把段落改判为列表项时不能复用 |
+| 公式决定摘要 `formulaDigest` | 取代原先键里的「受保护片段表哈希」。片段表哈希只覆盖 LaTeX 字符串，覆盖不了「LaTeX 不变、显示决定变了」这类变化，论证见[差异清单](./docs/v2-gap-and-changes.md) §6.2.1 |
 | `providerId`、`modelId`、目标语言 | 换模型或语言就重译 |
 | 提示词模板版本、润色开关 | 翻译方式变了就重译 |
 
+`formulaDigest` = 本块受保护片段按出现顺序规范化后的 SHA-256。每个片段取「还原时实际写进 `markdown` 或决定显示方式」的全部内容：
+
+- 公式片段：行内 / 行间；当前采用版本的显示决定（`verified-latex` / `source-crop`）；`verified-latex` 时为规范化后的 LaTeX 字节，`source-crop` 时为裁图资产的内容哈希。
+- 编号、引用片段：原文字节。
+- 另含占位协议版本与公式切块版本。
+- **不含** `decisionId`、候选 ID、候选来源、评分与评估器版本、`revisionId`：它们变了而上面各项不变时，写进 `markdown` 的字节不变，放进来只会让重解析白白重译。
+
+规则：
+
+- **进提示词的每一项都要进键。** v2 的提示词只含本块占位文本、区块类型、提示词模板与润色开关；以后加入上下文段落或术语表时，必须同时加进键，并补 AC-57 的用例。
 - 键里**不含** `documentId`、`revisionId`、`sourceBlockId`：重解析后内容不变的块、或另一篇内容相同的块，命中缓存直接复用，不发请求（AC-02）。记录本身仍绑定（文献, 采用版本, 区块）。
+- 公式决定只随新的采用版本变化，不原地修改（§8.2 乐观锁）；`reevaluate-pending` 补评后显示决定若有变化，也要生成新的采用版本。规格补充。
+- 读取兜底：`getBlocks` 把记录上的 `formulaDigest` 与当前采用版本算出的摘要比对；不一致时不返回旧正文（该块按 `pending` 显示），并自动排队重译。正常情况下不会触发，触发即记诊断事件。
+- 在途结果：翻译请求按发出时的输入算键；结果回来时该块所属的采用版本已被替换，就只写缓存、不写 `tr_blocks`（与 §8.2「过期任务结果不能覆盖新版本」一致）。
 - 只有 `success` 结果进入可复用缓存；`failed` 不缓存，所以「重译」一定会重新请求。
+- 待定：`source-crop` 的行内公式在 `oi-md/1` 正文里怎么表示（方言目前不含图片，而 AC-04 要求未核验公式以裁图显示）。摘要按显示决定计算，不依赖这个表示，但译文栏的显示需要 Loom 与 Wisdom 定（差异清单 §6.2.1）。
 
 **存储**：SQLite，前缀 `tr_`，只有 `translation` 的 adapters 读写。
 
@@ -941,7 +987,7 @@ type StoredTranslationBlock = Readonly<{
 | `tr_cache` | `cache_key` | `success` 结果的 `markdown`、`check`、`model`、`created_at` |
 
 - 诊断包与日志只记长度、哈希、计数与状态码，不记 `markdown` 正文（AC-10）。
-- 事件 `translation.onBlockChanged`：`{ documentId, sourceBlockId, status, version }`。
+- 事件 `translation.onBlockChanged`：`{ documentId, revisionId, sourceBlockId, status, version, failureKind }`。
 - 整篇「导出译文为 .md」不在 v2（PRD §3.2）；将来做时由 core 按阅读顺序拼接各块 `markdown`。
 
 ### 8.2 桌面存储布局
@@ -1195,6 +1241,7 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | Q11 | 未配置翻译时借用多模态：保留、默认关、开启时提示消耗多模态额度 | §4.2 `settings/domain/translation-fallback.ts` |
 | Q12 | 不接 Unlimited-OCR，上游支持坐标输出后再评估 | 不进本文；记录在差异清单 §2.6 |
 | Markdown 阅读（2026-10-30 17:32） | 批准 Loom 方案并入 M0–M8：统一 `MarkdownView`；单个 `.md` 与笔记库只读阅读；KaTeX 与 formula 同一份安全选项；`.md` 独立入口、只链接库内 PDF；v2 只读、预留编辑接口；译文按区块存 Markdown（D1–D7） | §4.5、§8.1.1、§4.1 `latex-policy`、§4.3 新边、§9、G2；差异清单 §6.1 |
+| 译文区块四项结论（Loom 2026-10-30，经 Wisdom 转达） | 翻译块范围；`retranslateBlock` 与 `onBlockChanged.documentId`，状态只经事件推送；重译失败的界面（MD-27）；缓存键改用公式决定摘要 | §2.6 `TranslationSeam`、§8.1.1；差异清单 §6.2 |
 
 - 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3 / M6 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
 - 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。
