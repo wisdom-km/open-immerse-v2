@@ -8,6 +8,7 @@ Open Immerse v2 - PDF formula extraction and vector redraw project
 - [RULES.md](RULES.md)：编码约定、分支与 PR、并行开发、测试纪律、Agent 禁止事项。
 - [docs/v1-review.md](docs/v1-review.md)：v1 哪些能用、哪些不用（附原文件与行号）。
 - [docs/v2-gap-and-changes.md](docs/v2-gap-and-changes.md)：模型核实、草案修改清单、待拍板问题。
+- [docs/backlog.md](docs/backlog.md)：架构评审各项的处理状态与留给里程碑的事。
 - 视觉与交互：[DESIGN.md](DESIGN.md)、[docs/design-principles.md](docs/design-principles.md)（Loom 2026-10-30 入库）。
 
 以下早期草案保留为历史输入；与上述规格冲突时以规格为准。
@@ -19,6 +20,10 @@ Open Immerse v2 - PDF formula extraction and vector redraw project
 包含需求确认、桌面与云端架构、双引擎解析、核心数据协议、高精度规格迁移、手机与语音接口，以及分阶段实施和验收清单。
 
 当前为可审阅设计方案；应用实现、模型精度与双平台性能仍须按方案逐项验收。
+
+## CI 与云端环境
+
+Node 依赖用 pnpm（`corepack pnpm`）。检查命令、GitHub Actions 与云端 Agent 的 Node / Python 安装见 [docs/ci-and-environment.md](docs/ci-and-environment.md)。
 
 ## 许可证
 
