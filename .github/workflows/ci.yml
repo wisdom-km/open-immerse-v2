@@ -1,0 +1,84 @@
+name: CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  node:
+    name: node
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+  python-worker:
+    name: python-worker
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/parser
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          working-directory: workers/parser
+          enable-cache: true
+          cache-python: true
+          cache-dependency-glob: uv.lock
+
+      - name: Check uv pin
+        run: |
+          pinned="$(tr -d '[:space:]' < .uv-version)"
+          grep -q "^required-version = \"${pinned}\"$" pyproject.toml
+
+      - name: Install Python and sync dependencies
+        run: |
+          uv python install
+          uv sync --frozen --extra dev
+
+      - name: Ruff
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Pytest
+        run: |
+          set +e
+          uv run pytest
+          status=$?
+          if [ "$status" -eq 5 ]; then
+            echo "pytest: no tests collected; empty run allowed."
+            exit 0
+          fi
+          exit "$status"
+
+      - name: Check PDF dependency pin
+        run: |
+          if grep -E '^name = "(pymupdf|pymupdf-fonts|fitz)"$' uv.lock; then
+            echo "PyMuPDF is AGPL and must not be locked" >&2
+            exit 1
+          fi
+          grep -q '^name = "pypdfium2"$' uv.lock
