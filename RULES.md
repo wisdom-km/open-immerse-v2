@@ -1,6 +1,6 @@
 # open-immerse v2 协作与编码规则（RULES）
 
-状态：v0.3，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。日期：2026-10-30（Asia/Shanghai）。
+状态：v0.4，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。v0.4 按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修复（Wisdom 2026-10-30 19:57 批准）：§5 第 15、16 条（付费调用先预留额度、跨切片编排只在 `ingest`），§8 删除 G17、改由评审与交接说明检查。日期：2026-10-30（Asia/Shanghai）。
 适用对象：所有人类开发者与 AI Agent。
 同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；在 Loom 交付前，UI 实现只搭结构、不定视觉，也**不得**由其他人或 Agent 代写这两份文件。
 
@@ -110,6 +110,8 @@
 12. 新依赖与模型权重的许可证与 Apache-2.0 兼容，没有 GPL / AGPL（§1.5）。
 13. Markdown 显示（ARCHITECTURE §4.5.4）：UI 拿到的是 core 解析好的 `MdDocument`，不解析 Markdown 字符串、不拼路径、不判断链接是否存在、不决定是否重载、不读 front-matter；显示 Markdown 一律用 ui-kit 的 `MarkdownView`，不另写渲染器。译文块的样式只按 `translation.getBlocks` 返回的 `display` 选择，状态变化只从 `translation.onBlockChanged` 得知；不根据 `retranslateBlock` 的返回、计时器或任务事件推断块状态（ARCHITECTURE §8.1.1）。
 14. 模型能力 API 优先（ARCHITECTURE §7.0）：新增或修改由模型提供的能力时，有托管 API 就默认 API，「本地」作为同一端口或同一种 worker 作业后的一等选项保留在设置主选项里（不放进「高级」），并有部署文档 `docs/deploy/<能力>.md`；硬件画像只用于标注「本地」的可行性；没有 Key、拒绝外发或 API 不可用时按 §7.0 表降级，不静默改用其他付费服务或本地；新服务的 Key 变量名先登记在 ARCHITECTURE §15.4，代码不读 `.env`。
+15. 付费调用先预留（ARCHITECTURE §7.8）：任何向外部服务发出、可能计费的请求（Jev、引擎 B、云 OCR、多模态、翻译、问答、TTS / ASR，以及以后新增的）在发出之前调用 `BudgetGate.reserve`，被拒就不发请求，按 §7.0 降级；完成后 `settle` 实际用量，未发出则 `release`。计价、额度、上限判断只写在 `budget/domain`，其他切片与 worker 不自己算钱；单价未知时用请求数 / 页数 / token 上限，不当作 0 元。测试覆盖「被拒时请求数为 0」。
+16. 跨切片编排只在 `ingest`（ARCHITECTURE §4.2、§7.1、F-17）：按顺序调用多个切片的 seam 并按结果分支（解析 → 评分 → 采用 → 翻译、补救后重评）只写在 `ingest` 的用例里；UI、hooks、装配根、`jobs` 与其他业务切片里出现这种顺序即退回。
 
 ## 6. Agent 绝不能做的事
 
@@ -147,7 +149,7 @@
 
 ## 8. UI 与业务核心解耦（Q3）
 
-约束原文、调研依据、seam 定义与切片映射见 [ARCHITECTURE.md](./ARCHITECTURE.md) §2.1–§2.6，CI 规则见 ARCHITECTURE §13 的 G13–G17。本节是执行细则。
+约束原文、调研依据、seam 定义与切片映射见 [ARCHITECTURE.md](./ARCHITECTURE.md) §2.1–§2.6，CI 规则见 ARCHITECTURE §13 的 G13–G16。本节是执行细则。原 G17（同一 PR 同时改 UI 与 core 即失败）已按架构评审删除（Wisdom 2026-10-30 19:57 批准）：一个切片的功能同时包含 core 与 UI，同一切片的 UI 与 core 可以在一个 PR 里，但 seam 的类型变更先单独合入（§3 第 3 条）。下面规则 2、3、5 改由评审与交接说明检查。
 
 ### 8.1 执行规则（Wisdom 2026-10-30 原文，不得删改或弱化）
 
@@ -162,10 +164,10 @@
 | 规则 | 怎么做 | 机器检查 | 人工检查 |
 | --- | --- | --- | --- |
 | 1 | 五类规则写成 `features/<f>/src/domain/` 下的纯函数，由 application 用例调用；组件、hooks、`ipc-handlers.ts` 里不出现这五类判断（显示用的格式化除外） | G13、G14（core 不能依赖 UI）；G16（规则必须有 core 测试） | 评审清单 §5 第 11 条：在组件里看到 `if` 判断业务条件即退回 |
-| 2 | 「core 文件」= domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`。UI 任务的分支只改 `src/ui/**`、`apps/desktop/src/renderer/**`、`ui-kit` | G17（同一 PR 同时改 UI 与 core 即失败） | 交接说明中「core 是否没动」必须为「是」 |
-| 3 | 发现 seam 不够用：停止 UI 工作，在任务或 PR 中写明缺什么输入或结果、为什么现有 seam 不行；另开 seam PR（契约先行，§3 第 3 条），由 core 侧按领域语义设计，合入后再继续 UI | G17；`contracts` 为热点文件（G11） | 评审 seam PR 时检查：新增字段是否是领域概念，而不是某个页面的布局需要 |
+| 2 | 「core 文件」= domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`。UI 任务的分支只改 `src/ui/**`、`apps/desktop/src/renderer/**`、`ui-kit` | 无（G17 已删除） | 任务类型为「UI 改动」时，交接说明中「core 是否没动」必须为「是」，评审对照 diff 核实；core 文件出现在 UI 改动任务的 diff 里即退回 |
+| 3 | 发现 seam 不够用：停止 UI 工作，在任务或 PR 中写明缺什么输入或结果、为什么现有 seam 不行；另开 seam PR（契约先行，§3 第 3 条），由 core 侧按领域语义设计，合入后再继续 UI | `contracts` 为热点文件（G11） | 评审 seam PR 时检查：新增字段是否是领域概念，而不是某个页面的布局需要 |
 | 4 | core 测试放在 `test/core/`，只 import `src/index.ts`、`src/pure.ts`、`src/testing/**`，用 fake 端口；运行 `pnpm test:core` | G16（Node 环境、禁止 UI 依赖、规则覆盖核对） | 任务完成以 `pnpm test:core` 通过为准，组件测试通过不能代替 |
-| 5 | 在 PR 描述或任务回复中填写 §8.4 模板 | G17（改动 UI 路径的 PR 缺少交接说明块即失败） | 评审核对说明与 diff 一致 |
+| 5 | 在 PR 描述或任务回复中填写 §8.4 模板 | 无（G17 已删除） | 改动 UI 或 core 路径的 PR 缺少交接说明块即退回（§2）；评审核对说明与 diff 一致 |
 
 ### 8.3 交接指令必须引用
 
