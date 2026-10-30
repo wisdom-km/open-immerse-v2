@@ -1,6 +1,6 @@
 # open-immerse v2 协作与编码规则（RULES）
 
-状态：v0.1，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。
+状态：v0.2，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；本版加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）。日期：2026-10-30（Asia/Shanghai）。
 适用对象：所有人类开发者与 AI Agent。
 同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；在 Loom 交付前，UI 实现只搭结构、不定视觉，也**不得**由其他人或 Agent 代写这两份文件。
 
@@ -15,8 +15,8 @@
 - `tsconfig` 基线：`strict: true`、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`、`noImplicitOverride`、`noFallthroughCasesInSwitch`、`useUnknownInCatchVariables`、`verbatimModuleSyntax`。
 - 模块：ESM；`import type` 导入类型；禁止默认导出（React 路由懒加载除外）。
 - 禁止 `any`；必须绕过类型时用 `unknown` + 类型守卫。`@ts-expect-error` 必须附原因，`@ts-ignore` 禁止。
-- 错误：domain 与 application 返回 `Result` 或抛出 `AppError` 子类（带错误码），不抛字符串；adapters 把外部错误映射为契约错误码。
-- 异步：所有可能耗时的调用接受 `AbortSignal`；不写无上限的重试或轮询。
+- 错误：seam（切片的 `index.ts`、`pure.ts` 与 IPC 命令）一律返回 `Result`，错误是带 `code` 的普通数据，不向 seam 外抛异常（ARCHITECTURE §2.4）；切片内部可以抛 `AppError` 子类（带错误码），由用例在 seam 处转换；不抛字符串；adapters 把外部错误映射为契约错误码。
+- 异步：端口与 adapters 中所有可能耗时的调用接受 `AbortSignal`；`AbortSignal` 不穿过 seam，取消经 `jobs.cancel({ jobId })`；不写无上限的重试或轮询。
 - 不写模块级可变状态（ARCHITECTURE F-06）。
 - 命名：文件 `kebab-case.ts`；React 组件文件 `kebab-case.tsx`，组件名 `PascalCase`；端口接口名词（`TranslationProvider`），用例动宾（`translatePage`）。
 - 注释只写代码表达不了的约束或原因，不复述代码，不写「本次修改了什么」。
@@ -32,12 +32,12 @@
 ### 1.3 Lint 与格式
 
 - Prettier + ESLint（typescript-eslint `strict-type-checked`）；ruff。
-- 关键规则（错误级）：`max-lines-per-function: 80`、`complexity: 15`、`max-params: 4`、`no-restricted-imports`（按层）、`no-restricted-syntax`（顶层 `let`）、`no-restricted-globals`（`chrome`）。
+- 关键规则（错误级）：`max-lines-per-function: 80`、`complexity: 15`、`max-params: 4`、`no-restricted-imports`（按层）、`no-restricted-syntax`（顶层 `let`）、`no-restricted-globals`（全局禁用 `chrome`；core 路径另禁 `window`、`document`、`navigator`、`location`、`history`、`localStorage`、`sessionStorage`、`requestAnimationFrame`，ARCHITECTURE G14）。
 - 文件行数与依赖方向由 CI 门禁检查（ARCHITECTURE §6、§13），不得在本地关闭后提交。
 
 ### 1.4 测试命名与组织
 
-- TS 测试与源码镜像放在切片的 `test/` 下，文件名 `<被测文件名>.test.ts`；Python 为 `tests/.../test_<被测模块>.py`。
+- TS 测试放在切片的 `test/` 下：`test/core/`（经 seam 的核心测试，Node 环境，不渲染 UI）、`test/adapters/`、`test/ui/`；文件名 `<被测文件名>.test.ts`；Python 为 `tests/.../test_<被测模块>.py`。
 - 用例名描述**行为与条件**，格式：`<结果> when <条件>`，例如 `rejects translation when a formula placeholder is missing`。中文团队可写中文，但同一文件保持一种语言。
 - 与验收标准对应的用例在名称前加编号：`AC-03 rejects translation when ...`。
 - 从 v1 移植的规则测试，在 `describe` 名称后注明来源：`describe('integrity-check (v1: lib/pdf-blocks.js)')`。
@@ -46,7 +46,10 @@
 ### 1.5 依赖引入
 
 - 新增运行时依赖须在 PR 描述写：用途、许可证、体积、替代方案。
-- 许可证白名单：MIT、Apache-2.0、BSD-2/3、ISC、MPL-2.0（仅作为独立文件使用时）。GPL / AGPL / LGPL / 非商用 / 自定义许可证一律需要用户批准。已知需批准的：PyMuPDF（AGPL-3.0 或 Artifex 商业许可，见差异清单 Q6；包括作为 MiniCPM SDK `pdf` extra 被间接引入）、MinerU（MinerU Open Source License，Apache-2.0 加附加条款）。
+- 本项目许可证为 **Apache-2.0**（Q6，见根目录 `LICENSE`）。新依赖必须与 Apache-2.0 兼容。
+- 许可证白名单：MIT、Apache-2.0、BSD-2/3、ISC、MPL-2.0（仅作为独立文件使用时）。
+- **禁止 GPL / AGPL**（任何版本），不接受例外申请。已知禁止项：PyMuPDF（AGPL-3.0；包括作为 MiniCPM SDK `pdf` extra 被间接引入），以及 MinerU 在 2026-04-14 之前以 AGPL-3.0 发布的版本。
+- LGPL、非商用、自定义许可证一律需要用户批准；已知需批准的：MinerU 当前版本（MinerU Open Source License，Apache-2.0 加附加条款）。
 - 间接依赖同样适用：引入一个包前检查它的 extras 与传递依赖，不得借上游包把需批准的许可证带进来。
 - 模型权重视同依赖：在 worker `runtime/` 模型清单登记名称、版本、sha256、许可证与官方出处；非商用或自定义许可证的权重需要用户批准。
 - 「借鉴思路」不等于引入代码：可以参考需批准许可证项目的公开算法描述，但不得复制其代码或把它加为依赖。
@@ -63,6 +66,7 @@
   2. 涉及的切片与热点文件（ARCHITECTURE G11）。
   3. 测试证据：命令、结果摘要；失败项与重跑记录（§4）。
   4. 未验证项与风险。
+  5. 改动了 UI 或 core 路径时，附「UI–core 交接说明」（§8.4）。
 - 合入方式由用户决定；任何人与 Agent 不自行合入他人或自己的 PR，除非用户明确要求。
 
 ## 3. 并行开发规则
@@ -100,6 +104,8 @@
 8. 日志与错误信息中没有正文、密钥、绝对路径。
 9. UI 改动遵循 DESIGN.md（待 Loom 产出）；在其交付前不引入新的视觉规范。
 10. PR 描述完整（§2）。
+11. UI 与核心解耦（§8）：业务规则（校验、计价、状态转移、权限、失败条件）只在 core；UI 改动 PR 中 core 文件零改动；seam 只传普通数据；新增或修改的规则有经 seam 的 core 测试且不渲染 UI。
+12. 新依赖与模型权重的许可证与 Apache-2.0 兼容，没有 GPL / AGPL（§1.5）。
 
 ## 6. Agent 绝不能做的事
 
@@ -119,9 +125,11 @@
 | N-10 | 编写或修改 `DESIGN.md`、`docs/design-principles.md`（属于设计师 Loom） |
 | N-11 | 修改 `.cursor/environment.json`，除非用户明确要求；建议写在 ARCHITECTURE §15 或 PR 描述里 |
 | N-12 | 在 CI 或自动测试中调用付费 API、下载模型权重、提交大体积二进制（PDF、权重、音频）进仓库 |
-| N-13 | 引入未经批准的 GPL / AGPL / 非商用许可证依赖 |
+| N-13 | 引入 GPL / AGPL 依赖（含 PyMuPDF，含经上游 extras 间接引入）；引入未经批准的 LGPL / 非商用 / 自定义许可证依赖 |
 | N-14 | 删除或改写用户数据迁移、已入库的规格历史，或把「待基准定标」的数值自行填成具体数字 |
 | N-15 | 以「模型说对」为依据把候选标为已核验；在代码或文档中编造上游模型能力、API 或测试结果 |
+| N-16 | 在 UI 任务中修改 core 文件；为迁就页面给 seam 加参数或改返回形状而不先停下说明（§8 规则 2、3） |
+| N-17 | 让任何识别结果（引擎 A / B、云 OCR、arXiv 对齐、多模态补救）绕过 Jev 评分进入已核验状态（Q1） |
 
 ## 7. 文档规则
 
@@ -130,4 +138,51 @@
 - 修改规格必须在同一个 PR 同步修改受影响的其他规格与 CI 配置；结构性变更配 ADR。
 - 引用上游模型、库、API 的能力时附官方链接、锁定的提交或版本、核实日期；未核实的写「未核实」。官方自测的精度与速度数字一律注明「官方自测」，不当作已验证结论。
 - 上游核实结论集中在 `docs/v2-gap-and-changes.md` §2；规格引用它而不是各自重述，避免多处说法漂移。
-- 「待基准定标」「待 Loom 产出」「待用户拍板」三种标记保持原样，直到对应的人给出结论。
+- 「待基准定标」「待 Loom 产出」「待用户拍板」三种标记保持原样，直到对应的人给出结论。用户已决定的问题标「已决定（Wisdom 日期）」，并在同一个 PR 改入全部受影响的规格。
+
+## 8. UI 与业务核心解耦（Q3）
+
+约束原文、调研依据、seam 定义与切片映射见 [ARCHITECTURE.md](./ARCHITECTURE.md) §2.1–§2.6，CI 规则见 ARCHITECTURE §13 的 G13–G17。本节是执行细则。
+
+### 8.1 执行规则（Wisdom 2026-10-30 原文，不得删改或弱化）
+
+1. 校验、计价、状态转移、权限、失败条件只写在 core。
+2. 改 UI（布局、文案、组件、交互）时，默认不改 core 文件。
+3. 现有 seam 不够用时先停下来说明缺什么，不要为了迁就页面去加参数、改返回形状。
+4. 核心测试直接调用 seam，不渲染 UI。这是完成标准。
+5. 做完说明：改了哪些 UI 文件，core 是否没动，核心测试是否通过。
+
+### 8.2 每条规则怎么做、怎么查
+
+| 规则 | 怎么做 | 机器检查 | 人工检查 |
+| --- | --- | --- | --- |
+| 1 | 五类规则写成 `features/<f>/src/domain/` 下的纯函数，由 application 用例调用；组件、hooks、`ipc-handlers.ts` 里不出现这五类判断（显示用的格式化除外） | G13、G14（core 不能依赖 UI）；G16（规则必须有 core 测试） | 评审清单 §5 第 11 条：在组件里看到 `if` 判断业务条件即退回 |
+| 2 | 「core 文件」= domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`。UI 任务的分支只改 `src/ui/**`、`apps/desktop/src/renderer/**`、`ui-kit` | G17（同一 PR 同时改 UI 与 core 即失败） | 交接说明中「core 是否没动」必须为「是」 |
+| 3 | 发现 seam 不够用：停止 UI 工作，在任务或 PR 中写明缺什么输入或结果、为什么现有 seam 不行；另开 seam PR（契约先行，§3 第 3 条），由 core 侧按领域语义设计，合入后再继续 UI | G17；`contracts` 为热点文件（G11） | 评审 seam PR 时检查：新增字段是否是领域概念，而不是某个页面的布局需要 |
+| 4 | core 测试放在 `test/core/`，只 import `src/index.ts`、`src/pure.ts`、`src/testing/**`，用 fake 端口；运行 `pnpm test:core` | G16（Node 环境、禁止 UI 依赖、规则覆盖核对） | 任务完成以 `pnpm test:core` 通过为准，组件测试通过不能代替 |
+| 5 | 在 PR 描述或任务回复中填写 §8.4 模板 | G17（改动 UI 路径的 PR 缺少交接说明块即失败） | 评审核对说明与 diff 一致 |
+
+### 8.3 交接指令必须引用
+
+给人或 Agent 分派任何涉及 UI 或 core 的任务时，任务说明里必须包含下面这一行，且不得删减：
+
+> 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
+
+任务说明还需写明任务类型（UI 改动 / seam 变更 / core 改动三选一）与涉及的切片。没有这一行的交接指令，接手方应先补上再开工。
+
+### 8.4 完成说明模板
+
+```markdown
+### UI–core 交接说明（ARCHITECTURE §2.1 / RULES §8）
+
+- 任务类型：UI 改动 / seam 变更 / core 改动（三选一）
+- 涉及切片：
+- 改了哪些 UI 文件：
+  - `packages/features/<切片>/src/ui/...`
+- core 是否没动：是 / 否（否时列出文件与原因；UI 改动任务中出现 core 改动即不合格，按规则 3 另开 seam PR）
+- 用到的 seam：`<切片>.<操作>`（`index.ts` / `pure.ts` / `window.oi`）
+- seam 是否够用：够用 / 不够用（不够用时写：缺什么输入或结果、为什么现有 seam 不行、对应的 seam PR 链接）
+- 核心测试是否通过：`pnpm test:core` 于提交 `<SHA>`：通过 N / 失败 N / 跳过 N
+- 未验证项与风险：
+```
+
