@@ -494,7 +494,7 @@ v1 链路：识别 ID（`lib/arxiv-id.js`）→ 限速下载（`background/arxiv
 - 事故：Attention 第 4–5 页显示旧公式译文，因为版面键只有 `hash:page:mode:blocks-1:source-v3`，缺公式管线版本；只抬 `CHAIN_VERSION` 清不掉旧版面（`docs/formula-stale-cache-rca.md` §1）。
 - 修复：引入 `FORMULA_PIPELINE_VERSION = "fp-1"` 与陈旧判定（`lib/formula-pipeline.js:9`、`:205-227`），测试 `tests/formula-stale-cache-fix.test.mjs`。
 - 决策缓存键：`unitKey:tier:version:model:cropHash`（`lib/formula-contract.js:110-111`）。
-- v2 规则：版面键、译文键、公式决策键都必须包含「公式切块 / 占位协议版本」。版面键与公式决策键另含采用版本号；译文键（`translation/domain/cache-key.ts`）改为按内容寻址，包含原文占位文本哈希、受保护片段表哈希、`oi-md/1` 方言版本、模型与提示词版本，但不含文献、采用版本与区块号，这样重解析后内容不变的块不重发请求；译文记录本身仍绑定采用版本（ARCHITECTURE §8.1.1）。公式一变，片段表哈希就变，旧译文不会被误用，本节的事故因此仍被挡住。
+- v2 规则：版面键、译文键、公式决策键都必须包含「公式切块 / 占位协议版本」。版面键与公式决策键另含采用版本号；译文键（`translation/domain/cache-key.ts`）改为按内容寻址，包含原文占位文本哈希、区块类型、公式决定摘要 `formulaDigest`、`oi-md/1` 方言版本、模型与提示词版本，但不含文献、采用版本与区块号，这样重解析后内容不变的块不重发请求；译文记录本身仍绑定采用版本（ARCHITECTURE §8.1.1）。公式决定摘要覆盖每个公式的显示决定（已核验 LaTeX / 裁图）及其内容，所以公式的 LaTeX 或显示方式一变，旧译文就不会被误用，本节的事故因此仍被挡住。只用「片段表哈希」不够：它覆盖不了 LaTeX 不变、显示决定改变的情况，论证见[差异清单](./v2-gap-and-changes.md) §6.2.1。
 
 ### 4.19 整页多模态替换的复盘（反面经验）
 
