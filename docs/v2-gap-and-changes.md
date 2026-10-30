@@ -197,6 +197,7 @@
 | §6 末 | arXiv 源码校准是否保留待定 | Q4 已决定：做，新增 `formula-source` 切片（ARCH §7.6） |
 | §6 | `EvaluationResult` 四态 | **保留**；补 `detailCode` 映射（本文 §2.3） |
 | §7 | `⟦fN⟧` 占位 + 片段表哈希 | **保留**（v1 审查 §4.6；ARCH `translation/domain/placeholder.ts`） |
+| §7 | 译文缓存键含采用版本；公式保护哈希绑定 `pageRevisionId + blockId + formulaDecisionId` | **改**：译文缓存键按内容寻址，不含采用版本、区块号与决定 ID，改含公式决定摘要；记录本身仍绑定采用版本（本文 §6.2.1；ARCH §8.1.1） |
 | §10 | blocks-1 导入迁移表 | 不采用：Q8 已决定不做 v1 迁移 |
 | §11 | 同步 canonical 与缓存 | 同步移出 v2 |
 
