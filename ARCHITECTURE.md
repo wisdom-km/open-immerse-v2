@@ -28,7 +28,7 @@ flowchart LR
   end
   W1["Python worker（本机）<br/>预处理 / 引擎 A / 引擎 B<br/>Jev 评分（本机推理，可选）"]
   W2["Python worker（远程，自建）<br/>同一代码、同一协议<br/>Jev 评分（服务器上推理）"]
-  QE["Jev 远程服务<br/>官方云 API 或用户自建 Docker"]
+  QE["面壁开放平台（远程默认）<br/>Jev 托管 API · MiniCPM-OCR-1.0 文档解析（引擎 B 可选）<br/>高级：用户自建 Jev Docker"]
   API["第三方 API<br/>翻译 / 多模态 / 云 OCR / TTS / ASR"]
   ARX["arXiv<br/>（源码包）"]
 
@@ -37,8 +37,8 @@ flowchart LR
   M -- "MessagePort" --> U
   U -- "HTTP + SSE（oi-parse/1）<br/>127.0.0.1 + 一次性令牌" --> W1
   U -- "HTTPS + SSE（oi-parse/1）<br/>服务令牌" --> W2
-  W1 -- "HTTPS（jev_http 后端）" --> QE
-  W2 -- "HTTPS（jev_http 后端）" --> QE
+  W1 -- "HTTPS（jev_http / 引擎 B 云端后端）" --> QE
+  W2 -- "HTTPS（jev_http / 引擎 B 云端后端）" --> QE
   U -- "HTTPS（provider 适配器）" --> API
   U -- "HTTPS，≥3 s 一次、单连接<br/>（formula-source 适配器）" --> ARX
 ```
@@ -47,8 +47,8 @@ flowchart LR
 - **Preload** 只暴露由契约生成的类型化命令与事件订阅，不暴露 `ipcRenderer`、任意通道、`fs`、`shell`。
 - **Main** 是装配根（composition root）：创建适配器、注入用例、注册 IPC 处理器、管理窗口与 worker 生命周期。不写业务规则。
 - **Utility 进程**：application 层与 adapters 默认在 main 进程装配；M3 起若长任务影响 main 响应（以实测为准），整体迁到 Electron `utilityProcess`，代码不改，只改装配位置。
-- **Python worker**：无状态计算服务。不写用户文献库、不决定采用版本、不持久化用户的第三方 API 密钥（本机模式下，Jev 云 API 的凭据由 main 在每个 `evaluate` 作业的请求头中传入，worker 只在内存中使用，不落盘、不进日志、不进产物）。本机与远程运行同一份代码、同一协议（Q7）。
-- **质量评估一律经 worker**（Q9）：桌面端只通过 `oi-parse/1` 的 `evaluate` 作业请求评分，无论 Jev 在本机推理、在远程 worker 所在服务器推理，还是由 worker 转发给官方云 API / 用户 Docker 服务。桌面端没有第二条评分通路（§7.4）。
+- **Python worker**：无状态计算服务。不写用户文献库、不决定采用版本、不持久化用户的第三方 API 密钥（面壁 API Key 等凭据由 main 在每个 `evaluate` / `parse` 作业的请求头中传入，worker 只在内存中使用，不落盘、不进日志、不进产物，§7.4「面壁 API」）。本机与远程运行同一份代码、同一协议（Q7）。
+- **质量评估一律经 worker**（Q9）：桌面端只通过 `oi-parse/1` 的 `evaluate` 作业请求评分，无论 Jev 在本机推理、在远程 worker 所在服务器推理，还是由 worker 转发给面壁 API / 用户 Docker 服务。桌面端没有第二条评分通路（§7.4）。
 
 ## 2. 分层
 
@@ -199,7 +199,7 @@ export type HardwareProfile = Readonly<{
   gpus: ReadonlyArray<Readonly<{ vendor: 'nvidia' | 'amd' | 'intel' | 'apple' | 'other'; vramGB: number | null }>>;
 }>;
 export type DeploymentAdvice = Readonly<{
-  recommended: 'local' | 'remote';
+  recommended: 'local' | 'modelbest-api';   // 设置主选项「本地 / 面壁 API」；高级自建选项不参与推荐
   meetsOfficialHardware: boolean;  // 是否达到 Jev 官方硬件下限（§7.4）
   platformDocumented: boolean;     // 官方文档是否覆盖该平台（Windows 未覆盖）
   reason: 'apple-silicon-16gb' | 'nvidia-8gb' | 'below-official-minimum';
@@ -217,7 +217,7 @@ it('recommends remote when the machine is an 8 GB laptop with integrated graphic
     os: 'windows', arch: 'x64', totalMemoryGB: 8, unifiedMemory: false,
     gpus: [{ vendor: 'intel', vramGB: null }],
   });
-  expect(advice).toMatchObject({ recommended: 'remote', reason: 'below-official-minimum' });
+  expect(advice).toMatchObject({ recommended: 'modelbest-api', reason: 'below-official-minimum' });
 });
 ```
 
@@ -353,7 +353,7 @@ packages/features/<name>/
 | `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `application/use-cases/get-notes-by-ids.ts`（按 ID 批量只读，写作预留，§4.4） · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx`（正文用 ui-kit `MarkdownView`） |
 | `qa` | 论文问答、上下文选取、引用 | `domain/context-selection.ts` · `domain/citation.ts` · `application/use-cases/ask.ts`（流式回答经 `markdown` 的 seam 切分为已闭合块与未闭合尾部）· `application/ports/chat-provider.ts` · `ui/ask-panel.tsx`（回答用 ui-kit `MarkdownView`） |
 | `voice` | TTS 朗读 / 讲解、ASR 语音笔记 | `domain/speech-script.ts` · `domain/audio-segment.ts` · `application/ports/tts-port.ts` · `application/ports/asr-port.ts` · `application/use-cases/generate-narration.ts` · `application/use-cases/transcribe-note.ts` |
-| `settings` | 非密钥设置、provider 配置、密钥引用绑定、预算设置 | `domain/provider-config-validate.ts` · `domain/budget-settings.ts` · `domain/translation-fallback.ts`（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/evaluator-deployment.ts`（Jev 本机 / 远程选择与推荐值的关系，Q9）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
+| `settings` | 非密钥设置、provider 配置、密钥引用绑定、预算设置 | `domain/provider-config-validate.ts` · `domain/budget-settings.ts` · `domain/translation-fallback.ts`（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/evaluator-deployment.ts`（Jev「本地 / 面壁 API」选择、高级自建选项与推荐值的关系，Q9，§7.4）· `domain/engine-b-source.ts`（引擎 B 来源：本机 SDK / 面壁 API，默认不启用云端，§7.1）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
 | `diagnostics` | 诊断事件记录、诊断包导出、脱敏 | `domain/redaction-rules.ts`（自 v1 移植）· `domain/retention.ts`（保留天数与体积上限）· `application/use-cases/export-bundle.ts` · `ui/diagnostics-page.tsx` |
 
 ### 4.3 切片之间的依赖（允许的方向）
@@ -681,7 +681,7 @@ flowchart TD
   IN["原 PDF + SHA-256"] --> PRE["预处理（pypdfium2）<br/>文字层检测 · 页面渲染 · 坐标帧<br/>（所有识别来源共用同一张页面图）"]
   IN --> AX["公式来源：arXiv 源码（§7.6）<br/>编号 + 版本 → 下载缓存 → TeX 解析 → 区域对齐<br/>对齐失败的公式不产生候选"]
   PRE --> A["引擎 A：模块化<br/>版面检测（标准档 V3 / 高质量档 plus-L）<br/>文字层对齐 / OCR 兜底 · 公式识别 · 表格 · 自写阅读顺序"]
-  PRE --> B["引擎 B：端到端流水线<br/>版面 → 裁剪 → 识别 → 组装<br/>（对比与兜底）"]
+  PRE --> B["引擎 B：端到端流水线<br/>版面 → 裁剪 → 识别 → 组装<br/>（对比与兜底；本机 SDK 或面壁 API）"]
   PRE --> CO["云 OCR（可选，BYOK，§7.7）<br/>按版面区域裁片识别"]
   PRE --> T["文字层基础档<br/>（无服务时降级，TS 实现）"]
   A --> N["规范化为统一文档模型<br/>（候选页 PageCandidate）"]
@@ -707,6 +707,14 @@ flowchart TD
 流水线约束（上游核实结论见差异清单 §2）：
 
 - **当前选型**（只写在 adapters 与配置里，F-13）：引擎 A = 版面模型 + PP-FormulaNet 系列 + PaddleOCR 兜底 + 自写阅读顺序；引擎 B = MiniCPM-OCR 1.0 官方 SDK（`minicpm-ocr`，版面后端用 `ppdoclayout3_torch`，不依赖 PaddlePaddle）；质量评估 = MiniCPM-OCR Jev（部署见 §7.4）。按 Q1，MiniCPM-OCR 1.0 与 Jev 照用：锁定上游提交、SDK 版本与权重 sha256，记入 `EngineCapabilities.models[]` 与每次 `ParseRun`，M6 开工前复核一次。
+- **引擎 B 的云端来源（可选，Wisdom 2026-10-30 18:37）**：除本机 SDK 外，引擎 B 可改用面壁开放平台的 MiniCPM-OCR-1.0 文档解析 API（`POST https://api.modelbest.ai/v1/document-parse`，Bearer `MODELBEST_API_KEY`，与 Jev 共用同一个面壁 Key；[文档](https://platform.modelbest.ai/console/docs/api/document-parse)，2026-10-30 查阅，页面标注更新于 2026-10-27）。默认不启用，在设置中开启（PRD §3.3；验收 AC-60）。
+  - 输入是预处理渲染好的页面图（同步接口，`image` 用 data URI），**不上传原 PDF**，所有来源仍共用同一张页面图与 `CoordinateFrame`（Q6）。
+  - 请求带 `upright: false`（平台默认 `true`，会自适应旋转并把坐标改到旋转后的页面上），让坐标直接落在我们的页面图上；页面方向由预处理负责。
+  - 输出的 `ocr.blocks[]`（`order`、`label`、`bbox` / `regions`，像素坐标、左上原点，相对 `image_width` / `image_height`）经 `engines/e2e_b/mapping.py` 转成候选页，与本机 SDK 走同一套映射。防御：若仍返回 `rotation.applied = true`，按 `total_angle`（逆时针为正）换回我们的页面坐标，换算不了的页不产生候选；`image_width` / `image_height` 与我们发出的图不一致时同样不产生候选。块的 `status` 不是 `ok`（`failed` / `skipped_no_vlm` / `skipped_seal`）时只保留版面框，不产生文字候选。
+  - 错误处理沿用 §7.4「面壁 API」表，差别两处：413 表示单张图过大，没有批可拆，记 `error/invalid_request`；409 只出现在异步作业的幂等键冲突，v2 不用异步作业。5xx 时把响应头 `X-Request-Id` 记入诊断事件（它不是凭据）。
+  - `EngineId` 仍是 `e2e-b`；`ParseRun` 记录后端（`sdk-local` / `modelbest-api`）与返回的模型名。产出的候选照常送 Jev 评分（Q1）。
+  - 平台显示限时免费；长期价格**未核实**。计价不写死：按平台返回的用量记账，单价来自用户配置，否则记「未知」（PRD QM-10）。
+  - 托管 API 背后的版本与流水线是否与锁定的 SDK（`1269e4f`，版面用 PP-DocLayoutV3）一致**未核实**，对比视图按「版面可能同源」标注。文档页自己声明「描述的是已实现的契约，不证明生产部署或线上连通」，真实可用性在 M6 冒烟时确认（PRD M6）。
 - **引擎 A 的版面档位（Q10）**：标准档 = PP-DocLayoutV3，M3 起步即用；基准集另跑 PP-DocLayout_plus-L 对照。plus-L 若在阅读顺序与版面指标上「明显更好」（判据待基准定标，PRD QM-13），作为「高质量档」在设置中供用户选择；否则不开放。档位是配置值，记入 `ParseRun`，切换只影响新的解析，不改已采用版本。
 - **版面同源**：B 的 SDK 固定使用 PP-DocLayoutV3，阅读顺序也来自它，而不是来自 OCR 模型。A 用标准档（V3）时，A/B 的版面判断同源：对比视图必须标注「版面同源」，A/B 一致不能作为互相印证的证据。A 用高质量档（plus-L）时不同源，但 plus-L 不输出阅读顺序，顺序完全由自写算法给出。
 - **页面图（Q6）**：预处理统一用 pypdfium2 渲染页面图并生成 `CoordinateFrame`；所有识别来源使用同一张图。B 以图片输入 SDK，不安装其 `pdf` extra（该 extra 依赖 PyMuPDF）。PyMuPDF 禁止引入（AGPL，与本项目 Apache-2.0 许可证政策冲突，RULES §1.5）。
@@ -785,33 +793,33 @@ interface LatexRenderer { check(latex: string): RenderCheck }   // 只证明语�
 - `EngineId` 是配置值（如 `modular-a`、`e2e-b`、`text-layer`），模型名、权重版本记在 `EngineCapabilities.models[]` 与每次 `ParseRun` 中。
 - 引擎不支持区域级解析时必须在 `capabilities` 里声明；用例据此拒绝或显示「需整页运行」及估算费用，不能隐式扩大收费范围。
 - 质量评估的 `error` / `unavailable` / `not-run` 不得触发补救（AC-05）。
-- 上游 verdict 的规范化只在 `quality/domain/evaluation-status.ts` 做，上游原值保存在 `providerVerdict`。以 Jev 为例：`scored` → `scored`（带 `rawScore`）；`precheck_reject` → `error/invalid_candidate`；`render_error` → `error/render_failed`；`missing_original_image` → `error/missing_image`；`encode_error` → `error/encode_failed`；`forward_error` → `error/service_failed`；其他任何值 → `error/unknown_verdict`。上游返回的 0.0 / -1.0 占位分一律丢弃。
+- 上游 verdict 的规范化只在 `quality/domain/evaluation-status.ts` 做，上游原值保存在 `providerVerdict`。以 Jev 为例：`scored` → `scored`（带 `rawScore`）；`precheck_reject` → `error/invalid_candidate`；`render_error` → `error/render_failed`；`missing_original_image` → `error/missing_image`；`encode_error` → `error/encode_failed`；`forward_error` → `error/service_failed`；其他任何值 → `error/unknown_verdict`。上游返回的 0.0 / -1.0 占位分一律丢弃。HTTP 层的失败（鉴权、额度、限流等）按 §7.4「面壁 API」表映射为 `error` 或 `unavailable`，同样不带分数、不触发补救。
 - 阈值按（类别, `evaluatorVersion`）分别定标；`evaluatorVersion` 包含模型版本、部署方式、推理后端与量化档、渲染环境。上游默认阈值 0.5 不使用（PRD QM-05）。某个 `evaluatorVersion` 尚无定标阈值时，分数照常记录，但 `low-score-routing` 返回「未定标」，不触发补救。
 - 补救、翻译都经过 `budget-ledger` 预留；预留失败即进入 `waiting-budget`。
 
 ### 7.4 质量评估的部署（Q9）
 
-决定：Jev 同时支持本机与远程运行，用户在设置里选择；默认按机器硬件推荐，用户随时可改。开发机（32 GB 内存 + NVIDIA RTX 4070 12 GB 独显，Wisdom 2026-10-30 17:56 告知）按 CUDA 路线在本机跑 Jev，能否跑通在 M0 实测确认（见本节末「开发机」）。
+决定：Jev 同时支持本机与远程运行，用户在设置里选择；默认按机器硬件推荐，用户随时可改。Wisdom 2026-10-30 18:37 补充：设置里的主选项是「本地 / 面壁 API」。远程模式的默认服务商是面壁开放平台的托管 API（模型 `MiniCPM-OCR-Jev`，见下文「面壁 API」）；本地部署保留，llama.cpp CUDA 构建首选。两者走同一个 `evaluate` 作业接口。原来的「远程：自建 worker」「远程：自建 Docker」放到「高级」里，不删。开发机（32 GB 内存 + NVIDIA RTX 4070 12 GB 独显，Wisdom 2026-10-30 17:56 告知）按 CUDA 路线在本机跑 Jev，能否跑通在 M0 实测确认（见本节末「开发机」）。
 
 **worker 接口对两种部署一致。** 桌面端只有一个适配器 `quality/adapters/worker-quality-evaluator.ts`：经 `worker-client` 向 worker 提交 `POST /v1/jobs`（`kind: "evaluate"`），请求与产物使用同一份 schema（`contracts/src/worker/evaluate.ts`）。本机与远程的差别只在 worker 地址与鉴权（§10.1），与解析作业完全相同。worker 内部由 `quality/backends/` 选择后端，两种后端实现同一个 `QualityEvaluatorBackend`（§7.2）：
 
 | 设置中的选择 | 请求发往 | worker 内后端 | 分数可比性 | 硬件（官方说法） |
 | --- | --- | --- | --- | --- |
-| 本机 | 本机 worker（`127.0.0.1`） | `local_engine`：本机推理引擎（llama.cpp / Ollama 的 GGUF 路线）+ Jev 评分服务层 | 排序稳定，绝对值与 Docker / 云 API 可能不同；渲染图由 worker 自备，分数不能与官方数值比较，必须单独定标 | NVIDIA ≥ 8 GB 显存，或 Apple M 系列 ≥ 16 GB 统一内存 |
-| 远程：自建 worker | 远程 worker | `local_engine`（在服务器上推理，可用 vLLM / SGLang） | 同上，按服务器环境单独定标 | vLLM ≥ 12 GB、SGLang ≥ 16 GB、llama.cpp / Ollama ≥ 8 GB 显存 |
-| 远程：官方云 API | 本机或远程 worker | `jev_http`（图片带 `data:image/png;base64,` 前缀） | 与 Docker 一致，可与官方数值直接比较 | 本机无要求；开通条件与价格**未核实** |
-| 远程：用户自建 Docker 服务 | 本机或远程 worker | `jev_http`（图片**不带**前缀） | 与云 API 一致 | Linux + NVIDIA ≥ 12 GB、驱动 ≥ 535 |
+| 本地 | 本机 worker（`127.0.0.1`） | `local_engine`：本机推理引擎（llama.cpp CUDA 构建首选，Ollama 备选；macOS 走 Metal）+ Jev 评分服务层 | 排序稳定，绝对值与 Docker / 面壁 API 可能不同；渲染图由 worker 自备，分数不能与官方数值比较，必须单独定标 | NVIDIA ≥ 8 GB 显存，或 Apple M 系列 ≥ 16 GB 统一内存 |
+| 面壁 API（远程默认） | 本机或远程 worker | `jev_http`：面壁开放平台托管 API（OpenAI 兼容 `POST /v1/chat/completions`，图片用 `data:image/png;base64,` 形式） | 服务端渲染；上游说云 API 与 Docker 一致、可与官方数值比较（本 PR 未实测） | 本机无要求；需要面壁 API Key；价格**未核实** |
+| 高级：自建远程 worker | 远程 worker | `local_engine`（在服务器上推理，可用 vLLM / SGLang） | 同「本地」，按服务器环境单独定标 | vLLM ≥ 12 GB、SGLang ≥ 16 GB、llama.cpp / Ollama ≥ 8 GB 显存 |
+| 高级：自建 Docker 服务 | 本机或远程 worker | `jev_http`（图片**不带**前缀） | 与面壁 API 一致 | Linux + NVIDIA ≥ 12 GB、驱动 ≥ 535 |
 
 - 本机 worker 只做转发时不加载任何模型，只装基础依赖；基础安装体积**未实测**，M1 统计。
-- `jev_http` 统一处理两种图片编码差异，由契约测试覆盖两种形态；Jev 云 API 的凭据按 §1 的约定只随作业传入。
+- `jev_http` 统一处理面壁 API 与 Docker 两种请求形态（图片前缀、端点），由契约测试覆盖两种形态；面壁 API Key 按 §1、§10.1 的约定只随作业的请求头传入。
 - 两种后端都把上游 verdict 与原始分原样放进产物；规范化只在 TS 的 `quality/domain/evaluation-status.ts` 做（§7.3），本机与远程走同一条规范化路径。
 
 **推荐规则**（`quality/domain/deployment-recommendation.ts`，纯函数，示例见 §2.6）：
 
-1. Apple Silicon 且统一内存 ≥ 16 GB → 推荐本机（`apple-silicon-16gb`）。
-2. NVIDIA 独显且显存 ≥ 8 GB → 推荐本机（`nvidia-8gb`）。Jev 官方部署文档只覆盖 Linux + NVIDIA 与 macOS，Windows 上 `platformDocumented = false`，界面注明「官方文档未覆盖 Windows」。
-3. 其他情况（含 8 GB 内存核显机、M1 8 GB）→ 推荐远程（`below-official-minimum`）。
-4. 推荐值只是默认，用户随时可改。选择「本机」但未达官方下限时，界面注明「不在官方硬件要求内，速度与可用性未核实」，仍允许尝试。
+1. Apple Silicon 且统一内存 ≥ 16 GB → 推荐本地（`apple-silicon-16gb`）。
+2. NVIDIA 独显且显存 ≥ 8 GB → 推荐本地（`nvidia-8gb`）。Jev 官方部署文档只覆盖 Linux + NVIDIA 与 macOS，Windows 上 `platformDocumented = false`，界面注明「官方文档未覆盖 Windows」。
+3. 其他情况（含 8 GB 内存核显机、M1 8 GB）→ 推荐面壁 API（`below-official-minimum`）。
+4. 推荐值只是默认，用户随时可改。选择「本地」但未达官方下限时，界面注明「不在官方硬件要求内，速度与可用性未核实」，仍允许尝试。选择「面壁 API」但还没填 Key 时，评分记为 `unavailable`、标「待评分」，不触发补救（PRD AC-05），界面提示去填 Key。
 5. 本机模式启用前必须通过官方启动自检与参考样例比对（上游说明：只有启动自检能确认后端可用；参考样例三项分数与参考值相差 0.02 以内为正常，见 MiniCPM-OCR `1269e4f` 的 `docs/llamacpp_deploy_jev_en.md:326`）。不通过则不启用本机模式，保留原来的选择并提示原因。
 
 硬件画像来源：main 进程提供操作系统、架构、总内存；GPU 厂商与显存由 worker `runtime/` 设备探测，经 `GET /v1/capabilities` 返回。画像只含普通数据，交给纯函数判断。
@@ -822,7 +830,28 @@ interface LatexRenderer { check(latex: string): RenderCheck }   // 只证明语�
 - 每条 `EvaluationResult` 带 `evaluatorVersion`；切换部署即产生新的 `evaluatorVersion`，旧结果保留原版本、不改写。
 - 新 `evaluatorVersion` 没有定标阈值时只记分、不路由（§7.3），不触发补救。
 - 适配器在健康检查时记录 Docker API 返回的 `template_md5` 与本机渲染环境指纹；指纹变化视为新的 `evaluatorVersion`，旧阈值不再适用。
-- 适配器按 64 项分批；单次请求失败只影响该批，按 `error/service_failed` 记录，不扩大为整页失败。
+- 适配器按 64 项分批；单次请求失败只影响该批，按下文「面壁 API」的 HTTP 错误表记为 `error` 或 `unavailable`（Docker 服务同表），不扩大为整页失败。
+
+**面壁 API（`jev_http` 的默认远程形态）。** 依据：[面壁开放平台文档](https://platform.modelbest.ai/console/docs/api/ocr-jev)（2026-10-30 查阅，页面标注更新于 2026-10-29），与上游仓库的 `docs/minicpm_ocr_jev_api_en.md`（`1269e4f`）一致。
+
+| 项 | 契约 | 适配器的处理 |
+| --- | --- | --- |
+| 端点 | `POST {base}/chat/completions`，OpenAI 兼容；`GET {base}/models` 列出 Key 可用的模型 | 国际站 `base = https://api.modelbest.ai/v1`（文档写明）。国内站 platform.modelbest.cn 的控制台模型列表能看到 `MiniCPM-OCR-Jev`，上游仓库文档写的是 `https://api.modelbest.cn/v1`，但国内 API base URL **未核实**。base URL 做成配置项，两个站点各自预置，国内站标「未核实」 |
+| 鉴权 | `Authorization: Bearer <Key>` | 见下文「Key」 |
+| 模型 | `model: "MiniCPM-OCR-Jev"`，区分大小写；响应里的 `model` 可能是小写 | 请求固定写这个名；`testConnection` 先调 `/models` 确认列表里有它 |
+| 请求体 | `messages` 里放原区域图（`image_url`，Base64 / data URI）和候选文本；顶层 `minicpm_ocr_jev{ mode, category, threshold, candidates, items }`；`stream: false` | 批量时 `items` 与 `messages` 都放同样的图和文本（`messages` 为空会返回 400 `moderation_invalid_input`）；图片一律用 `data:image/png;base64,` 形式（两份文档都接受） |
+| `mode` | `score` / `score_best` / `score_best_batch` | v2 只用 `score`（每个候选单独评分，批量用 `items`）。选哪个候选由 core 的 §7.5 优先级链决定，不交给 `score_best*`：后者在全部失败时也会返回 `best_index: 0`。契约类型覆盖三种模式，契约测试覆盖三种的请求形态 |
+| `category` | `text` / `formula` / `table`（表格要 HTML） | 由区域类别映射；表格候选先转成 HTML |
+| `threshold` | 只影响 `summary`，不改原始分 | 不依赖；只取每项的 `verdict` 与 `prob_yes`（§7.3） |
+| 上限 | 单请求 ≤ 64 项（`score` 数 `items`，选择模式数全部候选）；不支持 SSE | `quality/batching.py` 按 64 分批；`stream` 恒为 `false` |
+| 响应 | `choices[0].message.content` 是 JSON 字符串，要再解析一次；`results[i]` 对应 `items[i]`；`usage.prompt_tokens` 在顶层 | 解析失败的整批记 `error/service_failed`；用量记入预算账本 |
+| HTTP 错误 | 400 / 422 请求错；401 / 403 Key 或权限；402 额度或计费；404 端点或模型；413 过大；429 限流；5xx 服务端 | 400 / 404 / 422 不重试，记 `error/invalid_request`；401 / 403 / 402 不重试，整批记 `unavailable`（原因码 `auth` / `quota`），提示用户；413 拆半重试；429 按响应提示退避；5xx（含用量无效时的 502）有限次退避重试，重试用尽记 `error/service_failed`，响应头 `X-Request-Id` 记入诊断事件。每次重试都是新的计费调用，先经预算账本预留；部分失败只重试失败项 |
+
+- **Key**：环境变量名 `MODELBEST_API_KEY`。开发与 CI 只从 Cursor Secrets 注入的环境变量读取；应用里由用户在设置中填写，存入本机安全存储（`safeStorage`，§8.3），`ProviderConfig` 只存 `secretRef`。Key 绝不进仓库、fixtures、录制的响应、日志、任务 JSON、诊断包（RULES N-05、PRD AC-09、AC-59）。调用真实服务的测试只在该变量存在时运行，默认跳过；契约测试用去掉 `Authorization` 与图片内容的录制样例。
+- **同一个 Key 两处用**：面壁的 Jev 与 MiniCPM-OCR-1.0 文档解析（§7.1 引擎 B 云端来源）用同一个平台 Key，设置里是一个「面壁开放平台」服务商、一个 `secretRef`。
+- **数据外发提示**：第一次选「面壁 API」（或开启引擎 B 云端来源）时，界面说明会把区域裁图（或页面图）与候选文本发到面壁平台，用户确认后才发请求。
+- **价格**：Jev 在平台上没有标价，**未核实**；不写死单价，按 `usage` 的 token 数记账，单价来自用户配置，否则记「未知」（PRD QM-10）。
+- `evaluatorVersion` 记部署方式 `modelbest-api`、模型名与 base URL 所属站点；国内站与国际站分别定标，分数不混用。
 
 **开发机。** 配置：32 GB 内存 + NVIDIA RTX 4070 12 GB 独显（Wisdom 2026-10-30 17:56 告知）；操作系统、驱动与 CUDA 版本未告知，M0 记录。按推荐规则第 2 条，它会被推荐本机。
 
@@ -1037,9 +1066,9 @@ type StoredTranslationBlock = Readonly<{
 | --- | --- | --- | --- |
 | 非密钥设置（语言、主题、开关、预算） | SQLite `set_*` | settings 用例 | 可导出；可进诊断摘要 |
 | Provider 配置（厂商、Base URL、模型、能力） | SQLite `set_providers` | settings 用例 | 可导出；URL 中 token 脱敏 |
-| 密钥（API key、服务令牌） | `secrets.bin`（safeStorage） | 仅 adapters 在发请求的瞬间通过 `SecretStore.read(secretRef)` 读取 | **永不**：不回传 renderer（只回「已设置 / 未设置」）、不进日志、不进任务 JSON、不进导出 |
+| 密钥（API key、服务令牌；含面壁开放平台 Key） | `secrets.bin`（safeStorage） | 仅 adapters 在发请求的瞬间通过 `SecretStore.read(secretRef)` 读取；面壁 Key 由提交 `evaluate` / `parse` 作业的适配器读出，经 `worker-client` 放进作业请求头交给 worker（§10.1） | **永不**：不回传 renderer（只回「已设置 / 未设置」）、不进日志、不进任务 JSON、不进导出 |
 | 本机 worker 令牌 | 进程内存 | main 与 worker-client | 永不落盘 |
-| 开发 / 测试密钥 | 环境变量（`.env` 被 gitignore） | 本机与 CI secrets | 永不入库 |
+| 开发 / 测试密钥 | 环境变量（`.env` 被 gitignore；面壁 Key 的变量名为 `MODELBEST_API_KEY`，只从 Cursor Secrets 注入） | 本机与 CI secrets | 永不入库 |
 
 `safeStorage` 不可用时（例如 Linux 无密钥环），要求用户每次会话输入或拒绝保存，**不得**静默明文落盘。
 
@@ -1066,6 +1095,7 @@ type StoredTranslationBlock = Readonly<{
 | 地址 | `127.0.0.1` + 随机端口（worker 启动后在 stdout 打印一行 JSON 报告端口） | 用户配置的 HTTPS 地址 |
 | 鉴权 | 每次启动生成的一次性 Bearer 令牌（经 stdin 传入，不进命令行参数） | 服务令牌（`secretRef`） |
 | 资产 | 统一上传，不传本机路径 | 统一上传 |
+| 第三方服务凭据 | 面壁 API Key 等随每个 `evaluate` / `parse` 作业放在请求头 `OI-Provider-Authorization`，只在作业内存里使用 | 同左；远程 worker 同样不落盘 |
 
 Q7 已决定：本机与远程同一协议 HTTP + SSE；stdio JSON-RPC 不采用（取舍见差异清单 §6）。
 
@@ -1085,6 +1115,7 @@ Q7 已决定：本机与远程同一协议 HTTP + SSE；stdio JSON-RPC 不采用
 - 请求头 `OI-Protocol: 1`；不兼容版本返回 `426`，桌面端提示升级 worker。
 - 所有消息 schema 来自 `contracts`（TypeBox 定义 → JSON Schema → `datamodel-code-generator` 生成 pydantic 模型），CI 校验生成物无漂移；`fixtures/protocol/` 的合法 / 非法样例在 TS 与 Python 两侧都跑。
 - worker 只在自己的工作目录写临时文件，任务结束按 TTL 清理；不访问桌面数据目录。
+- 第三方服务凭据（如 `MODELBEST_API_KEY` 的值）只经请求头 `OI-Provider-Authorization` 随作业传入，不进作业 JSON、`idempotencyKey`、配置摘要、SSE 事件、产物与日志；作业结束即丢弃。`GET /v1/jobs/{id}` 的错误只报 `auth` / `quota` 等类别，不回显凭据（§7.4「面壁 API」，PRD AC-59）。
 
 ### 10.3 worker 内部结构
 
@@ -1101,9 +1132,11 @@ workers/parser/
 │  │  ├─ base.py             # §7.2 的 Protocol
 │  │  ├─ modular_a/          # layout.py / text_align.py / ocr_fallback.py / formula.py / table.py / assemble.py
 │  │  ├─ reading_order/      # columns.py / xy_cut.py / cross_column.py / continuation.py
-│  │  └─ e2e_b/              # pipeline_adapter.py（以页面图调用 SDK）/ mapping.py（块级记录 → 候选页；block_id、order 只作运行内标识）
+│  │  └─ e2e_b/              # mapping.py（块级记录 → 候选页；block_id、order 只作运行内标识；两个后端共用）
+│  │     └─ backends/        # sdk_local.py（以页面图调用 SDK）/ modelbest_api.py（面壁 document-parse，只发页面图，处理 rotation；§7.1）
 │  ├─ quality/               # Jev 评分（§7.4）：本机与远程 worker 同一代码
-│  │  ├─ backends/           # local_engine.py（本机推理 + 评分服务层）/ jev_http.py（官方云 API、Docker API，处理前缀差异）
+│  │  ├─ backends/           # local_engine.py（本机推理 + 评分服务层）/ jev_http.py（面壁 API 的 OpenAI 兼容 chat/completions，与用户自建 Docker API；处理请求形态与前缀差异）
+│  │  ├─ http_errors.py      # HTTP 状态 → error / unavailable / 拆批 / 退避的映射表（纯规则，§7.4「面壁 API」）
 │  │  ├─ render/             # 本机模式自备渲染图：固定渲染器与字体版本，写入 evaluatorVersion
 │  │  ├─ batching.py         # 64 项分批（纯规则）
 │  │  └─ self_check.py       # 官方启动自检与参考样例比对
@@ -1113,7 +1146,7 @@ workers/parser/
 
 **开发机上的本机 worker。** 开发机是 32 GB 内存 + NVIDIA RTX 4070 12 GB（§7.4「开发机」）。`jev-local` extra 在开发机上走 CUDA 路线：首选 llama.cpp 的 CUDA 构建，Ollama 备选，具体后端在 M0 实测后定。`runtime/` 的设备探测要报出驱动与 CUDA 版本、可用显存，供推荐规则与 M0 记录使用。M0 实测通过之前，开发机不承诺能本机跑 Jev；规格中「本机模式」的开发与定标以 M0 的实测结论为准。
 
-Python 分层用 `import-linter` 强制：`api → jobs → engines | quality → preprocess → protocol`，不允许反向；`engines/modular_a` 与 `engines/e2e_b` 互不 import；`quality/backends/local_engine` 与 `jev_http` 互不 import。Python 侧的 core（`engines/reading_order/`、`engines/e2e_b/mapping.py`、`quality/batching.py`）另加 forbidden 契约：不得 import `fastapi`、`starlette`、`httpx`、`torch`、`paddle`、`pypdfium2` 等 IO 与推理依赖（§2.3）。不同引擎的重依赖可以拆成独立 venv / 容器，由 `runtime` 按引擎分别启动。
+Python 分层用 `import-linter` 强制：`api → jobs → engines | quality → preprocess → protocol`，不允许反向；`engines/modular_a` 与 `engines/e2e_b` 互不 import；`quality/backends/local_engine` 与 `jev_http` 互不 import。`engines/e2e_b/backends/sdk_local` 与 `modelbest_api` 互不 import。Python 侧的 core（`engines/reading_order/`、`engines/e2e_b/mapping.py`、`quality/batching.py`、`quality/http_errors.py`）另加 forbidden 契约：不得 import `fastapi`、`starlette`、`httpx`、`torch`、`paddle`、`pypdfium2` 等 IO 与推理依赖（§2.3）。不同引擎的重依赖可以拆成独立 venv / 容器，由 `runtime` 按引擎分别启动。
 
 ## 11. 可观测性
 
@@ -1261,7 +1294,7 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | Q6 | pypdfium2；项目许可证 Apache-2.0；禁止 GPL / AGPL（含 PyMuPDF） | §7.1、§10.3、G10 |
 | Q7 | 本机与远程同一协议 HTTP + SSE | §1、§10.1 |
 | Q8 | 不做 v1 迁移，v2 从零开始 | §4.2 `library`（无导入器） |
-| Q9 | Jev 本机 / 远程可选，按硬件推荐，worker 接口一致 | §1、§2.6 示例、§7.4、§10.2、§10.3 |
+| Q9 | Jev 本机 / 远程可选，按硬件推荐，worker 接口一致；设置主选项「本地 / 面壁 API」，远程默认面壁开放平台托管 API（Wisdom 2026-10-30 18:37），自建 worker / Docker 归入「高级」 | §1、§2.6 示例、§4.2 `settings`、§7.4「面壁 API」、§10.1、§10.2、§10.3 |
 | Q10 | PP-DocLayoutV3 起步，plus-L 对照，明显更好时作为高质量档 | §7.1「版面档位」、`parsing/domain/layout-profile.ts` |
 | Q11 | 未配置翻译时借用多模态：保留、默认关、开启时提示消耗多模态额度 | §4.2 `settings/domain/translation-fallback.ts` |
 | Q12 | 不接 Unlimited-OCR，上游支持坐标输出后再评估 | 不进本文；记录在差异清单 §2.6 |
