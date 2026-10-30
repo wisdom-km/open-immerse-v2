@@ -122,7 +122,7 @@
 
 | 项 | 官方说法 | 出处 | v2 处理 |
 | --- | --- | --- | --- |
-| 接口 | 异步任务：`POST https://paddleocr.aistudio-app.com/api/v2/ocr/jobs` 提交，`GET /api/v2/ocr/jobs/{jobId}` 查询，结果是 `resultUrl.jsonUrl` 指向的 JSONL；鉴权 `Authorization: Bearer {access_token}` | [异步 API 使用文档](https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5)（更新时间 2026-02-04）；[英文版](https://ai.baidu.com/ai-doc/AISTUDIO/Mml7n69e7) | worker 内 `modular_a/backends/aistudio_api.py`（ARCH §10.3）；凭据按作业请求头传入；开发变量名暂定 `PADDLEOCR_ACCESS_TOKEN`（ARCH §15.4） |
+| 接口 | 异步任务：`POST https://paddleocr.aistudio-app.com/api/v2/ocr/jobs` 提交，`GET /api/v2/ocr/jobs/{jobId}` 查询，结果是 `resultUrl.jsonUrl` 指向的 JSONL；鉴权 `Authorization: Bearer {access_token}` | [异步 API 使用文档](https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5)（更新时间 2026-02-04）；[英文版](https://ai.baidu.com/ai-doc/AISTUDIO/Mml7n69e7) | 核实通过后才在 worker `modular_a/backends/` 加托管后端文件，核实失败就从三条路径中删掉托管 API，不留空文件（ARCH §7.0、§10.3；架构评审 P1-12）；凭据按作业请求头传入；开发变量名暂定 `PADDLEOCR_ACCESS_TOKEN`（ARCH §15.4） |
 | 可选模型 | `PaddleOCR-VL-1.5`、`PaddleOCR-VL`、`PP-StructureV3`、`PP-OCRv5` | 同上（示例代码注释） | 与本地 A 的标准档 PP-DocLayoutV3 / 高质量档 plus-L 如何对应**未核实**（Q10） |
 | 输出 | 示例代码只取每页 `layoutParsingResults[].markdown`（文字与图片），文档没有写区域框字段 | 同上 | 我们需要区域框、类别与公式 LaTeX 才能对齐文字层与坐标帧；托管结果能否给出这些**未核实**，给不出时不能作为 A 的来源 |
 | 限制 | 单次最多 1000 页 PDF；文件 URL ≤ 200 MB，本地上传 ≤ 50 MB；错误码 12001 每日页数上限（HTTP 403）、12002 频率过高（HTTP 429） | 同上 | 我们只发渲染好的页面图，不上传 PDF（Q6，与面壁一致）；单张图是否接受、每日配额与价格**未核实** |
@@ -177,7 +177,7 @@ Windows 本地（开发机）：Paddle 3.3 官方提供 Windows 的 pip 安装�
 
 | 项 | 公开时间（查询时） | 风险 | 要求 |
 | --- | --- | --- | --- |
-| MiniCPM-OCR 仓库 / SDK 1.0.3 | 2026-10-27 创建，约 2 天 | 接口、字段、部署脚本可能快速变化；官方基准雷达图自注「some values remain to be confirmed」（`docs/minicpm_ocr_1dot0_en.md:131`） | 锁定仓库提交（当前 `1269e4f`）、SDK 版本、权重 sha256；M6 开工前复核一次 |
+| MiniCPM-OCR 仓库 / SDK 1.0.3 | 2026-10-27 创建，约 2 天 | 接口、字段、部署脚本可能快速变化；官方基准雷达图自注「some values remain to be confirmed」（`docs/minicpm_ocr_1dot0_en.md:131`） | 锁定仓库提交（当前 `1269e4f`）、SDK 版本、权重 sha256；M6a（Jev）与 M6b（MiniCPM-OCR）开工前各复核一次 |
 | MiniCPM-OCR-1.0 / Jev 权重 | 2026-10-21 起 | 同上 | 记入 worker `runtime/` 模型清单 |
 | Unlimited-OCR-2 | 2026-10-27 | 不接入 | — |
 | PP-DocLayoutV3 | 2026-01-20 | Paddle 文档矛盾 | 锁定 PaddleOCR / PaddleX 版本，M3 实测 |
@@ -304,15 +304,15 @@ Windows 本地（开发机）：Paddle 3.3 官方提供 Windows 的 pip 安装�
 
 | 编号 | 问题 | 决定 | 状态 | 落点 |
 | --- | --- | --- | --- | --- |
-| Q1 | MiniCPM-OCR 1.0（引擎 B）与 Jev（质量评估）是否照附件使用？ | 照用，锁定版本，M6 开工前复核。硬性不变式：**所有**识别结果路径（引擎 A、引擎 B、百度 OCR、智谱 OCR、arXiv 源码对齐、多模态补救）都必须经过 Jev 评分；低分区域进入多模态补救；评分不可用标「待评分」，不触发补救 | 已决定（Wisdom 2026-10-30） | ARCH §7.1、§7.3、§7.5、§7.7；PRD S5、AC-18；RULES N-17 |
+| Q1 | MiniCPM-OCR 1.0（引擎 B）与 Jev（质量评估）是否照附件使用？ | 照用，锁定版本，M6a / M6b 开工前复核。硬性不变式：**所有**识别结果路径（引擎 A、引擎 B、百度 OCR、智谱 OCR、arXiv 源码对齐、多模态补救）都必须经过 Jev 评分；低分区域进入多模态补救；评分不可用标「待评分」，不触发补救 | 已决定（Wisdom 2026-10-30） | ARCH §7.1、§7.3、§7.5、§7.7；PRD S5、AC-18；RULES N-17 |
 | Q2 | 「文字层基础档」是否作为无服务时的默认降级？ | 同意 | 已决定（Wisdom 2026-10-30） | PRD S2、AC-11；ARCH §7.1 |
 | Q3 | v2 只做桌面端，同时支持远程 / 自建 worker？ | 同意；手机、账号同步、官方云只在契约中留余地。另加约束「UI 与业务核心解耦（functional core, imperative shell）」：先调研再写，调研来源见 ARCH §2.2 | 已决定（Wisdom 2026-10-30） | PRD S11、S12、AC-21；ARCH §2.1–§2.6、§13 G13–G16（原 G17 已删除，§6.6）；RULES §8 |
-| Q4 | arXiv 源码校准公式是否进入 v2？ | 做，进入 M0–M8：编号与版本识别、源码下载缓存限流超时、TeX 解析、与版面区域对齐、KaTeX 安全渲染、对齐失败回落识别链路；对齐结果同样进 Jev 与优先级链 | 已决定（Wisdom 2026-10-30） | ARCH §4.2 `formula-source`、§7.5、§7.6；PRD S4、US-18、AC-22–AC-26、M4、M6；v1 审查 §4.17 |
+| Q4 | arXiv 源码校准公式是否进入 v2？ | 做，进入 M0–M8：编号与版本识别、源码下载缓存限流超时、TeX 解析、与版面区域对齐、KaTeX 安全渲染、对齐失败回落识别链路；对齐结果同样进 Jev 与优先级链 | 已决定（Wisdom 2026-10-30） | ARCH §4.2 `formula-source`、§7.5、§7.6；PRD S4、US-18、AC-22–AC-26、M4、M6a；v1 审查 §4.17 |
 | Q5 | 写作辅助是否移出 v2？ | 移出 v2 实现范围，但在架构中提前设计：切片位置、seam 草案、依赖的数据模型（笔记 / 引用 / 文献库）与扩展点；PRD 记为后续阶段并验收保留接口 | 已决定（Wisdom 2026-10-30） | ARCH §4.4；PRD §3.2、AC-27、M5 |
 | Q6 | worker 的 PDF 渲染与文字提取库？ | pypdfium2；MiniCPM SDK 以图片输入；根目录 `LICENSE` 改为 Apache-2.0；禁止 GPL / AGPL 依赖（含 PyMuPDF） | 已决定（Wisdom 2026-10-30） | `LICENSE`、`package.json`、`README.md`；RULES §1.5、N-13；ARCH §7.1、§10.3、G10 |
 | Q7 | 本机 worker 传输方式？ | 本机与远程同一协议 HTTP + SSE；不采用 stdio JSON-RPC | 已决定（Wisdom 2026-10-30） | ARCH §1、§10.1；PRD S11 |
 | Q8 | 是否做 v1 数据迁移器？ | 不做，v2 从零开始；删除迁移器相关里程碑与验收。取舍：省去导入器的格式解析、dry-run、冲突处理与测试，v2 数据模型不受 v1 约束；代价是 v1 的文献库、笔记、已存译文不进 v2 | 已决定（Wisdom 2026-10-30） | PRD §3.2；ARCH §4.2 `library`；v1 审查 §2、§4.14、§5 |
-| Q9 | Jev 部署在哪？ | 设置主选项「本地 / API」，默认「API」；两者走同一个 `evaluate` 作业接口。API 服务商是面壁开放平台托管 API（`MiniCPM-OCR-Jev`）；「本地」首选 llama.cpp CUDA 构建；硬件画像只给「本地」标可行性，用户随时可改；自建远程 worker 与 Jev Docker 在「高级」。Key 名 `MODELBEST_API_KEY`，只放 Cursor Secrets 或用户本机安全存储，绝不进仓库。引擎 B 同样默认用面壁 MiniCPM-OCR-1.0 文档解析 API（§2.3.1、§6.3）。开发机是 Windows（32 GB 内存 + RTX 4070 12 GB）：开发走 API 路径，本地 Jev「不要求 / 未核实」，M0 只要求 API 路径（实测已延后，§6.4） | 已决定（Wisdom 2026-10-30；开发机配置 17:56、面壁 API 18:37、API 优先 18:44 补充） | ARCH §1、§2.6、§4.2、§7.0、§7.1、§7.4、§8.3、§10.1–§10.3；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、M0、M6 |
+| Q9 | Jev 部署在哪？ | 设置主选项「本地 / API」，默认「API」；两者走同一个 `evaluate` 作业接口。API 服务商是面壁开放平台托管 API（`MiniCPM-OCR-Jev`）；「本地」首选 llama.cpp CUDA 构建；硬件画像只给「本地」标可行性，用户随时可改；自建远程 worker 与 Jev Docker 在「高级」。Key 名 `MODELBEST_API_KEY`，只放 Cursor Secrets 或用户本机安全存储，绝不进仓库。引擎 B 同样默认用面壁 MiniCPM-OCR-1.0 文档解析 API（§2.3.1、§6.3）。开发机是 Windows（32 GB 内存 + RTX 4070 12 GB）：开发走 API 路径，本地 Jev「不要求 / 未核实」，M0 只要求 API 路径（实测已延后，§6.4） | 已决定（Wisdom 2026-10-30；开发机配置 17:56、面壁 API 18:37、API 优先 18:44 补充） | ARCH §1、§2.6、§4.2、§7.0、§7.1、§7.4、§8.3、§10.1–§10.3；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、M0、M6a、M6b |
 | Q10 | 引擎 A 的版面模型？ | PP-DocLayoutV3 起步，PP-DocLayout_plus-L 对照；明显更好时作为「高质量档」供用户选择 | 已决定（Wisdom 2026-10-30） | ARCH §7.1；PRD S2、US-21、AC-28、QM-13 |
 | Q11 | 是否保留「未配置翻译时借用多模态服务翻译」？ | 保留，默认关闭，开启时提示会消耗多模态额度 | 已决定（Wisdom 2026-10-30） | ARCH §4.2 `settings`；PRD S3、US-22、AC-29 |
 | Q12 | Unlimited-OCR 是否接入？ | 不接入；上游支持坐标输出后再评估 | 已决定（Wisdom 2026-10-30） | 本文 §2.6；PRD §3.2 |
@@ -477,9 +477,9 @@ Wisdom 19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md
 | PP-FormulaNet_plus-L 的 BLEU 与 1476 ms 耗时 | Paddle 文档 | **未核实**（官方自测，硬件以表注为准） |
 | 面壁开放平台 Jev（`MiniCPM-OCR-Jev`）的价格 | 平台 ocr-jev 文档与控制台没有标价（Wisdom 2026-10-30 18:37 告知） | **未核实**；规格不写死单价，按 `usage` 记账，单价未填时显示「未知」（ARCH §7.4「面壁 API」） |
 | 面壁 MiniCPM-OCR-1.0 文档解析的长期价格与限时免费的截止时间 | 平台控制台显示限时免费（Wisdom 告知）；文档只说按页计用量、「free trials」按异步任务计数 | **未核实**；引擎 B 默认用面壁文档解析 API（§6.3），计价同上 |
-| 面壁国内站的 API base URL | 国内站 platform.modelbest.cn 控制台模型列表可见 `MiniCPM-OCR-Jev`（Wisdom 告知）；上游仓库 `docs/minicpm_ocr_jev_api_en.md:11` 写 `https://api.modelbest.cn/v1`；平台文档只写国际站 `https://api.modelbest.ai/v1` | **未核实**；设置里两站都预置，国内站标「未核实」，默认国际站（PRD §3.3），M6 开工前用真实 Key 核对 |
+| 面壁国内站的 API base URL | 国内站 platform.modelbest.cn 控制台模型列表可见 `MiniCPM-OCR-Jev`（Wisdom 告知）；上游仓库 `docs/minicpm_ocr_jev_api_en.md:11` 写 `https://api.modelbest.cn/v1`；平台文档只写国际站 `https://api.modelbest.ai/v1` | **未核实**；设置里两站都预置，国内站标「未核实」，默认国际站（PRD §3.3），M6a 开工前用真实 Key 核对 |
 | 面壁国内站与国际站的 Key、账号、模型清单能否互用 | — | **未核实**；两站按不同站点记 `evaluatorVersion`、分别定标 |
-| 面壁 API 的开通条件、配额、限流数值与服务稳定性 | 两份平台文档只给错误码与「最多 2 个活动任务」，没有给配额与限流数值；文档页声明只描述已实现的契约，不证明生产部署或线上连通 | **未核实**；本 PR 没有调用真实服务，M6 用 `MODELBEST_API_KEY` 冒烟（PRD M6） |
+| 面壁 API 的开通条件、配额、限流数值与服务稳定性 | 两份平台文档只给错误码与「最多 2 个活动任务」，没有给配额与限流数值；文档页声明只描述已实现的契约，不证明生产部署或线上连通 | **未核实**；本 PR 没有调用真实服务，M6a（Jev）与 M6b（文档解析）用 `MODELBEST_API_KEY` 冒烟（PRD §8） |
 | 面壁托管文档解析背后的模型版本与流水线（是否与 SDK `1269e4f` 相同、版面是否 PP-DocLayoutV3） | 平台文档未说明 | **未核实**；与引擎 A 对比时按「版面可能同源」标注（ARCH §7.1） |
 | 面壁 Jev API 的分数与官方 Docker 的一致性 | 上游说云 API 与 Docker 渲染一致、可与官方数值比较（`docs/minicpm_ocr_jev_tutorial_en.md:28-32`） | **未实测**；按 PRD QM-14 测，分别定标 |
 | MiniCPM-OCR 1.0 在 Apple Silicon 上可用的具体芯片与内存下限 | `docs/llamacpp_deploy.md:23` 只写 macOS ARM64 包 | **未核实** |
@@ -509,9 +509,9 @@ Wisdom 19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md
 | 在本地 Windows 开发机（不在 Cursor 云端 Agent 里）开发时，Cursor Secrets 如何注入环境变量 | Cursor Secrets 用于云端 Agent 的环境 | **未核实**；现在的做法：开发者自己设为系统用户级或会话级环境变量，值不进仓库里的脚本与配置（ARCH §15.4、RULES N-05）；Key 只放 Cursor Secrets 或用户本机安全存储、不写 `.env`、不进仓库（Wisdom 18:37）；Windows 凭据管理器的支持之后再加（Wisdom 2026-10-30 20:57） |
 | 本机 worker 基础安装（不含模型）的体积 | — | **未实测**，M1 统计 |
 | 本机模式自备渲染图的 Jev 分数与官方 Docker / 面壁 API 的一致性 | 上游说明 macOS 只能跑纯评分服务、分数不能与官方数值比较 | **未核实**；按 PRD QM-14 单独定标 |
-| 百度「通用文字识别（高精度含位置版）」对学术公式的识别能力、当前计价与免费额度 | 官方文档只描述接口与字段 | **未核实**，M6 接入前确认 |
+| 百度「通用文字识别（高精度含位置版）」对学术公式的识别能力、当前计价与免费额度 | 官方文档只描述接口与字段 | **未核实**，M6c 接入前确认 |
 | 智谱 GLM-OCR 在 OmniDocBench V1.5 得分 94.62 | 智谱官方模型介绍 | **未核实**（官方自测） |
-| 智谱 GLM-OCR 的公式输出格式与质量、价格稳定性 | 官方文档 | **未核实**，M6 实测 |
+| 智谱 GLM-OCR 的公式输出格式与质量、价格稳定性 | 官方文档 | **未核实**，M6c 实测 |
 | 智谱 OCR 服务（`files/ocr`，`tool_type: hand_write`）对印刷体论文是否适用 | 官方文档定位为手写体识别 | **未核实**；v2 默认不接入 |
 | `export.arxiv.org` 是否提供 `/src/<编号>` 源码下载 | arXiv Bulk Data 页面建议程序访问使用 `export.arxiv.org`，未说明源码路径 | **未核实**，M4 前确认；v1 实际使用 `https://arxiv.org/src/` |
 | arXiv「每三秒一次、单连接」限制是否适用于源码下载 | arXiv API 使用条款只列旧版 API、OAI-PMH、RSS | 条款**未明确**；v2 按同一口径执行 |
@@ -524,7 +524,7 @@ Wisdom 19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md
 | Electron `webUtils.getPathForFile`（拖入文件取路径）在锁定版本中可用 | Electron 文档 | **未核实**，M2 随 Electron 版本锁定确认 |
 | KaTeX 对 Obsidian 笔记常见写法（`\begin{align}` 自动编号、部分 AMS 宏）的覆盖程度 | Loom 方案「代价」一栏 | **未量化**；不支持的公式显示原文加错误标记（PRD AC-31） |
 | Anthropic 应锁定哪个 `anthropic-version` | [Messages](https://docs.claude.com/en/api/messages) 示例为 `2026-10-21` | **未核实**是否为当前推荐值；实现时按当时文档定，写进注册表（ARCH §7.9.6） |
-| 智谱 `layout_parsing` 的 `Authorization` 是否带 `Bearer` 前缀 | OpenAPI 定义为 Bearer，指南示例不带 | **未核实**；M6 接入前用真实 Key 确认（§2.10） |
+| 智谱 `layout_parsing` 的 `Authorization` 是否带 `Bearer` 前缀 | OpenAPI 定义为 Bearer，指南示例不带 | **未核实**；M6c 接入前用真实 Key 确认（§2.10） |
 | 百度 OCR 用 API Key 鉴权时的请求头写法 | [鉴权文档](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)列出三种方式 | **未核实**；现在用 access_token，核实后加入 API Key 方式（Wisdom 2026-10-30 20:57） |
 | 千帆 v2 逐模型支持 `detail` 与 `stream_options.include_usage` 的清单；千帆文本生成页的当前地址 | [视觉理解](https://cloud.baidu.com/doc/qianfan-api/s/rm7u7qdiq)只写了部分模型 | **未核实**，M5 实现时核对 |
 | Gemini OpenAI 兼容端点与原生端点在用量与错误体上的差异 | [OpenAI 兼容文档](https://ai.google.dev/gemini-api/docs/openai) | **未核实**；默认用原生格式，兼容端点为备选（Wisdom 2026-10-30 20:57） |
@@ -549,7 +549,7 @@ Wisdom 19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md
 | 阅读顺序：模型顺序为主、`reading_order/` 校验与兜底、规则集两侧对拍、云 OCR 不作顺序来源（Wisdom 2026-10-30 21:12） | 本文 §2.4、§6.8、§7；ARCH §3、§4.1、§4.2、§7.0、§7.1、§7.2、§7.7、§7.10、§10.3、§12；PRD S2、AC-68–AC-71、QM-01、M0、M2、M3 |
 | 决策记录 Q1–Q12 | 本文 §6；PRD §9；ARCH §16 |
 | Markdown 阅读方案（D1–D7）、译文按区块存 Markdown | 本文 §6.1；ARCH §4.5、§8.1.1；PRD S13、§3.2、US-23–US-28、AC-30–AC-56、QM-15–QM-17、§8.1；RULES N-18；方案原文 `docs/design/md-reader.md` |
-| Jev 的 API 服务商是面壁开放平台、设置「本地 / API」、`MODELBEST_API_KEY` 的保管、引擎 B 的面壁 API 来源（Wisdom 2026-10-30 18:37） | 本文 §2.3.1、§7；ARCH §1、§2.6、§4.2、§7.1、§7.3、§7.4「面壁 API」、§8.3、§10.1–§10.3、§16；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、QM-14、M6、§9 |
+| Jev 的 API 服务商是面壁开放平台、设置「本地 / API」、`MODELBEST_API_KEY` 的保管、引擎 B 的面壁 API 来源（Wisdom 2026-10-30 18:37） | 本文 §2.3.1、§7；ARCH §1、§2.6、§4.2、§7.1、§7.3、§7.4「面壁 API」、§8.3、§10.1–§10.3、§16；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、QM-14、M6a、M6b、§9 |
 | API 优先：每个模型能力默认托管 API、「本地」是同一接口后的一等选项、硬件只标可行性、开发机 Windows 上不要求本地、M0 只要求 API 路径、开发密钥只以环境变量提供（Wisdom 2026-10-30 18:44） | 本文 §0 第 4 条、§2.3、§2.4.1、§6.3、§7；ARCH §1、§2.5、§2.6、§4.2、§7.0、§7.1、§7.4、§7.7、§8.3、§10.3、§12、§15.4、§16；PRD §2、S2、S3、S5、S8、S9、§3.3、US-19、US-30、US-31、AC-20、AC-60、AC-61、M0、M3–M7、§9；RULES §4、§5 第 14 项、N-05 |
 | 四项风险的决定：数据外发同意对话框、引擎 A 三条路径、问答支持多模态与纯文本模型、M0 API 实测延后（Wisdom 2026-10-30 19:11） | 本文 §0 第 4 条、§2.4.1、§6.3、§6.4、§7；ARCH §2.5、§4.2、§7.0、§7.1、§7.3、§7.4、§10.3、§16；PRD S2、S8、§3.3、AC-61、AC-62、M0、M3、M5、§9 |
 | 外发同意按服务商、追加告知新增能力、「外发前询问」开关与「数据去向」列表（Wisdom 2026-10-30 19:30） | 本文 §6.4、§6.5；ARCH §2.5、§4.2、§7.0 第 6 条、§7.4、§16；PRD §3.3、AC-61 ⑦、§9 |

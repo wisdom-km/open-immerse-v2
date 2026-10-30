@@ -754,7 +754,7 @@ flowchart TB
 | --- | --- | --- | --- | --- |
 | Jev 质量评分 | 面壁开放平台 `MiniCPM-OCR-Jev`（§7.4「面壁 API」） | worker `local_engine`：llama.cpp CUDA 构建首选，Ollama 备选，macOS 走 Metal | **不要求 / 未核实**：官方部署文档只覆盖 Linux + NVIDIA 与 macOS（§7.4「开发机」） | 记 `unavailable`，标「待评分」，不触发补救（PRD AC-05） |
 | 引擎 B（MiniCPM-OCR 1.0） | 面壁开放平台文档解析 `MiniCPM-OCR-1.0`（§7.1） | worker 内 SDK（`ppdoclayout3_torch`） | **不要求 / 未核实**：上游只写了 Linux vLLM（RTX 5090 32 GB）与 macOS ARM64 llama.cpp 两个验证环境 | 不运行引擎 B，只用引擎 A 或文字层基础档 |
-| 引擎 A 的模型阶段（版面、公式识别、OCR 兜底、表格） | 三条路径都保留、都可在设置中选（Wisdom 2026-10-30 19:11）：托管 API（核实通过后）、本地部署、租用的 Linux 远程 worker（「高级」里的远程 worker，跑同一份 worker 代码与 `paddle_local` 后端）；M3 开工前由 Wisdom 定最终选择（默认值与开发用的路径）。托管 API 的**候选**是百度 AI Studio 的 PaddleOCR 托管 API（异步任务，PP-StructureV3 / PaddleOCR-VL-1.5 / PP-OCRv5，Bearer access token）。异步文档的示例只取每页的 Markdown，没有写区域框字段；能否返回我们需要的区域框与公式 LaTeX、版本能否锁定、托管版面模型对应哪个档位（Q10）、价格与每日页数配额都**未核实**（差异清单 §2.4.1）；M3 开工前核实，不合用就不出现在选项里。托管结果若带阅读顺序，按 §7.10 当作模型顺序校验；不带时走 XY-cut 兜底；文字层对齐由我们自己的代码完成 | worker 内 PaddleOCR / PaddleX（`engine-a` extra） | **不要求 / 未实测**：Paddle 3.3 有官方 Windows GPU 包（CUDA 11.8 / 12.6 / 12.9，要求 GPU 计算能力高于 7.5），PaddleOCR 整条流水线在 Windows 上未实测。开发用哪条路径（托管 API / 开发机本地 / 租用的 Linux 远程 worker）随 M3 前的最终选择一起定 | 文字层基础档（Q2） |
+| 引擎 A 的模型阶段（版面、公式识别、OCR 兜底、表格） | 三条路径都保留、都可在设置中选（Wisdom 2026-10-30 19:11）：托管 API（核实通过后）、本地部署、租用的 Linux 远程 worker（「高级」里的远程 worker，跑同一份 worker 代码与 `paddle_local` 后端）；M3 开工前由 Wisdom 定最终选择（默认值与开发用的路径）。托管 API 的**候选**是百度 AI Studio 的 PaddleOCR 托管 API（异步任务，PP-StructureV3 / PaddleOCR-VL-1.5 / PP-OCRv5，Bearer access token）；核实通过之前，worker 里不建它的后端文件，核实失败就从三条路径中删掉托管 API，不留空文件（架构评审 P1-12）。异步文档的示例只取每页的 Markdown，没有写区域框字段；能否返回我们需要的区域框与公式 LaTeX、版本能否锁定、托管版面模型对应哪个档位（Q10）、价格与每日页数配额都**未核实**（差异清单 §2.4.1）；M3 开工前核实，不合用就不出现在选项里。托管结果若带阅读顺序，按 §7.10 当作模型顺序校验；不带时走 XY-cut 兜底；文字层对齐由我们自己的代码完成 | worker 内 PaddleOCR / PaddleX（`engine-a` extra） | **不要求 / 未实测**：Paddle 3.3 有官方 Windows GPU 包（CUDA 11.8 / 12.6 / 12.9，要求 GPU 计算能力高于 7.5），PaddleOCR 整条流水线在 Windows 上未实测。开发用哪条路径（托管 API / 开发机本地 / 租用的 Linux 远程 worker）随 M3 前的最终选择一起定 | 文字层基础档（Q2） |
 | 多模态补救 | 用户自带 Key 的多模态服务（经服务商适配层，§7.9：OpenAI 兼容、Anthropic、Gemini、千帆、智谱等；不预选，用户在设置里从全部服务商中选） | 本机 OpenAI 兼容服务（例如 Ollama、llama.cpp server 加用户自选的视觉模型） | 不要求 | 不补救，未核验公式保留原图（PRD AC-04、AC-05） |
 | 云 OCR（额外识别来源，§7.7；只识别区域裁片的文字，不提供阅读顺序与版面，§7.10） | 百度 OCR、智谱 GLM-OCR（用户自带 Key，经服务商适配层，§7.9） | 本身就是 API；对应的本地能力是引擎 A 的 OCR 兜底 | — | 不请求（PRD AC-18） |
 | 翻译 | 用户自带 Key 的对话模型（经服务商适配层，§7.9；不预选，用户在设置里从全部服务商中选） | 本机 OpenAI 兼容服务 | 不要求 | 不翻译，显示原文并提示去配置；可按 Q11 借用多模态（默认关） |
@@ -796,7 +796,7 @@ flowchart TD
 - **编排归属**：上图从入库到翻译的整条流水线由 `ingest` 切片编排（§4.2、§4.3）：`ingest/domain/ingest-policy.ts` 按已保存的事实算出下一步，`open-document` / `resume-ingest` 依次调用各切片的 seam。各切片只做自己那一步，不调用下一步。
 - **预算闸门**：图中每个发往外部服务商的模型调用（引擎 A 的托管 API、引擎 B 文档解析、云 OCR、Jev 评分、多模态补救、翻译）发出前都经 `BudgetGate` 预留，被拒时按 §7.8 的规则处理：Jev 记 `unavailable`（原因码 `budget`）并标「待评分」，不触发补救，不改用别的服务商。
 
-- **当前选型**（只写在 adapters 与配置里，F-13）：引擎 A = 版面模型 + PP-FormulaNet 系列 + PaddleOCR 兜底 + 阅读顺序（版面模型给出，`engines/reading_order/` 校验与兜底，§7.10）；引擎 B = MiniCPM-OCR 1.0（默认来源是面壁文档解析 API，见下条；「本地」用官方 SDK `minicpm-ocr`，版面后端用 `ppdoclayout3_torch`，不依赖 PaddlePaddle）；各能力的默认来源见 §7.0；质量评估 = MiniCPM-OCR Jev（部署见 §7.4）。按 Q1，MiniCPM-OCR 1.0 与 Jev 照用：锁定上游提交、SDK 版本与权重 sha256，记入 `EngineCapabilities.models[]` 与每次 `ParseRun`，M6 开工前复核一次。
+- **当前选型**（只写在 adapters 与配置里，F-13）：引擎 A = 版面模型 + PP-FormulaNet 系列 + PaddleOCR 兜底 + 阅读顺序（版面模型给出，`engines/reading_order/` 校验与兜底，§7.10）；引擎 B = MiniCPM-OCR 1.0（默认来源是面壁文档解析 API，见下条；「本地」用官方 SDK `minicpm-ocr`，版面后端用 `ppdoclayout3_torch`，不依赖 PaddlePaddle）；各能力的默认来源见 §7.0；质量评估 = MiniCPM-OCR Jev（部署见 §7.4）。按 Q1，MiniCPM-OCR 1.0 与 Jev 照用：锁定上游提交、SDK 版本与权重 sha256，记入 `EngineCapabilities.models[]` 与每次 `ParseRun`；Jev 在 M6a、MiniCPM-OCR 1.0 在 M6b 开工前各复核一次。
 - **引擎 B 的云端来源（Wisdom 2026-10-30 18:37、18:44）**：引擎 B 默认用面壁开放平台的 MiniCPM-OCR-1.0 文档解析 API，本机 SDK 是同一接口后的「本地」选项。文档解析 API（`POST https://api.modelbest.ai/v1/document-parse`，Bearer `MODELBEST_API_KEY`，与 Jev 共用同一个面壁 Key；[文档](https://platform.modelbest.ai/console/docs/api/document-parse)，2026-10-30 查阅，页面标注更新于 2026-10-27）。第一次使用前须确认数据外发；可在设置中改选「本地」（PRD §3.3；验收 AC-60）。引擎 B 什么时候运行不变：仍是对比与兜底。
   - 输入是预处理渲染好的页面图（同步接口，`image` 用 data URI），**不上传原 PDF**，所有来源仍共用同一张页面图与 `CoordinateFrame`（Q6）。
   - 请求带 `upright: false`（平台默认 `true`，会自适应旋转并把坐标改到旋转后的页面上），让坐标直接落在我们的页面图上；页面方向由预处理负责。
@@ -804,11 +804,12 @@ flowchart TD
   - 错误处理沿用 §7.4「面壁 API」表，差别两处：413（`too_large`）表示单张图过大，没有批可拆，不重试，记 `error/too_large`；409 只出现在异步作业的幂等键冲突，v2 不用异步作业。5xx 时把响应头 `X-Request-Id` 记入诊断事件（它不是凭据）。
   - `EngineId` 仍是 `e2e-b`；`ParseRun` 记录后端（`sdk-local` / `modelbest-api`）与返回的模型名。产出的候选照常送 Jev 评分（Q1）。
   - 平台显示限时免费；长期价格**未核实**。计价不写死：按平台返回的用量记账，单价来自用户配置，否则记「未知」（PRD QM-10）。
-  - 托管 API 背后的版本与流水线是否与锁定的 SDK（`1269e4f`，版面用 PP-DocLayoutV3）一致**未核实**，对比视图按「版面可能同源」标注。文档页自己声明「描述的是已实现的契约，不证明生产部署或线上连通」，真实可用性在 M6 冒烟时确认（PRD M6）。
+  - 托管 API 背后的版本与流水线是否与锁定的 SDK（`1269e4f`，版面用 PP-DocLayoutV3）一致**未核实**，对比视图按「版面可能同源」标注。文档页自己声明「描述的是已实现的契约，不证明生产部署或线上连通」，真实可用性在 M6b 冒烟时确认（PRD §8 M6b）。
 - **引擎 A 的版面档位（Q10）**：标准档 = PP-DocLayoutV3，M3 起步即用；基准集另跑 PP-DocLayout_plus-L 对照。plus-L 若在阅读顺序与版面指标上「明显更好」（判据待基准定标，PRD QM-13），作为「高质量档」在设置中供用户选择；否则不开放。档位是配置值，记入 `ParseRun`，切换只影响新的解析，不改已采用版本。
 - **版面同源**：B 的 SDK 固定使用 PP-DocLayoutV3，阅读顺序也来自它，而不是来自 OCR 模型。A 用标准档（V3）时，A/B 的版面判断同源，采用模型顺序时顺序也同源：对比视图必须标注「版面同源」，A/B 一致不能作为互相印证的证据。A 用高质量档（plus-L）时版面不同源；plus-L 不输出阅读顺序，这一档的顺序由 §7.10 的 XY-cut 兜底给出（来源记 `xy_cut`）。
 - **页面图（Q6）**：预处理统一用 pypdfium2 渲染页面图并生成 `CoordinateFrame`；所有识别来源使用同一张图。B 以图片输入 SDK，不安装其 `pdf` extra（该 extra 依赖 PyMuPDF）。PyMuPDF 禁止引入（AGPL，与本项目 Apache-2.0 许可证政策冲突，RULES §1.5）。
 - **全路径评分（Q1）**：所有产出识别结果的路径——引擎 A、引擎 B、云 OCR（百度、智谱等）、arXiv 源码对齐、多模态补救——产出的候选都必须经过 Jev 评分，结果写入候选的 `EvaluationResult`。`quality/domain/scoring-coverage.ts` 是唯一判定处：没有评估记录的识别候选不能进入采用版本；评分服务错误或不可用时，记录为 `error` / `unavailable` 并标「待评分」，可以采用用于阅读，但不算已核验、不触发补救，评分恢复后由 `reevaluate-pending` 自动补评。文字层基础档的文字直接取自 PDF 文字层，不是识别结果，不在此列；但其公式区域不产生 LaTeX 候选，只显示原页裁图。
+- **评分分期（架构评审 P1-12）**：评分状态机、`scoring-coverage` 与 `reevaluate-pending` 在 M3 就位，后端是假评估器（`quality/testing/`，经同一个 `evaluate` 作业返回录制或合成样例，`evaluatorVersion` 以 `fake/` 开头）。假评估器的结果永远不使候选成为「已核验」，也不触发补救（PRD AC-84）。M6a 只把后端换成真实 Jev，并做真机冒烟。
 - **低分再补**：只有经 §7.5 优先级链选出、且有效低分（`scored` 且低于该类别、该 `evaluatorVersion` 的阈值）或有明确不确定证据的区域才进入多模态补救；补救结果是新的识别候选，同样重新校验、重新评分。
 - **补救时序**：某区域的补救必须在该区域进入采用版本**之前**完成；已采用区域的翻译可以与其他区域的补救并行，但同一区域不能先用未核验内容翻译。
 - **评分错误不是低分**：评分错误、未配置、未运行、阈值未定标的区域不进入补救（PRD AC-05）；公式仍按 `formula-policy` 默认显示原页裁图。
@@ -980,7 +981,7 @@ M0 的开发机验证（结果写入差异清单 §7，PRD §8 M0 退出条件�
 
 「本地」选项本身由契约测试（假后端）与启动自检门槛（推荐规则第 5 条）保证；有达到官方要求的机器（如 Linux + NVIDIA）时，在那台机器上做真实推理验证并记录，没有就在设置中标「未经本项目实测」。
 
-**macOS 与 Windows 的本机渲染。** 上游「渲染 + 评分」服务依赖 `apt-get` 固定字体环境，只支持 Linux；macOS 只能跑纯评分服务、由调用方提供渲染图。桌面的两个目标平台都不是 Linux，所以本机模式下由 worker 的 `quality/render/` 自己把候选文本渲染成图，渲染器与字体包版本固定并写入 `evaluatorVersion`。具体渲染实现 M6 选定，这是本机模式最大的实现风险。
+**macOS 与 Windows 的本机渲染。** 上游「渲染 + 评分」服务依赖 `apt-get` 固定字体环境，只支持 Linux；macOS 只能跑纯评分服务、由调用方提供渲染图。桌面的两个目标平台都不是 Linux，所以本机模式下由 worker 的 `quality/render/` 自己把候选文本渲染成图，渲染器与字体包版本固定并写入 `evaluatorVersion`。具体渲染实现 M6a 选定，这是本机模式最大的实现风险。
 
 ### 7.5 公式候选优先级链（Q1、Q4）
 
@@ -995,7 +996,7 @@ arXiv 候选不因「来自源码」而免评分或免核对：源码版本可�
 
 ### 7.6 公式来源模块 `formula-source`（Q4）
 
-决定：做，arXiv 源码校准公式进入 M0–M8（PRD §8：M4 交付模块，M6 接入评分与优先级链）。v1 已有完整实现，可复用的规则与测试见 [v1 审查](./docs/v1-review.md) §4.17。
+决定：做，arXiv 源码校准公式进入 M0–M8（PRD §8：M4 交付模块，M6a 接入评分与优先级链）。v1 已有完整实现，可复用的规则与测试见 [v1 审查](./docs/v1-review.md) §4.17。
 
 ```mermaid
 flowchart LR
@@ -1037,7 +1038,7 @@ flowchart LR
 - 计价不写死：适配器上报计费单位（次 / 页 / token），单价来自用户配置，否则记「未知」（PRD QM-10）；每次调用都先经 `BudgetGate` 预留（§7.8）。
 - **不是阅读顺序或版面的来源**（Wisdom 2026-10-30 21:12）：百度云通用 OCR 处理多栏页面不可靠（Wisdom 的判断，本 PR 没有实测），不作为任何档位的主路线。云 OCR 只收版面区域裁片，不发整页图；返回的行序只决定该区域内文字的拼接，不参与块的顺序与版面（§7.10；PRD AC-71）。
 - 两家都只是 `packages/providers` 注册表里的记录（格式 `baidu-ocr`、`zhipu-layout-parsing`）；`parsing` 只有一个 `cloud-ocr-provider` 适配器（§7.9）。
-- M6 接入前按当时的官方文档逐字段复核；与本表不符时先更新本表与差异清单 §7，再写适配器（RULES §7）。
+- M6c 接入前按当时的官方文档逐字段复核；与本表不符时先更新本表与差异清单 §7，再写适配器（RULES §7）。
 
 ### 7.8 预算闸门：所有付费调用先预留（架构评审 P0-3）
 
@@ -1193,7 +1194,7 @@ interface ProviderAuthorizer {     // main 实现（§1）
   authorize(req: Readonly<{ vendorId: string; host: string; slot: string }>):
     Promise<Result<Readonly<Record<string, string>>, 'host_not_allowed' | 'secret_missing'>>;
 }
-// OcrRequest / OcrResult：区域裁片（assetId）→ 行文字与行框（相对裁片）；字段 M6 按 §7.7 定
+// OcrRequest / OcrResult：区域裁片（assetId）→ 行文字与行框（相对裁片）；字段 M6c 按 §7.7 定
 ```
 
 #### 7.9.6 格式与服务商
@@ -1209,7 +1210,7 @@ interface ProviderAuthorizer {     // main 实现（§1）
 | `zhipu-layout-parsing` | 智谱 GLM-OCR（[文档解析](https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90)） | `POST https://open.bigmodel.cn/api/paas/v4/layout_parsing`，`model: "glm-ocr"`；单图 ≤ 10 MB，PDF ≤ 50 MB、≤ 100 页（§7.7） | OpenAPI 定义为 Bearer，指南示例的 `Authorization` 不带 `Bearer` 前缀：哪种写法被接受未核实 |
 | `modelbest-jev`（worker 侧） | 面壁开放平台 Jev（§7.4「面壁 API」） | `POST https://api.modelbest.ai/v1/chat/completions`，Bearer | 见 §7.4 |
 | `modelbest-document-parse`（worker 侧） | 面壁开放平台 MiniCPM-OCR-1.0 文档解析（§7.1 引擎 B） | `POST https://api.modelbest.ai/v1/document-parse`，Bearer | 见 §7.1 |
-| `paddleocr-aistudio-jobs`（worker 侧，候选） | 百度 AI Studio PaddleOCR（[文档](https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5)） | `POST https://paddleocr.aistudio-app.com/api/v2/ocr/jobs` 提交，`GET /api/v2/ocr/jobs/{jobId}` 查询 `state` 与 `resultUrl.jsonUrl`；`Authorization: bearer`；模型 PP-OCRv5、PP-StructureV3、PaddleOCR-VL、PaddleOCR-VL-1.5；错误 12001（每日页数上限，403）、12002（429） | 区域框与公式 LaTeX 是否返回、版本锁定、价格（§7.0 引擎 A 行，差异清单 §2.4.1） |
+| `paddleocr-aistudio-jobs`（worker 侧，候选；核实通过前不建适配器） | 百度 AI Studio PaddleOCR（[文档](https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5)） | `POST https://paddleocr.aistudio-app.com/api/v2/ocr/jobs` 提交，`GET /api/v2/ocr/jobs/{jobId}` 查询 `state` 与 `resultUrl.jsonUrl`；`Authorization: bearer`；模型 PP-OCRv5、PP-StructureV3、PaddleOCR-VL、PaddleOCR-VL-1.5；错误 12001（每日页数上限，403）、12002（429） | 区域框与公式 LaTeX 是否返回、版本锁定、价格（§7.0 引擎 A 行，差异清单 §2.4.1） |
 
 TTS / ASR 的格式在 M7 选型时加入本表。
 
@@ -1529,7 +1530,7 @@ workers/parser/
 │  ├─ engines/
 │  │  ├─ base.py             # §7.2 的 Protocol
 │  │  ├─ modular_a/          # layout.py / text_align.py / ocr_fallback.py / formula.py / table.py / assemble.py
-│  │  │  └─ backends/        # 模型阶段的来源：paddle_local.py（本地）/ aistudio_api.py（百度 AI Studio 托管 API，候选，M3 前核实；§7.0）
+│  │  │  └─ backends/        # 模型阶段的来源：paddle_local.py（本地）；托管 API 的后端文件在 M3 前核实通过后才加入（§7.0）
 │  │  ├─ reading_order/      # validate.py / page_furniture.py / caption_binding.py / continuation.py / cross_column.py / columns.py / xy_cut.py（纯规则，§7.10）
 │  │  └─ e2e_b/              # mapping.py（块级记录 → 候选页；block_id、order 只作运行内标识；两个后端共用）
 │  │     └─ backends/        # sdk_local.py（以页面图调用 SDK）/ modelbest_api.py（面壁 document-parse，只发页面图，处理 rotation；§7.1）
@@ -1545,7 +1546,7 @@ workers/parser/
 
 **开发机上的本机 worker。** 开发机是 Windows + 32 GB 内存 + NVIDIA RTX 4070 12 GB（§7.0 第 7 条、§7.4「开发机」）。按 API 优先，开发机上的 worker 默认只装基础依赖，Jev、引擎 B 都走托管 API 后端；引擎 A 模型阶段在开发时走哪条路径（托管 API、开发机本地、租用的 Linux 远程 worker）M3 前定（§7.0）；`jev-local`、`engine-a`、`engine-b` 这些本地 extra 在开发机上**不要求**，能否在 Windows 上装好并跑通**未核实**，有意愿时按 §7.4 的可选步骤试。`runtime/` 的设备探测照常报出驱动与 CUDA 版本、可用显存，供「本地」的可行性标注使用。
 
-Python 分层用 `import-linter` 强制：`api → jobs → engines | quality → preprocess → protocol`，不允许反向；`engines/modular_a` 与 `engines/e2e_b` 互不 import；`quality/backends/local_engine` 与 `jev_http` 互不 import。`engines/e2e_b/backends/sdk_local` 与 `modelbest_api` 互不 import，`engines/modular_a/backends/paddle_local` 与 `aistudio_api` 互不 import。Python 侧的 core（`engines/reading_order/`、`engines/e2e_b/mapping.py`、`quality/batching.py`、`quality/http_errors.py`）另加 forbidden 契约：不得 import `fastapi`、`starlette`、`httpx`、`torch`、`paddle`、`pypdfium2` 等 IO 与推理依赖（§2.3）。不同引擎的重依赖可以拆成独立 venv / 容器，由 `runtime` 按引擎分别启动。
+Python 分层用 `import-linter` 强制：`api → jobs → engines | quality → preprocess → protocol`，不允许反向；`engines/modular_a` 与 `engines/e2e_b` 互不 import；`quality/backends/local_engine` 与 `jev_http` 互不 import。`engines/e2e_b/backends/sdk_local` 与 `modelbest_api` 互不 import，`engines/modular_a/backends/` 下的各个后端互不 import。Python 侧的 core（`engines/reading_order/`、`engines/e2e_b/mapping.py`、`quality/batching.py`、`quality/http_errors.py`）另加 forbidden 契约：不得 import `fastapi`、`starlette`、`httpx`、`torch`、`paddle`、`pypdfium2` 等 IO 与推理依赖（§2.3）。不同引擎的重依赖可以拆成独立 venv / 容器，由 `runtime` 按引擎分别启动。
 
 ### 10.4 协议版本与升级（架构评审 P1-9）
 
@@ -1722,7 +1723,7 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 
 | 编号 | 决定（摘要） | 本文落点 |
 | --- | --- | --- |
-| Q1 | MiniCPM-OCR 1.0 与 Jev 照用、锁版本、M6 前复核；所有识别路径（含云 OCR、arXiv 对齐、多模态补救）都经 Jev 评分 | §7.1「全路径评分」、§7.3、§7.5、§7.7；`quality/domain/scoring-coverage.ts` |
+| Q1 | MiniCPM-OCR 1.0 与 Jev 照用、锁版本、M6a / M6b 前复核；所有识别路径（含云 OCR、arXiv 对齐、多模态补救）都经 Jev 评分 | §7.1「全路径评分」、§7.3、§7.5、§7.7；`quality/domain/scoring-coverage.ts` |
 | Q2 | 无解析服务时回落文字层基础档 | §7.1；`parsing/domain/text-layer/*` |
 | Q3 | UI 与业务核心解耦（functional core, imperative shell） | §2.1–§2.6、§3.1、§5、§12、G13–G16、§14.4；执行细则 RULES §8 |
 | Q4 | 做 arXiv 源码校准公式 | §4.2 `formula-source`、§4.3、§7.5、§7.6 |
@@ -1742,5 +1743,5 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | 架构评审修复 A（Wisdom 2026-10-30 19:57 批准） | P0-1 新增无界面的编排切片 `ingest`，删除 `repair → quality`；P0-2 main 与 utility 的固定职责，密钥明文只在 main；P0-3 所有付费调用先经 `BudgetGate` 预留，账本移入新切片 `budget`，单价未知时按请求数 / 页数 / token 上限；P0-4 译文 `markdown` 不含未核验公式，裁图位置记在 `crops`，`getBlocks` 生成裁图节点；删除 G17，保留 G13–G16。20:57 按建议定下：采用 `budget` 切片；默认受限预算，各科目带保守的占位次数类上限，M0 实测后定标（§7.8 第 4 条）；评审建议的热点收窄（P1-11 后半）留到之后的 PR | §1、§2.5、§3、§4.1–§4.4、§5.2 F-16 / F-17、§7.1、§7.3、§7.8、§8.1.1、§8.2、§9、§10.2、§13；差异清单 §6.6 |
 | 架构评审修复 B 与服务商适配层（Wisdom 2026-10-30 19:45、19:46、19:57） | P1-1 同意规则措辞统一：拒绝只让该服务商对列出能力的请求为 0，其他服务商上已同意的能力照常；采纳「重新打开开关后照常询问」；P1-2 外发检查端口 `EgressCheck` 与目的主机分类；P1-3 远程 worker 不接收桌面的服务商 Key，本机 worker 只经回环地址接收；P1-4 删除已被取代的旧表述；P1-8 `ProviderFailure`；P1-9 存储与协议的版本升级规则；P1-10 Electron 加固；新增服务商适配层 `packages/providers`：按 API 格式写适配器、按服务商写注册表、能力标记、每个适配器的契约测试。20:57 按建议定下：各能力列出全部服务商、不预选；Gemini 默认原生格式，OpenAI 兼容端点为备选；百度 OCR 现在用 access_token；开发者本机的 Key 现在用环境变量；保留「本机可信」选项（默认没有）与「重新打开开关后照常询问」（§7.9.8、§15.4） | §1、§2、§2.5、§3、§4.1–§4.3、§5.1、§5.2 F-18、§7.0、§7.3、§7.4、§7.7、§7.9、§8.3、§8.4、§9、§10.1–§10.4、§12、§13、§15.4；差异清单 §6.7 |
 
-- 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3 / M6 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
+- 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3、M6a、M6b 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
 - 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、架构评审新增的 `ingest` 切片及其九条出边、`budget` 切片与删除的 `repair → quality`，以及修复 B 新增的 `packages/providers` 包与 `providers-boundary` 规则、`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。
