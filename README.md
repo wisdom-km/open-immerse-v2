@@ -8,6 +8,7 @@ Open Immerse v2 - PDF formula extraction and vector redraw project
 - [RULES.md](RULES.md)：编码约定、分支与 PR、并行开发、测试纪律、Agent 禁止事项。
 - [docs/v1-review.md](docs/v1-review.md)：v1 哪些能用、哪些不用（附原文件与行号）。
 - [docs/v2-gap-and-changes.md](docs/v2-gap-and-changes.md)：模型核实、草案修改清单、待拍板问题。
+- [docs/backlog.md](docs/backlog.md)：架构评审各项的处理状态与留给里程碑的事。
 - 视觉与交互：DESIGN.md、docs/design-principles.md（待 Loom 产出）。
 
 以下早期草案保留为历史输入；与上述规格冲突时以规格为准。

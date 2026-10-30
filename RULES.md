@@ -1,6 +1,6 @@
 # open-immerse v2 协作与编码规则（RULES）
 
-状态：v0.5，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。v0.4 按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修复（Wisdom 2026-10-30 19:57 批准）：§5 第 15、16 条（付费调用先预留额度、跨切片编排只在 `ingest`），§8 删除 G17、改由评审与交接说明检查。v0.5 按评审的 P1 项与 Wisdom 2026-10-30 19:45、19:46 的服务商适配层要求：§4 服务商适配层的契约测试，§5 第 17、18 条（服务商细节只在 `packages/providers`、外发检查与凭据），N-05 开发者本机的 Key。日期：2026-10-30（Asia/Shanghai）。
+状态：v0.6，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。v0.4 按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修复（Wisdom 2026-10-30 19:57 批准）：§5 第 15、16 条（付费调用先预留额度、跨切片编排只在 `ingest`），§8 删除 G17、改由评审与交接说明检查。v0.5 按评审的 P1 项与 Wisdom 2026-10-30 19:45、19:46 的服务商适配层要求：§4 服务商适配层的契约测试，§5 第 17、18 条（服务商细节只在 `packages/providers`、外发检查与凭据），N-05 开发者本机的 Key。v0.6 按 Wisdom 2026-10-30 21:12 批准的 PR C：§1.3 domain 纯函数的行数，§1.5 与 N-19 禁止复制 BabelDOC 代码，§2 一个 PR 一个切片与解析规则集的例外，§3 热点收窄与 UI 事件登记，§5 第 19 条（解析规则集两侧一致）。日期：2026-10-30（Asia/Shanghai）。
 适用对象：所有人类开发者与 AI Agent。
 同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；在 Loom 交付前，UI 实现只搭结构、不定视觉，也**不得**由其他人或 Agent 代写这两份文件。
 
@@ -32,7 +32,7 @@
 ### 1.3 Lint 与格式
 
 - Prettier + ESLint（typescript-eslint `strict-type-checked`）；ruff。
-- 关键规则（错误级）：`max-lines-per-function: 80`、`complexity: 15`、`max-params: 4`、`no-restricted-imports`（按层）、`no-restricted-syntax`（顶层 `let`）、`no-restricted-globals`（全局禁用 `chrome`；core 路径另禁 `window`、`document`、`navigator`、`location`、`history`、`localStorage`、`sessionStorage`、`requestAnimationFrame`，ARCHITECTURE G14）。
+- 关键规则（错误级）：`max-lines-per-function: 80`（domain 纯函数与 Python core 不受此条约束，按「一个不变量一个文件」拆分并受文件上限约束，ARCHITECTURE §6）、`complexity: 15`、`max-params: 4`、`no-restricted-imports`（按层）、`no-restricted-syntax`（顶层 `let`）、`no-restricted-globals`（全局禁用 `chrome`；core 路径另禁 `window`、`document`、`navigator`、`location`、`history`、`localStorage`、`sessionStorage`、`requestAnimationFrame`，ARCHITECTURE G14）。
 - Markdown 与公式渲染（ARCHITECTURE §4.5）：renderer 全局 `react/no-danger` 为错误级；`katex` 只能在 `packages/ui-kit/src/markdown/math.tsx` 与 `packages/features/formula/src/adapters/katex-renderer.ts` 导入，选项只从 `contracts/src/latex-policy.ts` 读取，不得在别处另写一份；Markdown 解析库只能在 `features/markdown/src/domain/parse/` 导入；`features/markdown/src/adapters/**` 禁止导入 `fs` 的写入类 API。
 - 文件行数与依赖方向由 CI 门禁检查（ARCHITECTURE §6、§13），不得在本地关闭后提交。
 
@@ -54,12 +54,13 @@
 - 间接依赖同样适用：引入一个包前检查它的 extras 与传递依赖，不得借上游包把需批准的许可证带进来。
 - 模型权重视同依赖：在 worker `runtime/` 模型清单登记名称、版本、sha256、许可证与官方出处；非商用或自定义许可证的权重需要用户批准。
 - 「借鉴思路」不等于引入代码：可以参考需批准许可证项目的公开算法描述，但不得复制其代码或把它加为依赖。
+- **BabelDOC**（`funstory-ai/BabelDOC`，AGPL-3.0，依赖 PyMuPDF；Wisdom 2026-10-30 21:12）：只借思路（ARCHITECTURE §7.11 列出的六项），严禁复制、改写、翻译成 TS 或摘录它的代码，也不引入它与它的依赖。参考时只看 README 与公开文档；PR 描述写明参考了哪一项、查阅的提交。实现由我们按规格自写，不得对照它的源码逐段改写（N-19）。
 - 不复制第三方代码进仓库；确需复制时保留许可证头并在 `THIRD_PARTY_NOTICES.md` 登记。
 
 ## 2. 分支、提交与 PR
 
 - 分支命名：`feature/<简短描述>`（功能与文档）、`fix/<简短描述>`（修复）、`chore/<简短描述>`（工具与依赖）。小写、连字符。
-- 一个分支只做一件事；一个 PR 只动**一层**或**一个切片**（ARCHITECTURE §3.1）。契约（`packages/contracts`）改动单独成 PR，先合入，再开实现 PR。
+- 一个分支只做一件事；一个 PR 只动**一个切片**（ARCHITECTURE §3.1，G18）。同一切片的 UI 与 core 可以在一个 PR 里；UI 改动的 PR 不得改另一个切片的 core。契约（`packages/contracts`）改动单独成 PR，先合入，再开实现 PR；契约 PR 的非生成代码超过 200 行时，在 PR 描述写明不拆的理由（G12）。
 - 提交信息：Conventional Commits，类型 `feat|fix|docs|refactor|test|chore|build|ci`，范围用切片名，例如 `feat(translation): reject reordered placeholders`。描述可用中文。
 - PR 一律先开 **Draft**；自检（§4、§5）全部完成后再转为 Ready。
 - PR 描述必须包含：
@@ -69,15 +70,16 @@
   4. 未验证项与风险。
   5. 改动了 UI 或 core 路径时，附「UI–core 交接说明」（§8.4）。
 - 合入方式由用户决定；任何人与 Agent 不自行合入他人或自己的 PR，除非用户明确要求。
+- **解析规则集的例外**（ARCHITECTURE §7.10）：改阅读顺序、扫描页判定或段落切分的规则时，TS `parsing/domain/text-layer/`、worker 对应的纯规则模块与 `fixtures/parsing-rules/` 必须在同一个 PR 里改；这是唯一允许一个 PR 同时动 TS 切片与 worker 的情形，PR 里不得夹带其他改动。
 
 ## 3. 并行开发规则
 
 目的：多个 Agent 同时工作而不在同一文件上冲突。
 
-1. **开工前声明。** 在 PR 描述（或任务说明）写明：要改的切片、要改的热点文件。热点文件包括：`apps/desktop/src/main/composition-root.ts`、`apps/desktop/src/renderer/slots.ts`、`packages/contracts/**`、`dependency-cruiser` 配置、`tools/check-file-size/allowlist.json`、根 `package.json`、`pnpm-lock.yaml`。
+1. **开工前声明。** 在 PR 描述（或任务说明）写明：要改的切片、要改的热点文件。热点文件包括：`apps/desktop/src/main/composition-root.ts`、`apps/desktop/src/renderer/slots.ts`、被两个以上切片 import 的契约文件（如 `ids.ts`、`errors.ts`；清单由 `tools/check-hotspots` 按 import 图算出）、`dependency-cruiser` 配置、`tools/check-file-size/allowlist.json`、根 `package.json`、`pnpm-lock.yaml`。只被一个切片使用的契约文件（如 `contracts/src/ipc/<切片>.ts`）算该切片的文件，不是热点（架构评审 P1-11）。
 2. **一个切片同一时间一个活跃 PR。** 与进行中的 PR 改同一切片时，串行；或先抽出接口（契约 PR）再并行。
 3. **契约先行。** 新功能先合入契约（类型、IPC 定义、端口接口），实现可以先返回固定值；接口稳定后，各切片并行实现。
-4. **热点文件只加行。** 装配根与插槽注册遵循「一行一个切片」，PR 对每个热点文件的改动不超过 30 行（G11）。
+4. **热点文件只加行。** 装配根与插槽注册遵循「一行一个切片」，PR 对每个热点文件的改动不超过 30 行（G11）。新增 UI 事件或给事件新增发布方、订阅方，在 `contracts/src/ui-events.ts` 登记并附 ADR（ARCHITECTURE §4.3、§5.3）。
 5. **迁移不撞号。** 数据库迁移放在各切片自己的 `migrations/`，编号只在切片内递增。
 6. **锁文件冲突**：以目标分支为准重新生成，不手工合并。
 7. **短分支。** 分支落后目标分支时先同步再继续；同步方式用 merge 或 rebase 均可，但已推送的共享分支不得 force push（§6）。
@@ -115,6 +117,7 @@
 16. 跨切片编排只在 `ingest`（ARCHITECTURE §4.2、§7.1、F-17）：按顺序调用多个切片的 seam 并按结果分支（解析 → 评分 → 采用 → 翻译、补救后重评）只写在 `ingest` 的用例里；UI、hooks、装配根、`jobs` 与其他业务切片里出现这种顺序即退回。
 17. 服务商细节只在 `packages/providers`（ARCHITECTURE §7.9、F-18）：新增服务商 = 一条注册表记录，格式没有时再加一个格式适配器；切片里不出现服务商主机名、请求体格式、鉴权头、错误码表，也不为某一家服务商新建切片适配器。模型的能力标记来自注册表或用户勾选，不探测，未知按否。
 18. 外发检查与凭据（ARCHITECTURE §7.0 第 6 条、§10.1）：任何连接发出前经 `EgressCheck`；回环地址之外都算外发，包括远程 worker。桌面的服务商 Key 只由 main 按次授权，发给对应服务商与本机回环 worker，绝不发给远程 worker；Key 只放请求头，不放 URL（百度 OCR 的 `access_token` 例外，日志里必须打码）。测试覆盖「询问或拒绝时连接数为 0」与「远程 worker 收到 Key 的次数为 0」。
+19. 解析规则集两侧一致（ARCHITECTURE §7.10、§7.11）：改阅读顺序、扫描页判定或段落切分的规则时，TS 与 worker 两侧和 `fixtures/parsing-rules/` 的夹具在同一个 PR 里改，夹具只用合成数据；输出变化时规则集版本升一级（`oi-rules/N`），已采用版本不改写；只改一侧即退回。
 
 ## 6. Agent 绝不能做的事
 
@@ -140,6 +143,7 @@
 | N-16 | 在 UI 任务中修改 core 文件；为迁就页面给 seam 加参数或改返回形状而不先停下说明（§8 规则 2、3） |
 | N-17 | 让任何识别结果（引擎 A / B、云 OCR、arXiv 对齐、多模态补救）绕过 Jev 评分进入已核验状态（Q1） |
 | N-18 | 在 v2 为 `.md` 实现写入、删除、重命名，或以「保存」「导出」等任何名义写入用户的笔记库文件夹；在 preload 暴露 `markdown.writeFile`、在装配根注入 `MdFileWriter`（Markdown 方案 D7，ARCHITECTURE §4.5.7） |
+| N-19 | 复制、改写、逐段翻译或摘录 BabelDOC（AGPL-3.0）的代码，把它或它依赖的 PyMuPDF 加为依赖，或对照它的源码写实现；只允许按 ARCHITECTURE §7.11 借用思路（§1.5） |
 
 ## 7. 文档规则
 
@@ -167,8 +171,8 @@
 | 规则 | 怎么做 | 机器检查 | 人工检查 |
 | --- | --- | --- | --- |
 | 1 | 五类规则写成 `features/<f>/src/domain/` 下的纯函数，由 application 用例调用；组件、hooks、`ipc-handlers.ts` 里不出现这五类判断（显示用的格式化除外） | G13、G14（core 不能依赖 UI）；G16（规则必须有 core 测试） | 评审清单 §5 第 11 条：在组件里看到 `if` 判断业务条件即退回 |
-| 2 | 「core 文件」= domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`。UI 任务的分支只改 `src/ui/**`、`apps/desktop/src/renderer/**`、`ui-kit` | 无（G17 已删除） | 任务类型为「UI 改动」时，交接说明中「core 是否没动」必须为「是」，评审对照 diff 核实；core 文件出现在 UI 改动任务的 diff 里即退回 |
-| 3 | 发现 seam 不够用：停止 UI 工作，在任务或 PR 中写明缺什么输入或结果、为什么现有 seam 不行；另开 seam PR（契约先行，§3 第 3 条），由 core 侧按领域语义设计，合入后再继续 UI | `contracts` 为热点文件（G11） | 评审 seam PR 时检查：新增字段是否是领域概念，而不是某个页面的布局需要 |
+| 2 | 「core 文件」= domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`。UI 任务的分支只改 `src/ui/**`、`apps/desktop/src/renderer/**`、`ui-kit` | G18 拒绝「改 UI 又改另一个切片的 core」；同一切片内的 core 改动不由机器检查 | 任务类型为「UI 改动」时，交接说明中「core 是否没动」必须为「是」，评审对照 diff 核实；core 文件出现在 UI 改动任务的 diff 里即退回 |
+| 3 | 发现 seam 不够用：停止 UI 工作，在任务或 PR 中写明缺什么输入或结果、为什么现有 seam 不行；另开 seam PR（契约先行，§3 第 3 条），由 core 侧按领域语义设计，合入后再继续 UI | 契约 PR 的体量（G12）；被两个以上切片 import 的契约文件是热点（G11）；一个 PR 一个切片（G18） | 评审 seam PR 时检查：新增字段是否是领域概念，而不是某个页面的布局需要 |
 | 4 | core 测试放在 `test/core/`，只 import `src/index.ts`、`src/pure.ts`、`src/testing/**`，用 fake 端口；运行 `pnpm test:core` | G16（Node 环境、禁止 UI 依赖、规则覆盖核对） | 任务完成以 `pnpm test:core` 通过为准，组件测试通过不能代替 |
 | 5 | 在 PR 描述或任务回复中填写 §8.4 模板 | 无（G17 已删除） | 改动 UI 或 core 路径的 PR 缺少交接说明块即退回（§2）；评审核对说明与 diff 一致 |
 
