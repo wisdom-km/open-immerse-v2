@@ -159,7 +159,7 @@
 | --- | --- | --- |
 | AC-01 | 同一份 PDF（SHA-256 相同）第二次导入不创建新文献、不触发新解析 | US-01, US-08 |
 | AC-02 | 重开已翻译论文：0 次翻译 API 请求、0 次解析请求（以网络适配器计数为准） | US-08 |
-| AC-03 | 翻译结果中公式占位符的数量、顺序、对应关系与原文 100% 一致；不一致的结果 100% 被拒绝：该译文区块记为 `failed`、不写入正文，不落为已完成译文；界面上，从未成功的块显示原文 +「翻译未通过校验」+「重译」，已有成功版本的块按 AC-56 显示 | US-04 |
+| AC-03 | 翻译结果中公式占位符的数量、顺序、对应关系与原文 100% 一致；不一致的结果 100% 被拒绝：该译文区块记为 `failed`、不写入正文，不落为已完成译文；界面上，从未成功的块显示原文 + 状态行「未翻译（校验没过）· 重译」，已有成功版本的块按 AC-56 显示 | US-04 |
 | AC-04 | 未通过核验的公式 100% 以原页裁图显示；LaTeX 候选可查看但不冒充已核验。译文中同样成立（core 测试，夹具含行内与行间的未核验公式）：显示决定为 `source-crop` 的公式片段，在 `StoredTranslationBlock.markdown` 中出现 0 次 LaTeX、0 个图片或 HTML 语法；每个这样的片段在 `crops` 里有 1 条记录；`getBlocks` 返回的 `MdDocument` 在对应位置是带 `assetId` 的裁图节点，个数与片段数相等（ARCHITECTURE §8.1.1） | US-04, US-05 |
 | AC-05 | 质量评估返回错误 / 未配置 / 未运行时，**不**触发任何付费补救请求 | US-07 |
 | AC-06 | 受限预算模式下，某科目或总额的已预留 + 已结算金额达到上限后，该范围内所有新的付费请求数为 0，不只补救：Jev 首评与重试、引擎 B 文档解析、引擎 A 托管 API、云 OCR、多模态补救、翻译（含借用多模态）、问答、TTS、ASR 各有契约测试断言；每个付费请求发出前都有一条预留记录（发出的付费请求数 = 预留记录数，经 worker 的作业按额度信封计）；被拒时 Jev 记 `unavailable/budget` 且补救请求为 0（AC-05），翻译返回 `budget_exhausted`；界面显示「已达上限」（ARCHITECTURE §7.8） | US-07 |
@@ -219,7 +219,7 @@
 | AC-53 | （MD-24）契约中存在 `WriteFileInput`、`WriteFileResult`、`MdFileWriter`、`MdCapabilities` 类型且有契约测试；v2 preload 中没有 `writeFile`，main 没有注册其处理器 | — |
 | AC-54 | （MD-25）调用写入用例返回 `write_disabled`；`getCapabilities` 返回 `canWrite:false`；`markdown` 的 adapters 中没有写入适配器，也没有 `fs` 写入类导入（G2 检查） | — |
 | AC-55 | （MD-26）`EditorSlot` 存在且在 v2 渲染为空；UI 中没有编辑按钮或快捷键（e2e） | — |
-| AC-56 | （MD-27）重译失败保留上一版：对已有 `success` 版本的块注入三种失败（校验未通过、网络、模型错误），每种都满足：正文与上一版 `markdown` 逐字节一致；块左侧出现 2px 标记线（`--oi-reader-warn`），块末出现提示行「重译未成功，仍显示上一版 · 重试」，提示行 `role="status"`；悬停「重试」显示对应原因；toast、弹窗、全局横幅为 0。点「重试」后提示行变为「正在重译…」且「重试」禁用；成功后标记线与提示行消失并显示新版本，再次失败回到失败样式。从未成功的块显示原文 +「翻译未通过校验」+「重译」。「重试」可用键盘聚焦，焦点环用 `--oi-reader-focus`；灰度快照中失败块仍可与正常块区分。UI 的块样式只由 `getBlocks` 返回的 `display` 决定，状态变化只经 `onBlockChanged` 到达（core 测试 + 组件测试 + e2e）。界面结构见 DESIGN DS-12、DS-13；`never_succeeded` 状态行的验收文案为本条「翻译未通过校验」+「重译」，与 DESIGN §4.1 一致 | US-28 |
+| AC-56 | （MD-27）重译失败保留上一版：对已有 `success` 版本的块注入三种失败（校验未通过、网络、模型错误），每种都满足：正文与上一版 `markdown` 逐字节一致；块左侧出现 2px 标记线（`--oi-reader-warn`），块末出现提示行，按失败原因（`failureKind`）分别为「重译未成功（校验没过），仍显示上一版 · 重试」「重译未成功（网络问题），仍显示上一版 · 重试」「重译未成功（模型出错），仍显示上一版 · 重试」，提示行 `role="status"`；悬停或聚焦提示行显示该原因的详情（DESIGN §4.1）；toast、弹窗、全局横幅为 0。点「重试」后提示行变为「正在重译…」且「重试」禁用；成功后标记线与提示行消失并显示新版本，再次失败回到失败样式。从未成功的块显示原文 + 2px 标记线 + 按原因的提示行「未翻译（校验没过）· 重译」「未翻译（网络问题）· 重译」「未翻译（模型出错）· 重译」，同样 `role="status"`、悬停显示详情。「重试」可用键盘聚焦，焦点环用 `--oi-reader-focus`；灰度快照中失败块仍可与正常块区分。UI 的块样式只由 `getBlocks` 返回的 `display` 决定，原因文案只由 `failureKind` 决定，状态变化只经 `onBlockChanged` 到达（core 测试 + 组件测试 + e2e）。界面结构见 DESIGN DS-12、DS-13、DS-27；文案与 DESIGN §4.1「失败原因文案」一致（Wisdom 2026-10-30 22:02） | US-28 |
 
 #### 6.1.2 译文区块（D6 补充，AC-57–AC-58）
 
@@ -300,7 +300,7 @@
 
 ### 6.3 视觉与交互验收对照
 
-Loom 的 [DESIGN.md](./DESIGN.md) DS-01–DS-26 与 §6.1、§6.2 验收的对照。有 AC 的，断言以 AC 的原文为准；没有 AC 的是界面或无障碍验收，不另设产品门槛。冲突与裁决写在 DESIGN.md 文首的入库说明。
+Loom 的 [DESIGN.md](./DESIGN.md) DS-01–DS-27 与 §6.1、§6.2 验收的对照。有 AC 的，断言以 AC 的原文为准；没有 AC 的是界面或无障碍验收，不另设产品门槛。冲突与裁决写在 DESIGN.md 文首的入库说明。
 
 | DS | 对应验收 | 关系 |
 | --- | --- | --- |
@@ -315,8 +315,8 @@ Loom 的 [DESIGN.md](./DESIGN.md) DS-01–DS-26 与 §6.1、§6.2 验收的对�
 | DS-09 | 无 AC | 对话框按钮按平台排序。 |
 | DS-10 | 无 AC | 快捷键符号随平台。 |
 | DS-11 | 无 AC | 每屏主按钮不超过 1 个。 |
-| DS-12 | AC-56 | 五种 `display` 只按 `getBlocks` 分支。`never_succeeded` 的文案「翻译未通过校验」+「重译」，DESIGN §4.1 与 AC-56 一致。 |
-| DS-13 | AC-56 | `previous_with_failure` 的上一版、2px `--oi-reader-warn`、文案「重译未成功，仍显示上一版 · 重试」、`role=status`、无 toast / 对话框。与 AC-56 一致。原因短句以 AC-56 为准。 |
+| DS-12 | AC-56 | 五种 `display` 只按 `getBlocks` 分支。`never_succeeded` 的文案按 `failureKind` 分三种，见 DESIGN §4.1 与 AC-56；另见 DS-27。 |
+| DS-13 | AC-56 | `previous_with_failure` 的上一版、2px `--oi-reader-warn`、文案「重译未成功，仍显示上一版 · 重试」、`role=status`、无 toast / 对话框。与 AC-56 一致；提示行按 `failureKind` 分三种（Wisdom 2026-10-30 22:02）。 |
 | DS-14 | AC-04、AC-31 | 裁图固定 18px 参考字号、不随正文字号变化是 DS-14（Wisdom 2026-10-24 12:06；ARCHITECTURE `crop-geometry.ts`），没有单独的 AC 数字。未核验公式不把 LaTeX 写进译文正文见 AC-04；非法 LaTeX 显示原文见 AC-31。 |
 | DS-15 | AC-61 ⑦e、⑦f | 开关默认开；关时外发确认 0 次；数据去向始终显示。从开到关的那一次确认是 UI，core 不弹（⑦e）。 |
 | DS-16 | AC-61 ⑦a、AC-60 ② | 对话框只在 `settings.onEgressConsentRequired` 之后出现；不上传原 PDF。 |
@@ -330,6 +330,7 @@ Loom 的 [DESIGN.md](./DESIGN.md) DS-01–DS-26 与 §6.1、§6.2 验收的对�
 | DS-24 | AC-61 ⑦i | 每个已同意的服务商可 `settings.withdrawEgressConsent`。 |
 | DS-25 | 无 AC | 设置是应用内页。 |
 | DS-26 | 无 AC | 阅读主题 3 套。PRD S1 的「主题由 Loom 定」即此。 |
+| DS-27 | AC-03、AC-56 | `never_succeeded` 按 `failureKind` 三种文案 + 悬停详情。 |
 
 ## 7. 基准集（定标前提）
 

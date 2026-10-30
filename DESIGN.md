@@ -2,7 +2,7 @@
 >
 > - 来源：Loom 的视觉与交互规格草案 v0.2（上传附件）。本说明之后的正文为 Loom v0.2 加走查修正。本次没有需要改的链接或格式：正文指向 [docs/design-principles.md](./docs/design-principles.md)，相对链接对仓库根目录是对的。正文由 Loom 维护，其他人不改（[RULES](./RULES.md) N-10）。
 > - 分工：界面细节以正文为准；需求、验收、里程碑以 [PRD](./PRD.md) 为准；切片、seam、外发同意的状态转移以 [ARCHITECTURE](./ARCHITECTURE.md) 为准。
-> - DS-01–DS-26 与 PRD 验收的对照表在 [PRD §6.3](./PRD.md#63-视觉与交互验收对照)。PRD 里对应的 AC 回引本文件的 DS 编号。
+> - DS-01–DS-27 与 PRD 验收的对照表在 [PRD §6.3](./PRD.md#63-视觉与交互验收对照)。PRD 里对应的 AC 回引本文件的 DS 编号。
 > - 正文已按 Loom 2026-10-30 对 PR #9 @ a6830bf 的走查修正（Loom 走查记录 PR9-a6830bf-LOOM.md：公式裁图参考字号 18px、DS-20 不再引用 G17、`never_succeeded` 文案对齐 AC-56、外发同意的 `vendorId` / `granted: null` / 撤回与开关文案对齐 ARCHITECTURE §7.0 第 6 条、删除已解决的「待核对」与附注）。剩余说明：
 >   1. **seam**：`settings.onEgressConsentRequired`、`settings.withdrawEgressConsent` 已写入 ARCHITECTURE §7.0 与 PRD §3.3 / AC-61，只有类型、没有实现；正文已改用契约字段名。
 >   2. **人日**：§3.2a 的「+1 人日」是 Loom 的粗估，不进 PRD / ARCHITECTURE。
@@ -234,10 +234,20 @@ flowchart TD
 | --- | --- | --- | --- | --- |
 | `current` | 当前版本 `MarkdownView` | 无 | 无 | 悬停/聚焦出现：重译、复制、写笔记 |
 | `retranslating` | 上一版 | 无 | 「正在重译…」+ 小型指示 | 重译按钮禁用（`aria-disabled`） |
-| `previous_with_failure` | **上一版（保留）** | **2px `--oi-reader-warn` 左边线** | 「重译未成功，仍显示上一版 · 重试」；「重试」是文字按钮，可聚焦，焦点环 `--oi-reader-focus`；悬停/聚焦状态行显示失败原因（`failureKind` 的文案映射：`check_failed`「公式或数字核对未通过」、`network`「网络或超时」、`model_error`「服务商返回错误」） | 重试 |
-| `never_succeeded` | 原文（英文，`--oi-reader-ink-2`） | 2px `--oi-reader-warn` | 「翻译未通过校验」+ 文字按钮「重译」（与 PRD AC-56 / AC-03 原文一致：「从未成功的块显示原文 +「翻译未通过校验」+「重译」」）；悬停「重译」显示原因 | 重译 |
+| `previous_with_failure` | **上一版（保留）** | **2px `--oi-reader-warn` 左边线** | 按 `failureKind` 三选一（见下表「失败原因文案」），`role=status`；「重试」是文字按钮，可聚焦，焦点环 `--oi-reader-focus`；悬停或键盘聚焦状态行显示详情 | 重试 |
+| `never_succeeded` | 原文（英文，`--oi-reader-ink-2`） | 2px `--oi-reader-warn` | 按 `failureKind` 三选一（见下表），`role=status`；文字按钮「重译」；悬停或聚焦显示详情 | 重译 |
 | `pending` | 骨架（3 行灰条，reduced-motion 下不闪动） | 无 | 无 | — |
 
+  **失败原因文案**（Wisdom 2026-10-30 22:02：按原因分三种）。UI 只把 `failureKind`（`getBlocks` 每块 `latest.failureKind`，`onBlockChanged` 同字段，ARCHITECTURE §8.1.1）映射成文案，不从错误信息、计时或 HTTP 状态推断原因。
+
+| `failureKind` | `previous_with_failure` 状态行（保留上一版） | `never_succeeded` 状态行（显示原文） | 悬停 / 聚焦详情 |
+| --- | --- | --- | --- |
+| `check_failed` | 重译未成功（校验没过），仍显示上一版 · 重试 | 未翻译（校验没过）· 重译 | 新译文里的公式、数字或引用编号和原文对不上，已丢弃。可以再试一次。 |
+| `network` | 重译未成功（网络问题），仍显示上一版 · 重试 | 未翻译（网络问题）· 重译 | 没连上翻译服务或超时。请检查网络后重试。 |
+| `model_error` | 重译未成功（模型出错），仍显示上一版 · 重试 | 未翻译（模型出错）· 重译 | 翻译服务返回了错误或看不懂的结果。可以重试，或到设置 › 模型来源 换一个翻译服务 / 改选本地。 |
+| `null`（防御，core 不应在失败时给出） | 重译未成功，仍显示上一版 · 重试 | 未翻译 · 重译 | 无 |
+
+  「设置 › 模型来源」入口来自 PRD §3.3（翻译的「本地 / API」与服务商选择），不是新功能。详情只说明原因与下一步，不显示原始错误文本、Key 或请求内容。
   **不使用 toast，不弹对话框**（US-28）。失败原因文案映射是展示层（允许在 UI），但「是否失败、显示哪一版」只来自 `display`。
 - **Markdown/KaTeX**：译文、笔记、问答回答都用同一 `MarkdownView`（ARCHITECTURE §4.5.4）；KaTeX 渲染失败显示原始 LaTeX + 错误底；流式回答中未闭合的尾部按原文（等宽、`--oi-reader-muted`）显示，闭合后替换，不闪烁。公式裁图使用 `--oi-reader-formula-ref-size`，不跟随正文字号。
 - **空态**：未解析且无服务 →译文栏 `EmptyState`「这篇论文还没有译文。可以先读原文文字层 · 去设置翻译服务」（US-16）；侧栏笔记空「选中文字后按 Mod+Shift+N 写笔记」。
@@ -322,7 +332,7 @@ flowchart TD
 | DS-10 | 快捷键显示随平台（⌘ / Ctrl） | 组件测试 |
 | DS-11 | 每屏主按钮 ≤ 1 | 走查 |
 | DS-12 | 译文块五种 `display` 各有对应样式；UI 不读 `status` 推断显示（代码检查：组件只分支于 `display`） | 组件测试 + 评审 |
-| DS-13 | `previous_with_failure`：显示上一版、2px `--oi-reader-warn` 左边线、状态行文案「重译未成功，仍显示上一版 · 重试」、`role=status`、「重试」可键盘聚焦；整个过程 toast 与对话框出现 0 次 | e2e |
+| DS-13 | `previous_with_failure`：显示上一版、2px `--oi-reader-warn` 左边线、状态行按 `failureKind` 显示 §4.1「失败原因文案」对应一句（三种原因各注入一次断言）、`role=status`、「重试」可键盘聚焦；整个过程 toast 与对话框出现 0 次 | e2e |
 | DS-14 | 公式裁图显示尺寸不随正文字号变化；KaTeX 失败显示原 LaTeX + 错误底 | 组件测试 |
 | DS-15 | 「隐私与数据」页含「外发前询问」开关，新安装为**开**；开时首个服务商/新增能力发送前出现同意对话框，关时出现 0 次；开→关弹一次确认（取消则保持开），关→开不弹确认；「数据去向」在开关任何状态下都显示，状态用文字徽标 | e2e（假 core） |
 | DS-21 | 标题栏与工具栏合并：mac 红绿灯在左、Win 系统按钮在右且 Snap Layouts 可用；工具栏空白可拖动窗口，按钮不可拖 | 手动两平台 |
@@ -331,6 +341,7 @@ flowchart TD
 | DS-24 | 「数据去向」中每个「已同意」服务商有「撤回同意」危险按钮；点击弹确认，默认焦点「取消」；确认后状态变为 core 返回的新状态并有 `role=status` 提示 | e2e（假 core） |
 | DS-25 | 设置为应用内页：`Mod+,` 从任意屏打开，返回后回到原屏与原阅读位置；不创建新窗口 | e2e |
 | DS-26 | 阅读主题恰好 3 套（白、暖纸、深色），每套 reader token 对比度满足 DS-01 | 自动 |
+| DS-27 | `never_succeeded`：显示原文 + 2px 标记线 + 按 `failureKind` 的「未翻译（校验没过 / 网络问题 / 模型出错）· 重译」；悬停或聚焦显示对应详情；组件只按 `failureKind` 选文案（`null` 用通用句），不解析错误文本 | 组件测试 + e2e |
 | DS-16 | 外发同意对话框只在 core 触发事件时出现；内容逐项来自载荷；包含「不会上传你的原 PDF 文件」；拒绝后对话框不再连环出现，降级提示就地显示 | e2e（假 core） |
 | DS-17 | Key 输入框不回显已保存值，只显示「已设置 / 未设置」 | e2e |
 | DS-18 | 界面放大 200% 不丢内容 | 手动 |
