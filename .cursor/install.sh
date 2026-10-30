@@ -16,15 +16,8 @@ nvm use "$node_version"
 nvm alias default "$node_version"
 set -u
 
-if [[ -f pnpm-lock.yaml ]]; then
-  corepack enable
-  corepack pnpm install --frozen-lockfile
-elif [[ -f package-lock.json ]]; then
-  npm ci
-else
-  echo "install: expected pnpm-lock.yaml or package-lock.json" >&2
-  exit 1
-fi
+corepack enable
+corepack pnpm install --frozen-lockfile
 
 uv_version="$(tr -d '[:space:]' < workers/parser/.uv-version)"
 if ! command -v uv >/dev/null 2>&1 || [[ "$(uv --version)" != "uv ${uv_version}"* ]]; then

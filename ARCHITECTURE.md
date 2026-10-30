@@ -1603,7 +1603,7 @@ G13–G16 与 5 层、18 个切片的关系：规则全部按通配路径写（`
 | 工具 | 建议 | 说明 |
 | --- | --- | --- |
 | Node.js | 20.19.2（沿用仓库 `.nvmrc`），M1 评估升到 22 LTS | 仅用于构建与测试；Electron 自带运行时 |
-| pnpm | 通过 `corepack enable` 启用，版本写进 `package.json` 的 `packageManager` | workspace |
+| pnpm | 10.34.9，写进 `package.json` 的 `packageManager`，经 `corepack enable` 启用 | 本仓库 Node 20.19.2 自带 corepack 0.31.0 能启动的最新版本；pnpm 11 起需要 Node 22.13 |
 | Electron | M1 锁定一个受支持主版本 | 锁定后逐条核对安全清单与 `safeStorage` 行为 |
 | Python | 3.11，补丁版本锁在 `workers/parser/.python-version` | 由 `uv` 安装；不要求最终用户自行安装。Paddle / MiniCPM 的兼容性仍留到对应里程碑实测，3.12 仍是候选，本次不改默认主版本 |
 | uv | 锁在 `workers/parser/.uv-version`，并写入该目录 `pyproject.toml` 的 `tool.uv.required-version` | `workers/parser/uv.lock` 入库 |
@@ -1612,7 +1612,7 @@ G13–G16 与 5 层、18 个切片的关系：规则全部按通配路径写（`
 
 `install` 执行 `.cursor/install.sh`（用法见 [docs/ci-and-environment.md](./docs/ci-and-environment.md)）。脚本按顺序做这些事：
 
-- 用 `nvm` 安装 `.nvmrc` 里的 Node，再按锁文件安装 JS 依赖：有 `pnpm-lock.yaml` 时 `corepack pnpm install --frozen-lockfile`，否则 `npm ci`。
+- 用 `nvm` 安装 `.nvmrc` 里的 Node，执行 `corepack enable`，再按 `pnpm-lock.yaml` 执行 `corepack pnpm install --frozen-lockfile`。
 - 安装 `.uv-version` 指定的 `uv`，并把 `uv` / `uvx` 链到 `/usr/local/bin`（非交互登录壳不读 `~/.bashrc` 里的 PATH）。
 - 在 `workers/parser/` 执行 `uv python install` 与 `uv sync --frozen --extra dev`。基础依赖含锁定的 `pypdfium2`，不含 PyMuPDF。
 

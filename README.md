@@ -22,7 +22,7 @@ Open Immerse v2 - PDF formula extraction and vector redraw project
 
 ## CI 与云端环境
 
-检查命令、GitHub Actions 与云端 Agent 的 Node / Python 安装见 [docs/ci-and-environment.md](docs/ci-and-environment.md)。
+Node 依赖用 pnpm（`corepack pnpm`）。检查命令、GitHub Actions 与云端 Agent 的 Node / Python 安装见 [docs/ci-and-environment.md](docs/ci-and-environment.md)。
 
 ## 许可证
 

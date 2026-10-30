@@ -9,7 +9,8 @@
 | 工具 | 锁定位置 |
 | --- | --- |
 | Node.js | `.nvmrc`（`20.19.2`） |
-| npm 依赖 | `package-lock.json`；有 `pnpm-lock.yaml` 之后改为 pnpm |
+| pnpm | `package.json` 的 `packageManager`（`10.34.9`）。Node 20.19.2 自带 corepack 0.31.0：pnpm 11 起需要 Node 22.13，pnpm 12 的启动文件这个 corepack 也执行不了，所以锁在 10 的最新版 |
+| JS 依赖 | `pnpm-lock.yaml`（`corepack pnpm install --frozen-lockfile`） |
 | Python | `workers/parser/.python-version`（当前 `3.11.18`） |
 | uv | `workers/parser/.uv-version`（当前 `0.13.6`），并与 `workers/parser/pyproject.toml` 的 `tool.uv.required-version` 相同 |
 | worker 依赖 | `workers/parser/uv.lock`（`uv sync --frozen --extra dev`） |
@@ -21,13 +22,14 @@ Node 侧在仓库根目录：
 ```bash
 nvm install
 nvm use
-npm ci
-npm run lint
-npm run typecheck
-npm test
+corepack enable
+corepack pnpm install --frozen-lockfile
+corepack pnpm run lint
+corepack pnpm run typecheck
+corepack pnpm test
 ```
 
-`npm test` 使用 Node 自带的 `node --test`。还没有 `.ts` / `.tsx` 时，`npm run typecheck` 说明一句后成功退出；一旦出现这类源文件，就执行 `tsc --noEmit`，类型错误会使命令失败。
+`pnpm test` 使用 Node 自带的 `node --test`。还没有 `.ts` / `.tsx` 时，`pnpm run typecheck` 说明一句后成功退出；一旦出现这类源文件，就执行 `tsc --noEmit`，类型错误会使命令失败。
 
 Python worker 在 `workers/parser/`：
 
@@ -47,7 +49,7 @@ uv run pytest
 
 | Job | 步骤 | 缓存 |
 | --- | --- | --- |
-| `node` | `npm ci`、`npm run lint`、`npm run typecheck`、`npm test` | `actions/setup-node` 的 npm 缓存，键来自 `package-lock.json` |
+| `node` | `corepack enable`、`corepack pnpm install --frozen-lockfile`、`corepack pnpm run lint`、`corepack pnpm run typecheck`、`corepack pnpm test` | `actions/cache` 缓存 pnpm store，键来自 `pnpm-lock.yaml` |
 | `python-worker` | 安装锁定的 uv 与 Python、`uv sync --frozen --extra dev`、`ruff check`、`ruff format --check`、pytest（允许退出码 5）、确认锁文件含 `pypdfium2` 且不含 PyMuPDF | `astral-sh/setup-uv` 缓存 `workers/parser/uv.lock`，并缓存该 Python 解释器 |
 
 建议在保护分支上把这两个 check 设为必需：`CI / node`、`CI / python-worker`。是否启用由仓库管理员决定；Agent 不修改分支保护。
@@ -56,7 +58,7 @@ uv run pytest
 
 ### 云端 Agent
 
-`.cursor/environment.json` 的 `install` 是 `bash .cursor/install.sh`。脚本用 `.nvmrc` 安装 Node，再按上面的锁文件安装 JS 依赖；然后安装锁定版本的 uv（可执行文件链到 `/usr/local/bin`，避免非交互登录壳读不到 `~/.bashrc`），并在 `workers/parser/` 执行 `uv python install` 与 `uv sync --frozen --extra dev`。
+`.cursor/environment.json` 的 `install` 是 `bash .cursor/install.sh`。脚本用 `.nvmrc` 安装 Node，执行 `corepack enable`，再按 `pnpm-lock.yaml` 执行 `corepack pnpm install --frozen-lockfile`；然后安装锁定版本的 uv（可执行文件链到 `/usr/local/bin`，避免非交互登录壳读不到 `~/.bashrc`），并在 `workers/parser/` 执行 `uv python install` 与 `uv sync --frozen --extra dev`。
 
 不安装 Paddle、Torch 或模型权重。Chrome 与中文字体仍按原环境尽力安装，失败不会把 Node / Python 安装算成成功。
 
