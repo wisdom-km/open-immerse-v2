@@ -1,6 +1,6 @@
 # open-immerse v2 协作与编码规则（RULES）
 
-状态：v0.2，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；本版加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）。日期：2026-10-30（Asia/Shanghai）。
+状态：v0.3，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7）。日期：2026-10-30（Asia/Shanghai）。
 适用对象：所有人类开发者与 AI Agent。
 同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；在 Loom 交付前，UI 实现只搭结构、不定视觉，也**不得**由其他人或 Agent 代写这两份文件。
 
@@ -33,6 +33,7 @@
 
 - Prettier + ESLint（typescript-eslint `strict-type-checked`）；ruff。
 - 关键规则（错误级）：`max-lines-per-function: 80`、`complexity: 15`、`max-params: 4`、`no-restricted-imports`（按层）、`no-restricted-syntax`（顶层 `let`）、`no-restricted-globals`（全局禁用 `chrome`；core 路径另禁 `window`、`document`、`navigator`、`location`、`history`、`localStorage`、`sessionStorage`、`requestAnimationFrame`，ARCHITECTURE G14）。
+- Markdown 与公式渲染（ARCHITECTURE §4.5）：renderer 全局 `react/no-danger` 为错误级；`katex` 只能在 `packages/ui-kit/src/markdown/math.tsx` 与 `packages/features/formula/src/adapters/katex-renderer.ts` 导入，选项只从 `contracts/src/latex-policy.ts` 读取，不得在别处另写一份；Markdown 解析库只能在 `features/markdown/src/domain/parse/` 导入；`features/markdown/src/adapters/**` 禁止导入 `fs` 的写入类 API。
 - 文件行数与依赖方向由 CI 门禁检查（ARCHITECTURE §6、§13），不得在本地关闭后提交。
 
 ### 1.4 测试命名与组织
@@ -106,6 +107,7 @@
 10. PR 描述完整（§2）。
 11. UI 与核心解耦（§8）：业务规则（校验、计价、状态转移、权限、失败条件）只在 core；UI 改动 PR 中 core 文件零改动；seam 只传普通数据；新增或修改的规则有经 seam 的 core 测试且不渲染 UI。
 12. 新依赖与模型权重的许可证与 Apache-2.0 兼容，没有 GPL / AGPL（§1.5）。
+13. Markdown 显示（ARCHITECTURE §4.5.4）：UI 拿到的是 core 解析好的 `MdDocument`，不解析 Markdown 字符串、不拼路径、不判断链接是否存在、不决定是否重载、不读 front-matter；显示 Markdown 一律用 ui-kit 的 `MarkdownView`，不另写渲染器。
 
 ## 6. Agent 绝不能做的事
 
@@ -122,7 +124,7 @@
 | N-07 | 修改、推送或在旧仓库 `wisdom-km/open-immerse` 开 PR / Issue / 评论；旧仓库只能只读 clone 到临时目录参考 |
 | N-08 | 关闭或绕过 CI 门禁：删除 / 跳过测试、调高行数或复杂度上限、往 allowlist 加豁免、`--no-verify`，除非有用户批准的 ADR |
 | N-09 | 手改生成文件（契约生成物、preload API、Python 协议模型） |
-| N-10 | 编写或修改 `DESIGN.md`、`docs/design-principles.md`（属于设计师 Loom） |
+| N-10 | 编写或修改 `DESIGN.md`、`docs/design-principles.md`，以及 `docs/design/**` 的正文（属于设计师 Loom）。例外：按用户指示把 Loom 交付的原文放入 `docs/design/`，并在文首加「入库说明」写明来源与规格校正；正文不改 |
 | N-11 | 修改 `.cursor/environment.json`，除非用户明确要求；建议写在 ARCHITECTURE §15 或 PR 描述里 |
 | N-12 | 在 CI 或自动测试中调用付费 API、下载模型权重、提交大体积二进制（PDF、权重、音频）进仓库 |
 | N-13 | 引入 GPL / AGPL 依赖（含 PyMuPDF，含经上游 extras 间接引入）；引入未经批准的 LGPL / 非商用 / 自定义许可证依赖 |
@@ -130,11 +132,12 @@
 | N-15 | 以「模型说对」为依据把候选标为已核验；在代码或文档中编造上游模型能力、API 或测试结果 |
 | N-16 | 在 UI 任务中修改 core 文件；为迁就页面给 seam 加参数或改返回形状而不先停下说明（§8 规则 2、3） |
 | N-17 | 让任何识别结果（引擎 A / B、云 OCR、arXiv 对齐、多模态补救）绕过 Jev 评分进入已核验状态（Q1） |
+| N-18 | 在 v2 为 `.md` 实现写入、删除、重命名，或以「保存」「导出」等任何名义写入用户的笔记库文件夹；在 preload 暴露 `markdown.writeFile`、在装配根注入 `MdFileWriter`（Markdown 方案 D7，ARCHITECTURE §4.5.7） |
 
 ## 7. 文档规则
 
 - 全部文档用中文。代码标识符、命令、路径保持原文。
-- 规格的唯一真相源是根目录的 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`；设计规格是 `DESIGN.md` 与 `docs/design-principles.md`（待 Loom 产出）。`docs/architecture/` 是历史草案。
+- 规格的唯一真相源是根目录的 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`；设计规格是 `DESIGN.md` 与 `docs/design-principles.md`（待 Loom 产出），以及 `docs/design/` 下 Loom 的功能级设计文档（目前是 Markdown 阅读方案 `md-reader.md`）。设计文档与规格冲突时，需求、验收、里程碑、架构以规格为准，界面细节以设计文档为准；校正写在设计文档的「入库说明」里。`docs/architecture/` 是历史草案。
 - 修改规格必须在同一个 PR 同步修改受影响的其他规格与 CI 配置；结构性变更配 ADR。
 - 引用上游模型、库、API 的能力时附官方链接、锁定的提交或版本、核实日期；未核实的写「未核实」。官方自测的精度与速度数字一律注明「官方自测」，不当作已验证结论。
 - 上游核实结论集中在 `docs/v2-gap-and-changes.md` §2；规格引用它而不是各自重述，避免多处说法漂移。
