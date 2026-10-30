@@ -391,7 +391,7 @@ packages/features/<name>/
 | `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `application/use-cases/get-notes-by-ids.ts`（按 ID 批量只读，写作预留，§4.4） · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx`（正文用 ui-kit `MarkdownView`） |
 | `qa` | 论文问答、上下文选取、引用 | `domain/context-selection.ts`（按 `ChatCapabilities.acceptsImages` 决定上下文只含文本，还是文本加区域裁图，§7.3）· `domain/citation.ts` · `application/use-cases/ask.ts`（流式回答经 `markdown` 的 seam 切分为已闭合块与未闭合尾部）· `application/ports/chat-provider.ts`（多模态模型与纯文本 LLM 共用一个端口，Wisdom 2026-10-30 19:11）· `adapters/llm-chat-provider.ts`（经 `@oi/providers` 的 `ChatTransport`；API 与本机 OpenAI 兼容服务共用，`acceptsImages` 取自模型的 `vision` 标记）· `ui/ask-panel.tsx`（回答用 ui-kit `MarkdownView`） |
 | `voice` | TTS 朗读 / 讲解、ASR 语音笔记 | `domain/speech-script.ts` · `domain/audio-segment.ts` · `application/ports/tts-port.ts` · `application/ports/asr-port.ts` · `application/use-cases/generate-narration.ts` · `application/use-cases/transcribe-note.ts` |
-| `settings` | 非密钥设置、provider 配置、密钥引用绑定（预算上限的规则与存储在 `budget`，设置页只经 `window.oi.budget.*` 读写） | `domain/provider-config-validate.ts` · `domain/translation-fallback.ts`（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/backend-choice.ts`（每个模型能力的「本地 / API」选择：有托管 API 时默认「API」，本地是同一接口后的一等选项，高级自建选项与推荐值的关系；覆盖 Jev、引擎 A 模型阶段、引擎 B、多模态、翻译、问答、TTS / ASR；API 优先，§7.0；Q9，§7.4）· `domain/egress-consent.ts`（按服务商记录数据外发同意：每个服务商一条记录，含已告知并同意的能力集合与时间；判断要不要弹对话框、对话框列哪些能力（首次列出全部、之后只列新增）；「外发前询问」开关（默认开，只能由用户在设置里关闭）；生成「数据去向」列表；未同意的能力对该服务商的请求为 0；Wisdom 2026-10-30 19:11、19:30，§7.0 第 6 条）· `domain/egress-destination.ts`（目的主机分类：回环地址与用户标为「本机可信」的主机不算外发，其余都算；服务商身份按（`vendorId`, 主机）判定，主机不在该服务商的 `allowedHosts` 里就按新服务商处理；架构评审 P1-2）· `application/use-cases/check-egress.ts`（`EgressCheck` 的实现，由装配根注入到业务切片、`providers` 与 `worker-client`）· `application/use-cases/list-provider-presets.ts` · `application/ports/provider-catalog.ts` · `adapters/providers-catalog.ts`（经 `@oi/providers` 列出注册表里的服务商与模型）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
+| `settings` | 非密钥设置、provider 配置、密钥引用绑定（预算上限的规则与存储在 `budget`，设置页只经 `window.oi.budget.*` 读写） | `domain/provider-config-validate.ts` · `domain/translation-fallback.ts`（只判定开关与权限；借用的绑定由装配根完成，§4.3）（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/backend-choice.ts`（每个模型能力的「本地 / API」选择：有托管 API 时默认「API」，本地是同一接口后的一等选项，高级自建选项与推荐值的关系；覆盖 Jev、引擎 A 模型阶段、引擎 B、多模态、翻译、问答、TTS / ASR；API 优先，§7.0；Q9，§7.4）· `domain/egress-consent.ts`（按服务商记录数据外发同意：每个服务商一条记录，含已告知并同意的能力集合与时间；判断要不要弹对话框、对话框列哪些能力（首次列出全部、之后只列新增）；「外发前询问」开关（默认开，只能由用户在设置里关闭）；生成「数据去向」列表；未同意的能力对该服务商的请求为 0；Wisdom 2026-10-30 19:11、19:30，§7.0 第 6 条）· `domain/egress-destination.ts`（目的主机分类：回环地址与用户标为「本机可信」的主机不算外发，其余都算；服务商身份按（`vendorId`, 主机）判定，主机不在该服务商的 `allowedHosts` 里就按新服务商处理；架构评审 P1-2）· `application/use-cases/check-egress.ts`（`EgressCheck` 的实现，由装配根注入到业务切片、`providers` 与 `worker-client`）· `application/use-cases/list-provider-presets.ts` · `application/ports/provider-catalog.ts` · `adapters/providers-catalog.ts`（经 `@oi/providers` 列出注册表里的服务商与模型）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
 | `diagnostics` | 诊断事件记录、诊断包导出、脱敏 | `domain/redaction-rules.ts`（自 v1 移植）· `domain/retention.ts`（保留天数与体积上限）· `application/use-cases/export-bundle.ts` · `ui/diagnostics-page.tsx` |
 
 ### 4.3 切片之间的依赖（允许的方向）
@@ -450,7 +450,9 @@ flowchart TD
 - `document` 与 `jobs` 不依赖任何其他切片。`settings`、`diagnostics`、`budget` 不被业务切片 import：业务切片通过端口拿到配置、日志器、外发检查（`contracts` 的 `EgressCheck`，§7.0 第 6 条）与预算闸门（`contracts` 的 `BudgetGate`，§7.8），由装配根注入。`packages/providers` 不是切片，只被切片的 adapters 与装配根使用（§7.9.2）。
 - `markdown`（§4.5）被 `translation`、`notes`、`qa` 依赖：它们在 core 里调用 `markdown` 的 seam 把正文解析成 `MdDocument`，随自己的 seam 结果一起返回，UI 拿到的已经是解析好的普通数据。`markdown` 依赖 `library`（只用于「链接指向库内 PDF」的匹配，Markdown 文件本身不进文献库，D5）与 `jobs`（大文件夹扫描可取消）；它不依赖 `document`、`formula`：KaTeX 安全选项来自 `contracts/src/latex-policy.ts`，不经 `formula` 的 seam。
 - `reader` 只有 ui 与纯 domain，不出现在图中：它通过 `window.oi` 调用其他切片的 IPC 命令，不 import 其他切片。译文块的 `MdDocument` 由 `translation.getBlocks` 返回，reader 不 import `markdown`。
-- 新增一条边需要 ADR，并在同一个 PR 里更新本图与 dependency-cruiser 配置。`ingest` 的九条边与删除 `repair → quality` 在 M1 建立 `docs/adr/` 时登记（§16）。
+- **借用多模态翻译（Q11）是装配期复用，不是依赖边**（架构评审 P1-6）：`translation` 只依赖自己的 `TranslationProvider` 端口。开关打开时，装配根把补救所用的同一个服务商绑定（`@oi/providers` 的 `ChatTransport` 与模型）也交给 `translation` 的 `llm-translation-provider`，预留记在多模态科目（§7.8，PRD AC-29）。图上没有、也不得加 `translation → repair` 的边；`translation` 不 import `repair` 的任何东西（PRD AC-78）。
+- **UI 事件不是依赖边，但同样登记**（架构评审 P2-2）：切片间的 UI 事件（§5.3）在 `contracts/src/ui-events.ts` 写明每个事件的发布方与订阅方；它们不进 dependency-cruiser 矩阵，由 G5 的事件检查核对（PRD AC-82）。
+- 新增一条边需要 ADR，并在同一个 PR 里更新本图与 dependency-cruiser 配置。新增 UI 事件，或给事件新增发布方、订阅方，同样需要 ADR。`ingest` 的九条边与删除 `repair → quality` 在 M1 建立 `docs/adr/` 时登记（§16）。
 
 ### 4.4 预留切片 `writing`（Q5）
 
@@ -552,34 +554,37 @@ export interface WritingSeam {
 | 命令 / 导出 | 输入 → 输出 | core 规则 |
 | --- | --- | --- |
 | `markdown.render` | `{ text, context: 'note' \| 'translation' \| 'answer' }` → `MdDocument` | 解析、HTML 屏蔽、公式抽取与判定；`translation` 上下文按 `oi-md/1` 方言解析（不认 wikilink 与图片，§8.1.1） |
-| `markdown.openFile` | `{}`（main 弹对话框）、`{ recentId }` 或 `{ dropped: true }`（拖入，见下）→ `{ source, doc }` | 扩展名、大小、编码 |
+| `markdown.openFile` | `{}`（main 弹对话框）、`{ recentId }` 或 `{ dropped: true }`（拖入，见下）→ `{ source, doc: MdDocumentWindow }` | 扩展名、大小、编码 |
 | `markdown.openVault` | `{}` 或 `{ recentId }`，`confirmLarge?` → `{ vaultId, jobId }` | 扫描是长任务（§2.4 第 3 条）：先计数，超过阈值以 `vault_too_big { approxCount }` 结束，用户确认后带 `confirmLarge:true` 重开；进度与取消走 `jobs` |
 | `markdown.getVaultTree` | `{ vaultId }` → `VaultTree` | 扫描完成后取树；排序、显示名、忽略目录在 core |
-| `markdown.readFile` | `{ source }` → `MdDocument` | 链接解析、越界检查、库内 PDF 匹配（经 `library` 的 seam 按文件名或 SHA-256 查询） |
+| `markdown.readFile` | `{ source }` → `MdDocumentWindow` | 链接解析、越界检查、库内 PDF 匹配（经 `library` 的 seam 按文件名或 SHA-256 查询）；按块窗口返回（见表下） |
+| `markdown.readBlocks` | `{ fileId, revision, from, count }` → `MdBlock[]` | 从按 `revision` 缓存的解析结果中取一段块；`revision` 已变时返回 `stale_revision`，不重新解析旧内容 |
 | `markdown.listRecent` / `close` / `getCapabilities` | 见方案 §3.3 | `close` 停止监视；`getCapabilities` 在 v2 恒为 `{ canWrite:false }` |
 | `markdown.openExternal` | `{ url }` → `void` | 规格补充：UI 确认后调用；main 再次只放行 `http` / `https` / `mailto`，交给系统浏览器 |
 | `markdown.revealInFolder` | `{ fileId }` → `void` | 规格补充：「在文件管理器中显示」，由 main 执行 |
 | 事件 `markdown.onFileEvent` | → `MdFileEvent` | 去抖后推送（§4.5.6） |
 | （预留）`markdown.writeFile` | `WriteFileInput` → `WriteFileResult` | v2 只有类型，不注册（§4.5.7） |
 | `index.ts` 另导出给其他切片 | `renderMarkdown(text, context)`、`extractMath(text)`、`splitStreaming(text)` | `translation` 用前两个做完整性复核与 `getBlocks`；`notes` 用第一个；`qa` 用第三个 |
-| `pure.ts` | `renderMarkdown`、`navigate(history, action)`、`sliceSource` | 只给本切片 UI 与测试；其他切片的 UI 不调用 Markdown 解析（§4.5.4） |
+| `pure.ts` | `navigate(history, action)`、`sliceSource` | 只给本切片 UI 与测试；**不导出解析器**（架构评审 P1-7）：`renderMarkdown` 只经 `index.ts` 给其他切片的 core 与 `test/core` 使用，renderer 里没有 Markdown 解析器（G15，§4.5.4） |
+
+**块窗口**（架构评审 P1-7；PRD AC-79）：`MdDocumentWindow` = `{ fileId, revision, blockCount, outline, from, blocks }`。整篇序列化后不超过窗口预算（可配置，默认取 §11 IPC 阈值的一半）时，一次返回全部块；超过时只返回第一个窗口，其余块由 reader 滚动时经 `readBlocks` 取。解析只做一次，结果按 `revision` 缓存在解析所在的进程（main，或按 §1 迁到 utility 后在 utility）；任何一条 IPC 消息都不携带超过预算的整棵 `MdDocument`。
 
 规格对方案 §3.3 形状的调整（都是加字段或加命令，不改已有字段）：
 
 1. 公式节点（块级 `math`、行内 `math`）加可选字段 `blocked?: 'untrusted_command' | 'too_long'`，判定在 core。
 2. `ResolvedLink` 的 `broken.reason` 加 `'unsupported_scheme'`（`file:`、`javascript:`、`data:` 等）。
 3. `openVault` 改为返回 `{ vaultId, jobId }`，树由 `getVaultTree` 取，以符合「长任务立即返回 jobId」。
-4. 新增 `openExternal`、`revealInFolder` 两条命令，承接方案「危险」与「低频」两类操作。
+4. 新增 `openExternal`、`revealInFolder` 两条命令，承接方案「危险」与「低频」两类操作；新增 `readBlocks`，`readFile` 与 `openFile` 改为返回块窗口（架构评审 P1-7）。
 5. seam 不返回绝对路径（§9）：面包屑用库内相对路径；单个文件只显示文件名与所在文件夹名。
 6. 拖入：preload 用 Electron 的 `webUtils.getPathForFile` 取路径，直接随 `openFile` 发给 main，不写入 renderer 状态；main 按 `md-file-reader` 的规则重新校验。该 API 的可用性随锁定的 Electron 版本核实（M2）。
 
 #### 4.5.4 谁解析、谁渲染
 
-规则：**UI 不解析 Markdown，也不调用 Markdown 解析库**。解析在 core 完成，UI 拿到的永远是 `MdDocument`（或其中的块），交给 `ui-kit/src/markdown/markdown-view.tsx` 画出来。共享组件放 `ui-kit` 而不是 `features/markdown/src/ui`，因为切片 UI 不能互相 import（F-05、G15），而笔记、译文、问答都要用它。
+规则：**UI 不解析 Markdown，也不调用 Markdown 解析库**；只有一条解析路径，在 core（架构评审 P1-7）。解析在 core 完成，UI 拿到的永远是 `MdDocument`（或其中的块），交给 `ui-kit/src/markdown/markdown-view.tsx` 画出来。共享组件放 `ui-kit` 而不是 `features/markdown/src/ui`，因为切片 UI 不能互相 import（F-05、G15），而笔记、译文、问答都要用它。
 
 | 场景 | 谁调用解析 | UI 拿到什么 | 里程碑 |
 | --- | --- | --- | --- |
-| 单个 `.md`、笔记库 | `markdown` 用例 `readFile` | `MdDocument` | M2（单文件）、M3（笔记库） |
+| 单个 `.md`、笔记库 | `markdown` 用例 `readFile` / `readBlocks` | `MdDocumentWindow` 与按需取的块 | M2（单文件）、M3（笔记库） |
 | 译文 | `translation` 用例 `getBlocks`：读出 `StoredTranslationBlock`，经 `markdown` 的 seam 解析要显示的 `success` 版本的 `markdown` 字段，再按 `crops` 插入裁图节点（§8.1.1） | 每块 `{ display, shown, latest, doc }`；reader 按 `sourceBlockId` 对齐，按 `display` 选样式 | M4 |
 | 笔记 | `notes` 用例读笔记时解析正文 | 笔记 + `MdDocument` | M5 |
 | 问答回答 | `qa` 用例在流式输出时调用 `splitStreaming` | 事件载荷：新闭合的 `MdBlock[]` + 未闭合尾部文本（UI 按原文样式显示）；结束时给完整 `MdDocument` | M5 |
@@ -612,7 +617,7 @@ export interface WritingSeam {
 | 外部修改到界面更新 | ≤ 1 秒 | 待定标 | PRD QM-15、AC-36 |
 | 笔记库文件数确认阈值 | 1 万个 | 待定标 | `vault-limits.ts`、AC-37 |
 | 1 万个文件的扫描时长（8 GB 基准机） | 方案未给 | 待定标 | PRD QM-16、AC-44 |
-| 单文件大小上限（超过即截断） | 5 MB | 待定标；还要保证 `MdDocument` 不超过 §11 的 IPC 载荷阈值 | `vault-limits.ts`；方案 §4.3 的 `too_large` 错态 |
+| 单文件大小上限（超过即截断） | 5 MB | 待定标；IPC 由块窗口约束，不再要求整篇 `MdDocument` 低于 §11 的阈值 | `vault-limits.ts`；方案 §4.3 的 `too_large` 错态 |
 | 每个文档的公式数 / 公式总字符预算 | v1 问答为 30 个 / 4000 字符（`lib/markdown-render.js:13-14`），方案未提 | 待定：`.md` 文件不宜沿用，问答是否沿用 M5 前定 | `math-policy.ts` |
 | 非 UTF-8 编码（如 GBK） | 方案只说「编码检测」 | 待定：v2 先只支持 UTF-8（含 BOM），其他返回 `decode_failed` | `node-md-file-reader.ts` |
 
@@ -706,7 +711,7 @@ flowchart TB
 
 - 应用外壳（`apps/desktop/src/renderer/`）定义布局插槽：`reader.main`、`reader.side`、`toolbar.document`、`settings.pages`；Markdown 阅读另用 `markdown.main`（单文件与笔记库标签页）与 `home.recent`（首页最近列表中的本地 Markdown 组）。「文件 → 打开文件… / 打开文件夹…」菜单由 main 注册，按扩展名分流到 `ingest.openDocument`（PDF）或 `markdown.openFile`。
 - 每个切片的 `ui/index.ts` 导出 `contributions`（要放进哪个插槽、用哪个组件、排序权重）。外壳的 `slots.ts` 只是一个注册数组，**一行一个切片**，因此多人同时加入口只会各加一行。
-- 切片间 UI 交互通过类型化事件总线（`contracts/src/ui-events.ts` 定义事件名与载荷），例如 reader 发出 `selection.changed`，notes 订阅。
+- 切片间 UI 交互通过类型化事件总线（`contracts/src/ui-events.ts`），例如 reader 发出 `selection.changed`，notes 订阅。每个事件登记名称、载荷类型、发布方切片与订阅方切片（架构评审 P2-2）；载荷只能是普通数据（类型约束为 `PlainData`：不含函数、Promise、类实例），不允许「请调用我」式的命令事件。G5 的 `ui-events-declared` 检查：未登记的切片发布或订阅即失败（PRD AC-82）。
 
 ## 6. 文件与函数大小
 
@@ -722,6 +727,7 @@ flowchart TB
 | 圈复杂度 | 10 | **15** |
 | 函数参数 | 3 个 | 4 个（更多用对象参数） |
 
+- **domain 纯函数的例外**（架构评审 P2-1）：`features/*/src/domain/**` 与 Python core（§2.3）里的纯函数不受函数 50 / 80 行的限制，只受文件上限与圈复杂度约束；按「一个不变量一个文件」拆分（例如 `integrity-check` 的每条检查一个文件），评审看一个文件承接几个不变量（RULES §5 第 2 条）。这是 ESLint / ruff 按路径的配置，不是 allowlist 豁免。adapters、application、UI 与入口仍受函数上限约束。
 - 超过建议上限时，PR 描述必须写明「为什么不拆」；超过硬上限 CI 直接失败。
 - 豁免只能通过 ADR 加入 allowlist，并写**到期里程碑**；到期未拆 CI 失败。
 - 行数达标不等于职责单一：评审仍按 RULES.md 的评审清单检查职责数量与依赖扇出。
@@ -1226,6 +1232,7 @@ TTS / ASR 的格式在 M7 选型时加入本表。
   - 主机不在 `allowedHosts` 里时 main 拒绝授权。
 - 调用真实服务的 `@live` 冒烟只在对应环境变量存在时运行，按 RULES §4 的 `@paid` 对待；CI 不跑。
 - worker 侧格式的样例在 `fixtures/protocol/`，TS 与 Python 两侧都跑（§12）。
+- **OpenAI 兼容基线**（架构评审 P2-7；M4 之前）：`fixtures/providers/openai-chat-baseline/` 放一份最小的 chat completions 样例——消息、图片 content part、流式块、错误体。走 `openai-chat` 格式的各家注册表记录，只在它们自己的样例目录里写与这份基线的差异。
 
 #### 7.9.8 默认值（Wisdom 2026-10-30 20:57）
 
@@ -1531,7 +1538,7 @@ type FormulaCropRef = Readonly<{
 
 | 项 | 本机 worker | 远程 / 自建 worker |
 | --- | --- | --- |
-| 启动 | main 的 `worker-supervisor.ts` 拉起，退出时关闭 | 用户自行部署 |
+| 启动 | main 的 `worker-supervisor.ts` 拉起，退出时关闭；状态机见 §10.5 | 用户自行部署 |
 | 地址 | `127.0.0.1` + 随机端口（worker 启动后在 stdout 打印一行 JSON 报告端口） | 用户配置的 HTTPS 地址 |
 | 鉴权 | 每次启动生成的一次性 Bearer 令牌（经 stdin 传入，不进命令行参数） | 服务令牌（`secretRef`） |
 | 资产 | 统一上传，不传本机路径 | 统一上传 |
@@ -1609,13 +1616,42 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 - **测试。** `fixtures/protocol/versions/`：主版本不符时作业数为 0；次版本更高的响应带未知字段时照常解析；`426` 响应体可解析。验收 PRD AC-66 ②。
 - 与 §8.4 合为一个 ADR（§16）。
 
+### 10.5 本机 worker 的监管状态机（架构评审 P2-6）
+
+状态转移是纯函数 `worker-client/src/supervisor-state.ts`（Node 环境测试）；拉起进程、计时与读写 pid 文件在 main 的 `worker-supervisor.ts`。两者都不在装配根里。验收 PRD AC-81。
+
+```mermaid
+stateDiagram-v2
+  [*] --> stopped
+  stopped --> starting: 需要 worker 的能力被调用 / 用户「重新启动」
+  starting --> handshaking: stdout 报出端口
+  starting --> crashed: 启动超时或进程退出
+  handshaking --> ready: health、协议版本、capabilities 通过
+  handshaking --> incompatible: 主版本不在支持范围（§10.4）
+  handshaking --> crashed: 握手超时或失败
+  ready --> crashed: 进程退出或健康检查连续失败
+  crashed --> starting: 未超过重启上限（退避后）
+  crashed --> degraded: 重启次数用尽
+  ready --> stopping: 应用退出
+  stopping --> stopped
+  incompatible --> stopped: 用户更新 worker 后重试
+  degraded --> starting: 用户「重新启动」（计数清零）
+```
+
+- **单实例。** 应用用单实例锁，一个应用实例最多一个本机 worker。pid 与启动时间写在应用数据目录的 `runtime/worker.pid`；启动时发现上次遗留、且可执行路径属于本应用 worker 的进程，先结束它再拉起。
+- **令牌。** 每次进入 `starting` 都生成新的一次性令牌（§10.1），旧令牌立即作废。
+- **崩溃与在途作业。** 进入 `crashed` 时，在途作业记为中断，由 `ingest` 从已落库的事实续跑（§4.2）；已发出的付费请求按 §7.8 结算，不自动重发不幂等的请求（PRD AC-07）。
+- **退避与上限。** 重启间隔指数退避；时间窗内的重启上限与各超时是配置值，默认值随 M3 的 supervisor 实现 PR 提出。
+- **降级。** `degraded` 与 `incompatible` 时，依赖本机 worker 的能力记「不可用」（原因 `worker_stopped` / `worker_incompatible`），阅读回落到文字层基础档（Q2，PRD AC-11）；界面给出「重新启动」入口。
+- **退出。** 应用退出时先取消在途作业，再请求 worker 结束，超时后强制结束；退出后本机 worker 进程数为 0。
+
 ## 11. 可观测性
 
 - **日志**：`kernel` 只定义 `Logger` 接口；`platform-node/logging/file-logger.ts` 输出 JSON 行。字段：`ts`、`level`、`event`（来自 `contracts/src/diag-events.ts` 白名单）、`feature`、`requestId`、`jobId`、`parseRunId`、`durationMs`、`errorCode`。不记录正文、译文、提示词、密钥；Markdown 阅读只记 `FileId`、文件数、耗时与错误码，不记文件路径与内容。
 - **IPC 载荷**：单条 IPC 消息或 worker 产物超过阈值（默认 1 MB，可配置）记诊断事件 `ipc.oversize`，带通道名与字节数，不带内容；大数据一律走 `assetId`（§2.4）。
 - **关联**：每次 IPC 调用生成 `requestId`，透传到 worker（请求头 `OI-Request-Id`）与 provider 调用日志。
 - **Python worker**：结构化 JSON 写 stderr，supervisor 收集并加上 `source: worker`。
-- **诊断包**：保留天数与体积上限沿用 v1 起点（7 天、2 MB，见 v1 审查），可在设置调整；导出前统一走 `diagnostics/domain/redaction-rules.ts`；导出内容只含计数、哈希、阶段耗时、错误码、设置摘要（无密钥）。
+- **诊断包**（架构评审 P2-4）：保留天数与体积上限是设置项（M2 诊断页）。默认值要能容下一次完整解析（20 页论文，含 Jev、引擎与翻译）的全部用量事件与错误码，M2 实测后定标；v1 的 7 天、2 MB 只是实测前的起点。超过上限时按时间从旧到新滚动删除；导出前统一走 `diagnostics/domain/redaction-rules.ts`；导出内容只含计数、哈希、阶段耗时、错误码、设置摘要（无密钥）。
 - **用量**：每次付费调用记录 provider、模型、token / 次数、估算费用（未知则为 `unknown`）、`jobId`，写入 `budget` 切片的账本（§7.8）并供界面显示。
 - **崩溃**：只写本机；不自动上传。
 
@@ -1633,6 +1669,7 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 | e2e | Playwright Electron | 只做少量冒烟：开窗、导入、阅读、重开 |
 | 基准 | 独立脚本 | 不作为 CI 门禁；结果写入 `docs/acceptance/` |
 
+- **夹具只用合成数据**（架构评审 P2-8）：`fixtures/protocol/`、`fixtures/providers/`、`fixtures/parsing-rules/` 与录制样例只用合成图、合成文字与假令牌，不放真实论文页面的图片、裁图或正文。需要真实页面的基准走不入库的语料流程，仓库只存清单与 sha256（`fixtures/corpus/`）。
 - 测试只断言行为，不读取源码文本（F-08）。
 - CI 不调用付费 API、不下载模型权重；需要真实模型的测试标记为 `@model`，只在手动或夜间任务运行。
 - 每个模型能力的「本地」与「API」两个来源跑同一份契约测试（假后端或去掉凭据与图片内容的录制样例），这是「本地是一等选项」的完成标准（§7.0）。调用真实托管 API 的冒烟测试标记 `@live`（按 RULES §4 的 `@paid` 对待，有调用次数上限），只在对应 Key 已由 Cursor Secrets 注入时运行，否则跳过；不是 CI 门禁。
@@ -1648,22 +1685,25 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 | G2 Lint | ESLint（typescript-eslint strict-type-checked）、ruff | 含 F-06、F-08、F-12、`max-lines-per-function`、`complexity`、`no-restricted-imports`；Markdown 相关（§4.5）：renderer 全局 `react/no-danger` 为 error；`katex` 只能在 `ui-kit/src/markdown/math.tsx` 与 `formula/adapters/katex-renderer.ts` 导入；Markdown 解析库只能在 `features/markdown/src/domain/parse/` 导入；`features/markdown/src/adapters/**` 禁止导入 `fs` 的写入类 API；切片代码（`packages/features/**`）中出现注册表登记的服务商主机名即失败（F-18） |
 | G3 类型检查 | `tsc -b`（strict）、mypy `--strict` 或 pyright strict | 0 错误 |
 | G4 行数 | `tools/check-file-size` | §6 的硬上限；allowlist 必须有 ADR 与到期里程碑 |
-| G5 依赖方向 | dependency-cruiser | `no-circular`、`layer-direction`、`no-cross-feature-internals`、`feature-dependency-matrix`（§4.3；含 `ingest` 的九条出边，任何切片 import `ingest` 或 `budget` 即失败）、`renderer-isolation`、`electron-only-in-desktop`、`contracts-is-leaf`、`providers-boundary`（`packages/providers` 只被 `features/*/src/adapters/` 与 `apps/desktop/src/main/` 导入，只经 `@oi/providers` 入口；它自己不导入任何切片、Electron 与 UI，§7.9.2）；Q3 相关规则单列为 G13、G15、G16 |
+| G5 依赖方向 | dependency-cruiser | `no-circular`、`layer-direction`、`no-cross-feature-internals`、`feature-dependency-matrix`（§4.3；含 `ingest` 的九条出边，任何切片 import `ingest` 或 `budget` 即失败）、`renderer-isolation`、`electron-only-in-desktop`、`contracts-is-leaf`、`ui-events-declared`（只有在 `contracts/src/ui-events.ts` 登记的切片能发布或订阅该事件，§5.3）、`providers-boundary`（`packages/providers` 只被 `features/*/src/adapters/` 与 `apps/desktop/src/main/` 导入，只经 `@oi/providers` 入口；它自己不导入任何切片、Electron 与 UI，§7.9.2）；Q3 相关规则单列为 G13、G15、G16 |
 | G6 Python 分层 | import-linter | §10.3 的层次契约，含 Python core 的 forbidden 契约 |
 | G7 生成物无漂移 | `pnpm codegen && git diff --exit-code` | 契约、preload、pydantic 模型 |
 | G8 单元与契约测试 | Vitest、pytest | 按 RULES.md §4 的运行纪律 |
 | G9 密钥扫描 | gitleaks | 0 命中；契约测试样例里的假 Key 用固定测试前缀，登记在 gitleaks allowlist（§7.9.7） |
 | G10 依赖许可证 | license-checker、pip-licenses；`runtime` 模型清单校验 | 项目许可证为 Apache-2.0（Q6）：依赖必须与之兼容；GPL / AGPL 一律拒绝（包括 PyMuPDF，以及经上游 extras 间接引入的情况）；LGPL、非商用、自定义许可证（如 MinerU Open Source License）未经用户批准即拒绝；模型权重的许可证在模型清单登记并按同一规则检查（RULES §1.5） |
-| G11 热点文件 | `tools/check-hotspots` | 改动热点文件（装配根、`slots.ts`、契约）的 PR 必须在描述中声明，且单 PR 对每个热点文件的改动 ≤ 30 行 |
-| G12 PR 体量 | 脚本 | 非生成代码改动 > 600 行时要求拆分或写明理由 |
+| G11 热点文件 | `tools/check-hotspots` | 热点（架构评审 P1-11）= 装配根 `composition-root.ts`、`slots.ts`，以及被两个以上切片 import 的契约文件（如 `ids.ts`、`errors.ts`；清单由脚本按 import 图算出，不手写）。改动热点的 PR 必须在描述中声明，且单 PR 对每个热点文件的改动 ≤ 30 行。只被一个切片使用的契约文件（如 `contracts/src/ipc/<切片>.ts`）算该切片的文件，不是热点 |
+| G12 PR 体量 | 脚本 | 非生成代码改动 > 600 行时要求拆分或写明理由；只改 `packages/contracts` 的契约 PR，非生成代码 > 200 行时要求写明不拆的理由 |
 | G13 core 不依赖 UI | dependency-cruiser 规则 `core-no-ui`；开启 `tsPreCompilationDeps`，type-only 导入也算 | from：`^packages/(contracts\|kernel)/`、`^packages/features/[^/]+/src/(domain\|application)/`、`^packages/features/[^/]+/src/(index\|pure)\.ts$`。to（命中任一即失败）：`react`、`react-dom`、`react/jsx-runtime`；路由库（`react-router*`、`@tanstack/*router*`、`wouter`）；样式（`\.(css\|scss\|sass\|less)$`、`styled-components`、`@emotion/*`、`@vanilla-extract/*`）；`electron`、`pdfjs-dist`；`@oi/ui-kit`；`^packages/features/[^/]+/src/ui/`；`^apps/desktop/src/(renderer\|preload)/`；`@testing-library/*` |
 | G14 core 编译环境 | `tsconfig.core.json` + ESLint `no-restricted-globals` | core 文件单独编译：`lib: ["ES2023"]`（不含 `DOM`）、`types: []`（不自动带入 `@types/react`、`@types/node`），出现 `window`、`document`、`HTMLElement`、`KeyboardEvent`、`process` 即类型错误；ESLint 对 core 路径禁用 `window`、`document`、`navigator`、`location`、`history`、`localStorage`、`sessionStorage`、`requestAnimationFrame` |
-| G15 UI 只经 seam | dependency-cruiser 规则 `ui-through-seam`、`pure-seam-stays-pure` | from `^packages/features/([^/]+)/src/ui/` 与 `^apps/desktop/src/renderer/`：to `^packages/features/[^/]+/src/(domain\|application\|adapters)/` 一律禁止，本切片只允许 `src/pure.ts`；`pure.ts` 用 `reachable: true` 检查，不得传递到达 application、adapters |
+| G15 UI 只经 seam | dependency-cruiser 规则 `ui-through-seam`、`pure-seam-stays-pure` | from `^packages/features/([^/]+)/src/ui/` 与 `^apps/desktop/src/renderer/`：to `^packages/features/[^/]+/src/(domain\|application\|adapters)/` 一律禁止，本切片只允许 `src/pure.ts`；`pure.ts` 用 `reachable: true` 检查，不得传递到达 application、adapters；`markdown-parser-not-in-renderer`：从 renderer 与各切片 `src/ui/`、`pure.ts` 出发，传递上不得到达 `features/markdown/src/domain/parse/` 与 Markdown 解析库（架构评审 P1-7） |
 | G16 core 测试只调 seam、不渲染 UI | Vitest 工程 `core` + dependency-cruiser 规则 `core-test-through-seam` | `core` 工程：`environment: 'node'`，include `packages/features/*/test/core/**`；文件内出现 `@vitest-environment` 注释即失败。`core-test-through-seam`：from `^packages/features/([^/]+)/test/core/`，to `^packages/features/$1/src/` 且 pathNot `^packages/features/$1/src/((index\|pure)\.ts\|testing/)` → 失败；to `react`、`@testing-library/*`、`jsdom`、`happy-dom`、`@oi/ui-kit`、`src/ui/` → 失败。每个切片 `README.md` 登记的 core 规则必须至少有一个 core 测试（脚本核对测试名中的规则编号） |
+| G18 一个 PR 一个切片 | 脚本 | PR 改动的 `packages/features/*/src/**` 只属于一个切片（RULES §2）；例外：解析规则集 PR（`parsing` + worker 对应规则 + `fixtures/parsing-rules/`，§7.10）与带 ADR 编号的 PR。由此「UI 改动的 PR 又改了另一个切片的 core」必然失败（架构评审 P1-11）；同一切片的 UI 与 core 在一个 PR 里不失败 |
+
+**运行环境**（架构评审 P2-5）：Linux 跑 G1–G16、G18 全部；另有一条 Windows 任务，只跑不带模型的 worker 健康检查、`fixtures/protocol/` 与 `fixtures/parsing-rules/` 的两侧测试；两条都是必需检查。macOS 签名与公证留到 M8，由人执行。
 
 原 G17（同一 PR 同时改 UI 路径与 core 路径即失败）已按架构评审删除（Wisdom 2026-10-30 19:57 批准）：一个垂直切片的功能本来就同时包含 core 与 UI，按层强制拆 PR 与 §0「改一个功能只动一个切片」相反。Q3 的执行规则 2、3 仍然有效，由评审清单与 UI–core 交接说明检查（RULES §5 第 11 条、§8）；依赖方向与 core 测试由 G13–G16 机器检查。
 
-G13–G16 与 5 层、18 个切片的关系：规则全部按通配路径写（`features/[^/]+/src/<层>/`），因此对每个切片的 domain、application、ui 同时生效，不需要逐切片登记，新增的 `markdown` 切片自动受约束；`ui-kit/src/markdown/` 属于 UI，G13 已禁止 core 导入 `@oi/ui-kit`；§2.5 的映射表说明每个切片哪些文件落在哪一层。workers 层没有 UI，Q3 在 Python 侧的落点是 G6 的 core forbidden 契约。M1 的退出条件包含四个故意违规的样例 PR：core import React 类型、UI import application 用例、core 测试渲染组件、`ingest` 之外的切片 import `ingest`——都必须被 CI 拒绝（PRD §8）。同一切片的 UI 与 core 在一个 PR 里改，不是违规样例。
+G13–G16 与 5 层、18 个切片的关系：规则全部按通配路径写（`features/[^/]+/src/<层>/`），因此对每个切片的 domain、application、ui 同时生效，不需要逐切片登记，新增的 `markdown` 切片自动受约束；`ui-kit/src/markdown/` 属于 UI，G13 已禁止 core 导入 `@oi/ui-kit`；§2.5 的映射表说明每个切片哪些文件落在哪一层。workers 层没有 UI，Q3 在 Python 侧的落点是 G6 的 core forbidden 契约。M1 的退出条件包含五个故意违规的样例 PR：core import React 类型、UI import 另一个切片的 application、core 测试渲染组件、UI 改动的 PR 又改了另一个切片的 domain（G18）、`ingest` 之外的切片 import `ingest`——都必须被 CI 拒绝（PRD §8）。同一切片的 UI 与 core 在一个 PR 里改，不是违规样例，必须通过。
 
 ## 14. v1 教训：一个 16,641 行的文件是怎么长出来的，v2 怎么从制度上防止
 
@@ -1694,12 +1734,12 @@ G13–G16 与 5 层、18 个切片的关系：规则全部按通配路径写（`
 
 | 防线 | 机制 | 落在哪 |
 | --- | --- | --- |
-| 大小 | 单文件 400 / 600、入口 150、函数 80、复杂度 15，CI 失败而非提醒 | §6、G2、G4 |
+| 大小 | 单文件 400 / 600、入口 150、函数 80（domain 纯函数只受文件上限）、复杂度 15，CI 失败而非提醒 | §6、G2、G4 |
 | 边界 | 分层方向、切片矩阵、切片内部私有、renderer 隔离，全部由 dependency-cruiser 与 import-linter 强制 | §2、§4.3、§5、G5、G6 |
 | 入口 | 入口只装配；业务分支一律进用例；跨切片的流水线编排只在 `ingest`；`slots.ts` 一行一个切片 | F-02、F-17、§5.3 |
 | 状态 | 禁止模块级可变状态；状态属于用例（持久）或组件（界面） | F-06 |
 | 测试 | 禁止读源码断言；每个端口有共享契约测试；domain 测试不依赖任何运行时 | F-08、§12 |
-| 并行 | 每个切片在 `README.md` 登记所有者与热点文件；契约改动先单独合入，再开实现 PR；热点文件单 PR 改动 ≤ 30 行 | G11、RULES.md §3 |
+| 并行 | 每个切片在 `README.md` 登记所有者与热点文件；契约改动先单独合入，再开实现 PR；热点（装配根、`slots.ts`、被两个以上切片 import 的契约文件）单 PR 改动 ≤ 30 行；一个 PR 一个切片 | G11、G12、G18、RULES.md §2、§3 |
 | UI 与核心 | core 不依赖 UI（含类型）、core 编译环境无 DOM、UI 只经 seam、core 测试只调 seam（Q3）；UI 任务不改 core 由评审与交接说明检查 | §2.1–§2.6、G13–G16、RULES §8 |
 | 评审 | 评审清单逐项检查「这个文件承接几种变化」「新增依赖边是否在矩阵内」「是否有新的顶层状态」；不满足即退回 | RULES.md §5 |
 | 豁免 | 只能通过 ADR，且带到期里程碑；到期未清 CI 失败 | §6 |

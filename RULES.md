@@ -32,7 +32,7 @@
 ### 1.3 Lint 与格式
 
 - Prettier + ESLint（typescript-eslint `strict-type-checked`）；ruff。
-- 关键规则（错误级）：`max-lines-per-function: 80`、`complexity: 15`、`max-params: 4`、`no-restricted-imports`（按层）、`no-restricted-syntax`（顶层 `let`）、`no-restricted-globals`（全局禁用 `chrome`；core 路径另禁 `window`、`document`、`navigator`、`location`、`history`、`localStorage`、`sessionStorage`、`requestAnimationFrame`，ARCHITECTURE G14）。
+- 关键规则（错误级）：`max-lines-per-function: 80`（domain 纯函数与 Python core 不受此条约束，按「一个不变量一个文件」拆分并受文件上限约束，ARCHITECTURE §6）、`complexity: 15`、`max-params: 4`、`no-restricted-imports`（按层）、`no-restricted-syntax`（顶层 `let`）、`no-restricted-globals`（全局禁用 `chrome`；core 路径另禁 `window`、`document`、`navigator`、`location`、`history`、`localStorage`、`sessionStorage`、`requestAnimationFrame`，ARCHITECTURE G14）。
 - Markdown 与公式渲染（ARCHITECTURE §4.5）：renderer 全局 `react/no-danger` 为错误级；`katex` 只能在 `packages/ui-kit/src/markdown/math.tsx` 与 `packages/features/formula/src/adapters/katex-renderer.ts` 导入，选项只从 `contracts/src/latex-policy.ts` 读取，不得在别处另写一份；Markdown 解析库只能在 `features/markdown/src/domain/parse/` 导入；`features/markdown/src/adapters/**` 禁止导入 `fs` 的写入类 API。
 - 文件行数与依赖方向由 CI 门禁检查（ARCHITECTURE §6、§13），不得在本地关闭后提交。
 
@@ -60,7 +60,7 @@
 ## 2. 分支、提交与 PR
 
 - 分支命名：`feature/<简短描述>`（功能与文档）、`fix/<简短描述>`（修复）、`chore/<简短描述>`（工具与依赖）。小写、连字符。
-- 一个分支只做一件事；一个 PR 只动**一层**或**一个切片**（ARCHITECTURE §3.1）。契约（`packages/contracts`）改动单独成 PR，先合入，再开实现 PR。
+- 一个分支只做一件事；一个 PR 只动**一个切片**（ARCHITECTURE §3.1，G18）。同一切片的 UI 与 core 可以在一个 PR 里；UI 改动的 PR 不得改另一个切片的 core。契约（`packages/contracts`）改动单独成 PR，先合入，再开实现 PR；契约 PR 的非生成代码超过 200 行时，在 PR 描述写明不拆的理由（G12）。
 - 提交信息：Conventional Commits，类型 `feat|fix|docs|refactor|test|chore|build|ci`，范围用切片名，例如 `feat(translation): reject reordered placeholders`。描述可用中文。
 - PR 一律先开 **Draft**；自检（§4、§5）全部完成后再转为 Ready。
 - PR 描述必须包含：
@@ -76,10 +76,10 @@
 
 目的：多个 Agent 同时工作而不在同一文件上冲突。
 
-1. **开工前声明。** 在 PR 描述（或任务说明）写明：要改的切片、要改的热点文件。热点文件包括：`apps/desktop/src/main/composition-root.ts`、`apps/desktop/src/renderer/slots.ts`、`packages/contracts/**`、`dependency-cruiser` 配置、`tools/check-file-size/allowlist.json`、根 `package.json`、`pnpm-lock.yaml`。
+1. **开工前声明。** 在 PR 描述（或任务说明）写明：要改的切片、要改的热点文件。热点文件包括：`apps/desktop/src/main/composition-root.ts`、`apps/desktop/src/renderer/slots.ts`、被两个以上切片 import 的契约文件（如 `ids.ts`、`errors.ts`；清单由 `tools/check-hotspots` 按 import 图算出）、`dependency-cruiser` 配置、`tools/check-file-size/allowlist.json`、根 `package.json`、`pnpm-lock.yaml`。只被一个切片使用的契约文件（如 `contracts/src/ipc/<切片>.ts`）算该切片的文件，不是热点（架构评审 P1-11）。
 2. **一个切片同一时间一个活跃 PR。** 与进行中的 PR 改同一切片时，串行；或先抽出接口（契约 PR）再并行。
 3. **契约先行。** 新功能先合入契约（类型、IPC 定义、端口接口），实现可以先返回固定值；接口稳定后，各切片并行实现。
-4. **热点文件只加行。** 装配根与插槽注册遵循「一行一个切片」，PR 对每个热点文件的改动不超过 30 行（G11）。
+4. **热点文件只加行。** 装配根与插槽注册遵循「一行一个切片」，PR 对每个热点文件的改动不超过 30 行（G11）。新增 UI 事件或给事件新增发布方、订阅方，在 `contracts/src/ui-events.ts` 登记并附 ADR（ARCHITECTURE §4.3、§5.3）。
 5. **迁移不撞号。** 数据库迁移放在各切片自己的 `migrations/`，编号只在切片内递增。
 6. **锁文件冲突**：以目标分支为准重新生成，不手工合并。
 7. **短分支。** 分支落后目标分支时先同步再继续；同步方式用 merge 或 rebase 均可，但已推送的共享分支不得 force push（§6）。
@@ -171,8 +171,8 @@
 | 规则 | 怎么做 | 机器检查 | 人工检查 |
 | --- | --- | --- | --- |
 | 1 | 五类规则写成 `features/<f>/src/domain/` 下的纯函数，由 application 用例调用；组件、hooks、`ipc-handlers.ts` 里不出现这五类判断（显示用的格式化除外） | G13、G14（core 不能依赖 UI）；G16（规则必须有 core 测试） | 评审清单 §5 第 11 条：在组件里看到 `if` 判断业务条件即退回 |
-| 2 | 「core 文件」= domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`。UI 任务的分支只改 `src/ui/**`、`apps/desktop/src/renderer/**`、`ui-kit` | 无（G17 已删除） | 任务类型为「UI 改动」时，交接说明中「core 是否没动」必须为「是」，评审对照 diff 核实；core 文件出现在 UI 改动任务的 diff 里即退回 |
-| 3 | 发现 seam 不够用：停止 UI 工作，在任务或 PR 中写明缺什么输入或结果、为什么现有 seam 不行；另开 seam PR（契约先行，§3 第 3 条），由 core 侧按领域语义设计，合入后再继续 UI | `contracts` 为热点文件（G11） | 评审 seam PR 时检查：新增字段是否是领域概念，而不是某个页面的布局需要 |
+| 2 | 「core 文件」= domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`。UI 任务的分支只改 `src/ui/**`、`apps/desktop/src/renderer/**`、`ui-kit` | G18 拒绝「改 UI 又改另一个切片的 core」；同一切片内的 core 改动不由机器检查 | 任务类型为「UI 改动」时，交接说明中「core 是否没动」必须为「是」，评审对照 diff 核实；core 文件出现在 UI 改动任务的 diff 里即退回 |
+| 3 | 发现 seam 不够用：停止 UI 工作，在任务或 PR 中写明缺什么输入或结果、为什么现有 seam 不行；另开 seam PR（契约先行，§3 第 3 条），由 core 侧按领域语义设计，合入后再继续 UI | 契约 PR 的体量（G12）；被两个以上切片 import 的契约文件是热点（G11）；一个 PR 一个切片（G18） | 评审 seam PR 时检查：新增字段是否是领域概念，而不是某个页面的布局需要 |
 | 4 | core 测试放在 `test/core/`，只 import `src/index.ts`、`src/pure.ts`、`src/testing/**`，用 fake 端口；运行 `pnpm test:core` | G16（Node 环境、禁止 UI 依赖、规则覆盖核对） | 任务完成以 `pnpm test:core` 通过为准，组件测试通过不能代替 |
 | 5 | 在 PR 描述或任务回复中填写 §8.4 模板 | 无（G17 已删除） | 改动 UI 或 core 路径的 PR 缺少交接说明块即退回（§2）；评审核对说明与 diff 一致 |
 
