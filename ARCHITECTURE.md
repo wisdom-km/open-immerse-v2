@@ -144,15 +144,15 @@ Q3 的要求是映射到 5 层与 14 个切片；Q4 决定新增 `formula-source
 
 | 切片 | core：规则所在（校验 / 计价 / 状态转移 / 权限 / 失败条件） | seam | UI adapter | shell 适配器 |
 | --- | --- | --- | --- | --- |
-| `ingest` | `ingest-policy`（状态转移：由已保存的候选、评估记录、采用版本、译文区块算出下一步——解析、取源码候选、评分、公式决定、补救、采用、翻译或停止；失败条件：预算被拒、未同意外发、服务不可用时停在哪一步、记什么原因） | `openDocument`（打开 PDF 的唯一用户入口）、`resumeIngest`（启动时与评分恢复后续跑）、`scoreDocument`（「为本文评分」，§7.4「评分开关」） | 无（进度由 reader 经 `jobs` 事件显示） | 无（只调用其他切片的 seam） |
+| `ingest` | `ingest-policy`（状态转移：由已保存的候选、评估记录、采用版本、译文区块与当前路线算出下一步——版面、识别、取源码候选、评分、公式决定、补救、采用、翻译或停止；失败条件：预算被拒、未同意外发、服务不可用时停在哪一步、记什么原因）、`route-presets`、`route-config`（校验：路线是四类积木的声明式组合，§7.12） | `openDocument`（打开 PDF 的唯一用户入口）、`resumeIngest`（启动时与评分恢复后续跑）、`scoreDocument`（「为本文评分」）、`rerecognizeRegion`（评分关闭时手动重新识别单个区域）、`getRoute`、`setRoute`（后四项见 §7.4「评分开关」、§7.12） | 无（进度由 reader 经 `jobs` 事件显示；路线设置页属于 settings，经 `window.oi.ingest.*`） | `sqlite-route-store`（只存用户选的路线，不存流水线进度） |
 | `library` | `document-identity`（校验：哈希身份）、`library-record`（校验：元数据） | `importPdf`（由 `ingest` 调用，不是 IPC 命令）、`listLibrary`、`updateProgress`、`getBibliographicRecords`（§4.4 预留） | `ui/library-list.tsx` | `sqlite-library-repository`、文件资产 |
-| `document` | `accepted-revision`（失败条件）、`adopt-policy`（状态转移、权限：compare 与 adopt）、`source-audit`（失败条件） | `adoptPage`、`compareCandidates`、`getAcceptedRevision` | 无（由 reader 渲染） | `sqlite-document-repository` |
+| `document` | `accepted-revision`（失败条件）、`adopt-policy`（状态转移、权限：compare 与 adopt）、`source-audit`（失败条件）、`region-selection`（状态转移：区域候选怎么选，§7.1）、`source-priority`（校验：来源优先级列表的默认值、校验与合并，§7.1「没有有效分数时的采用」）、`display-fallback`（失败条件：裁图 → 占位框的降级链，§7.5） | `adoptPage`、`compareCandidates`、`getAcceptedRevision`、`getSourcePriority`、`setSourcePriority` | 无（由 reader 渲染；优先级设置页属于 settings，经 `window.oi.document.*`） | `sqlite-document-repository`、`sqlite-source-priority-store` |
 | `parsing` | `engine-capabilities`、`layout-profile`（权限：高质量档是否可选，Q10）、`text-layer/*` | `submitParse`、`getParseCapabilities` | 无（状态显示在 reader） | `worker-parse-gateway`、`text-layer-engine`、`cloud-ocr-provider`（经 `providers`，§7.9） |
 | `jobs` | `job-state-machine`（状态转移）、`idempotency`（失败条件：能否重发） | `cancelJob`、`listJobs`、事件 `onJobEvent` | 无 | `sqlite-job-store` |
-| `formula` | `formula-policy`（失败条件：候选优先级链，§7.5）、`charset-check`、`equation-number`、`render-equivalence`（校验） | `decideFormula`；`pure.ts`：`formulaDisplayMode` | 无（`reader/ui/formula-view.tsx` 渲染） | `katex-renderer` |
+| `formula` | `formula-policy`（失败条件：候选优先级链，§7.5）、`charset-check`、`equation-number`、`render-equivalence`、`program-check`、`context-consistency`（校验：评分关闭时的程序核对，§7.5）、`source-check-standing`（权限：「源码核对」算不算已核验） | `decideFormula`；`pure.ts`：`formulaDisplayMode` | 无（`reader/ui/formula-view.tsx` 渲染） | `katex-renderer` |
 | `formula-source` | `arxiv-id`（校验）、`fetch-policy`（状态转移：限流与冷却）、`archive-limits`、`align-policy`（失败条件） | `resolveArxivSource`、`alignSource` | 无（来源标注由 reader 显示，开关在 settings） | `arxiv-http-client`、`sqlite-source-cache`、`node-gunzip` |
-| `quality` | `evaluation-status`（状态转移：verdict 规范化）、`scoring-coverage`（失败条件：没有有效分数不得算已核验，Q1）、`low-score-routing`、`deployment-recommendation`（Q9）、`scoring-switch`（权限：评分开关的默认值与谁能改，§7.4「评分开关」） | `evaluateRegions`、`getScoringEnabled`、`setScoringEnabled`、事件 `onScoringUnavailable`；`pure.ts`：`recommendEvaluatorDeployment` | 无（设置页属于 settings，开关经 `window.oi.quality.*`） | `worker-quality-evaluator`、`sqlite-scoring-switch-store` |
-| `repair` | `repair-plan`（权限：是否允许补救）、`repair-limits`（失败条件） | `runRepair` | 无（入口在 reader） | `llm-multimodal-provider`（经 `providers`） |
+| `quality` | `evaluation-status`（状态转移：verdict 规范化）、`scoring-coverage`（失败条件：没有有效分数不得算已核验，Q1）、`low-score-routing`、`deployment-recommendation`（Q9）、`scoring-switch`（权限：Jev 这一块判定积木的开关，默认开、谁能改，§7.4「评分开关」、§7.12） | `evaluateRegions`、`getScoringEnabled`、`setScoringEnabled`、事件 `onScoringUnavailable`；`pure.ts`：`recommendEvaluatorDeployment` | 无（设置页属于 settings，开关经 `window.oi.quality.*`） | `worker-quality-evaluator`、`sqlite-scoring-switch-store` |
+| `repair` | `repair-plan`（权限：是否允许补救）、`repair-limits`（失败条件）、`recognition-scope`（权限：路线把多模态当作识别来源时对哪些图发请求，§7.4「评分开关」、§7.12） | `runRepair`、`recognizeRegions`（多模态识别，不是补救） | 无（重新识别的入口在 reader） | `llm-multimodal-provider`（经 `providers`） |
 | `budget` | `budget-ledger`（计价：预留、结算、释放）、`budget-limits`（失败条件：金额上限，以及按「服务商 + 能力」的请求数 / 页数 / token 上限）、`price-book`（计价：单价已知或未知，未知不记为 0） | `getBudgetStatus`、`setBudgetLimits`；其他切片只经 `contracts` 的 `BudgetGate` 端口使用（装配根注入，§7.8） | 无（预算设置页在 settings，经 `window.oi.budget.*`） | `sqlite-ledger-store` |
 | `translation` | `placeholder`、`integrity-check`（校验、失败条件）、`markdown-restore`（校验：占位还原后公式与片段表一致）、`block-scope`（哪些块是翻译块）、`block-status`（状态转移：success / failed / retranslating）、`adopted-version`（采用哪个版本）、`cache-key`（含公式决定摘要） | `translatePage`、`retranslateBlock`、`getBlocks`、`polishTranslation`、事件 `onBlockChanged` | 无（译文由 reader 渲染） | `llm-translation-provider`（经 `providers`）、`sqlite-translation-store` |
 | `markdown` | `html-policy`（校验：原始 HTML 一律屏蔽）、`math-syntax`（失败条件：不可信命令、超长公式）、`link-resolve`（失败条件：not_found / ambiguous / outside_vault）、`vault-path-policy`（权限：越界、符号链接）、`vault-limits`（失败条件：文件数、单文件大小）、`watch-debounce`（状态转移）、`nav-history`（状态转移）、`write-capability`（权限：v2 恒为只读） | `render`、`openFile`、`openVault`、`readFile`、`listRecent`、`close`、`getCapabilities`、事件 `onFileEvent`；`pure.ts`：`renderMarkdown`、`navigate` | `ui/md-file-page.tsx`、`ui/vault-page.tsx`、`file-tree`、`outline-panel`、`reload-toast`、`editor-slot`；共享渲染组件在 `ui-kit/src/markdown/`（§4.5.4） | `node-md-file-reader`、`node-vault-scanner`、`node-file-watcher`、`sqlite-md-recent-store`、`vault-asset-registrar` |
@@ -328,10 +328,10 @@ packages/features/<name>/
 | `contracts/src/ids.ts` | 品牌化 ID 类型（DocumentId、PageRevisionId、BlockId、JobId…）与构造校验 |
 | `contracts/src/geometry.ts` | `NormalizedBBox`、`CoordinateFrame`、六元矩阵类型 |
 | `contracts/src/document.ts` | `ContentBlock`、`AcceptedPageRevision`、`SourceAudit`、`ReadingOrderResult`（阅读顺序的结果、来源与规则集版本，§7.10）、`PageTextLayer`（每页文字层 `trusted` / `untrusted` / `none`，§7.11） |
-| `contracts/src/formula.ts` | `FormulaCandidate`、`FormulaDecision`（显示决定 `verified-latex` / `source-checked-latex` / `source-crop`，§7.5） |
+| `contracts/src/formula.ts` | `FormulaCandidate`、`FormulaDecision`（显示决定 `verified-latex` / `source-checked-latex` / `checked-latex` / `source-crop` / `page-placeholder`，§7.5） |
 | `contracts/src/evaluation.ts` | `EvaluationResult`（规范状态只有四种：`scored` / `error` / `unavailable` / `not-run`；`not-run` 的原因码目前只有 `disabled`，即用户关闭了质量评分，§7.4「评分开关」；「待评分」「未评分」是由记录算出的界面标记，不是状态，§7.1） |
-| `contracts/src/translation.ts` | `StoredTranslationBlock`（译文区块记录，取代草案 02 的 `TranslationRecord`，§8.1.1；含裁图位置 `crops`）、`TranslationBlockView`、`TranslationBlockChanged`、受保护片段表（每个公式片段带显示决定，`source-crop` 时带 `assetId`）、`GlossaryEntry`（术语表条目；v2 只有接口，§7.11） |
-| `contracts/src/markdown.ts` | `MdDocument`、`MdBlock`、`MdInline`、`MdHeading`、`MdImageRef`、`MdFormulaCrop`（未核验公式的裁图节点，只出现在译文的 `MdDocument` 里，§8.1.1）、`ResolvedLink`、`VaultTree`、`MdFileEvent`、`MdCapabilities`、`MdError`；预留的 `WriteFileInput` / `WriteFileResult` / `MdEdit`（§4.5.7）。形状以 [Loom 方案](./docs/design/md-reader.md) §3.3 为起点 |
+| `contracts/src/translation.ts` | `StoredTranslationBlock`（译文区块记录，取代草案 02 的 `TranslationRecord`，§8.1.1；含裁图与占位框的位置 `crops`）、`TranslationBlockView`、`TranslationBlockChanged`、受保护片段表（每个公式片段带显示决定，`source-crop` 时带 `assetId`，`page-placeholder` 时带页码）、`GlossaryEntry`（术语表条目；v2 只有接口，§7.11） |
+| `contracts/src/markdown.ts` | `MdDocument`、`MdBlock`、`MdInline`、`MdHeading`、`MdImageRef`、`MdFormulaCrop`（不显示 LaTeX 的公式节点：裁图或占位框，只出现在译文的 `MdDocument` 里，§8.1.1）、`ResolvedLink`、`VaultTree`、`MdFileEvent`、`MdCapabilities`、`MdError`；预留的 `WriteFileInput` / `WriteFileResult` / `MdEdit`（§4.5.7）。形状以 [Loom 方案](./docs/design/md-reader.md) §3.3 为起点 |
 | `contracts/src/latex-policy.ts` | KaTeX 安全选项的**唯一一份**常量（`KATEX_SAFE_OPTIONS`）、单个公式字符上限、不可信命令清单；只有数据，不 import `katex`。`formula`、`markdown`、`ui-kit` 都从这里读（§4.5.5） |
 | `contracts/src/anchor.ts` | `ContentAnchor`（笔记、问答、语音共用；写作预留，§4.4） |
 | `contracts/src/citation.ts` | `Citation`（锚点 + 文献引用元数据：标题、作者、年份、DOI / arXiv 编号与版本、页、块）；问答与笔记导出共用，写作预留 |
@@ -375,15 +375,15 @@ packages/features/<name>/
 
 | 切片 | 职责（一句话） | 关键文件（每个文件单一职责） |
 | --- | --- | --- |
-| `ingest` | 流水线编排：一次用户动作「打开 PDF」按 §7.1 依次调用其他切片的 seam；没有界面，没有自己的表 | `domain/ingest-policy.ts`（纯函数：输入是候选、评估记录、公式决定、采用版本、译文区块，以及本次预算与同意的结果；输出下一步：解析、取源码候选、评分、公式决定、补救、采用、翻译、停止，带停止原因；不调用网络）· `domain/ingest-steps.ts`（步骤与原因码的类型）· `application/use-cases/open-document.ts`（入库 → 提交解析 → 取源码候选 → 评分 → 公式决定 → 必要时补救并重新评分 → 采用 → 按块翻译；每一步只调对方的 `index.ts`）· `application/use-cases/resume-ingest.ts`（应用启动、评分服务恢复、预算或同意状态变化后，从已保存的事实重新算下一步续跑；`quality` 的 `reevaluate-pending` 由它触发；`not-run/disabled` 的候选不在续跑范围内）· `application/use-cases/score-document.ts`（「为本文评分」：评分开着时，只对一篇文献 `not-run/disabled` 的候选提交评估，再按评估结果重算公式决定与采用；关着时返回 `scoring_disabled`，§7.4「评分开关」）。进度与取消用 `jobs` 的任务（种类 `ingest`）；下一步总是由 `ingest-policy` 从已保存的事实重新算出，所以 `ingest` 不建表，重启后重算即可续跑 |
+| `ingest` | 流水线编排：一次用户动作「打开 PDF」按当前路线（§7.12）依次调用其他切片的 seam；没有界面。流水线进度不建表；用户选的路线存在 `ing_route` | `domain/ingest-policy.ts`（纯函数：输入是候选、评估记录、公式决定、采用版本、译文区块，以及本次预算与同意的结果；输出下一步：按路线做版面、识别（列表里有多模态才做多模态识别）、取源码候选、评分（路线的判定含 Jev 且开关开着才评分）、公式决定、补救、采用、翻译、停止，带停止原因；不调用网络；不点名任何积木的具体实现）· `domain/ingest-steps.ts`（步骤与原因码的类型）· `application/use-cases/open-document.ts`（入库 → 提交解析 → 取源码候选 → 评分 → 公式决定 → 必要时补救并重新评分 → 采用 → 按块翻译；每一步只调对方的 `index.ts`）· `application/use-cases/resume-ingest.ts`（应用启动、评分服务恢复、预算或同意状态变化后，从已保存的事实重新算下一步续跑；`quality` 的 `reevaluate-pending` 由它触发；`not-run/disabled` 的候选不在续跑范围内）· `application/use-cases/score-document.ts`（「为本文评分」：评分开着时，只对一篇文献 `not-run/disabled` 的候选提交评估，再按评估结果重算公式决定与采用；关着时返回 `scoring_disabled`，§7.4「评分开关」）· `application/use-cases/rerecognize-region.ts`（手动「重新识别」：评分关闭时对用户选定的 1 个区域换用 1 个来源识别，经外发检查与预算，结果记 `not-run/disabled`，再按 §7.5 重算该区域的公式决定与采用；评分开着时返回 `scoring_enabled`；不批量、不自动发起，§7.4「评分开关」）。进度与取消用 `jobs` 的任务（种类 `ingest`）；下一步总是由 `ingest-policy` 从已保存的事实重新算出，所以流水线进度不建表，重启后重算即可续跑。用户选的路线例外：`domain/route-presets.ts`（四个内置预设与全局默认，唯一决定点，§7.12）、`domain/route-config.ts`（校验组合：已知积木、该积木允许的部署、列表去重）、`application/use-cases/set-route.ts`（只由用户操作调用；预设带不带 Jev 时，只通过 `quality` 的 `scoring-switch` 改评分开关）、`application/ports/route-store.ts`、`adapters/sqlite-route-store.ts`（表 `ing_route`，一行） |
 | `library` | 文献导入、身份（SHA-256）、元数据、列表、阅读进度 | `domain/document-identity.ts`（哈希身份与去重规则）· `domain/library-record.ts`（元数据校验）· `application/use-cases/import-pdf.ts` · `application/use-cases/list-library.ts` · `application/use-cases/update-progress.ts` · `application/use-cases/get-bibliographic-records.ts`（按 ID 批量只读，写作预留，§4.4） · `application/ports/library-repository.ts` · `adapters/sqlite-library-repository.ts` · `ui/library-list.tsx`。不做 v1 数据迁移（Q8），没有 v1 导入器 |
-| `document` | 统一文档模型：解析运行、候选页、采用版本、来源审计、坐标帧 | `domain/accepted-revision.ts`（采用不变式）· `domain/source-audit.ts`（missing / duplicates）· `domain/coordinate-frame.ts`（矩阵与换算）· `domain/block-id.ts`（稳定块号）· `domain/adopt-policy.ts`（compare 与 adopt 区分）· `domain/region-selection.ts`（正文与表格区域在多个来源的候选之间怎么选，含没有有效分数时的固定来源优先级，§7.1；输入是候选与评估记录的普通数据）· `application/use-cases/adopt-page.ts`（乐观锁原子切换）· `application/ports/document-repository.ts` · `adapters/sqlite-document-repository.ts` |
+| `document` | 统一文档模型：解析运行、候选页、采用版本、来源审计、坐标帧 | `domain/accepted-revision.ts`（采用不变式）· `domain/source-audit.ts`（missing / duplicates）· `domain/coordinate-frame.ts`（矩阵与换算）· `domain/block-id.ts`（稳定块号）· `domain/adopt-policy.ts`（compare 与 adopt 区分）· `domain/region-selection.ts`（区域在多个来源的候选之间怎么选，§7.1；没有有效分数时按 `source-priority` 给出的列表；用户手动「重新识别」的选择优先；输入是候选与评估记录的普通数据）· `domain/source-priority.ts`（唯一决定点：来源优先级列表的默认值、校验与合并——缺的来源按默认顺序补在末尾、未知来源忽略，§7.1「没有有效分数时的采用」）· `domain/display-fallback.ts`（降级链：裁图拿不到时改用占位框，§7.5）· `application/use-cases/adopt-page.ts`（乐观锁原子切换）· `application/use-cases/set-source-priority.ts`（只由设置页的用户操作调用）· `application/ports/document-repository.ts` · `application/ports/source-priority-store.ts` · `adapters/sqlite-document-repository.ts` · `adapters/sqlite-source-priority-store.ts` |
 | `parsing` | 解析任务编排、引擎选择、文字层基础档、云 OCR 识别来源 | `domain/engine-capabilities.ts` · `domain/layout-profile.ts`（标准档 / 高质量档；高质量档只在基准证明后开放，Q10）· `domain/text-layer/`（文字层基础档的规则，每条规则一个文件，自 v1 移植：`columns`、`cross-column`、`xy-cut`、`page-furniture`、`caption-binding`、`continuation`、`scan-detect`（每页文字层是否可信，§7.11）、`paragraphs`（行合并为段落，§7.11）、字形清洗，以及文字层启发式标签；顺序、扫描页判定与段落切分规则与 worker 的对应模块属于同一规则集 `oi-rules/1`，以 `fixtures/parsing-rules/` 对拍，§7.10）· `application/use-cases/submit-parse.ts` · `application/ports/parse-gateway.ts` · `application/ports/ocr-provider.ts`（云 OCR，§7.7）· `adapters/worker-parse-gateway.ts` · `adapters/text-layer-engine.ts`（pdfjs-dist 提取 → domain 规则）· `adapters/cloud-ocr-provider.ts`（`OcrProvider` 的唯一实现，经 `@oi/providers` 的 `OcrTransport`；百度、智谱等服务商只在注册表里，§7.9） |
 | `jobs` | 持久任务记录、状态机、重启恢复、事件流 | `domain/job-state-machine.ts` · `domain/idempotency.ts` · `application/use-cases/resume-jobs.ts` · `application/ports/job-store.ts` · `adapters/sqlite-job-store.ts` |
-| `formula` | 公式候选、校验、显示决策、兜底顺序 | `domain/formula-policy.ts`（候选优先级链与换层判据，§7.5）· `domain/source-check-standing.ts`（唯一决定点：「源码核对」是否算已核验，当前为不算，§7.5）· `domain/charset-check.ts` · `domain/equation-number.ts` · `domain/render-equivalence.ts` · `domain/crop-geometry.ts`（裁图外扩与 18px 参考字号） · `application/use-cases/decide-formula.ts` · `application/ports/latex-renderer.ts` · `adapters/katex-renderer.ts`（安全配置见 §7.6） |
+| `formula` | 公式候选、校验、显示决策、兜底顺序 | `domain/formula-policy.ts`（候选优先级链与换层判据，§7.5）· `domain/source-check-standing.ts`（唯一决定点：「源码核对」是否算已核验，当前为不算，§7.5）· `domain/charset-check.ts` · `domain/equation-number.ts` · `domain/render-equivalence.ts` · `domain/program-check.ts`（评分关闭时非 arXiv 候选的五项程序核对，§7.5 第 5 步）· `domain/context-consistency.ts`（与文字层或邻近内容一致的判定，§7.5 第 5 步）· `domain/crop-geometry.ts`（裁图外扩与 18px 参考字号） · `application/use-cases/decide-formula.ts` · `application/ports/latex-renderer.ts` · `adapters/katex-renderer.ts`（安全配置见 §7.6） |
 | `formula-source` | arXiv 源码校准公式：编号与版本识别、源码下载缓存、TeX 解析、与版面区域对齐、对齐失败回落（Q4，§7.6） | `domain/arxiv-id.ts` · `domain/fetch-policy.ts`（间隔、超时、冷却）· `domain/archive-limits.ts`（解包安全上限）· `domain/tar-reader.ts`（纯 tar 读取，gunzip 经端口注入）· `domain/tex-units.ts`（TeX → 公式单元）· `domain/macro-table.ts`（导言区宏 → KaTeX 宏，带展开上限）· `domain/source-align.ts`（词序列对齐与覆盖率）· `domain/align-policy.ts`（逐公式核对与回落判定）· `application/use-cases/resolve-arxiv-source.ts` · `application/use-cases/align-source.ts` · `application/ports/arxiv-source-client.ts` · `application/ports/source-cache.ts` · `application/ports/gunzip.ts` · `adapters/arxiv-http-client.ts` · `adapters/node-gunzip.ts` · `adapters/sqlite-source-cache.ts` |
-| `quality` | 质量评估端口、结果规范化、全路径评估记录不变式、评分开关、部署推荐 | `domain/evaluation-status.ts`（verdict → 规范状态）· `domain/scoring-coverage.ts`（每个识别候选必须有评估记录，Q1）· `domain/low-score-routing.ts`（阈值按类别与 `evaluatorVersion`）· `domain/deployment-recommendation.ts`（Jev 的「本地 / API」推荐与本地可行性标注，API 优先，Q9）· `domain/scoring-switch.ts`（评分开关：默认开、只能由用户操作改变、升级保留、恢复默认为开；哪些 `unavailable` 原因要发三选一提示，§7.4「评分开关」）· `application/ports/quality-evaluator.ts` · `application/ports/scoring-switch-store.ts` · `application/use-cases/evaluate-regions.ts`（开关关着时不提交作业，直接写 `not-run/disabled`）· `application/use-cases/reevaluate-pending.ts`（评分服务恢复后补评 `error` / `unavailable`，不补 `not-run`；由 `ingest` 的 `resume-ingest` 调用）· `application/use-cases/set-scoring-enabled.ts`（只由设置页的用户操作调用）· `adapters/worker-quality-evaluator.ts`（唯一实现：经 worker-client 提交 `evaluate` 作业）· `adapters/sqlite-scoring-switch-store.ts` |
-| `repair` | 有效低分区域的多模态补救（v2 不以其他不确定证据触发，§7.1）：只产出新的识别候选，重新评分由 `ingest` 调 `quality` 完成 | `domain/repair-plan.ts` · `domain/repair-limits.ts`（次数、并发、超时上限）· `application/use-cases/run-repair.ts` · `application/ports/multimodal-provider.ts` · `adapters/llm-multimodal-provider.ts`（经 `@oi/providers` 的 `ChatTransport`，要求模型有 `chat` 与 `vision` 标记，§7.9.3） |
+| `quality` | 质量评估端口、结果规范化、全路径评估记录不变式、评分开关、部署推荐 | `domain/evaluation-status.ts`（verdict → 规范状态）· `domain/scoring-coverage.ts`（每个识别候选必须有评估记录，Q1）· `domain/low-score-routing.ts`（阈值按类别与 `evaluatorVersion`）· `domain/deployment-recommendation.ts`（Jev 的「本地 / API」推荐与本地可行性标注，API 优先，Q9）· `domain/scoring-switch.ts`（评分开关：默认开、只能由用户操作改变、升级保留、恢复默认为开；哪些 `unavailable` 原因要发三选一提示。它是判定积木里 Jev 这一块的开关，不另存一套识别来源，§7.4「评分开关」、§7.12）· `application/ports/quality-evaluator.ts` · `application/ports/scoring-switch-store.ts` · `application/use-cases/evaluate-regions.ts`（开关关着时不提交作业，直接写 `not-run/disabled`）· `application/use-cases/reevaluate-pending.ts`（评分服务恢复后补评 `error` / `unavailable`，不补 `not-run`；由 `ingest` 的 `resume-ingest` 调用）· `application/use-cases/set-scoring-enabled.ts`（只由用户操作调用：设置页的开关，或 `ingest.setRoute` 套用预设）· `adapters/worker-quality-evaluator.ts`（唯一实现：经 worker-client 提交 `evaluate` 作业）· `adapters/sqlite-scoring-switch-store.ts` |
+| `repair` | 有效低分区域的多模态补救（v2 不以其他不确定证据触发，§7.1）：只产出新的识别候选，重新评分由 `ingest` 调 `quality` 完成；路线把多模态列入识别来源时也承担多模态识别（不是补救，§7.12） | `domain/repair-plan.ts` · `domain/repair-limits.ts`（次数、并发、超时上限）· `domain/recognition-scope.ts`（版面开着时只对公式区域、表格区域、文字层不可信页上的正文区域发裁片，图区域不发；版面关着时发整页）· `application/use-cases/run-repair.ts` · `application/use-cases/recognize-regions.ts`（多模态识别，预算科目「多模态识别」；也供手动「重新识别」选多模态时调用）· `application/ports/multimodal-provider.ts` · `adapters/llm-multimodal-provider.ts`（经 `@oi/providers` 的 `ChatTransport`，要求模型有 `chat` 与 `vision` 标记，§7.9.3） |
 | `budget` | 预算账本：所有付费调用的预留、结算、释放；金额上限与单价未知时的请求数 / 页数 / token 上限（§7.8） | `domain/budget-ledger.ts`（预留 / 结算 / 释放；已预留 + 已结算达到上限即拒绝）· `domain/budget-limits.ts`（预算模式、金额上限、按「服务商 + 能力」的请求数 / 页数 / token 上限）· `domain/default-caps.ts`（默认受限预算与各科目的占位次数类上限，§7.8 第 4 条）· `domain/price-book.ts`（单价来自用户配置；未知时金额记「未知」，不记为 0，不参与金额累加）· `domain/envelope.ts`（worker 作业的额度信封：最多请求数，含拆批与重试）· `application/use-cases/reserve.ts` · `settle.ts` · `release.ts` · `get-budget-status.ts` · `set-budget-limits.ts` · `application/ports/ledger-store.ts` · `adapters/sqlite-ledger-store.ts`（表前缀 `bud_`） |
 | `translation` | 自然语言翻译、占位保护、完整性校验、Markdown 还原、译文区块记录（D6，§8.1.1）、润色、缓存 | `domain/placeholder.ts`（抽取与恢复；原文里的 `⟦`、`⟧` 也作为字面片段保护，§7.11）· `domain/integrity-check.ts`（公式占位 / 数字 / 引用）· `domain/markdown-restore.ts`（占位还原为 `$…$` / `$$…$$`、模型文字中的 `$`、`<`、`[[` 转义、还原后公式与片段表逐个比对）· `domain/block-scope.ts`（按块类型判定是否为翻译块，§8.1.1）· `domain/block-status.ts`（success / failed / retranslating 状态转移）· `domain/adopted-version.ts`（显示哪个版本）· `domain/cache-key.ts`（§8.1.1 的键组成与公式决定摘要 `formulaDigest`）· `domain/segmenter.ts`（只按上下文窗口把块分批，不切分、不合并块，§7.11）· `domain/glossary.ts`（术语命中与摘要，§7.11）· `application/use-cases/translate-page.ts` · `application/use-cases/retranslate-block.ts` · `application/use-cases/get-blocks.ts`（经 `markdown` 的 seam 解析出 `MdDocument`）· `application/use-cases/polish-translation.ts` · `application/ports/translation-provider.ts` · `application/ports/translation-store.ts` · `application/ports/glossary-provider.ts`（v2 装配只注入空实现）· `adapters/sqlite-translation-store.ts`（表前缀 `tr_`）· `adapters/llm-translation-provider.ts`（经 `@oi/providers` 的 `ChatTransport`；服务商只在注册表里，§7.9） |
 | `markdown` | Markdown 解析为块级 AST、公式与 HTML 安全规则、单个 `.md` 与文件夹（笔记库）只读阅读、wikilink 与相对链接解析、文件监视、编辑接口预留（§4.5） | 文件清单见 §4.5.2 |
@@ -738,7 +738,7 @@ flowchart TB
 
 ### 7.0 模型能力的默认来源：API 优先（Wisdom 2026-10-30 18:44）
 
-决定：开发与最终用户一视同仁，凡是由模型提供的能力（Jev 评分、引擎 B / MiniCPM-OCR、版面、多模态、OCR、翻译，以及同样依赖模型的文本问答与 TTS / ASR），有托管 API 时默认用托管 API，把对用户硬件的要求降到最低。本地部署仍是一等选项：有部署文档、用户可在设置中选（「本地 / API」）、与 API 走同一个接口，想自建的用户可以自建。
+决定：开发与最终用户一视同仁，凡是由模型提供的能力（Jev 评分、引擎 B / MiniCPM-OCR、版面、多模态、OCR、翻译，以及同样依赖模型的文本问答与 TTS / ASR），有托管 API 时默认用托管 API，把对用户硬件的要求降到最低。本地部署仍是一等选项：有部署文档、用户可在设置中选（「本地 / API」）、与 API 走同一个接口，想自建的用户可以自建。这些能力在流水线里是可替换的积木，一条处理路线是它们的声明式组合（§7.12）。版面积木在有已核实的托管版面 API 之前，默认部署暂定本地，远程只写自建 worker；托管 API 核实通过后可以作为另一种实现，默认是否改回 API 等 M0 实测后由 Wisdom 定。
 
 规则：
 
@@ -777,7 +777,9 @@ flowchart TD
   PRE --> B["引擎 B：端到端流水线<br/>版面 → 裁剪 → 识别 → 组装<br/>（对比与兜底；默认面壁 API，可选本机 SDK）"]
   PRE --> CO["云 OCR（可选，BYOK，§7.7）<br/>按版面区域裁片识别"]
   PRE --> T["文字层基础档<br/>（无服务时降级，TS 实现）"]
-  A --> N["规范化为统一文档模型<br/>（候选页 PageCandidate）"]
+  PRE --> MM["多模态识别（只在评分关闭时，§7.4「评分开关」）<br/>按区域裁片识别：公式、表格、文字层不可信页的正文"]
+  A --> N
+  MM --> N["规范化为统一文档模型<br/>（候选页 PageCandidate）"]
   B --> N
   CO --> N
   T --> N
@@ -785,9 +787,9 @@ flowchart TD
   N --> Q["质量评估（Jev）<br/>所有识别候选都有评估记录（Q1）<br/>按区域：text / formula / table；只有 scored 算分<br/>评分开关关闭时不调 Jev，记 not-run/disabled"]
   Q --> D{"按 §7.5 与「没有有效分数时的采用」选出的候选<br/>是否有效低分？"}
   D -- "否" --> ACC["采用：AcceptedPageRevision"]
-  D -- "评分错误 / 不可用（含未同意外发、预算被拒）/ 阈值未定标" --> PEND["按固定来源优先级采用，标「待评分」<br/>不算已核验、不触发补救<br/>评分恢复后自动补评"]
+  D -- "评分错误 / 不可用（含未同意外发、预算被拒）/ 阈值未定标" --> PEND["按来源优先级采用，标「待评分」<br/>公式显示裁图（拿不到时占位框）<br/>不算已核验、不触发补救<br/>评分恢复后自动补评"]
   PEND --> ACC
-  D -- "评分已关闭（not-run/disabled）" --> OFF["按固定来源优先级采用，标「未评分」<br/>arXiv 源码核对通过的公式显示 LaTeX（源码核对）<br/>不算已核验、不触发补救、不自动补评"]
+  D -- "评分已关闭（not-run/disabled）" --> OFF["按来源优先级采用，标「未评分」<br/>公式：arXiv 源码核对 → 程序核对通过的 LaTeX → 裁图 → 占位框（§7.5）<br/>不算已核验、不自动补救、不自动补评<br/>用户可对单个区域手动重新识别"]
   OFF --> ACC
   D -- "是，且补救开启、预算可用" --> RP["区域补救（仅目标区域）<br/>先试引擎 B 区域候选（若声明支持）<br/>仍低分再调用多模态"]
   D -- "是，但补救关闭 / 预算到限" --> FB["保留原图 + 候选，标待复核"]
@@ -802,9 +804,9 @@ flowchart TD
 流水线约束（上游核实结论见差异清单 §2）：
 
 - **编排归属**：上图从入库到翻译的整条流水线由 `ingest` 切片编排（§4.2、§4.3）：`ingest/domain/ingest-policy.ts` 按已保存的事实算出下一步，`open-document` / `resume-ingest` 依次调用各切片的 seam。各切片只做自己那一步，不调用下一步。
-- **预算闸门**：图中每个发往外部服务商的模型调用（引擎 A 的托管 API、引擎 B 文档解析、云 OCR、Jev 评分、多模态补救、翻译）发出前都经 `BudgetGate` 预留，被拒时按 §7.8 的规则处理：Jev 记 `unavailable`（原因码 `budget`）并标「待评分」，不触发补救，不改用别的服务商。
+- **预算闸门**：图中每个发往外部服务商的模型调用（引擎 A 的托管 API、引擎 B 文档解析、云 OCR、Jev 评分、多模态识别与补救、翻译）发出前都经 `BudgetGate` 预留，被拒时按 §7.8 的规则处理：Jev 记 `unavailable`（原因码 `budget`）并标「待评分」，不触发补救，不改用别的服务商。
 
-- **当前选型**（只写在 adapters 与配置里，F-13）：引擎 A = 版面模型 + PP-FormulaNet 系列 + PaddleOCR 兜底 + 阅读顺序（版面模型给出，`engines/reading_order/` 校验与兜底，§7.10）；引擎 B = MiniCPM-OCR 1.0（默认来源是面壁文档解析 API，见下条；「本地」用官方 SDK `minicpm-ocr`，版面后端用 `ppdoclayout3_torch`，不依赖 PaddlePaddle）；各能力的默认来源见 §7.0；质量评估 = MiniCPM-OCR Jev（部署见 §7.4）。按 Q1，MiniCPM-OCR 1.0 与 Jev 照用：锁定上游提交、SDK 版本与权重 sha256，记入 `EngineCapabilities.models[]` 与每次 `ParseRun`；Jev 在 M6a、MiniCPM-OCR 1.0 在 M6b 开工前各复核一次。
+- **当前选型**（只写在 adapters 与配置里，F-13）：引擎 A = 版面模型 + PP-FormulaNet 系列 + PaddleOCR 兜底 + 阅读顺序（版面模型给出，`engines/reading_order/` 校验与兜底，§7.10）。这是预设「OCR+版面+Jev」绑定的实现，不是写死的唯一路线（§7.12）；引擎 B = MiniCPM-OCR 1.0（默认来源是面壁文档解析 API，见下条；「本地」用官方 SDK `minicpm-ocr`，版面后端用 `ppdoclayout3_torch`，不依赖 PaddlePaddle）；各能力的默认来源见 §7.0；质量评估 = MiniCPM-OCR Jev（部署见 §7.4）。按 Q1，MiniCPM-OCR 1.0 与 Jev 照用：锁定上游提交、SDK 版本与权重 sha256，记入 `EngineCapabilities.models[]` 与每次 `ParseRun`；Jev 在 M6a、MiniCPM-OCR 1.0 在 M6b 开工前各复核一次。
 - **引擎 B 的云端来源（Wisdom 2026-10-30 18:37、18:44）**：引擎 B 默认用面壁开放平台的 MiniCPM-OCR-1.0 文档解析 API，本机 SDK 是同一接口后的「本地」选项。文档解析 API（`POST https://api.modelbest.ai/v1/document-parse`，Bearer `MODELBEST_API_KEY`，与 Jev 共用同一个面壁 Key；[文档](https://platform.modelbest.ai/console/docs/api/document-parse)，2026-10-30 查阅，页面标注更新于 2026-10-27）。第一次使用前须确认数据外发；可在设置中改选「本地」（PRD §3.3；验收 AC-60）。引擎 B 什么时候运行不变：仍是对比与兜底。
   - 输入是预处理渲染好的页面图（同步接口，`image` 用 data URI），**不上传原 PDF**，所有来源仍共用同一张页面图与 `CoordinateFrame`（Q6）。
   - 请求带 `upright: false`（平台默认 `true`，会自适应旋转并把坐标改到旋转后的页面上），让坐标直接落在我们的页面图上；页面方向由预处理负责。
@@ -816,19 +818,23 @@ flowchart TD
 - **引擎 A 的版面档位（Q10）**：标准档 = PP-DocLayoutV3，M3 起步即用；基准集另跑 PP-DocLayout_plus-L 对照。plus-L 若在阅读顺序与版面指标上「明显更好」（判据待基准定标，PRD QM-13），作为「高质量档」在设置中供用户选择；否则不开放。档位是配置值，记入 `ParseRun`，切换只影响新的解析，不改已采用版本。
 - **版面同源**：B 的 SDK 固定使用 PP-DocLayoutV3，阅读顺序也来自它，而不是来自 OCR 模型。A 用标准档（V3）时，A/B 的版面判断同源，采用模型顺序时顺序也同源：对比视图必须标注「版面同源」，A/B 一致不能作为互相印证的证据。A 用高质量档（plus-L）时版面不同源；plus-L 不输出阅读顺序，这一档的顺序由 §7.10 的 XY-cut 兜底给出（来源记 `xy_cut`）。
 - **页面图（Q6）**：预处理统一用 pypdfium2 渲染页面图并生成 `CoordinateFrame`；所有识别来源使用同一张图。B 以图片输入 SDK，不安装其 `pdf` extra（该 extra 依赖 PyMuPDF）。PyMuPDF 禁止引入（AGPL，与本项目 Apache-2.0 许可证政策冲突，RULES §1.5）。
-- **全路径评估记录（Q1；Wisdom 2026-10-30 22:15 收窄为「都必须有评估记录」）**：所有产出识别结果的路径——引擎 A、引擎 B、云 OCR（百度、智谱等）、arXiv 源码对齐、多模态补救——产出的候选都必须有评估记录，写入候选的 `EvaluationResult`。评分开关开着时（默认），候选经过 Jev 评分；用户关闭评分时（§7.4「评分开关」）记 `not-run/disabled`，不调用 Jev。`quality/domain/scoring-coverage.ts` 是唯一判定处：没有评估记录的识别候选不能进入采用版本；只有有效分数（`scored`、阈值已定标、不是 `fake/`）不低于阈值才可能算已核验（RULES N-17 不变）。文字层基础档的文字直接取自 PDF 文字层，不是识别结果，不在此列；但其公式区域不产生 LaTeX 候选，只显示原页裁图。
+- **全路径评估记录（Q1；Wisdom 2026-10-30 22:15 收窄为「都必须有评估记录」）**：所有产出识别结果的路径——引擎 A、引擎 B、云 OCR（百度、智谱等）、arXiv 源码对齐、多模态（补救，以及评分关闭时的识别）、手动重新识别——产出的候选都必须有评估记录，写入候选的 `EvaluationResult`。评分开关开着时（默认），候选经过 Jev 评分；用户关闭评分时（§7.4「评分开关」）记 `not-run/disabled`，不调用 Jev。`quality/domain/scoring-coverage.ts` 是唯一判定处：没有评估记录的识别候选不能进入采用版本；只有有效分数（`scored`、阈值已定标、不是 `fake/`）不低于阈值才可能算已核验（RULES N-17 不变）。文字层基础档的文字直接取自 PDF 文字层，不是识别结果，不在此列；但其公式区域不产生 LaTeX 候选，只显示原页裁图。
 - **评估状态与界面标记（规格补充，统一 PRD AC-18、AC-84 与 `contracts/src/evaluation.ts`）**：规范状态只有 `scored`、`error`、`unavailable`、`not-run` 四种；候选在评估之前没有记录，没有记录就不能进入采用版本。界面标记由记录算出，不是状态：`error`、`unavailable`，以及分数还不能用的 `scored`（阈值未定标、`fake/`）标「待评分」，可以采用用于阅读，不算已核验、不触发补救，评分恢复后由 `reevaluate-pending` 自动补评；`not-run/disabled` 标「未评分」，同样可以采用、不算已核验、不触发补救，但不自动补评，只有用户的「为本文评分」会重新评它（PRD AC-85）。补评写新记录，旧记录不改写。
 - **评分分期（架构评审 P1-12）**：评分状态机（含 `not-run/disabled` 与评分开关的 core 规则）、`scoring-coverage` 与 `reevaluate-pending` 在 M3 就位，后端是假评估器（`quality/testing/`，经同一个 `evaluate` 作业返回录制或合成样例，`evaluatorVersion` 以 `fake/` 开头）。假评估器的结果永远不使候选成为「已核验」，也不触发补救（PRD AC-84）。M6a 只把后端换成真实 Jev，加上开关的设置项与提示，并做真机冒烟。
-- **没有有效分数时的采用（规格补充；正文与表格，PRD AC-86）**：规则在 `document/domain/region-selection.ts`，`ingest` 把候选与评估记录作为普通数据传入。公式区域不用本条，按 §7.5。
+- **没有有效分数时的采用（规格补充；正文与表格，PRD AC-86）**：规则在 `document/domain/region-selection.ts`，`ingest` 把候选与评估记录作为普通数据传入。公式区域的显示决定按 §7.5，多个来源都通过核对时用本条第 3 步的同一个列表。
   1. 可信文字层（`textLayer = trusted`，§7.11）页上的正文用文字层，不被识别候选替换。
   2. 区域有已核验候选时，按（评分、来源权重）选，与 §7.5 第 2 步相同。
-  3. 区域里所有候选都没有有效分数（`error`、`unavailable`、`not-run`、阈值未定标或 `fake/`）时，按固定的来源优先级选：采用页所属引擎（A，或 A 这页没有结果时兜底的 B）的候选优先，其次云 OCR（多个时按设置里的启用顺序）。被选中的候选按记录标「待评分」或「未评分」，不算已核验。优先级是 `region-selection.ts` 里的一个常量，不散落在别处。
+  3. 区域里所有候选都没有有效分数（`error`、`unavailable`、`not-run`、阈值未定标或 `fake/`）时，按来源优先级选。被选中的候选按记录标「待评分」或「未评分」，不算已核验。
+     - 优先级是设置里可调的一个列表（Wisdom 2026-10-30 22:23），默认值、校验与合并只在 `document/domain/source-priority.ts` 一处，其他代码只读它给出的列表。
+     - 默认顺序（规格提议，待 Wisdom 确认）：引擎 A → 引擎 B → 云 OCR（多个时按设置里的启用顺序）→ 多模态。引擎 A 是主引擎、B 是对比与兜底；云 OCR 只发区域裁片；多模态最贵，放最后。
+     - 新安装与恢复默认时用默认顺序，升级保留用户的顺序；列表缺的来源按默认顺序补在末尾，未知来源忽略。arXiv 源码（只用于公式，§7.5）与可信文字层（第 1 步）不在列表里，位置固定。
+     - 用户手动「重新识别」某个区域后（§7.4「评分开关」），这个区域用用户的选择，不用列表。
   4. 区域里有任何一个有效低分的候选时，按下一条「低分再补」处理，不用第 3 步。
-  - 评分关闭时云 OCR 照常请求，照常经 `EgressCheck` 与 `BudgetGate`（§7.0 第 6 条、§7.8）；被拒时该来源这一页不产生候选，其他来源照常。
+  - 评分关闭时云 OCR 与多模态照常请求（多模态的范围见 §7.4「评分开关」），照常经 `EgressCheck` 与 `BudgetGate`（§7.0 第 6 条、§7.8）；被拒时该来源在这些区域不产生候选，其他来源照常。
   - 「采用」仍是页级操作（`adopt-policy`，PRD AC-13）；本条只决定页内每个区域用哪个候选，「对比」视图照常列出全部候选。
 - **低分再补**：只有经 §7.5 优先级链或上一条选出、且有效低分（`scored` 且低于该类别、该 `evaluatorVersion` 的阈值）的区域才进入多模态补救；补救结果是新的识别候选，同样重新校验、重新评分。「明确不确定证据」（已被取代的[草案 03](./docs/architecture/03_双引擎与质量评估_草案.md)列过公式结构校验失败、候选间实质差异等；差异清单 §3 记录了用户当时的确认）在 v2 规格里还没有定义，定义证据清单与验收之前不作为补救入口（规格补充，按最保守的读法统一 PRD S5 与 M6c）。
-- **补救时序**：只有要补救的区域（有效低分，且补救开启、预算可用）受这一条约束：它的补救必须在进入采用版本**之前**完成，补救结束之前不翻译。其他区域的翻译可以与补救并行。「待评分」「未评分」的区域不补救，按当前采用的候选照常翻译，公式按显示决定写进译文（LaTeX 或裁图，§8.1.1），与上图「采用 → 翻译」一致。
-- **评分错误不是低分**：评分错误、未配置、未运行（含 `not-run/disabled`）、阈值未定标的区域不进入补救（PRD AC-05）；评分关闭期间也没有手动补救的入口（Wisdom 2026-10-30 22:15）；公式仍按 `formula-policy` 默认显示原页裁图，唯一例外是评分关闭时 arXiv 的「源码核对」（§7.5）。
+- **补救时序**：只有要补救的区域（有效低分，且补救开启、预算可用）受这一条约束：它的补救必须在进入采用版本**之前**完成，补救结束之前不翻译。其他区域的翻译可以与补救并行。「待评分」「未评分」的区域不补救，按当前采用的候选照常翻译，公式按显示决定写进译文（LaTeX、裁图或占位框，§8.1.1），与上图「采用 → 翻译」一致。
+- **评分错误不是低分**：评分错误、未配置、未运行（含 `not-run/disabled`）、阈值未定标的区域不进入补救（PRD AC-05）。评分关闭期间没有自动补救；用户可以对单个区域手动「重新识别」，它不是补救，结果仍标「未评分」（§7.4「评分开关」，待 Wisdom 确认）。公式按 `formula-policy` 默认显示原页裁图；例外只在评分关闭时：arXiv 的「源码核对」与程序核对通过的 `checked-latex`（§7.5）。
 
 ### 7.2 Python 侧引擎接口（worker 内部）
 
@@ -915,7 +921,7 @@ interface BudgetGate {                         // contracts/src/budget.ts；budg
 - 上游 verdict 的规范化只在 `quality/domain/evaluation-status.ts` 做，上游原值保存在 `providerVerdict`。以 Jev 为例：`scored` → `scored`（带 `rawScore`）；`precheck_reject` → `error/invalid_candidate`；`render_error` → `error/render_failed`；`missing_original_image` → `error/missing_image`；`encode_error` → `error/encode_failed`；`forward_error` → `error/service_failed`；其他任何值 → `error/unknown_verdict`。上游返回的 0.0 / -1.0 占位分一律丢弃。HTTP 层的失败先由适配器映射为 `contracts/src/provider.ts` 的 `ProviderFailure`（TS 侧在 `packages/providers` 的 `formats/<format>/errors.ts`，worker 侧在 `quality/http_errors.py`，§7.9.5），再在这里规范化：`auth`、`quota` → `unavailable`（原因码同名），其余 → `error/<kind>`；同样不带分数、不触发补救。
 - 阈值按（类别, `evaluatorVersion`）分别定标；`evaluatorVersion` 包含模型版本、部署方式、推理后端与量化档、渲染环境。上游默认阈值 0.5 不使用（PRD QM-05）。某个 `evaluatorVersion` 尚无定标阈值时，分数照常记录，但 `low-score-routing` 返回「未定标」，不触发补救。
 - 所有发往外部服务商的模型调用（不只补救与翻译）发出前都经 `BudgetGate.reserve`；规则见 §7.8。
-- 问答的 `ChatProvider` 不区分「多模态」与「纯文本」两种实现：同一个适配器，差别只在 `acceptsImages`。这个值就是所选模型的 `vision` 能力标记（§7.9.3），来自注册表的预置信息或用户添加模型时的明确选择，不靠探测猜；不确定时按 `false` 处理。`qa/domain/context-selection.ts` 据此组上下文：纯文本模型只收原文、译文、已核验 LaTeX 与图表题注，图、表、未核验公式以「题注 + 区域编号」代替并注明「图像未提供给模型」；「源码核对」的公式（§7.5）也发 LaTeX，但标「源码核对，未核验」，标注来自 `source-check-standing` 的结论；多模态模型另收这些区域的裁图（只发裁图，不上传原 PDF；同样受 §7.0 第 6 条的外发同意约束）。两种模型的回答走同一条引用定位规则（PRD AC-15）。
+- 问答的 `ChatProvider` 不区分「多模态」与「纯文本」两种实现：同一个适配器，差别只在 `acceptsImages`。这个值就是所选模型的 `vision` 能力标记（§7.9.3），来自注册表的预置信息或用户添加模型时的明确选择，不靠探测猜；不确定时按 `false` 处理。`qa/domain/context-selection.ts` 据此组上下文：纯文本模型只收原文、译文、已核验 LaTeX 与图表题注，图、表、未核验公式以「题注 + 区域编号」代替并注明「图像未提供给模型」；「源码核对」的公式（§7.5）也发 LaTeX，但标「源码核对，未核验」，标注来自 `source-check-standing` 的结论；程序核对通过的 `checked-latex` 公式发 LaTeX，标「未评分，未核验」；多模态模型另收这些区域的裁图（只发裁图，不上传原 PDF；同样受 §7.0 第 6 条的外发同意约束）。两种模型的回答走同一条引用定位规则（PRD AC-15）。
 - `OcrProvider`、`MultimodalRepairProvider`、`TranslationProvider`、`ChatProvider` 各只有一个适配器，经 `@oi/providers` 发请求；换服务商、加服务商只动注册表（§7.9.4），不新增切片适配器（F-18）。
 
 ### 7.4 质量评估的部署（Q9）
@@ -999,16 +1005,24 @@ M0 的开发机验证（结果写入差异清单 §7，PRD §8 M0 退出条件�
 
 **macOS 与 Windows 的本机渲染。** 上游「渲染 + 评分」服务依赖 `apt-get` 固定字体环境，只支持 Linux；macOS 只能跑纯评分服务、由调用方提供渲染图。桌面的两个目标平台都不是 Linux，所以本机模式下由 worker 的 `quality/render/` 自己把候选文本渲染成图，渲染器与字体包版本固定并写入 `evaluatorVersion`。具体渲染实现 M6a 选定，这是本机模式最大的实现风险。
 
-**评分开关（Wisdom 2026-10-30 22:15）。** 质量评分可以由用户关闭（PRD §3.4，验收 AC-85）。开关与「本地 / API」是两个独立的设置：开关决定评不评，「本地 / API」决定在哪评。规则在 `quality/domain/scoring-switch.ts`，值存在 `sqlite-scoring-switch-store`；设置页经 `window.oi.quality.*` 读写，界面布局与文案待 Loom。
+**评分开关（Wisdom 2026-10-30 22:15、22:23、22:45）。** 质量评分可以由用户关闭（PRD §3.4、§3.5，验收 AC-85–AC-94）。开关与「本地 / API」是两个独立的设置：开关决定评不评，「本地 / API」决定在哪评。开关就是判定积木里 Jev 这一块（§7.12）。规则在 `quality/domain/scoring-switch.ts`，值存在 `sqlite-scoring-switch-store`；设置页经 `window.oi.quality.*` 读写，界面布局与文案待 Loom。
 
-- **默认与谁能改。** 新安装与恢复默认时为开。只有 `quality.setScoringEnabled` 能改它，而它只由设置页的用户操作调用；推荐规则、健康检查、`unavailable`、预算与外发同意都不改它。升级保留用户原来的值（§8.4）。
+- **默认与谁能改。** 新安装与恢复默认时为开（与全局默认预设「OCR+版面+Jev」一致，§7.12）。改它的用户操作有两种：设置页的 `quality.setScoringEnabled`，以及选用路线预设时由 `ingest.setRoute` 按预设带不带 Jev 来调用同一处 `scoring-switch` 规则。推荐规则、健康检查、`unavailable`、预算与外发同意都不改它。单独拨这个开关只增删判定列表里的 Jev，不改版面与识别。升级保留用户原来的值（§8.4）。
 - **评分不可用时三选一。** `evaluate-regions` 得到 `unavailable/auth`、`unavailable/quota`，或因外发未同意或被拒而记 `unavailable`（原因码 `consent_required`）时，候选照常标「待评分」，core 发事件 `quality.onScoringUnavailable`（载荷只有原因码，不含 Key、区域图与正文）。同一原因码在应用的一次运行里只发一次。UI 据此给出三项：填 Key（打开面壁服务商的设置）、改用本地（把 Jev 的「本地 / API」改成「本地」，仍受推荐规则第 5 条的自检门槛约束）、关闭评分（调 `setScoringEnabled(false)`）。用户不选就什么都不改。`unavailable/budget` 不发这个事件，按 §7.8 第 5 条处理；`error/*` 也不发。
 - **关闭期间。**
   - `evaluate-regions` 不提交 `evaluate` 作业，直接为每个新候选写 `not-run`（原因码 `disabled`），界面标「未评分」（§7.1「评估状态与界面标记」）。所以 Jev 的上游请求、Jev 科目的 `BudgetGate.reserve`、Jev 能力的 `EgressCheck.check` 都是 0 次。
   - 外发同意：面壁对话框只列当前确实要发往面壁的能力，评分关闭时就只有引擎 B（若选了 API）；「数据去向」列表同样不列 Jev。
-  - 正文与表格按 §7.1「没有有效分数时的采用」；公式按 §7.5，其中 arXiv 的「源码核对」只在这时出现。
-  - 云 OCR 照常请求，照常经外发同意与预算（§7.7、§7.8），结果标「未评分」。
-  - 不补救，也没有手动补救的命令（PRD AC-05）。
+  - 识别照常（Wisdom 2026-10-30 22:23；22:45 起由路线配置表达，不再另设一套开关）：关掉 Jev 不增删识别积木，路线里已有的 OCR（引擎 A 的识别阶段、引擎 B、云 OCR）与多模态继续识别，结果都标「未评分」。要「只开 OCR」「只开多模态」或「两者都开」，改的是路线的识别列表（§7.12，PRD AC-88、AC-91）。
+    - 识别列表不含引擎 A 的识别阶段、引擎 B、云 OCR 时，这些请求为 0。版面是否运行由版面积木决定，与识别列表无关；版面关着时多模态收整页。可信文字层页上的正文仍用文字层。
+    - 多模态作为识别来源时不是补救：由 `repair` 的 `recognizeRegions` 发请求，范围由 `repair/domain/recognition-scope.ts` 决定——公式区域、表格区域、文字层不是 `trusted` 的页上的正文区域，图区域不发。只发区域裁片，不上传原 PDF。
+    - 多模态与云 OCR 照常经外发同意与预算（§7.0 第 6 条、§7.7、§7.8）。多模态识别的预算科目是「多模态识别」，与「多模态补救」分开；该服务商此前只为补救同意过时，第一次识别请求前按 PRD AC-61 ⑦b 追加告知一次。没有配置多模态服务或云 OCR 时不发请求，界面提示可以去配置（待 Loom）。
+  - 正文与表格按 §7.1「没有有效分数时的采用」；公式按 §7.5，其中「源码核对」与程序核对通过的 `checked-latex` 只在这时出现。
+  - 没有自动补救（PRD AC-05）：没有批量、没有定时，核对失败也不触发请求。
+  - **手动「重新识别」（Wisdom 2026-10-30 22:23，待 Wisdom 确认；PRD AC-90）。** 用户可以对单个区域（公式、表格或正文区域）手动发起「重新识别」，换一个来源，入口在阅读页（布局待 Loom）。命令是 `ingest.rerecognizeRegion`。
+    - 可选来源：当前路线的识别列表里已启用、已配置、能力里声明支持区域级识别、且不是该区域当前所用来源的那些；选其他来源时返回 `source_not_available`，不发请求。评分开着时返回 `scoring_enabled`。
+    - 每次照常经外发检查与预算预留；被拒时返回原因码（`consent_required` / `budget_exhausted` / `budget_cap_unset`），不发请求。
+    - 结果是一个新候选，记 `not-run/disabled`，标「未评分」，不是补救。公式按 §7.5 第 5 步核对：通过时这个区域改用它；没通过时显示保持原样，新候选留在「对比」里。正文与表格区域直接改用新候选。
+    - 用户的选择只作用于这一个区域，优先于 §7.1 的来源优先级，记在新的采用版本里；翻译只在 `formulaDigest` 或原文占位文本改变的块重新请求（§8.1.1）。重新打开评分并「为本文评分」后，有有效分数的区域按 §7.1、§7.5 重新选，手动选择不再起作用。
   - 关闭之前已有的评估记录不改写；已核验的仍是已核验，「待评分」的在关闭期间不补评。
   - 切换只影响之后提交的评估；在途的 `evaluate` 作业按原设置完成，结果照常写入。
 - **重新打开。** 新产生的识别候选照常评分（「新」按候选算：旧文献新解析出的页也算新候选）。`not-run/disabled` 的候选不自动补评：`reevaluate-pending` 与 `resume-ingest` 都不选它们，应用重启也不补。用户在某篇文献上点「为本文评分」时调 `ingest.scoreDocument`：只对这篇的 `not-run/disabled` 候选提交评估，照常经外发同意与预算；结果写新记录，再由 `ingest-policy` 重算公式决定与采用，显示决定变化时生成新的采用版本。开关关着时它返回 `scoring_disabled`，不发请求。开着时出错或不可用的「待评分」候选照旧在评分恢复后自动补评。
@@ -1018,19 +1032,31 @@ M0 的开发机验证（结果写入差异清单 §7，PRD §8 M0 退出条件�
 
 ### 7.5 公式候选优先级链（Q1、Q4）
 
-`formula/domain/formula-policy.ts` 按以下顺序为每个公式区域选择要采用的候选，并给出显示决定。每一步的候选都必须已有评估记录（§7.1「全路径评估记录」）。显示决定只有三种（`contracts/src/formula.ts`）：`verified-latex`（已核验 LaTeX）、`source-checked-latex`（源码核对，只来自第 4 步）、`source-crop`（原页裁图）。
+`formula/domain/formula-policy.ts` 按以下顺序为每个公式区域选择要采用的候选，并给出显示决定。每一步的候选都必须已有评估记录（§7.1「全路径评估记录」）。显示决定只有五种（`contracts/src/formula.ts`）：`verified-latex`（已核验 LaTeX）、`source-checked-latex`（源码核对，只来自第 4 步）、`checked-latex`（程序核对通过、未评分，只来自第 5 步）、`source-crop`（原页裁图）、`page-placeholder`（占位框，只来自第 6 步的降级）。
 
 1. **arXiv 源码候选**：对齐通过（§7.6），程序核对（位置、字符集、编号、可渲染）通过，且有效分数（`scored`、阈值已定标、不是 `fake/`）不低于阈值 → `verified-latex`（来源：arXiv 源码）。
 2. **识别候选**（引擎 A、引擎 B、云 OCR）：程序核对通过且有效分数不低于阈值 → `verified-latex`。多个候选都通过时按（评分、来源权重）排序，来源权重是配置值，由基准定标。
 3. **补救**：选出的候选有效低分，且补救开启、预算可用 → 多模态补救；补救结果重新核对、重新评分，通过则 `verified-latex`。
-4. **源码核对（Wisdom 2026-10-30 22:15）**：前三步没有得到 `verified-latex`，且 arXiv 源码候选的评估记录是 `not-run/disabled`（即它是在评分关闭期间产生的，§7.4「评分开关」），整篇词覆盖率 ≥ 0.85，逐公式核对（位置、字符集、编号、可渲染）全部通过 → `source-checked-latex`：阅读页与译文显示 LaTeX，标记「源码核对」（暂定，样式待 Loom），不算已核验。任一检查不过时按 §7.6 的回落进入第 5 步。识别候选（引擎 A、引擎 B、云 OCR、补救）没有这一步。
-5. **其余情况** → `source-crop`：显示原页裁图，保留全部候选供查看与复制；按评估记录标「待评分」或「未评分」（§7.1「评估状态与界面标记」）。
+4. **源码核对（Wisdom 2026-10-30 22:15）**：前三步没有得到 `verified-latex`，且 arXiv 源码候选的评估记录是 `not-run/disabled`（即它是在评分关闭期间产生的，§7.4「评分开关」），整篇词覆盖率 ≥ 0.85，逐公式核对（位置、字符集、编号、可渲染）全部通过 → `source-checked-latex`：阅读页与译文显示 LaTeX，标记「源码核对」（暂定，样式待 Loom），不算已核验。任一检查不过时按 §7.6 的回落进入第 5 步。识别候选（引擎 A、引擎 B、云 OCR、多模态、补救）没有这一步。
+5. **程序核对（Wisdom 2026-10-30 22:23）**：前四步没有得到 LaTeX，且识别候选（引擎 A、引擎 B、云 OCR、多模态识别、手动重新识别）的评估记录是 `not-run/disabled` 时，`formula/domain/program-check.ts` 对每个候选做五项核对，全部通过 → `checked-latex`：阅读页与译文显示 LaTeX，标记「未评分」（样式待 Loom），不算已核验。多个来源都通过时按 §7.1 的来源优先级（`source-priority`）选 1 个；用户对这个区域手动「重新识别」且新候选通过时用新候选（§7.4「评分开关」）。五项：
+   - 可渲染：用 `KATEX_SAFE_OPTIONS` 渲染不抛错（§7.6）；
+   - 字符集：`charset-check`；
+   - 编号：`equation-number`，候选里的编号与版面上该公式右侧的编号一致，版面没有编号时候选也不能带；
+   - 位置：候选所属区域是版面公式区域，行内 / 行间与版面一致；
+   - 一致性：`formula/domain/context-consistency.ts` 把候选里的标识符、数字与运算符，与该区域的文字层字形比对（文字层是 `trusted` 或 `untrusted` 都可用，`untrusted` 只用来比对、不用来显示），没有文字层字形时与前后相邻正文块里出现的符号比对；重合比例的阈值是这个文件里的一个配置值，M4 用基准集定标（[backlog](./docs/backlog.md)）。两者都没有可比对的内容时判为不通过。
 
-arXiv 候选不因「来自源码」而免评分或免核对：源码版本可能与 PDF 不一致，对齐也可能错位。arXiv 候选低分时直接进入第 2 步；补救的对象是区域，不是某个来源。第 4 步只在没有分数可用时（评分被用户关闭）免掉 Jev 这一项，程序核对一项不少，结果也不算已核验（RULES N-17）。
+   任一项不过 → 第 6 步。正文与表格区域没有这一步（PRD AC-86）。
+6. **其余情况** → `source-crop`：显示原页裁图，保留全部候选供查看与复制；按评估记录标「待评分」或「未评分」（§7.1「评估状态与界面标记」）。**裁图拿不到**（页面图渲染失败、区域框无效、裁图资产缺失或读取失败）时，`document/domain/display-fallback.ts` 把它降为 `page-placeholder`：显示占位框，文字暂定「图见原文第 N 页（点击查看）」，点击后左侧原文跳到第 N 页并定位该区域（布局与文案待 Loom）。
+
+**降级链（Wisdom 2026-10-30 22:23）。** LaTeX（第 1–5 步）→ 原页裁图 → 占位框。行内公式、行间公式、图、表都按这条链显示，不留空白；图和表本来就显示裁图，从裁图这一级开始。评分开、关都适用：评分开着时只是第 4、5 步不出现（PRD AC-89）。
+
+arXiv 候选不因「来自源码」而免评分或免核对：源码版本可能与 PDF 不一致，对齐也可能错位。arXiv 候选低分时直接进入第 2 步；补救的对象是区域，不是某个来源。第 4、5 步只在没有分数可用时（评分被用户关闭）免掉 Jev 这一项，程序核对一项不少，结果也不算已核验（RULES N-17）。
+
+**已知代价（Wisdom 2026-10-30 22:23）。** 程序核对挡不住「能渲染但错」的公式：上下标、符号、积分上下限识别错了，但仍能渲染，编号与位置也对得上，与文字层的字形重合也可能够阈值。这类公式会以 `checked-latex` 显示、标「未评分」。这是评分关闭方案接受的代价：它们不算已核验，QM-03 单独报告这一类与真值等价的比例，PRD AC-89 ⑤ 用夹具记录这个行为；用户能做的是对照左侧原文、在「对比」里看裁图，或者打开评分后「为本文评分」。
 
 **「源码核对」算不算已核验：唯一决定点。** Wisdom 还在定这一点（2026-10-30 22:15）。结论只由 `formula/domain/source-check-standing.ts` 一处给出（纯函数，输入是显示决定，输出 `verified` 或 `source_checked`），当前为 `source_checked`，即不算。读这个结论的地方：`getBlocks` 给每个公式的标记（§8.1.1）、`quality/domain/scoring-coverage.ts` 的已核验判定、质量指标的分类（PRD QM-03、QM-04、QM-12）、问答上下文的标注（§7.3）；它们都不自己判断。存下来的显示决定始终是 `source-checked-latex`，翻转时不改写记录，也不改变 `formulaDigest`（写法都是 LaTeX，§8.1.1），所以不触发重译（PRD AC-57 ⑨）。真正翻转需要 Wisdom 的决定，并在同一个 PR 修改 RULES N-17 与 PRD AC-04、AC-87。
 
-**重新打开评分之后。** 已有的 `source-checked-latex` 不自动改写：它的候选仍是 `not-run/disabled`，按 §7.4 不自动补评。用户「为本文评分」后，这些候选得到 Jev 的记录，`formula-policy` 重新计算：有效分数不低于阈值的变为 `verified-latex`；其余（低分、`error`、`unavailable`、未定标）不再满足第 4 步的条件，回到第 2、3、5 步。
+**重新打开评分之后。** 已有的 `source-checked-latex` 与 `checked-latex` 不自动改写：它们的候选仍是 `not-run/disabled`，按 §7.4 不自动补评。用户「为本文评分」后，这些候选得到 Jev 的记录，`formula-policy` 重新计算：有效分数不低于阈值的变为 `verified-latex`；其余（低分、`error`、`unavailable`、未定标）不再满足第 4、5 步的条件，回到第 2、3、6 步。
 
 ### 7.6 公式来源模块 `formula-source`（Q4）
 
@@ -1065,7 +1091,7 @@ flowchart LR
 
 ### 7.7 云 OCR 识别来源（Q1）
 
-用户可以配置第三方云 OCR（自带密钥）作为额外的识别来源。它本身就是 API；按 §7.0，它仍是可选的额外来源，不替代引擎 A 的 OCR 兜底（后者的默认来源见 §7.0 表）。输入是版面区域裁片（版面来自引擎 A 或文字层基础档），输出是文字候选；坐标沿用我们自己的版面区域，不依赖服务商返回的坐标做定位。候选与引擎 A / B 一样进入统一文档模型，并且必须有评估记录：评分开着时送 Jev 评分，关闭时记 `not-run/disabled`；没有有效分数时按 §7.1「没有有效分数时的采用」的固定来源优先级采用，不算已核验。评分关闭期间云 OCR 照常请求，照常经外发同意与预算（§7.4「评分开关」）。
+用户可以配置第三方云 OCR（自带密钥）作为额外的识别来源。它本身就是 API；按 §7.0，它仍是可选的额外来源，不替代引擎 A 的 OCR 兜底（后者的默认来源见 §7.0 表）。输入是版面区域裁片（版面来自引擎 A 或文字层基础档），输出是文字候选；坐标沿用我们自己的版面区域，不依赖服务商返回的坐标做定位。候选与引擎 A / B 一样进入统一文档模型，并且必须有评估记录：评分开着时送 Jev 评分，关闭时记 `not-run/disabled`；没有有效分数时按 §7.1「没有有效分数时的采用」的来源优先级采用，不算已核验；公式还要先过 §7.5 的程序核对，不过则走裁图再到占位框。它是识别积木的一种实现（§7.12）：当前路线的识别列表含云 OCR 时才请求，评分开、关都一样，照常经外发同意与预算（§7.4「评分开关」）。
 
 | 服务 | 官方文档（2026-10-30 查阅） | 已从文档确认 | 未核实 |
 | --- | --- | --- | --- |
@@ -1082,13 +1108,13 @@ flowchart LR
 
 API 优先之后，Jev 与引擎 B 是默认就会出网的路径，单价又都未核实（差异清单 §7）。所以预算不能只管补救：
 
-1. **范围。** 每个发往外部服务商的模型调用，发出前都经 `BudgetGate.reserve`，预留成功才发：Jev 首评与每次重试、引擎 B 文档解析、引擎 A 的托管 API（核实通过后）、云 OCR、多模态补救、翻译（含 Q11 借用多模态）、问答、TTS、ASR。不在范围内的只有两类：目的主机是本机回环地址的「本地」服务（不花钱），以及 arXiv 源码下载（免费，由 `formula-source/domain/fetch-policy.ts` 限流）。用户关闭质量评分期间 Jev 不发请求，Jev 科目也就没有预留；其他科目不受影响（§7.4「评分开关」）。
+1. **范围。** 每个发往外部服务商的模型调用，发出前都经 `BudgetGate.reserve`，预留成功才发：Jev 首评与每次重试、引擎 B 文档解析、引擎 A 的托管 API（核实通过后）、云 OCR、多模态识别与多模态补救、翻译（含 Q11 借用多模态）、问答、TTS、ASR。版面走付费 API 时同样预留；自建远程 worker 上的本地推理不记金额，但目的主机不是回环时仍经外发同意（§7.12）。不在范围内的只有两类：目的主机是本机回环地址的「本地」服务（不花钱），以及 arXiv 源码下载（免费，由 `formula-source/domain/fetch-policy.ts` 限流）。用户关闭质量评分期间 Jev 不发请求，Jev 科目也就没有预留；其他科目不受影响（§7.4「评分开关」）。按区块识别时一页会有多次预留，一次一块（§7.12「代价」）。
 2. **科目。** 账本按「服务商 + 能力」记用量。Q11 借用多模态翻译记在多模态科目（PRD AC-29）。
 3. **两种上限口径。** 单价已知时按金额：某科目或总额的「已预留 + 已结算」达到上限即拒绝。单价未知时按用户设置的请求数、页数或 token 上限；界面上的金额仍显示「未知」，不显示 0，未知金额也不加进金额合计，所以金额上限管不到这些调用，由次数类上限管。
 4. **未设上限。** 受限预算模式下，单价未知、又没有为该科目设次数类上限时，`reserve` 返回 `budget_cap_unset`，请求为 0，界面提示去填单价或上限。「不设金额上限」模式下预留照常记录（用于显示用量），不因金额拒绝。**默认值（Wisdom 2026-10-30 20:57）：** 新安装与恢复默认时是受限预算模式；每个付费科目带一个保守的占位次数类上限（按该科目的计费单位取请求数、页数或 token），所以开箱既不会出现 `budget_cap_unset`，也不会不设上限地发出付费请求。占位值只在 `budget/domain/default-caps.ts` 一处，界面标「占位」；具体数字随 M1 的 `budget` 实现 PR 提出、经 Wisdom 批准后合入，M0 实测后定标，实现者不自行定数字（RULES N-14）。升级不改用户已选的模式与上限。
 5. **被拒之后。** 各能力的结果：
    - Jev：`unavailable`（原因码 `budget`），标「待评分」，不触发补救（PRD AC-05），不改用别的服务商；预算恢复后由 `ingest` 的 `resume-ingest` 补评。
-   - 引擎 B、引擎 A 托管 API、云 OCR：该来源这一页不产生候选，记原因码 `budget`；其他来源照常。
+   - 引擎 B、引擎 A 托管 API、云 OCR、多模态识别：该来源在被拒的这些区域不产生候选，记原因码 `budget`；其他来源照常。
    - 补救：不补救，保留原图与候选，标待复核（§7.1）。
    - 翻译：块进入 `waiting-budget`，seam 返回 `budget_exhausted`（§2.6）。
    - 问答、TTS、ASR：返回 `budget_exhausted`，不发请求。
@@ -1196,7 +1222,7 @@ export default defineVendor({
 
 #### 7.9.5 规则
 
-1. **鉴权。** 适配器不读密钥。鉴权方式（`auth/<scheme>.ts`）每次请求向 main 要请求头的值：`ProviderAuthorizer.authorize({ vendorId, host, slot })`；main 核对 `host` 在该服务商的 `allowedHosts` 里才返回（§1）。Key 只放请求头，不放 URL：Gemini 用 `x-goog-api-key` 请求头，不用 `?key=` 查询参数。唯一的例外是百度 OCR 的 `access_token`（官方文档给的是查询参数写法）：用 API Key 与 Secret Key 换取 token 的请求由 main 发出，这两个值不出 main；token 只缓存在 main 的内存里，到期（`expires_in`）前重新换取；带 token 的完整 URL 不进日志，`platform-node/src/http/redact.ts` 对查询参数 `access_token`、`key`、`client_id`、`client_secret` 一律打码。
+1. **鉴权。** 适配器不读密钥。鉴权方式（`auth/<scheme>.ts`）每次请求向 main 要请求头的值：`ProviderAuthorizer.authorize({ vendorId, host, slot })`；main 核对 `host` 在该服务商的 `allowedHosts` 里才返回（§1）。Key 只放请求头，不放 URL：Gemini 用 `x-goog-api-key` 请求头，不用 `?key=` 查询参数。唯一的例外是百度 OCR 的 `access_token`（官方文档给的是查询参数写法）：用 API Key 与 Secret Key 换取 token 的请求由 main 发出，这两个值不出 main；token 只缓存在 main 的内存里，到期（`expires_in`）前重新换取；带 token 的完整 URL 不进日志，`platform-node/src/http/redact.ts` 对查询参数 `access_token`、`key`、`client_id`、`client_secret` 一律打码。API Key 与账号 token 是同一端口的两种实现（Wisdom 2026-10-30 22:44）：已有的 `bearer`、`x-api-key`、`x-goog-api-key`、`baidu-access-token` 属于 API Key 一类；预留 `account-token`，用账号会话换来的访问令牌填同一个请求头，格式适配器与 core 不区分它和 API Key。v2 不实现账号系统。`contracts/src/account-session.ts` 的 `AccountSession`（取令牌、刷新）由装配根注入空实现，调用返回 `not_in_v2`。订阅、按账号计费、账号系统与自有托管服务端不在 v2（PRD §3.2），只留这个端口。
 2. **错误。** 每种格式的 `errors.ts` 把 HTTP 状态与厂商错误体映射为 `ProviderFailure`，只在这一处映射；规范化见 §7.3。重试只在本次预留与额度信封之内（§7.8）；不支持幂等的请求超时后不重发（PRD AC-07）。
 3. **用量。** 响应里的用量（token、页数、次数）交给 `BudgetGate.settle`；服务商没有返回的用量记「未知」，不估成 0。
 4. **预留与外发检查。** 传输层的 `send` 必须带 `Reservation` 参数，缺了编译不过；预留由用例先做，因为被拒之后怎么降级是用例的事（§7.8 第 5 条）。传输层在连接之前调用 `EgressCheck`；结果不是 `allow` 时不连接，并释放这次预留。
@@ -1375,6 +1401,38 @@ type ReadingOrderResult = Readonly<{
 
 **隔离**：v2 仓库、依赖树与 worker 环境中 BabelDOC 与 PyMuPDF 出现 0 次（G10）；夹具、测试与注释不得摘录它的代码。参考它的功能清单时只引用 README 选项名与目录名，并注明查阅的提交。
 
+### 7.12 处理路线：独立积木与声明式组合（Wisdom 2026-10-30 22:41、22:44、22:45）
+
+22:45 取代「把 A / B / C 写成三套固定路线」。处理一篇文献用到的能力分成四类积木，每类一个端口，本地、第三方 API、以后的自有托管服务都是该端口的实现。增加一种实现不改 core，也不改其他积木。一条路线是这些积木的一份配置；换路线只改配置。积木之间只通过统一文档模型与对方的 seam 交换数据，禁止在 core 或某个积木里写死另一个积木（RULES N-20）。界面只定行为，布局与文案待 Loom。
+
+| 类 | 端口 | 现在的实现 | 开关 |
+| --- | --- | --- | --- |
+| 版面 | `parsing` 的 `LayoutEngine` | PP-DocLayout（标准档 V3，高质量档 plus-L 仍按 Q10）。本地与自建远程 worker 是同一份代码、同一协议（HTTP + SSE，§10）。查阅范围内没有已确认的 PP-DocLayout 托管版面 API：百度 AI Studio 的 PaddleOCR API 能否返回版面区域仍是「未核实」（§7.0），核实通过之前不把它写成版面服务商，也不登记虚构的托管服务商。以后换别的版面模型，只加一个 `LayoutEngine` 实现 | 可以关掉。关着时不切块，识别积木收整页；阅读顺序改用文字层基础档（§7.10），文字层不可用时用识别结果自带的顺序并标明来源，`reading_order` 仍做校验 |
+| 识别来源 | 各来源自己的端口（`parse` 作业、`OcrProvider`、`MultimodalProvider`、`formula-source`） | 多模态、云 OCR、引擎 A 的识别阶段（公式、OCR 兜底、表格）、引擎 B、arXiv 源码。arXiv 只在文献有编号时运行，四个预设都带上它 | 每个来源单独列入或移出路线。可信文字层页上的正文仍用文字层，不交给这些来源 |
+| 结果判定 | `quality` 的评估端口，以及 `formula` 的 `program-check`、`source-check-standing` | Jev、程序核对（§7.5 第 5 步）、源码核对（§7.5 第 4 步） | Jev 的开关就是 §7.4 的评分开关，默认开。关掉后新候选记 `not-run/disabled`，界面标「未评分」。程序核对在没有有效分数时决定公式能否显示 LaTeX。源码核对只给通过覆盖率与逐公式核对的 arXiv 候选，徽标暂定「源码核对」，不算已核验 |
+| 兜底 | `document` 的 `display-fallback` | 原页裁图，再是占位框「图见原文第 N 页（点击查看）」，点击跳到左侧原文该页（§7.5 第 6 步） | 链本身不去掉。替换是换这个端口的实现，不是在别的积木里另写一套降级 |
+
+**每个区块带坐标。** 版面开着时，PP-DocLayout 先切出正文、行内公式、行间公式、图、表并给出阅读顺序，再把每个区块裁成小图交给识别来源，也交给翻译（翻译仍按 §8.1.1 的块，不整页送）。识别不准或程序核对没过，就退到这个区块的裁图，再退到占位框。行内公式、行间公式、图、表都走这条链。
+
+**预设。** 定义、默认是哪一个、以及「这份配置对应哪个预设」的判断，只在 `ingest/domain/route-presets.ts`。内置四个，用户也可以在这四类的取值范围内改成自定义组合：
+
+| id | 名称 | 版面 | 识别 | 判定 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| `multimodal-layout` | 多模态+版面 | PP-DocLayout，部署暂定本地 | 多模态（按区块） | 程序核对；不含 Jev | 22:41 里「A 路线」要采用的组合。在本结构里它是一个预设，不是写死的路线 |
+| `multimodal-only` | 仅多模态 | 关 | 多模态（整页） | 程序核对；不含 Jev | 版面关掉的组合 |
+| `ocr-layout` | OCR+版面 | PP-DocLayout，部署暂定本地 | 引擎 A 的识别阶段；引擎 B 作对比 | 程序核对；不含 Jev | 关掉 Jev 之后，全局默认预设剩下的部分 |
+| `ocr-layout-jev` | OCR+版面+Jev | 同上 | 同上 | Jev；没有分数时仍用程序核对与源码核对 | 现有方案。**暂定为全局默认**，等 M0 同一批论文的对比之后由 Wisdom 改定 |
+
+云 OCR 不在任何一个预设里默认打开（它是额外的付费来源，用户配好后加入识别列表）。四个预设都含 arXiv 源码。新安装与恢复默认用 `ocr-layout-jev`，升级保留用户的路线。选预设是用户操作：预设含 Jev 就经 `scoring-switch` 把评分开关打开，不含就把开关关掉（§7.4）。只拨评分开关则只增删 Jev，版面与识别不动，路线变成自定义组合。
+
+**部署。** 每个积木单独选本地、第三方 API 或自建远程。版面的远程在托管 API 核实之前只有自建远程 worker。PP-DocLayout 在 8 GB 内存、无独显、只用 CPU 的机器上的峰值内存与单页耗时**未核实**，不写成已验证；M0 加一项实测（PRD §8）。测不到这样的机器就保持「未核实」。
+
+**代价。** 版面开着且按区块识别时，一页的外部调用从「一页一次」变成「一个区块一次」，常见是几次到十几次（按该页区块数，不是固定次数）。每一次都经预算闸门与外发同意（§7.8、§7.0 第 6 条）。版面切错会让后面的识别和翻译跟着错：`reading_order` 负责校验和兜底（§7.10）；校验不过的区域按兜底链退到该区块的裁图，再退到占位框。
+
+**已处理的文献与按篇切换（待 Wisdom 确认）。** 规格先按最保守的写：切换路线不改写已有采用版本与译文；之后新解析的页，以及用户明确「按新路线重跑」的文献，才用新路线。是否自动重跑、能否按篇选择路线，见 PRD §9 的待定项，不在这次写成已决定。
+
+**统一接口与账号（22:44）。** 本地 worker、第三方 API、以后的自有托管服务实现同一个能力端口。鉴权见 §7.9.5：API Key 与账号 token 都走 `ProviderAuthorizer`。订阅、计费、账号系统、托管服务端不进 v2，只预留 `AccountSession`。
+
 ## 8. 数据模型与存储
 
 ### 8.1 权威数据
@@ -1407,8 +1465,8 @@ type StoredTranslationBlock = Readonly<{
   version: number;                       // 同一区块的译文版本号，重译 +1
   status: 'success' | 'failed' | 'retranslating';
   failureKind: 'check_failed' | 'network' | 'model_error' | null; // 规格补充；只有 failed 才有值，供「重译未成功」的原因提示
-  markdown: string | null;               // 只有 success 才有值；只含写成 LaTeX 的公式（verified-latex、source-checked-latex，§7.5），不含裁图公式
-  crops: readonly FormulaCropRef[];      // 架构评审 P0-4：裁图（source-crop）公式在 markdown 中的位置；没有时为空数组
+  markdown: string | null;               // 只有 success 才有值；只含写成 LaTeX 的公式（verified-latex、source-checked-latex、checked-latex，§7.5），不含裁图与占位框
+  crops: readonly FormulaCropRef[];      // 架构评审 P0-4：不写进 markdown 的公式（source-crop、page-placeholder）在块中的位置；没有时为空数组
   formatVersion: 'oi-md/1';
   model: Readonly<{ providerId: string; modelId: string }>;
   targetLang: 'zh-CN';                   // 规格补充
@@ -1421,7 +1479,9 @@ type FormulaCropRef = Readonly<{
   fragmentId: string;                    // 受保护片段表里的公式片段
   at: number;                            // 在 markdown 中的插入位置（UTF-16 偏移，转义与还原完成后计算）
   display: 'inline' | 'block';
-  assetId: AssetId;                      // 当前采用版本的裁图；内容哈希已计入 formulaDigest
+  kind: 'crop' | 'page_link';            // crop = 原页裁图；page_link = 占位框（§7.5 第 6 步）
+  assetId: AssetId | null;               // kind = crop 时为当前采用版本的裁图；内容哈希已计入 formulaDigest
+  page: number | null;                   // kind = page_link 时为原文页码
 }>;
 ```
 
@@ -1429,17 +1489,17 @@ type FormulaCropRef = Readonly<{
 
 **未核验公式的裁图（架构评审 P0-4，Wisdom 2026-10-30 19:57 批准；在建立 `contracts/src/translation.ts` 之前定死）**：
 
-- `markdown` 字符串里只出现写成 LaTeX 的公式的 `$…$` / `$$…$$`：已核验公式（显示决定 `verified-latex`），以及评分关闭时的「源码核对」公式（`source-checked-latex`，§7.5；Wisdom 2026-10-30 22:15）。其余未核验公式（`source-crop`）不把候选 LaTeX 写进去冒充已核验，也不在 Markdown 里发明图片或占位语法；`oi-md/1` 仍然不含图片与 HTML。`markdown` 本身不区分这两种 LaTeX 公式，区分由 `getBlocks` 的标记给出（「规则」末条）。
-- 片段表保存每个公式片段的显示决定，`source-crop` 时带当前采用版本的裁图 `assetId`。裁图在块里的位置记在记录的 `crops` 字段（`at` 是 `markdown` 中的插入位置）。
-- `getBlocks` 在 core 里生成每块的 `MdDocument`：先经 `markdown` 的 seam 解析 `markdown`，再在每个 `at` 处插入 `MdFormulaCrop` 节点（`{ type: 'formula_crop', display, assetId, fragmentId }`，源码区间是 `at` 处的零长度区间）。已核验公式是普通的 math 节点。reader 只渲染这个文档，裁图经 ui-kit 的裁图组件与 `oi-asset://` 显示；行内裁图的尺寸与基线对齐等视觉由 Loom 定（DESIGN.md 待 Loom 产出）。
+- `markdown` 字符串里只出现写成 LaTeX 的公式的 `$…$` / `$$…$$`：已核验公式（`verified-latex`），评分关闭时的「源码核对」（`source-checked-latex`，Wisdom 2026-10-30 22:15），以及程序核对通过的 `checked-latex`（Wisdom 2026-10-30 22:23）。其余情况（`source-crop`、`page-placeholder`）不把候选 LaTeX 写进去冒充已核验，也不在 Markdown 里发明图片或占位语法；`oi-md/1` 仍然不含图片与 HTML。`markdown` 本身不区分这三种 LaTeX 公式，区分由 `getBlocks` 的标记给出（「规则」末条）。
+- 片段表保存每个公式片段的显示决定。`source-crop` 带裁图 `assetId`；`page-placeholder` 带页码。位置记在记录的 `crops` 字段（`at` 是 `markdown` 中的插入位置）。
+- `getBlocks` 在 core 里生成每块的 `MdDocument`：先经 `markdown` 的 seam 解析 `markdown`，再在每个 `at` 处插入 `MdFormulaCrop` 节点。`kind = crop` 时是 `{ type: 'formula_crop', display, assetId, fragmentId }`；`kind = page_link` 时是 `{ type: 'formula_crop', display, kind: 'page_link', page, fragmentId }`，界面文字暂定「图见原文第 N 页（点击查看）」，点击后左侧原文跳到该页（样式待 Loom）。源码区间是 `at` 处的零长度区间。写成 LaTeX 的公式是普通的 math 节点。reader 只渲染这个文档，裁图经 ui-kit 的裁图组件与 `oi-asset://` 显示；行内裁图的尺寸与基线对齐等视觉由 Loom 定。
 - 这是 `oi-md/1` 的一部分，不是以后的方言升级：缓存键里的 `formatVersion` 不因此改变。`formulaDigest` 继续覆盖显示决定与裁图内容哈希（「缓存键」一节）。
 
 **写入流程**（全部在 `translation` core，顺序固定）：
 
-1. 抽取：原文区块 → 占位文本（`⟦fN⟧`）+ 受保护片段表（公式、编号、引用；每个公式片段带当前采用版本的显示决定，`source-crop` 时带裁图 `assetId`，见「缓存键」）+ 公式决定摘要 `formulaDigest`（v1 审查 §4.9）。
+1. 抽取：原文区块 → 占位文本（`⟦fN⟧`）+ 受保护片段表（公式、编号、引用；每个公式片段带当前采用版本的显示决定，`source-crop` 时带裁图 `assetId`，`page-placeholder` 时带页码，见「缓存键」）+ 公式决定摘要 `formulaDigest`（v1 审查 §4.9）。
 2. 完整性校验 `integrity-check.ts`：占位符的数量、顺序、对应关系与原文 100% 一致，数字与引用一致（AC-03）。不过 → 写一条 `failed` 记录，`failureKind = 'check_failed'`，`markdown` 为 `null`，`check.codes` 记原因。请求本身失败（网络、超时）记 `network`，服务商返回错误或无法解析的输出记 `model_error`，同样不写 `markdown`。
-3. 还原 `markdown-restore.ts`：先用 CommonMark 的反斜杠转义处理模型文字中的 `$`、`<`、`&`、`[[`，以及行首的 `#`、`>`、`-`、`+`、`*`、`数字.` / `数字)`（模型生成的 HTML 因此只会显示为文字，块内文字也不会被解析成标题、列表或引用），再还原占位符：`verified-latex` 与 `source-checked-latex` 片段还原为片段表里的 LaTeX，行内写 `$…$`，行间写独占一行的 `$$…$$`；`source-crop` 片段不写任何字符，只在 `crops` 里记下 `fragmentId`、行内 / 行间、`assetId` 与插入位置 `at`（整串拼好之后计算）。顺序不能反：先还原再转义会把公式里的符号也转义掉。
-4. 复核：经 `markdown` 的 seam 调 `extractMath(markdown)`，得到的公式序列必须与片段表中写成 LaTeX 的片段（`verified-latex`、`source-checked-latex`）逐个相等（`source-crop` 片段的 LaTeX 出现 0 次）；`crops` 的个数等于 `source-crop` 片段数，`at` 按片段顺序不减、在 `[0, markdown.length]` 内，且落在可插入行内节点的位置（不在代码、链接目标或公式内部）；`renderMarkdown(markdown, 'translation')` 不得出现 `html_blocked` 节点。任一不过 → `failed`（`math_mismatch` / `crop_position` / `html_leak`）。
+3. 还原 `markdown-restore.ts`：先用 CommonMark 的反斜杠转义处理模型文字中的 `$`、`<`、`&`、`[[`，以及行首的 `#`、`>`、`-`、`+`、`*`、`数字.` / `数字)`（模型生成的 HTML 因此只会显示为文字，块内文字也不会被解析成标题、列表或引用），再还原占位符：`verified-latex`、`source-checked-latex` 与 `checked-latex` 片段还原为片段表里的 LaTeX，行内写 `$…$`，行间写独占一行的 `$$…$$`；`source-crop` 与 `page-placeholder` 片段不写任何字符，只在 `crops` 里记下 `fragmentId`、行内 / 行间、`kind`、`assetId` 或页码，以及插入位置 `at`（整串拼好之后计算）。顺序不能反：先还原再转义会把公式里的符号也转义掉。
+4. 复核：经 `markdown` 的 seam 调 `extractMath(markdown)`，得到的公式序列必须与片段表中写成 LaTeX 的片段（`verified-latex`、`source-checked-latex`、`checked-latex`）逐个相等（`source-crop` 与 `page-placeholder` 片段的 LaTeX 出现 0 次）；`crops` 的个数等于这两类片段数，`at` 按片段顺序不减、在 `[0, markdown.length]` 内，且落在可插入行内节点的位置（不在代码、链接目标或公式内部）；`renderMarkdown(markdown, 'translation')` 不得出现 `html_blocked` 节点。任一不过 → `failed`（`math_mismatch` / `crop_position` / `html_leak`）。
 5. 通过 → `success`，写入 `markdown`，`check.result = 'passed'`。存储与读出逐字节一致（AC-48）。
 
 **状态与显示版本**（`block-status.ts`、`adopted-version.ts`）：
@@ -1471,10 +1531,10 @@ type FormulaCropRef = Readonly<{
 
 `formulaDigest` = 本块受保护片段按出现顺序规范化后的 SHA-256。每个片段取「还原时实际写进 `markdown` 或决定显示方式」的全部内容：
 
-- 公式片段：行内 / 行间；写法（`latex` 或 `crop`，由当前采用版本的显示决定得出：`verified-latex` 与 `source-checked-latex` 都是 `latex`，`source-crop` 是 `crop`）；`latex` 时为规范化后的 LaTeX 字节，`crop` 时为裁图资产的内容哈希。
+- 公式片段：行内 / 行间；写法（`latex`、`crop` 或 `page_link`，由当前采用版本的显示决定得出：`verified-latex`、`source-checked-latex` 与 `checked-latex` 都是 `latex`，`source-crop` 是 `crop`，`page-placeholder` 是 `page_link`）；`latex` 时为规范化后的 LaTeX 字节，`crop` 时为裁图资产的内容哈希，`page_link` 时为页码。
 - 编号、引用片段：原文字节。
 - 另含占位协议版本与公式切块版本。
-- **不含** `decisionId`、候选 ID、候选来源、评分与评估器版本、`revisionId`，也不含「是否已核验」（`verified-latex` 与 `source-checked-latex` 之别、`source-check-standing` 的结论）：它们变了而上面各项不变时，写进 `markdown` 的字节不变，放进来只会让重解析白白重译。所以「源码核对」翻转为已核验（§7.5），或用户「为本文评分」后同一 LaTeX 变为 `verified-latex`，都不触发重译（PRD AC-57 ⑨）；从 LaTeX 变为裁图或反过来时写法变了，照常重译。
+- **不含** `decisionId`、候选 ID、候选来源、评分与评估器版本、`revisionId`，也不含「是否已核验」（`verified-latex`、`source-checked-latex` 与 `checked-latex` 之别、`source-check-standing` 的结论）：它们变了而上面各项不变时，写进 `markdown` 的字节不变，放进来只会让重解析白白重译。所以「源码核对」翻转为已核验（§7.5），或用户「为本文评分」后同一 LaTeX 变为 `verified-latex`，都不触发重译（PRD AC-57 ⑨）；从 LaTeX 变为裁图或占位框、或裁图与占位框互变时写法变了，照常重译。
 
 规则：
 
@@ -1484,8 +1544,8 @@ type FormulaCropRef = Readonly<{
 - 读取兜底：`getBlocks` 把记录上的 `formulaDigest` 与当前采用版本算出的摘要比对；不一致时不返回旧正文（该块按 `pending` 显示），并自动排队重译。正常情况下不会触发，触发即记诊断事件。
 - 在途结果：翻译请求按发出时的输入算键；结果回来时该块所属的采用版本已被替换，就只写缓存、不写 `tr_blocks`（与 §8.2「过期任务结果不能覆盖新版本」一致）。
 - 只有 `success` 结果进入可复用缓存；`failed` 不缓存。`retranslateBlock` 不读缓存，一定重新请求，成功后覆盖同键的缓存条目（§7.11，PRD AC-73）。
-- 裁图公式（`source-crop`）在译文中的表示已定（见上文「未核验公式的裁图」）：`markdown` 不含它们，`crops` 记位置，`getBlocks` 生成裁图节点。`crops` 由 `markdown` 与片段表确定，不单独进键。
-- **公式标记（Wisdom 2026-10-30 22:15）**：`getBlocks` 给每块写成 LaTeX 的公式片段一个标记 `verified` 或 `source_checked`（`TranslationBlockView` 的普通数据，按 `fragmentId` 对应），由 `formula/domain/source-check-standing.ts` 的结论在读取时算出，不存进 `tr_blocks`，不进 `markdown`，也不进缓存键。reader 只按标记选徽标（「源码核对」，样式待 Loom），不自己判断。
+- 裁图公式（`source-crop`）与占位框（`page-placeholder`）在译文中的表示已定（见上文）：`markdown` 不含它们，`crops` 记位置与 `kind`，`getBlocks` 生成节点。`crops` 由 `markdown` 与片段表确定，不单独进键。
+- **公式标记（Wisdom 2026-10-30 22:15、22:23）**：`getBlocks` 给每块写成 LaTeX 的公式片段一个标记 `verified`、`source_checked` 或 `unscored`（`TranslationBlockView` 的普通数据，按 `fragmentId` 对应）。`source_checked` 由 `formula/domain/source-check-standing.ts` 的结论在读取时算出；`checked-latex` 固定是 `unscored`。标记不存进 `tr_blocks`，不进 `markdown`，也不进缓存键。reader 只按标记选徽标（「源码核对」或「未评分」，样式待 Loom），不自己判断。
 
 **存储**：SQLite，前缀 `tr_`，只有 `translation` 的 adapters 读写。
 
@@ -1510,7 +1570,7 @@ type FormulaCropRef = Readonly<{
 └─ secrets.bin                  # safeStorage 密文；不入 SQLite、不随导出
 ```
 
-- 表按切片加前缀（`lib_`、`doc_`、`job_`、`fsrc_`、`tr_`、`md_`、`note_`、`qa_`、`voice_`、`set_`、`bud_`、`diag_`；`ingest` 没有表；`wr_` 为 writing 预留），只有拥有该前缀的切片的 adapters 可以读写。跨切片查询走对方的用例，不跨前缀 JOIN。
+- 表按切片加前缀（`lib_`、`doc_`、`job_`、`fsrc_`、`tr_`、`md_`、`note_`、`qa_`、`voice_`、`set_`、`bud_`、`diag_`、`ing_`；`ing_` 只存用户选的路线，不存流水线进度，§7.12；`wr_` 为 writing 预留），只有拥有该前缀的切片的 adapters 可以读写。跨切片查询走对方的用例，不跨前缀 JOIN。
 - 用户的 `.md` 文件与笔记库**不复制**进 `<userData>`：`md_` 表只存最近打开列表与已登记的外部图片资产（绝对路径只在本机，§4.5.5）；`assets/` 不保存笔记库图片的副本，`oi-asset://` 按登记的路径实时读取并重新做库内检查。
 - 迁移文件放在各切片 `migrations/`，运行器按（切片, 版本号）排序执行并记录在 `schema_migrations`；**两个切片的迁移永远不会改同一个文件**。
 - 写入顺序：资产写暂存 → 校验摘要 → 事务内写引用 → 提交。失败不留半份文献。
@@ -1837,7 +1897,8 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 
 | 编号 | 决定（摘要） | 本文落点 |
 | --- | --- | --- |
-| Q1 | MiniCPM-OCR 1.0 与 Jev 照用、锁版本、M6a / M6b 前复核；所有识别路径（含云 OCR、arXiv 对齐、多模态补救）的候选都必须有评估记录。2026-10-30 22:15 收窄并新增评分开关：用户可关闭质量评分，关闭期间记 `not-run/disabled`、标「未评分」；默认开、升级保留、不可用时三选一；重新打开不自动补评，「为本文评分」逐篇补；关闭期间云 OCR 照常请求、按固定来源优先级采用；不补救；arXiv「源码核对」显示 LaTeX、不算已核验（是否改算已核验待 Wisdom 定，唯一决定点 `source-check-standing.ts`）；RULES N-17 不变 | §2.5 `ingest` / `quality`、§4.1、§4.2、§7.0、§7.1「全路径评估记录」「评估状态与界面标记」「没有有效分数时的采用」、§7.3、§7.4「评分开关」、§7.5、§7.7、§8.1.1；`quality/domain/scoring-coverage.ts`、`scoring-switch.ts`；差异清单 §6.9 |
+| Q1 | MiniCPM-OCR 1.0 与 Jev 照用、锁版本、M6a / M6b 前复核；所有识别路径（含云 OCR、arXiv 对齐、多模态识别与补救、手动重新识别）的候选都必须有评估记录。2026-10-30 22:15 起用户可关闭质量评分，关闭期间记 `not-run/disabled`、标「未评分」；默认开、升级保留、不可用时三选一；重新打开不自动补评。22:23：关闭期间识别照常，没有分数时用程序核对，不过则裁图再到占位框；来源优先级可调；没有自动补救，手动「重新识别」待确认。22:45：Jev 是判定积木的一块，识别来源由路线配置决定，不再另设一套开关。arXiv「源码核对」显示 LaTeX、不算已核验（是否改算已核验待 Wisdom 定，唯一决定点 `source-check-standing.ts`）；RULES N-17 不变 | §2.5、§4.1、§4.2、§7.0、§7.1、§7.3、§7.4「评分开关」、§7.5、§7.7、§7.8、§7.12、§8.1.1；差异清单 §6.9、§6.10 |
+| 处理路线（2026-10-30 22:41、22:44、22:45） | 四类积木（版面、识别来源、结果判定、兜底）加声明式组合，不写死 A/B/C。预设四个：多模态+版面、仅多模态、OCR+版面、OCR+版面+Jev（暂定全局默认）。版面可关，本地与自建远程；8 GB 无独显 CPU 上的 PP-DocLayout 未核实。能力接口统一，鉴权含 API Key 与预留的账号 token。订阅、计费、账号系统、托管服务端不进 v2。切换路线不改写已有采用版本（是否自动重跑、能否按篇切换待定） | §7.0、§7.9.5、§7.12、§8.2 `ing_`；PRD §3.2、§3.5、AC-91–AC-94；RULES N-20；差异清单 §6.10 |
 | Q2 | 无解析服务时回落文字层基础档 | §7.1；`parsing/domain/text-layer/*` |
 | Q3 | UI 与业务核心解耦（functional core, imperative shell） | §2.1–§2.6、§3.1、§5、§12、G13–G16、§14.4；执行细则 RULES §8 |
 | Q4 | 做 arXiv 源码校准公式 | §4.2 `formula-source`、§4.3、§7.5、§7.6 |
