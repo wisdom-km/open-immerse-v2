@@ -1,0 +1,26 @@
+[project]
+name = "oi-worker"
+version = "0.0.0"
+description = "Open Immerse parser worker 的依赖基线。PDF 只使用 pypdfium2。"
+license = "Apache-2.0"
+requires-python = ">=3.11.18,<3.12"
+# PDF 渲染与文字层只用 pypdfium2（Apache-2.0 OR BSD-3-Clause）。
+# 禁止 PyMuPDF / fitz：AGPL-3.0，与本项目 Apache-2.0 冲突（RULES §1.5、Q6）。
+dependencies = ["pypdfium2==5.14.0"]
+
+[project.optional-dependencies]
+dev = ["pytest==9.2.0", "ruff==0.17.3"]
+
+[tool.uv]
+package = false
+required-version = "0.13.6"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
