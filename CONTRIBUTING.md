@@ -18,3 +18,5 @@
 ## 不要做的事
 
 禁止事项的完整列表在 RULES §6。特别是：不把密钥写进仓库，不引入 GPL / AGPL（含 PyMuPDF），不改 `DESIGN.md` 正文，不扩大到 PRD §3.2 以外的能力，不在 M1 门禁落地前新建业务切片目录。
+
+三种版本号见 README「三种版本号」。已有决定的索引在 [docs/adr/README.md](docs/adr/README.md)。事故复盘用 [docs/incidents/TEMPLATE.md](docs/incidents/TEMPLATE.md)。

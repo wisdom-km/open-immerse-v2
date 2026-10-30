@@ -17,7 +17,8 @@
 - 禁止事项在 RULES §6。其中 N-20：不要在 core 或某个积木里写死另一个积木。N-21：依赖方向只能是界面 → 接口 → core；只改界面的 PR 不改 core 目录。N-16 同一句。
 - 交接模板在 RULES §8.4。任务说明里要有 RULES §8.3 规定的那一句，并写明任务类型（UI 改动 / seam 变更 / core 改动）和切片名。
 - 分支与 PR：`feature/`、`fix/`、`chore/`；PR 先开 Draft；描述按 RULES §2 的五项；不自行合入。模板在 `.github/PULL_REQUEST_TEMPLATE.md`。
-- 当前 CI 全绿不等于 ARCHITECTURE §13 的 G1–G18 已生效。M1 门禁 PR 合入前不新建 `packages/features/**`（N-22）。
+- 当前 CI 是空跑：没有 TypeScript 源文件时 typecheck 直接成功；pytest 退出码 5 在工作流里被当成通过。全绿不等于 ARCHITECTURE §13 的 G1–G18。门禁在 M1 补上，此前不新建 `packages/features/**`（N-22）。细节见 [docs/ci-and-environment.md](docs/ci-and-environment.md) 的「当前是空跑」。不改 CI 行为，不改分支保护。
+- 三种版本号（规格文档 v0.6、还没有的应用 semver、worker 包 `0.0.0`）见 README「三种版本号」。决定只从 [docs/adr/README.md](docs/adr/README.md) 指到 Q1–Q12。事故复盘用 [docs/incidents/TEMPLATE.md](docs/incidents/TEMPLATE.md)。
 - 空的 `AccountSession` 返回 `not_in_v2`。不要加登录页、订阅或计费（PRD AC-94）。
 - 不要实现矢量重绘、浏览器扩展、手机同步。未核验的公式显示裁图或占位框，不要把 LaTeX 冒充已核验（N-15、N-17）。
 

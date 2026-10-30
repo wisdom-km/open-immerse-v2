@@ -30,7 +30,21 @@ Open Immerse v2：把英文学术 PDF 做成可对照、可追溯、公式不走
 
 ## CI 与云端环境
 
-Node 依赖用 pnpm（`corepack pnpm`）。检查命令、GitHub Actions 与云端 Agent 的 Node / Python 安装见 [docs/ci-and-environment.md](docs/ci-and-environment.md)。当前 CI 全绿只说明工具链能跑，不等于 ARCHITECTURE §13 的门禁已经落地。
+Node 依赖用 pnpm（`corepack pnpm`）。检查命令、GitHub Actions 与云端 Agent 的 Node / Python 安装见 [docs/ci-and-environment.md](docs/ci-and-environment.md)。
+
+当前 CI 是空跑。仓库里没有 `.ts` / `.tsx` 时，`tools/typecheck.mjs` 打印 `typecheck: no .ts or .tsx sources; skipped.` 并以退出码 0 结束。`.github/workflows/ci.yml` 把 pytest 退出码 5（没有收集到测试）当成通过。工作流全绿不等于 ARCHITECTURE §13 的 G1–G18。真正的门禁在 M1 补上。在那之前不新建 `packages/features/**` 业务切片（RULES N-22）。这次不改 CI 行为，也不改分支保护。
+
+## 三种版本号
+
+仓库里有三种版本号，各管一件事：
+
+1. 规格文档版本。`PRD.md`、`ARCHITECTURE.md`、`RULES.md` 文首的 v0.6 只表示这三份规格的修订。这次不升这个号。
+2. 应用版本。给人安装的桌面应用用 semver。现在没有安装包，不要把 v0.6 当成应用版本。
+3. worker 包版本。`workers/parser/pyproject.toml` 的 `version`，今天是 `0.0.0`。它只描述 Python worker 包，不描述规格，也不描述安装包。
+
+变更记录从第一次给人安装的构建开始记，不回溯每一份规格 PR。
+
+决定索引在 [docs/adr/README.md](docs/adr/README.md)，只指向已有的 Q1–Q12，不另写决定。事故复盘的空白模板在 [docs/incidents/TEMPLATE.md](docs/incidents/TEMPLATE.md)。
 
 ## 许可证
 

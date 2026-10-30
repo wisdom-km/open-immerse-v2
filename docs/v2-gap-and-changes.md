@@ -560,6 +560,7 @@ Wisdom 批准开 PR C：只改规格，验收编号接在 AC-67 之后。各评�
 | 评分口径 | 「所有结果都经过 Jev」改为：开启时所有结果都经过评分；关闭时一律未评分，由程序核对把关 | ARCH §7.1；PRD S5；RULES N-17 |
 | 全局默认 | 保持待定，M0 实测后由 Wisdom 决定。新安装不预选 | PRD AC-91、§3.5 |
 | 界面与核心 | 依赖方向只能是界面 → 接口 → core。CI 用依赖检查挡住反向依赖。只改界面的 PR 不改 core 目录。core 测试可以没有界面 | ARCH §2.1、G13、G15；RULES N-21；PRD AC-100；AGENTS.md |
+| 流程文件（2026-10-31 00:08） | 只加入口、空跑说明、Issue/PR 模板、ADR 索引、事故模板、三种版本号。不改 CI 行为，不改分支保护，不重写 Q1–Q12 | README、AGENTS.md、docs/ci-and-environment.md、`.github` 模板、docs/adr/README.md、docs/incidents/TEMPLATE.md |
 
 ## 7. 未核实的说法
 

@@ -110,3 +110,25 @@ P0 与 P1 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6
 | P2-7 | 许可证机器检查还只有包名字符串 | 未处理。保持到 M1。M1 的门禁 PR 必须包含 G10（license-checker 与 pip-licenses），不只保留字符串 grep | M1 |
 | P2-8 | 诊断事件没有枚举 | 未处理。在 ARCH §11 列白名单（外发询问、预算拒绝、上游 5xx 的 request id、评分不可用）。未列入的事件名不得出现在日志调用里 | M2 写诊断时 |
 | P2-9 | `reader` 的会话 hook 可能再长成上帝文件 | 未处理。M2 搭阅读器之前，在 ARCH §4.2 `reader` 行写明 hook 只订阅 `window.oi` 与 `pure.ts`，不保存采用版本或译文正文的副本 | M2 前 |
+
+## 7. 工程成熟度（PR #11 第二轮，2026-10-31）
+
+对照 `docs/reviews/v2-engineering-maturity.md`（分支 `feature/v2-full-review`）。Wisdom 2026-10-31 00:08 只批准两条 P0 和几项流程文件。下表里「未处理」的项这次不做。不改 CI 行为，不改分支保护。
+
+| 编号 | 做什么 | 状态 |
+| --- | --- | --- |
+| E-P0-1 | README 对齐 v2，AGENTS.md | 已处理。与 23:55 的入口是同一份，不另写第二份规格 |
+| E-P0-2 | 写明当前 CI 是空跑 | 已处理。README 与 docs/ci-and-environment.md「当前是空跑」 |
+| E-P1-1 | ADR 索引 | 已处理：`docs/adr/README.md` 只指向 Q1–Q12。独立 ADR 文件仍在 M1 |
+| E-P1-2 | Issue 与 PR 模板 | 已处理。字段来自 RULES §2 与 §8.4，PR 模板含所在提交 SHA |
+| E-P1-11 | 事故复盘模板 | 已处理：`docs/incidents/TEMPLATE.md` |
+| E-P1-12 | 三种版本号 | 已处理。README「三种版本号」 |
+| E-P1-3 | 把两个 CI job 设为必需检查 | 未处理。仓库管理员做。Agent 不改分支保护（N-02） |
+| E-P1-4 | CODEOWNERS | 未处理。等 Wisdom 指定路径归属 |
+| E-P1-5 | Conventional Commits 检查 | 未处理。放进 M1 的 `pnpm check` |
+| E-P1-6 | dependency-cruiser 与 `tsconfig.core.json` | 未处理。M1，按 ARCHITECTURE §13 |
+| E-P1-7 | 空测试目录不再把 pytest 退出码 5 当成通过；Vitest 要有会失败的样例 | 未处理。M1。这次不改工作流 |
+| E-P1-8 | `docs/acceptance/` 结果格式 | 未处理。M0 开工时 |
+| E-P1-9 | 提示词目录与 Jev 模型卡 | 未处理。M4 / M6a |
+| E-P1-10 | Dependabot 与 gitleaks | 未处理。这次不加 |
+| E-P2-1–E-P2-10 | 并发取消、quarantine 目录、发版清单、崩溃只写本机、红队、`.env.example`、SECURITY.md、不用通用功能开关、Prettier、合入后是否删分支 | 未处理。按原报告的里程碑。E-P2-10 由管理员决定，Agent 不改仓库设置 |
