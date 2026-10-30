@@ -1,6 +1,6 @@
 # open-immerse v2 协作与编码规则（RULES）
 
-状态：v0.4，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。v0.4 按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修复（Wisdom 2026-10-30 19:57 批准）：§5 第 15、16 条（付费调用先预留额度、跨切片编排只在 `ingest`），§8 删除 G17、改由评审与交接说明检查。日期：2026-10-30（Asia/Shanghai）。
+状态：v0.5，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。v0.4 按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修复（Wisdom 2026-10-30 19:57 批准）：§5 第 15、16 条（付费调用先预留额度、跨切片编排只在 `ingest`），§8 删除 G17、改由评审与交接说明检查。v0.5 按评审的 P1 项与 Wisdom 2026-10-30 19:45、19:46 的服务商适配层要求：§4 服务商适配层的契约测试，§5 第 17、18 条（服务商细节只在 `packages/providers`、外发检查与凭据），N-05 开发者本机的 Key。日期：2026-10-30（Asia/Shanghai）。
 适用对象：所有人类开发者与 AI Agent。
 同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；在 Loom 交付前，UI 实现只搭结构、不定视觉，也**不得**由其他人或 Agent 代写这两份文件。
 
@@ -88,8 +88,9 @@
 - **失败只重跑失败项。** 全量出现失败后：修复 → 提交 → 只重跑失败的用例（`pnpm test:failed`、`uv run pytest --lf`）确认修复；新的 tip 若需要全量（例如合入前），再跑一次全量。
 - **记录。** PR 描述写明：全量运行所在的提交 SHA、通过 / 失败 / 跳过数量；每次只重跑失败项的命令与结果。
 - **不稳定测试（flaky）。** 连续两次在相同代码上结果不同，即判定为不稳定：开 issue、加 `quarantine` 标记移出门禁，并在 issue 中写修复所有者；不得通过删测试或放宽断言让 CI 变绿。
-- **慢测试。** 需要真实模型、真机或付费 API 的测试标记 `@model` / `@device` / `@paid`，不进 PR 门禁，只在手动或夜间任务运行，且付费测试必须有调用次数上限。调用真实托管 API 的冒烟测试标记 `@live`，按 `@paid` 对待（平台标「免费」的服务也一样），只在对应 Key 已由 Cursor Secrets 注入为环境变量时运行，Key 不存在时跳过（ARCHITECTURE §12、§15.4）。
+- **慢测试。** 需要真实模型、真机或付费 API 的测试标记 `@model` / `@device` / `@paid`，不进 PR 门禁，只在手动或夜间任务运行，且付费测试必须有调用次数上限。调用真实托管 API 的冒烟测试标记 `@live`，按 `@paid` 对待（平台标「免费」的服务也一样），只在对应 Key 已作为环境变量提供时运行（云端 Agent 经 Cursor Secrets 注入，开发者本机见 ARCHITECTURE §15.4），Key 不存在时跳过（ARCHITECTURE §12、§15.4）。
 - **两种来源同一套契约测试。** 有「本地 / API」两种来源的模型能力，两个来源跑同一份契约测试（假后端或去掉凭据与图片内容的录制样例）；只测其中一个来源不算完成（ARCHITECTURE §7.0）。
+- **服务商适配层的契约测试。** 每个格式适配器跑 `packages/providers/src/testing/` 里它支持的能力对应的共享套件，每条注册表记录至少跑 auth 与 errors；样例只用合成数据（假 Key 用登记在 gitleaks allowlist 的测试前缀，图片用合成图，不用真实论文页面），样例目录的 README 记来源文档链接与查阅日期（ARCHITECTURE §7.9.7）。
 - **跳过。** 门禁中出现 `skip` 视为失败，除非 PR 描述写明原因且关联 issue。
 
 ## 5. 代码评审清单
@@ -112,6 +113,8 @@
 14. 模型能力 API 优先（ARCHITECTURE §7.0）：新增或修改由模型提供的能力时，有托管 API 就默认 API，「本地」作为同一端口或同一种 worker 作业后的一等选项保留在设置主选项里（不放进「高级」），并有部署文档 `docs/deploy/<能力>.md`；硬件画像只用于标注「本地」的可行性；没有 Key、拒绝外发或 API 不可用时按 §7.0 表降级，不静默改用其他付费服务或本地；新服务的 Key 变量名先登记在 ARCHITECTURE §15.4，代码不读 `.env`。
 15. 付费调用先预留（ARCHITECTURE §7.8）：任何向外部服务发出、可能计费的请求（Jev、引擎 B、云 OCR、多模态、翻译、问答、TTS / ASR，以及以后新增的）在发出之前调用 `BudgetGate.reserve`，被拒就不发请求，按 §7.0 降级；完成后 `settle` 实际用量，未发出则 `release`。计价、额度、上限判断只写在 `budget/domain`，其他切片与 worker 不自己算钱；单价未知时用请求数 / 页数 / token 上限，不当作 0 元。测试覆盖「被拒时请求数为 0」。
 16. 跨切片编排只在 `ingest`（ARCHITECTURE §4.2、§7.1、F-17）：按顺序调用多个切片的 seam 并按结果分支（解析 → 评分 → 采用 → 翻译、补救后重评）只写在 `ingest` 的用例里；UI、hooks、装配根、`jobs` 与其他业务切片里出现这种顺序即退回。
+17. 服务商细节只在 `packages/providers`（ARCHITECTURE §7.9、F-18）：新增服务商 = 一条注册表记录，格式没有时再加一个格式适配器；切片里不出现服务商主机名、请求体格式、鉴权头、错误码表，也不为某一家服务商新建切片适配器。模型的能力标记来自注册表或用户勾选，不探测，未知按否。
+18. 外发检查与凭据（ARCHITECTURE §7.0 第 6 条、§10.1）：任何连接发出前经 `EgressCheck`；回环地址之外都算外发，包括远程 worker。桌面的服务商 Key 只由 main 按次授权，发给对应服务商与本机回环 worker，绝不发给远程 worker；Key 只放请求头，不放 URL（百度 OCR 的 `access_token` 例外，日志里必须打码）。测试覆盖「询问或拒绝时连接数为 0」与「远程 worker 收到 Key 的次数为 0」。
 
 ## 6. Agent 绝不能做的事
 
@@ -123,7 +126,7 @@
 | N-02 | 直接推送到 `main` 或任何受保护分支；修改分支保护规则、仓库设置、CI 必需检查项 |
 | N-03 | 合入 PR、开启自动合并 |
 | N-04 | 发版：打 tag、创建 Release、发布安装包、签名 / 公证、发布 npm / PyPI 包 |
-| N-05 | 把任何密钥、令牌、证书、`.env` 内容写入仓库、PR 描述、Issue、日志或测试快照（含录制的 HTTP 样例）。面壁开放平台 Key 的变量名是 `MODELBEST_API_KEY`，值只放 Cursor Secrets 或用户本机安全存储（ARCHITECTURE §7.4「面壁 API」）。所有开发与测试用的 Key 只经 Cursor Secrets 注入为环境变量，变量名先登记在 ARCHITECTURE §15.4；不在仓库里创建、提交或让代码读取 `.env` 文件，不把 Key 写进命令行参数 |
+| N-05 | 把任何密钥、令牌、证书、`.env` 内容写入仓库、PR 描述、Issue、日志或测试快照（含录制的 HTTP 样例）。面壁开放平台 Key 的变量名是 `MODELBEST_API_KEY`，值只放 Cursor Secrets 或用户本机安全存储（ARCHITECTURE §7.4「面壁 API」）。所有开发与测试用的 Key 只以环境变量提供：云端 Agent 经 Cursor Secrets 注入，开发者本机由开发者自己设为系统用户级或会话级环境变量，值不写进仓库里的脚本、`.vscode/launch.json` 或任务文件；变量名先登记在 ARCHITECTURE §15.4；不在仓库里创建、提交或让代码读取 `.env` 文件，不把 Key 写进命令行参数 |
 | N-06 | 扩大范围：做任务未要求的功能、重构无关模块、加入 PRD §3.2 范围外的能力（网页翻译、浏览器扩展壳等） |
 | N-07 | 修改、推送或在旧仓库 `wisdom-km/open-immerse` 开 PR / Issue / 评论；旧仓库只能只读 clone 到临时目录参考 |
 | N-08 | 关闭或绕过 CI 门禁：删除 / 跳过测试、调高行数或复杂度上限、往 allowlist 加豁免、`--no-verify`，除非有用户批准的 ADR |
