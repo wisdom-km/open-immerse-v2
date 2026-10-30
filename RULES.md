@@ -1,6 +1,6 @@
 # open-immerse v2 协作与编码规则（RULES）
 
-状态：v0.3，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7）。日期：2026-10-30（Asia/Shanghai）。
+状态：v0.3，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。日期：2026-10-30（Asia/Shanghai）。
 适用对象：所有人类开发者与 AI Agent。
 同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；在 Loom 交付前，UI 实现只搭结构、不定视觉，也**不得**由其他人或 Agent 代写这两份文件。
 
@@ -88,7 +88,8 @@
 - **失败只重跑失败项。** 全量出现失败后：修复 → 提交 → 只重跑失败的用例（`pnpm test:failed`、`uv run pytest --lf`）确认修复；新的 tip 若需要全量（例如合入前），再跑一次全量。
 - **记录。** PR 描述写明：全量运行所在的提交 SHA、通过 / 失败 / 跳过数量；每次只重跑失败项的命令与结果。
 - **不稳定测试（flaky）。** 连续两次在相同代码上结果不同，即判定为不稳定：开 issue、加 `quarantine` 标记移出门禁，并在 issue 中写修复所有者；不得通过删测试或放宽断言让 CI 变绿。
-- **慢测试。** 需要真实模型、真机或付费 API 的测试标记 `@model` / `@device` / `@paid`，不进 PR 门禁，只在手动或夜间任务运行，且付费测试必须有调用次数上限。
+- **慢测试。** 需要真实模型、真机或付费 API 的测试标记 `@model` / `@device` / `@paid`，不进 PR 门禁，只在手动或夜间任务运行，且付费测试必须有调用次数上限。调用真实托管 API 的冒烟测试标记 `@live`，按 `@paid` 对待（平台标「免费」的服务也一样），只在对应 Key 已由 Cursor Secrets 注入为环境变量时运行，Key 不存在时跳过（ARCHITECTURE §12、§15.4）。
+- **两种来源同一套契约测试。** 有「本地 / API」两种来源的模型能力，两个来源跑同一份契约测试（假后端或去掉凭据与图片内容的录制样例）；只测其中一个来源不算完成（ARCHITECTURE §7.0）。
 - **跳过。** 门禁中出现 `skip` 视为失败，除非 PR 描述写明原因且关联 issue。
 
 ## 5. 代码评审清单
@@ -108,6 +109,7 @@
 11. UI 与核心解耦（§8）：业务规则（校验、计价、状态转移、权限、失败条件）只在 core；UI 改动 PR 中 core 文件零改动；seam 只传普通数据；新增或修改的规则有经 seam 的 core 测试且不渲染 UI。
 12. 新依赖与模型权重的许可证与 Apache-2.0 兼容，没有 GPL / AGPL（§1.5）。
 13. Markdown 显示（ARCHITECTURE §4.5.4）：UI 拿到的是 core 解析好的 `MdDocument`，不解析 Markdown 字符串、不拼路径、不判断链接是否存在、不决定是否重载、不读 front-matter；显示 Markdown 一律用 ui-kit 的 `MarkdownView`，不另写渲染器。译文块的样式只按 `translation.getBlocks` 返回的 `display` 选择，状态变化只从 `translation.onBlockChanged` 得知；不根据 `retranslateBlock` 的返回、计时器或任务事件推断块状态（ARCHITECTURE §8.1.1）。
+14. 模型能力 API 优先（ARCHITECTURE §7.0）：新增或修改由模型提供的能力时，有托管 API 就默认 API，「本地」作为同一端口或同一种 worker 作业后的一等选项保留在设置主选项里（不放进「高级」），并有部署文档 `docs/deploy/<能力>.md`；硬件画像只用于标注「本地」的可行性；没有 Key、拒绝外发或 API 不可用时按 §7.0 表降级，不静默改用其他付费服务或本地；新服务的 Key 变量名先登记在 ARCHITECTURE §15.4，代码不读 `.env`。
 
 ## 6. Agent 绝不能做的事
 
@@ -119,7 +121,7 @@
 | N-02 | 直接推送到 `main` 或任何受保护分支；修改分支保护规则、仓库设置、CI 必需检查项 |
 | N-03 | 合入 PR、开启自动合并 |
 | N-04 | 发版：打 tag、创建 Release、发布安装包、签名 / 公证、发布 npm / PyPI 包 |
-| N-05 | 把任何密钥、令牌、证书、`.env` 内容写入仓库、PR 描述、Issue、日志或测试快照（含录制的 HTTP 样例）。面壁开放平台 Key 的变量名是 `MODELBEST_API_KEY`，值只放 Cursor Secrets 或用户本机安全存储（ARCHITECTURE §7.4「面壁 API」） |
+| N-05 | 把任何密钥、令牌、证书、`.env` 内容写入仓库、PR 描述、Issue、日志或测试快照（含录制的 HTTP 样例）。面壁开放平台 Key 的变量名是 `MODELBEST_API_KEY`，值只放 Cursor Secrets 或用户本机安全存储（ARCHITECTURE §7.4「面壁 API」）。所有开发与测试用的 Key 只经 Cursor Secrets 注入为环境变量，变量名先登记在 ARCHITECTURE §15.4；不在仓库里创建、提交或让代码读取 `.env` 文件，不把 Key 写进命令行参数 |
 | N-06 | 扩大范围：做任务未要求的功能、重构无关模块、加入 PRD §3.2 范围外的能力（网页翻译、浏览器扩展壳等） |
 | N-07 | 修改、推送或在旧仓库 `wisdom-km/open-immerse` 开 PR / Issue / 评论；旧仓库只能只读 clone 到临时目录参考 |
 | N-08 | 关闭或绕过 CI 门禁：删除 / 跳过测试、调高行数或复杂度上限、往 allowlist 加豁免、`--no-verify`，除非有用户批准的 ADR |
