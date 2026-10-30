@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" font-family="sans-serif" font-size="13">
+<rect width="960" height="560" fill="#fff" stroke="#999"/>
+<rect x="0" y="0" width="960" height="36" fill="#eee"/><text x="12" y="23">标签: 笔记库 · my-vault        [只读]</text>
+<rect x="0" y="36" width="230" height="524" fill="#f7f7f7" stroke="#bbb"/>
+<text x="12" y="60">my-vault  ⋯</text><rect x="10" y="70" width="210" height="24" fill="#fff" stroke="#bbb"/><text x="16" y="87" fill="#888">过滤文件…</text>
+<text x="16" y="120">▾ papers/</text><text x="34" y="142">attention.md</text><text x="34" y="164" font-weight="bold">diffusion.md</text><text x="16" y="186">▸ daily/</text><text x="16" y="208">README.md</text>
+<rect x="230" y="36" width="540" height="36" fill="#fafafa" stroke="#bbb"/><text x="242" y="59">← →   papers / diffusion.md</text>
+<text x="260" y="110" font-size="22">Diffusion 笔记</text>
+<text x="260" y="145">前向过程：  q(xₜ|xₜ₋₁) = 𝒩(…)   [MathInline]</text>
+<rect x="260" y="160" width="480" height="50" fill="#f3f3f3"/><text x="400" y="190">[MathBlock  $$ … $$]</text>
+<text x="260" y="235">参见 </text><text x="295" y="235" fill="#06c" text-decoration="underline">[[attention]]</text><text x="400" y="235" fill="#a00" text-decoration="underline" stroke-dasharray="2">[[missing]] ⚠</text>
+<rect x="260" y="255" width="480" height="70" fill="#f3f3f3"/><text x="270" y="275">```python   [CodeBlock]                         复制</text>
+<rect x="260" y="340" width="200" height="110" fill="#e8e8e8"/><text x="300" y="400">![[fig1.png]]</text>
+<rect x="770" y="36" width="190" height="524" fill="#f7f7f7" stroke="#bbb"/><text x="782" y="60">大纲</text><text x="790" y="84">Diffusion 笔记</text><text x="800" y="104">前向过程</text>
+<text x="782" y="480">▸ 失效链接 (1)</text>
+<rect x="560" y="500" width="200" height="40" rx="6" fill="#333"/><text x="572" y="525" fill="#fff">文件已在外部更新</text>
+</svg>
