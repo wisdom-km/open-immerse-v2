@@ -1,6 +1,6 @@
 # v2 差异与修改清单
 
-状态：v0.3。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC），Q3 / Q4 / Q9 相关补充查询 2026-10-30。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定（§6）；Markdown 阅读方案于 2026-10-30 17:32 批准（§6.1）；Loom 同日对译文区块四项风险给出结论（§6.2）。
+状态：v0.3。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC），Q3 / Q4 / Q9 相关补充查询 2026-10-30。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定（§6）；Markdown 阅读方案于 2026-10-30 17:32 批准（§6.1）；Loom 同日对译文区块四项风险给出结论（§6.2）；Wisdom 同日 18:37 决定 Jev 远程默认用面壁开放平台托管 API（§2.3.1）。
 用途：把三类输入——用户提供的双引擎方案（[附件原文](./architecture/inputs/pdf_translation_architecture.md)）、`docs/architecture/` 下的 01 / 02 / 03 草案、v1 实际实现（见 [v1 审查](./v1-review.md)）——与上游模型的官方资料逐条对照，列出**需要改的地方、冲突点、未核实的说法**，并给出统一编号的决策问题（Q1–Q12，现已全部决定）。
 结论已写入根目录规格：[PRD.md](../PRD.md)、[ARCHITECTURE.md](../ARCHITECTURE.md)、[RULES.md](../RULES.md)。三份规格与本文冲突时以规格为准；本文记录「为什么这样改」。视觉与交互规格 [DESIGN.md](../DESIGN.md)、[docs/design-principles.md](./design-principles.md) **待 Loom 产出**，本文不涉及。
 
@@ -11,7 +11,7 @@
 1. **五个模型名都真实存在**，没有编造的名称；但多数是近期发布，成熟度风险高：MiniCPM-OCR 仓库 2026-10-27 才创建（查询时公开约 2 天），Unlimited-OCR v2 同日发布，PP-DocLayoutV3 发布于 2026-01-20。实施时必须锁定提交与权重摘要。
 2. **引擎 B 不是「一个模型端到端」**：MiniCPM-OCR 1.0 官方 SDK 是「PP-DocLayoutV3 版面 → 裁剪 → MiniCPM-OCR 1.0 识别 → 按序组装」的流水线；阅读顺序来自 PP-DocLayoutV3，不来自 OCR 模型。A 若也用 PP-DocLayoutV3，**A/B 的版面判断不独立**。Q10 已决定：A 以 V3 起步，plus-L 对照，明显更好时作为「高质量档」。
 3. **Jev 的 0~1 分不是全部**：只有 `verdict = scored` 才是有效分；`precheck_reject`、`render_error`、`missing_original_image` 返回占位 0.0，`encode_error`、`forward_error` 返回 -1.0，都必须当作「错误」而不是「低分」，否则会误触发付费补救。默认阈值 0.5 只影响统计，不改原始分。
-4. **Jev 不适合在 8 GB 目标设备本机运行**：官方最低要求是 NVIDIA ≥ 8–12 GB 显存或 Apple M 系列 ≥ 16 GB 统一内存；且只有 Docker 镜像（Linux + NVIDIA）的渲染环境与云 API 一致、分数可直接比较。Q9 已决定：本机与远程都支持、设置中可选、按硬件推荐（8 GB 级推荐远程），两种部署是同一个 worker 接口。开发机是 32 GB 内存 + RTX 4070 12 GB（Wisdom 2026-10-30 17:56），按 CUDA 路线本机跑 Jev，在 M0 实测确认；12 GB 对 llama.cpp / Ollama（≥ 8 GB）够用，对 vLLM / Docker（≥ 12 GB）恰在下限，实际可用显存未核实。Q1 已决定：所有识别路径（含云 OCR、arXiv 对齐、多模态补救）都经 Jev 评分。
+4. **Jev 不适合在 8 GB 目标设备本机运行**：官方最低要求是 NVIDIA ≥ 8–12 GB 显存或 Apple M 系列 ≥ 16 GB 统一内存；且只有 Docker 镜像（Linux + NVIDIA）的渲染环境与云 API 一致、分数可直接比较。Q9 已决定：本机与远程都支持、设置中可选、按硬件推荐，两种部署是同一个 worker 接口；18:37 补充：设置主选项是「本地 / 面壁 API」，远程默认用面壁开放平台托管 API（8 GB 级推荐它），本地首选 llama.cpp CUDA 构建，自建 worker / Docker 归入「高级」（§2.3.1）。开发机是 32 GB 内存 + RTX 4070 12 GB（Wisdom 2026-10-30 17:56），按 CUDA 路线本机跑 Jev，在 M0 实测确认；12 GB 对 llama.cpp / Ollama（≥ 8 GB）够用，对 vLLM / Docker（≥ 12 GB）恰在下限，实际可用显存未核实。Q1 已决定：所有识别路径（含云 OCR、arXiv 对齐、多模态补救）都经 Jev 评分。
 5. **PyMuPDF 是 AGPL-3.0 / 商业双许可**，附件和草案 03 把它定为统一预处理库；MiniCPM SDK 的 PDF 输入与 Unlimited-OCR 示例也依赖它。Q6 已决定：worker 预处理用 pypdfium2（BSD-3-Clause / Apache-2.0），由我们渲染页面图再以图片交给 MiniCPM SDK；项目许可证定为 Apache-2.0，禁止 GPL / AGPL 依赖。
 6. **MinerU 许可证已不是 AGPL**，而是自定义的 MinerU Open Source License（Apache-2.0 加附加条款）；且 MinerU 3.0 起阅读顺序改由 PP-DocLayoutV2 给出，不再是「纯几何规则」。附件「借鉴 MinerU 几何规则」只能借思路，不能引入代码或依赖（RULES §1.5）。
 7. **Unlimited-OCR 存在（MIT），但未见 bbox 输出**，是面向多页长文档的端到端模型，无法满足「点击段落跳回原文」的定位要求。Q12 已决定：不接入，上游支持坐标输出后再评估。
@@ -77,12 +77,27 @@
 | 错误占位 | `precheck_reject`、`render_error`、`missing_original_image` → 0.0；`encode_error`、`forward_error` → -1.0；其他非 `scored` 值也无效 | 同上 `:347-352` | 全部映射为 `EvaluationResult.status = error`，`detailCode` 分别为 `invalid_candidate`、`render_failed`、`missing_image`、`encode_failed`、`service_failed`、`unknown_verdict`；**不得**触发补救（PRD AC-05） |
 | 阈值 | 默认 0.5，只影响 summary 的 `throughput_rate`，不改原始分 | 同上 `:51`、`:365-368` | 不沿用 0.5；按 text / formula / table 分别在校准集上定标（PRD QM-05） |
 | 批量上限 | 每请求最多 64 个评分项 | 同上 `:28`、`:57` | worker / 适配器按 64 分批 |
-| 图片编码 | 云 API 要求 `data:image/png;base64,` 前缀；Docker API 要求**不带**前缀，带了该项返回 `encode_error` | 同上 `:28`；`docs/minicpm_ocr_jev_docker_api_en.md:17` | 云与 Docker 共用一个适配器，但编码方式按配置切换，并有契约测试覆盖两种形态 |
+| 图片编码 | 云 API 要求 `data:image/png;base64,` 前缀；Docker API 要求**不带**前缀，带了该项返回 `encode_error` | 同上 `:28`；`docs/minicpm_ocr_jev_docker_api_en.md:17` | 云（即面壁开放平台托管 API，§2.3.1）与 Docker 共用一个适配器 `jev_http`，但编码方式按配置切换，并有契约测试覆盖两种形态 |
 | 渲染一致性 | Docker 镜像内置固定版本 Chromium 与 CJK 字体，渲染与云 API 一致，分数可直接与官方数值比较；SDK 部署的渲染器随宿主环境变化，排序稳定，绝对值可能在小数点后第三位不同。macOS 上**不支持**「渲染 + 评分」服务（固定字体环境依赖 `apt-get`），只能跑纯评分服务、由调用方自备渲染图，且分数不能与官方数值比较。Docker API 返回 `template_md5`，与训练模板不一致时分数不可比 | `docs/minicpm_ocr_jev_tutorial_en.md:28-32`、`docs/SKILL_jev_en.md:18-25`、`:96`、`:367`、`docs/llamacpp_deploy_jev_en.md:210`、`docs/minicpm_ocr_jev_docker_api_en.md:61` | 阈值按「部署方式 + 渲染环境」分别定标并记入 `evaluatorVersion`；不同部署的分数不混用；适配器在健康检查时记录 `template_md5`，变化即视为新的 `evaluatorVersion` |
-| 硬件 | Docker：NVIDIA ≥ 12 GB、驱动 ≥ 535；vLLM：≥ 12 GB；llama.cpp / Ollama：NVIDIA ≥ 8 GB 或 M 系列 ≥ 16 GB 统一内存；SGLang：≥ 16 GB。CUDA 路线的平台都只写 Linux + NVIDIA | `docs/minicpm_ocr_jev_tutorial_en.md:17`、`docs/SKILL_jev_en.md:31`、`:86-91`、`:116`、`docs/vllm_deploy_jev_en.md:30`、`docs/llamacpp_deploy_jev_en.md:34`、`docs/ollama_deploy_jev_en.md:34`、`docs/sglang_deploy_jev_en.md:30` | Q9 已决定：本机 / 远程都支持，设置中可选；按硬件推荐（达标推荐本机，8 GB 级推荐远程），用户随时可改；两种部署同一 worker 接口（ARCH §7.4） |
+| 硬件 | Docker：NVIDIA ≥ 12 GB、驱动 ≥ 535；vLLM：≥ 12 GB；llama.cpp / Ollama：NVIDIA ≥ 8 GB 或 M 系列 ≥ 16 GB 统一内存；SGLang：≥ 16 GB。CUDA 路线的平台都只写 Linux + NVIDIA | `docs/minicpm_ocr_jev_tutorial_en.md:17`、`docs/SKILL_jev_en.md:31`、`:86-91`、`:116`、`docs/vllm_deploy_jev_en.md:30`、`docs/llamacpp_deploy_jev_en.md:34`、`docs/ollama_deploy_jev_en.md:34`、`docs/sglang_deploy_jev_en.md:30` | Q9 已决定：设置中选「本地 / 面壁 API」；按硬件推荐（达标推荐本地，8 GB 级推荐面壁 API），用户随时可改；两者同一 worker `evaluate` 作业接口；自建 worker / Docker 在「高级」里（ARCH §7.4） |
 | 精度 | 宣称 JevOCRBench AUROC × 100 = 93.6 | 模型卡 | **未核实**（官方自测，§7） |
 
 草案 03 §9 的总体判断（只有 `scored` 是有效分、错误不是低分、0.5 不适用于本产品）是正确的，本文只补全遗漏的两个 verdict、批量上限、图片编码差异与渲染一致性约束。
+
+#### 2.3.1 面壁开放平台托管 API（Wisdom 2026-10-30 18:37 决定作为 Jev 远程默认）
+
+上游文档里的「Cloud API」就是面壁开放平台的托管服务。以下按平台文档（2026-10-30 查阅）与上游仓库（`1269e4f`）对照；本 PR 没有调用真实服务。
+
+| 项 | 平台文档的说法 | 出处 | v2 处理 |
+| --- | --- | --- | --- |
+| 端点与站点 | `POST https://api.modelbest.ai/v1/chat/completions`，OpenAI 兼容；`GET /v1/models` 列出 Key 可用的模型 | [平台 ocr-jev 文档](https://platform.modelbest.ai/console/docs/api/ocr-jev)（页面标注更新于 2026-10-29） | 国际站地址写明；base URL 做成配置项（ARCH §7.4「面壁 API」） |
+| 国内站 | 控制台 platform.modelbest.cn 的模型列表能看到 `MiniCPM-OCR-Jev`（Wisdom 告知）；上游仓库文档写 `https://api.modelbest.cn/v1` | MiniCPM-OCR `1269e4f` 的 `docs/minicpm_ocr_jev_api_en.md:11` | 国内站 API 地址**未核实**（§7）；预置但标「未核实」 |
+| 请求 | `model: "MiniCPM-OCR-Jev"`；顶层 `minicpm_ocr_jev{ mode: score / score_best / score_best_batch, category: text / formula / table, threshold, candidates, items }`；图片 PNG / JPEG 的 Base64 或 data URI；批量时 `messages` 也要放图和文本，否则 400 `moderation_invalid_input`；`stream: false`，不支持 SSE；单请求 ≤ 64 项 | 同上 | v2 只用 `mode: score`；`score_best*` 在全部候选失败时仍返回 `best_index: 0`，选哪个候选由 core 的优先级链决定（ARCH §7.5） |
+| 响应 | `choices[0].message.content` 是 JSON 字符串；`usage.prompt_tokens` 在顶层 | 同上 | 二次解析；用量进预算账本 |
+| 错误 | HTTP 400 / 401 / 402 / 403 / 404 / 413 / 422 / 429 / 5xx | 同上 | 映射表见 ARCH §7.4「面壁 API」；401 / 402 / 403 记 `unavailable`，不触发补救（PRD AC-05、AC-59） |
+| 价格 | 平台没有给 Jev 标价 | 同上 | **未核实**；按 `usage` 记账，单价由用户填，否则显示「未知」 |
+| 文档解析（引擎 B 云端来源） | `POST /v1/document-parse`（同步，单图：`image` / `file_id` / `url`）；PDF 走异步 `/jobs`；`model` 默认 `MiniCPM-OCR-1.0`；鉴权 `Authorization: Bearer ${MODELBEST_API_KEY}`；`upright` 默认 `true`（自适应旋转，坐标改到旋转后的页面）；`ocr.blocks[]` 含 `order`、`label`、`bbox`、`regions`、`content`、`status`（`ok` / `failed` / `skipped_no_vlm` / `skipped_seal`），像素坐标、左上原点；`rotation{ enabled, applied, total_angle }`；图片 ≤ 24 MiB，同步 JSON 体 ≤ 32 MiB，PDF ≤ 500 页；同时最多 2 个活动任务；只按上游返回的用量按页计，缺用量记未知；平台控制台显示限时免费（Wisdom 告知；文档只提到「free trials」按异步任务计数）；页面声明只描述已实现的契约，不证明生产部署或线上连通 | [平台 document-parse 文档](https://platform.modelbest.ai/console/docs/api/document-parse)（页面标注更新于 2026-10-27） | 只用同步接口发页面图，带 `upright: false`，不上传 PDF（与 Q6「由我们渲染页面图」一致，坐标帧也只有一个）；长期价格**未核实**；托管流水线是否与 SDK `1269e4f` 相同**未核实**，对比视图按「版面可能同源」标注（ARCH §7.1） |
+| Key | 一个平台 Key 同时用于 Jev 与文档解析（两份文档的鉴权相同） | 同上 | 环境变量名 `MODELBEST_API_KEY`，只放 Cursor Secrets 或用户本机安全存储，绝不进仓库（Wisdom 2026-10-30 18:37；RULES N-05） |
 
 ### 2.4 PP-DocLayoutV3 与版面模型选择
 
@@ -213,7 +228,7 @@
 | §6 | TS `ParseEngine` 接口、`EngineId` 联合类型 | 拆为 TS 侧 `ParseGateway`（application 端口）与 Python 侧 `DocumentEngine`（worker 内部）；`EngineId` 改为配置值（ARCH §7.2、§7.3） |
 | §9 | verdict：`render_error` 为 0、`encode_error` / `forward_error` 为 -1 | 补 `precheck_reject`、`missing_original_image`（0.0）与其他非 `scored` 值；补 64 项批量上限与渲染一致性（§2.3） |
 | §10 | 补救路由：先试 B 区域候选，仍低分再多模态 | 保留，B 区域候选以 `capabilities` 声明为前提（ARCH §7.1） |
-| §11 | 「Paddle、MiniCPM、Jev 重推理由用户配置的服务承担」；vLLM 验证 RTX 5090 32 GB；另有 llama.cpp CPU / Metal 路径 | 正确；补 Jev 硬件下限（§2.3），说明 M1 8 GB 推荐远程跑 Jev（Q9）；Metal 路径只验证了 macOS ARM64 包，芯片未写 |
+| §11 | 「Paddle、MiniCPM、Jev 重推理由用户配置的服务承担」；vLLM 验证 RTX 5090 32 GB；另有 llama.cpp CPU / Metal 路径 | 正确；补 Jev 硬件下限（§2.3），说明 M1 8 GB 推荐用面壁 API 跑 Jev（Q9）；Metal 路径只验证了 macOS ARM64 包，芯片未写 |
 | §11 | Paddle 与 MiniCPM / Jev 用隔离环境或独立服务 | **保留**（ARCH §10.3：按引擎分 extras / venv / 容器） |
 | §13 | 官方来源指向 `main` | 规格中注明锁定提交 `1269e4f`（MiniCPM-OCR） |
 
@@ -258,7 +273,7 @@
 | Q6 | worker 的 PDF 渲染与文字提取库？ | pypdfium2；MiniCPM SDK 以图片输入；根目录 `LICENSE` 改为 Apache-2.0；禁止 GPL / AGPL 依赖（含 PyMuPDF） | 已决定（Wisdom 2026-10-30） | `LICENSE`、`package.json`、`README.md`；RULES §1.5、N-13；ARCH §7.1、§10.3、G10 |
 | Q7 | 本机 worker 传输方式？ | 本机与远程同一协议 HTTP + SSE；不采用 stdio JSON-RPC | 已决定（Wisdom 2026-10-30） | ARCH §1、§10.1；PRD S11 |
 | Q8 | 是否做 v1 数据迁移器？ | 不做，v2 从零开始；删除迁移器相关里程碑与验收。取舍：省去导入器的格式解析、dry-run、冲突处理与测试，v2 数据模型不受 v1 约束；代价是 v1 的文献库、笔记、已存译文不进 v2 | 已决定（Wisdom 2026-10-30） | PRD §3.2；ARCH §4.2 `library`；v1 审查 §2、§4.14、§5 |
-| Q9 | Jev 部署在哪？ | 本机与远程都支持，设置中可选；按硬件推荐（满足要求推荐本机，8 GB 级推荐远程），用户随时可改；两种部署 worker 接口一致。开发机（32 GB 内存 + RTX 4070 12 GB）按 CUDA 路线本机跑 Jev，「必须能本机跑通」改为 M0 实测确认 | 已决定（Wisdom 2026-10-30；开发机配置 17:56 补充） | ARCH §1、§7.4、§10.2、§10.3；PRD §2、US-19、AC-19、AC-20、M0、M6 |
+| Q9 | Jev 部署在哪？ | 本机与远程都支持，设置中可选；按硬件推荐（满足要求推荐本机，8 GB 级推荐远程），用户随时可改；两种部署 worker 接口一致。开发机（32 GB 内存 + RTX 4070 12 GB）按 CUDA 路线本机跑 Jev，「必须能本机跑通」改为 M0 实测确认。18:37 补充：设置主选项「本地 / 面壁 API」，同一 `evaluate` 作业接口；远程默认面壁开放平台托管 API（`MiniCPM-OCR-Jev`），本地首选 llama.cpp CUDA 构建；自建 worker / Docker 归入「高级」；Key 名 `MODELBEST_API_KEY`，只放 Cursor Secrets 或用户本机安全存储；面壁 MiniCPM-OCR-1.0 文档解析作为引擎 B 的可选云端来源（§2.3.1） | 已决定（Wisdom 2026-10-30；开发机配置 17:56、面壁 API 18:37 补充） | ARCH §1、§2.6、§4.2、§7.1、§7.4、§8.3、§10.1–§10.3；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、M0、M6 |
 | Q10 | 引擎 A 的版面模型？ | PP-DocLayoutV3 起步，PP-DocLayout_plus-L 对照；明显更好时作为「高质量档」供用户选择 | 已决定（Wisdom 2026-10-30） | ARCH §7.1；PRD S2、US-21、AC-28、QM-13 |
 | Q11 | 是否保留「未配置翻译时借用多模态服务翻译」？ | 保留，默认关闭，开启时提示会消耗多模态额度 | 已决定（Wisdom 2026-10-30） | ARCH §4.2 `settings`；PRD S3、US-22、AC-29 |
 | Q12 | Unlimited-OCR 是否接入？ | 不接入；上游支持坐标输出后再评估 | 已决定（Wisdom 2026-10-30） | 本文 §2.6；PRD §3.2 |
@@ -353,7 +368,13 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | MiniCPM-OCR 1.0 在 OmniDocBench 等公开基准上的分数 | 官方 README / 模型卡 | **未核实**（官方自测，无第三方复现） |
 | Jev 在 JevOCRBench 上 AUROC × 100 = 93.6 | 模型卡 | **未核实**（官方自测） |
 | PP-FormulaNet_plus-L 的 BLEU 与 1476 ms 耗时 | Paddle 文档 | **未核实**（官方自测，硬件以表注为准） |
-| Jev 官方云 API 的开通条件、价格、配额与服务稳定性 | `docs/minicpm_ocr_jev_api_en.md` 只描述接口 | **未核实**；用户选择云 API 前需先确认 |
+| 面壁开放平台 Jev（`MiniCPM-OCR-Jev`）的价格 | 平台 ocr-jev 文档与控制台没有标价（Wisdom 2026-10-30 18:37 告知） | **未核实**；规格不写死单价，按 `usage` 记账，单价未填时显示「未知」（ARCH §7.4「面壁 API」） |
+| 面壁 MiniCPM-OCR-1.0 文档解析的长期价格与限时免费的截止时间 | 平台控制台显示限时免费（Wisdom 告知）；文档只说按页计用量、「free trials」按异步任务计数 | **未核实**；引擎 B 云端来源默认关，计价同上 |
+| 面壁国内站的 API base URL | 国内站 platform.modelbest.cn 控制台模型列表可见 `MiniCPM-OCR-Jev`（Wisdom 告知）；上游仓库 `docs/minicpm_ocr_jev_api_en.md:11` 写 `https://api.modelbest.cn/v1`；平台文档只写国际站 `https://api.modelbest.ai/v1` | **未核实**；设置里两站都预置，国内站标「未核实」，默认国际站（PRD §3.3），M6 开工前用真实 Key 核对 |
+| 面壁国内站与国际站的 Key、账号、模型清单能否互用 | — | **未核实**；两站按不同站点记 `evaluatorVersion`、分别定标 |
+| 面壁 API 的开通条件、配额、限流数值与服务稳定性 | 两份平台文档只给错误码与「最多 2 个活动任务」，没有给配额与限流数值；文档页声明只描述已实现的契约，不证明生产部署或线上连通 | **未核实**；本 PR 没有调用真实服务，M6 用 `MODELBEST_API_KEY` 冒烟（PRD M6） |
+| 面壁托管文档解析背后的模型版本与流水线（是否与 SDK `1269e4f` 相同、版面是否 PP-DocLayoutV3） | 平台文档未说明 | **未核实**；与引擎 A 对比时按「版面可能同源」标注（ARCH §7.1） |
+| 面壁 Jev API 的分数与官方 Docker 的一致性 | 上游说云 API 与 Docker 渲染一致、可与官方数值比较（`docs/minicpm_ocr_jev_tutorial_en.md:28-32`） | **未实测**；按 PRD QM-14 测，分别定标 |
 | MiniCPM-OCR 1.0 在 Apple Silicon 上可用的具体芯片与内存下限 | `docs/llamacpp_deploy.md:23` 只写 macOS ARM64 包 | **未核实** |
 | MiniCPM-OCR 1.0 在 8 GB 核显 Windows / M1 8 GB 上本机运行 | — | **未核实**，规格不承诺 |
 | PaddlePaddle 在 macOS ARM64 / Windows 核显上运行引擎 A 的实际速度与内存 | — | **未核实**，M3 实测 |
@@ -370,7 +391,7 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | 开发机按 CUDA 路线本机跑通 Jev（启动自检 + 参考样例三项 ≤ 0.02） | 官方 CUDA 路线只在 Linux + NVIDIA 上写明 | **未核实**，M0 实测（PRD §8 M0 退出条件）；开发机若是 Windows，llama.cpp CUDA 构建与 Ollama Windows 版运行 Jev 也**未核实**，文档未提 WSL2 |
 | 开发机上 Jev 的峰值显存与单批（64 项）耗时 | — | **未实测**，M0 记录 |
 | 本机 worker 基础安装（不含模型）的体积 | — | **未实测**，M1 统计 |
-| 本机模式自备渲染图的 Jev 分数与官方 Docker / 云 API 的一致性 | 上游说明 macOS 只能跑纯评分服务、分数不能与官方数值比较 | **未核实**；按 PRD QM-14 单独定标 |
+| 本机模式自备渲染图的 Jev 分数与官方 Docker / 面壁 API 的一致性 | 上游说明 macOS 只能跑纯评分服务、分数不能与官方数值比较 | **未核实**；按 PRD QM-14 单独定标 |
 | 百度「通用文字识别（高精度含位置版）」对学术公式的识别能力、当前计价与免费额度 | 官方文档只描述接口与字段 | **未核实**，M6 接入前确认 |
 | 智谱 GLM-OCR 在 OmniDocBench V1.5 得分 94.62 | 智谱官方模型介绍 | **未核实**（官方自测） |
 | 智谱 GLM-OCR 的公式输出格式与质量、价格稳定性 | 官方文档 | **未核实**，M6 实测 |
@@ -402,4 +423,5 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | 基准集真实规模与阅读顺序真值缺口 | PRD §7；v1 审查 §6 |
 | 决策记录 Q1–Q12 | 本文 §6；PRD §9；ARCH §16 |
 | Markdown 阅读方案（D1–D7）、译文按区块存 Markdown | 本文 §6.1；ARCH §4.5、§8.1.1；PRD S13、§3.2、US-23–US-28、AC-30–AC-56、QM-15–QM-17、§8.1；RULES N-18；方案原文 `docs/design/md-reader.md` |
+| Jev 远程默认面壁开放平台托管 API、设置「本地 / 面壁 API」、`MODELBEST_API_KEY` 的保管、引擎 B 的面壁云端来源（Wisdom 2026-10-30 18:37） | 本文 §2.3.1、§7；ARCH §1、§2.6、§4.2、§7.1、§7.3、§7.4「面壁 API」、§8.3、§10.1–§10.3、§16；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、QM-14、M6、§9 |
 | 译文区块四项结论（翻译块范围、重译 seam、重译失败显示、缓存键论证） | 本文 §6.2；ARCH §2.6、§8.1.1；PRD S3、US-28、AC-03、AC-56–AC-58、§9；RULES §5 第 13 项 |
