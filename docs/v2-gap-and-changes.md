@@ -278,7 +278,7 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | D3 | `.md` 阅读器只读，外部修改自动重载并保留位置 | 已决定（Wisdom 2026-10-30） | ARCH §4.5.2 `watch-debounce`；PRD AC-36、QM-15 |
 | D4 | 文件夹即笔记库：文件树、wikilink、`![[img]]`、`[[x#标题]]`、失效链接、后退 / 前进、大纲；链接在 core 解析 | 已决定（Wisdom 2026-10-30） | ARCH §4.5.2–§4.5.3；PRD US-25、AC-37–AC-41、AC-44 |
 | D5 | `.md` 独立入口，不进文献库，只链接库内 PDF | 已决定（Wisdom 2026-10-30） | ARCH §4.3 `markdown → library`；PRD AC-34、AC-43 |
-| D6 | 译文按原文区块结构化存储，正文字段是 Markdown；整篇导出延后 | 已决定（Wisdom 2026-10-30 17:27，17:32 修订） | ARCH §8.1.1、§4.2 `translation`；PRD S3、AC-03、AC-48–AC-51；v1 审查 §4.9、§4.18 |
+| D6 | 译文按原文段落分块结构化存储（不是整篇 `.md`），正文字段是 Markdown；seam `translation.getBlocks` / `translation.onBlockChanged`；先过公式校验再写、校验失败不存文本、重译期间保留上一版，规则都在 core；整篇导出推迟到 v2 之后 | 已决定（Wisdom 2026-10-30 17:27，17:32 修订） | ARCH §8.1.1、§4.2 `translation`；PRD S3、AC-03、AC-48–AC-51；v1 审查 §4.9、§4.18 |
 | D7 | v2 只读，预留编辑接口（源码区间、写入契约类型、不注册、不注入） | 已决定（Wisdom 2026-10-30） | ARCH §4.5.7；PRD AC-52–AC-55；RULES N-18 |
 
 规格对方案做的校正（不改界面设计，详见方案文首「入库说明」）：

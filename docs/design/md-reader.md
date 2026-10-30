@@ -1,6 +1,6 @@
 > **入库说明（Wisdom 2026-10-30 17:32 批准并入 v2 M0–M8）**
 >
-> - 来源：Loom 的方案草案 v0.2（上传附件 `PLAN.md`）。本说明之后的正文**逐字未改**；线框图原样放在 [wireframe-vault.svg](./wireframe-vault.svg)（正文 §4 末尾提到的 S-D 线框图）。正文由 Loom 维护，其他人不改（[RULES](../../RULES.md) N-10）。
+> - 来源：Loom 的方案草案 v0.2（上传附件 `PLAN.md`）。2026-10-30 Wisdom 再次上传 Loom 更新 D6 后的版本（译文按段落分块存储，以该版本为准），与此处正文逐字节一致。本说明之后的正文**逐字未改**；线框图原样放在 [wireframe-vault.svg](./wireframe-vault.svg)（正文 §4 末尾提到的 S-D 线框图）。正文由 Loom 维护，其他人不改（[RULES](../../RULES.md) N-10）。
 > - 分工：布局、组件拆分、文案、空 / 错 / 加载态、Token 这类**设计细节以本文为准**；需求、验收、里程碑以 [PRD](../../PRD.md) 为准（S13、US-23–US-28、AC-30–AC-55、QM-15–QM-16、§8）；切片、seam、存储、安全以 [ARCHITECTURE](../../ARCHITECTURE.md) 为准（§4.5、§8、§9）。
 > - 规格对本文做的校正（不影响 Loom 的界面设计；正文仍保留原写法以便追溯）：
 >   1. **KaTeX 选项**：D2 写 `throwOnError:false`。按 Wisdom「与 formula 同一份安全选项」，规格只保留一份选项，即公式闸门用的 `throwOnError:true`，放在 `contracts/src/latex-policy.ts`。渲染组件捕获异常后显示原始 LaTeX 加错误标记，用户看到的效果与 D2 相同。§3.2 说的「core 的 `pure.ts` 导出常量 `KATEX_OPTIONS`」也改为从 `contracts` 读取。
