@@ -9,7 +9,7 @@ Open Immerse v2 - PDF formula extraction and vector redraw project
 - [docs/v1-review.md](docs/v1-review.md)：v1 哪些能用、哪些不用（附原文件与行号）。
 - [docs/v2-gap-and-changes.md](docs/v2-gap-and-changes.md)：模型核实、草案修改清单、待拍板问题。
 - [docs/backlog.md](docs/backlog.md)：架构评审各项的处理状态与留给里程碑的事。
-- 视觉与交互：DESIGN.md、docs/design-principles.md（待 Loom 产出）。
+- 视觉与交互：[DESIGN.md](DESIGN.md)、[docs/design-principles.md](docs/design-principles.md)（Loom 2026-10-30 入库）。
 
 以下早期草案保留为历史输入；与上述规格冲突时以规格为准。
 

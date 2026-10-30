@@ -1,7 +1,7 @@
 # open-immerse v2 架构规格（ARCHITECTURE）
 
-状态：v0.6，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。v0.3 并入 Wisdom 2026-10-30 17:32 批准的 Markdown 阅读方案（Loom，[docs/design/md-reader.md](./docs/design/md-reader.md)）：新增 `markdown` 切片（§4.5），译文改为按区块存 Markdown（§8.1.1）；同日并入 Loom 对译文区块四项风险的结论（§8.1.1，§16）；同日 18:37 并入 Jev 远程默认面壁开放平台（§7.4），18:44 并入「API 优先」原则（§7.0），19:11 并入 Wisdom 对四项风险的决定（数据外发同意对话框、引擎 A 三条路径、问答同时支持多模态与纯文本模型、M0 API 实测延后；§2.5、§4.2、§7.0、§7.3、§7.4、§16），19:30 把外发同意改为按服务商询问并加入「外发前询问」开关（§7.0 第 6 条）。Wisdom 2026-10-30 19:57 批准按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修改；v0.4 改 P0 四项并删除 G17：新增无界面的编排切片 `ingest` 与预算切片 `budget`（§2.5、§4.2、§4.3），main 与 utility 进程的固定职责（§1），所有付费调用先预留（§7.8），译文中未核验公式的裁图表示（§8.1.1），CI 门禁（§13）。v0.5 改评审的 P1 项，并按 Wisdom 2026-10-30 19:45、19:46 的要求新增服务商适配层：外发同意的措辞统一（§7.0 第 6 条），外发检查端口 `EgressCheck` 与远程 worker 不接收桌面的服务商 Key（§1、§7.0、§10.1），删除已被取代的旧表述（§7.4、§16），存储与协议的版本升级规则（§8.4、§10.4），Electron 加固（§9），服务商适配层 `packages/providers`（§7.9），开发者本机的 Key 注入（§15.4）。v0.6 按 Wisdom 2026-10-30 21:12 批准的 PR C：阅读顺序（§7.10）、BabelDOC 借鉴（§7.11）、评分分期（§7.1）、借用多模态是装配期复用（§4.3）、Markdown 单路径与块窗口（§4.5.3）、UI 事件登记（§5.3）、domain 纯函数的行数（§6）、worker 监管状态机（§10.5）、诊断保留量（§11）、热点收窄与 G18、CI 运行环境（§13）。
-同级规格：[PRD.md](./PRD.md)（做什么）、[RULES.md](./RULES.md)（怎么协作）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；本文只规定 UI 代码放在哪、依赖谁，不规定长什么样。
+状态：v0.6，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。v0.3 并入 Wisdom 2026-10-30 17:32 批准的 Markdown 阅读方案（Loom，[docs/design/md-reader.md](./docs/design/md-reader.md)）：新增 `markdown` 切片（§4.5），译文改为按区块存 Markdown（§8.1.1）；同日并入 Loom 对译文区块四项风险的结论（§8.1.1，§16）；同日 18:37 并入 Jev 远程默认面壁开放平台（§7.4），18:44 并入「API 优先」原则（§7.0），19:11 并入 Wisdom 对四项风险的决定（数据外发同意对话框、引擎 A 三条路径、问答同时支持多模态与纯文本模型、M0 API 实测延后；§2.5、§4.2、§7.0、§7.3、§7.4、§16），19:30 把外发同意改为按服务商询问并加入「外发前询问」开关（§7.0 第 6 条）。Wisdom 2026-10-30 19:57 批准按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修改；v0.4 改 P0 四项并删除 G17：新增无界面的编排切片 `ingest` 与预算切片 `budget`（§2.5、§4.2、§4.3），main 与 utility 进程的固定职责（§1），所有付费调用先预留（§7.8），译文中未核验公式的裁图表示（§8.1.1），CI 门禁（§13）。v0.5 改评审的 P1 项，并按 Wisdom 2026-10-30 19:45、19:46 的要求新增服务商适配层：外发同意的措辞统一（§7.0 第 6 条），外发检查端口 `EgressCheck` 与远程 worker 不接收桌面的服务商 Key（§1、§7.0、§10.1），删除已被取代的旧表述（§7.4、§16），存储与协议的版本升级规则（§8.4、§10.4），Electron 加固（§9），服务商适配层 `packages/providers`（§7.9），开发者本机的 Key 注入（§15.4）。v0.6 按 Wisdom 2026-10-30 21:12 批准的 PR C：阅读顺序（§7.10）、BabelDOC 借鉴（§7.11）、评分分期（§7.1）、借用多模态是装配期复用（§4.3）、Markdown 单路径与块窗口（§4.5.3）、UI 事件登记（§5.3）、domain 纯函数的行数（§6）、worker 监管状态机（§10.5）、诊断保留量（§11）、热点收窄与 G18、CI 运行环境（§13）。同版入库 Loom 的设计稿，并定义外发同意事件 `settings.onEgressConsentRequired` 与命令 `settings.withdrawEgressConsent`（§7.0，Wisdom 2026-10-30 21:26）。
+同级规格：[PRD.md](./PRD.md)（做什么）、[RULES.md](./RULES.md)（怎么协作）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，Loom 2026-10-30 已入库（正文不改，校正在文首入库说明）。本文只规定 UI 代码放在哪、依赖谁，不规定长什么样。
 本文与 `docs/architecture/0x_*_草案.md` 冲突时以本文为准，差异逐条列在 [docs/v2-gap-and-changes.md](./docs/v2-gap-and-changes.md)。本文中的目录、接口、协议均为**拟议设计**，M1 起按本文落地；落地前不代表已存在。
 
 ---
@@ -160,7 +160,7 @@ Q3 的要求是映射到 5 层与 14 个切片；Q4 决定新增 `formula-source
 | `notes` | `anchor-match`（失败条件：无法唯一重定位）、`note`（校验）、`markdown-export` | `createNote`、`reanchorNotes`、`exportNotes`、`getNotesByIds`（§4.4 预留）；读笔记时随结果返回正文的 `MdDocument` | `ui/notes-panel.tsx`（正文交给 `MarkdownView`） | `sqlite-notes-repository` |
 | `qa` | `context-selection`、`citation`（失败条件：引用必须可定位） | `ask`；回答事件带已闭合块的 `MdBlock[]` 与未闭合尾部文本（§4.5.4） | `ui/ask-panel.tsx`（回答交给 `MarkdownView`） | `llm-chat-provider`（经 `providers`） |
 | `voice` | `speech-script`、`audio-segment`（校验：段落必须带锚点） | `generateNarration`、`transcribeNote` | `ui/narration-player.tsx`、`ui/voice-note-recorder.tsx` | TTS / ASR 适配器 |
-| `settings` | `provider-config-validate`（校验）、`translation-fallback`（权限，Q11）、`backend-choice`（每个模型能力的「本地 / API」默认值与切换，API 优先，§7.0；Q9）、`egress-consent`（权限：按服务商的数据外发同意、追加告知、「外发前询问」开关，§7.0 第 6 条）、`egress-destination`（权限：目的主机是否算外发，服务商身份按（服务商, 主机）判定，§7.0 第 6 条） | `saveProvider`、`testConnection`、`setBackendChoice`、`answerEgressConsent`、`setEgressPromptEnabled`、`listEgressDestinations`、`listProviderPresets`；`EgressCheck` 端口的实现（装配根注入，不是 IPC 命令） | `ui/settings-pages/*` | `safe-storage-secret-store`、`providers-catalog` |
+| `settings` | `provider-config-validate`（校验）、`translation-fallback`（权限，Q11）、`backend-choice`（每个模型能力的「本地 / API」默认值与切换，API 优先，§7.0；Q9）、`egress-consent`（权限：按服务商的数据外发同意、追加告知、「外发前询问」开关，§7.0 第 6 条）、`egress-destination`（权限：目的主机是否算外发，服务商身份按（服务商, 主机）判定，§7.0 第 6 条） | `saveProvider`、`testConnection`、`setBackendChoice`、`answerEgressConsent`、`withdrawEgressConsent`、`setEgressPromptEnabled`、`listEgressDestinations`、`listProviderPresets`、事件 `onEgressConsentRequired`；`EgressCheck` 端口的实现（装配根注入，不是 IPC 命令） | `ui/settings-pages/*` | `safe-storage-secret-store`、`providers-catalog` |
 | `diagnostics` | `redaction-rules`（校验）、`retention`（失败条件：超限删除） | `exportBundle` | `ui/diagnostics-page.tsx` | `file-logger` |
 | `writing`（预留，v2 不建） | 引用必须解析到锚点（复用 `qa/citation` 规则） | §4.4 草案 | — | — |
 
@@ -252,9 +252,9 @@ pnpm workspace + Python `uv` 项目。下面每个目录都是**可以独立测�
 ```text
 open-immerse-v2/
 ├─ PRD.md  ARCHITECTURE.md  RULES.md
-├─ DESIGN.md                          # 待 Loom 产出
+├─ DESIGN.md                          # Loom 2026-10-30 入库；正文不改
 ├─ docs/
-│  ├─ design-principles.md            # 待 Loom 产出
+│  ├─ design-principles.md            # Loom 2026-10-30 入库；正文不改
 │  ├─ design/                         # Loom 的功能级设计文档（md-reader.md、wireframe-vault.svg）
 │  ├─ v1-review.md  v2-gap-and-changes.md
 │  ├─ adr/                            # 架构决策记录：NNNN-标题.md
@@ -338,11 +338,11 @@ packages/features/<name>/
 | `contracts/src/jobs.ts` | 任务种类、状态、事件 |
 | `contracts/src/provider-config.ts` | `ProviderConfig`（`vendorId`、API 格式、Base URL、模型与能力标记、`secretRef`；不含密钥） |
 | `contracts/src/provider.ts` | 服务商中立类型：`ApiFormat`（品牌化字符串）、`ModelCapabilities`、`ModelPreset`、`ProviderDescriptor`、`ChatRequest` / `ChatChunk`、`OcrRequest` / `OcrResult`、`ProviderFailure`、`ProviderAuthorizer`（§7.9） |
-| `contracts/src/egress.ts` | `EgressCheck` 端口与 `EgressDecision`（`allow` / `ask` / `refused`）（§7.0 第 6 条） |
+| `contracts/src/egress.ts` | `EgressCheck` 端口与 `EgressDecision`（`allow` / `ask` / `refused`）；外发同意载荷 `EgressConsentRequired`、`EgressSendKind`、数据去向 `EgressDestination`（§7.0 第 6 条，只有类型） |
 | `contracts/src/budget.ts` | `BudgetGate` 端口（`reserve` / `settle` / `release`）、`ReserveRequest`、`Reservation`、`UsageReport`、`BudgetRefusal`、worker 作业的额度信封 `BudgetEnvelope`（§7.8） |
 | `contracts/src/errors.ts` | 错误码枚举与 `{code, message, retryable}` 形状 |
 | `contracts/src/diag-events.ts` | 诊断事件名与字段白名单 |
-| `contracts/src/ipc/<feature>.ts` | 一个切片一个文件：该切片的 IPC 命令与事件定义 |
+| `contracts/src/ipc/<feature>.ts` | 一个切片一个文件：该切片的 IPC 命令与事件定义。`settings` 的外发同意命令与事件在 `contracts/src/ipc/settings.ts`（§7.0，只有类型） |
 | `contracts/src/worker/*.ts` | `oi-parse/1` 协议消息（§10） |
 | `kernel/src/result.ts` | `Result<T, E>` |
 | `kernel/src/app-error.ts` | 错误基类与类型守卫 |
@@ -391,7 +391,7 @@ packages/features/<name>/
 | `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `application/use-cases/get-notes-by-ids.ts`（按 ID 批量只读，写作预留，§4.4） · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx`（正文用 ui-kit `MarkdownView`） |
 | `qa` | 论文问答、上下文选取、引用 | `domain/context-selection.ts`（按 `ChatCapabilities.acceptsImages` 决定上下文只含文本，还是文本加区域裁图，§7.3）· `domain/citation.ts` · `application/use-cases/ask.ts`（流式回答经 `markdown` 的 seam 切分为已闭合块与未闭合尾部）· `application/ports/chat-provider.ts`（多模态模型与纯文本 LLM 共用一个端口，Wisdom 2026-10-30 19:11）· `adapters/llm-chat-provider.ts`（经 `@oi/providers` 的 `ChatTransport`；API 与本机 OpenAI 兼容服务共用，`acceptsImages` 取自模型的 `vision` 标记）· `ui/ask-panel.tsx`（回答用 ui-kit `MarkdownView`） |
 | `voice` | TTS 朗读 / 讲解、ASR 语音笔记 | `domain/speech-script.ts` · `domain/audio-segment.ts` · `application/ports/tts-port.ts` · `application/ports/asr-port.ts` · `application/use-cases/generate-narration.ts` · `application/use-cases/transcribe-note.ts` |
-| `settings` | 非密钥设置、provider 配置、密钥引用绑定（预算上限的规则与存储在 `budget`，设置页只经 `window.oi.budget.*` 读写） | `domain/provider-config-validate.ts` · `domain/translation-fallback.ts`（只判定开关与权限；借用的绑定由装配根完成，§4.3）（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/backend-choice.ts`（每个模型能力的「本地 / API」选择：有托管 API 时默认「API」，本地是同一接口后的一等选项，高级自建选项与推荐值的关系；覆盖 Jev、引擎 A 模型阶段、引擎 B、多模态、翻译、问答、TTS / ASR；API 优先，§7.0；Q9，§7.4）· `domain/egress-consent.ts`（按服务商记录数据外发同意：每个服务商一条记录，含已告知并同意的能力集合与时间；判断要不要弹对话框、对话框列哪些能力（首次列出全部、之后只列新增）；「外发前询问」开关（默认开，只能由用户在设置里关闭）；生成「数据去向」列表；未同意的能力对该服务商的请求为 0；Wisdom 2026-10-30 19:11、19:30，§7.0 第 6 条）· `domain/egress-destination.ts`（目的主机分类：回环地址与用户标为「本机可信」的主机不算外发，其余都算；服务商身份按（`vendorId`, 主机）判定，主机不在该服务商的 `allowedHosts` 里就按新服务商处理；架构评审 P1-2）· `application/use-cases/check-egress.ts`（`EgressCheck` 的实现，由装配根注入到业务切片、`providers` 与 `worker-client`）· `application/use-cases/list-provider-presets.ts` · `application/ports/provider-catalog.ts` · `adapters/providers-catalog.ts`（经 `@oi/providers` 列出注册表里的服务商与模型）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
+| `settings` | 非密钥设置、provider 配置、密钥引用绑定（预算上限的规则与存储在 `budget`，设置页只经 `window.oi.budget.*` 读写） | `domain/provider-config-validate.ts` · `domain/translation-fallback.ts`（只判定开关与权限；借用的绑定由装配根完成，§4.3）（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/backend-choice.ts`（每个模型能力的「本地 / API」选择：有托管 API 时默认「API」，本地是同一接口后的一等选项，高级自建选项与推荐值的关系；覆盖 Jev、引擎 A 模型阶段、引擎 B、多模态、翻译、问答、TTS / ASR；API 优先，§7.0；Q9，§7.4）· `domain/egress-consent.ts`（按服务商记录数据外发同意：每个服务商一条记录，含已告知并同意的能力集合与时间；判断要不要弹对话框、对话框列哪些能力（首次列出全部、之后只列新增）；「外发前询问」开关（默认开，只能由用户在设置里关闭）；生成「数据去向」列表；开关为开且未同意时，该能力对该服务商的请求为 0；未作答不记已拒绝、下次再问；`withdrawEgressConsent` 只清已同意、不改记已拒绝；Wisdom 2026-10-30 19:11、19:30、21:26，§7.0 第 6 条）· `domain/egress-destination.ts`（目的主机分类：回环地址与用户标为「本机可信」的主机不算外发，其余都算；服务商身份按（`vendorId`, 主机）判定，主机不在该服务商的 `allowedHosts` 里就按新服务商处理；架构评审 P1-2）· `application/use-cases/check-egress.ts`（`EgressCheck` 的实现，由装配根注入到业务切片、`providers` 与 `worker-client`）· `application/use-cases/answer-egress-consent.ts` · `application/use-cases/withdraw-egress-consent.ts` · `application/use-cases/set-egress-prompt.ts` · `application/use-cases/list-egress-destinations.ts`· `application/use-cases/list-provider-presets.ts` · `application/ports/provider-catalog.ts` · `adapters/providers-catalog.ts`（经 `@oi/providers` 列出注册表里的服务商与模型）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
 | `diagnostics` | 诊断事件记录、诊断包导出、脱敏 | `domain/redaction-rules.ts`（自 v1 移植）· `domain/retention.ts`（保留天数与体积上限）· `application/use-cases/export-bundle.ts` · `ui/diagnostics-page.tsx` |
 
 ### 4.3 切片之间的依赖（允许的方向）
@@ -747,13 +747,16 @@ flowchart TB
 3. **按硬件推荐。** 硬件画像只做两件事：给「本地」标可行性（达到官方要求 / 不在官方要求内 / 官方文档未覆盖该平台），以及在没有托管 API 或用户拒绝数据外发时，决定推荐本地还是降级。规则是纯函数，Jev 的规则见 §7.4，其他能力随各自里程碑补齐；补齐前「本地」标「硬件要求未评估」。
 4. **没有 Key、拒绝外发或 API 不可用时**，不静默改用另一个付费服务，也不静默改成本地，按下表最后一列降级，界面提示去填 Key 或改选本地。
 5. **密钥。** 最终用户的 Key 只存本机安全存储（§8.3）。开发与测试用的 Key 只以环境变量提供：云端 Agent 经 Cursor Secrets 注入，开发者本机由开发者自己设置（§15.4）；变量名先登记在 §15.4 再使用；仓库不放、也不读取 `.env` 文件。CI 不调用付费 API（§12）。
-6. **数据外发同意（Wisdom 2026-10-30 19:11 批准；19:30 改为按服务商）。** 规则全部在 `settings/domain/egress-consent.ts` 与 `egress-destination.ts`；发请求的一方经装配根注入的 `EgressCheck` 端口在连接前检查（业务切片不 import `settings`，§5）。
-   - **按服务商问一次。** 某个服务商第一次要收到数据前，弹一个对话框，列出当前选定把数据发给它的**全部**能力，每项写明会发什么（区域裁图、候选文本、我们渲染的页面图、待翻译文本或问答上下文），并写明不上传原 PDF。例：面壁开放平台一个对话框，列出 Jev 评分与引擎 B 文档解析。用户对整个对话框同意或拒绝。
-   - **新增能力要追加告知。** 已同意的服务商，之后又有能力要把数据发给它（例如用户把另一项能力改选到这家），该能力第一次请求前再弹一次，只列新增的能力。同意范围只覆盖对话框里列出过的能力。
-   - **拒绝或未作答。** 只影响这一个服务商、只影响对话框里列出的能力：这些能力对该服务商的请求为 0，结果记 `unavailable`（原因码 `consent_required`），按下表最后一列降级，并提示可改选「本地」；被拒的能力也不改发给别的服务商。其他服务商上已同意的能力照常请求；追加告知被拒时，此前已同意的能力不受影响。对话框弹出后、用户作答之前，按「未作答」处理。
-   - **「外发前询问」开关。** 设置里有一个开关，默认开（弹对话框）。只有用户在设置里亲自操作才会关闭；新安装、升级、恢复默认都不会关闭它。关闭后不再弹对话框，请求照常发送。无论开关状态，设置里都显示「数据去向」列表：每个服务商、发给它的能力、每项的状态（已同意 / 询问已关闭 / 已拒绝）。重新打开开关后，没有在对话框里同意过的「服务商 + 能力」，下次使用前照常询问（按架构评审 P1-1，Wisdom 2026-10-30 20:57 确认保留）。
-   - **统一检查端口与目的主机（架构评审 P1-2）。** 发请求的一方在连接之前调用 `contracts/src/egress.ts` 的 `EgressCheck.check({ vendorId, capability, host })`，返回 `allow`、`ask` 或 `refused`；实现是 `settings` 的 `check-egress` 用例，由装配根注入。调用点有三处：`ingest` 提交会让 worker 调用托管后端的作业之前；`packages/providers` 的传输层连接之前（§7.9.5）；`worker-client` 连接远程 worker 之前。目的主机的判定：回环地址（`127.0.0.0/8`、`::1`；`localhost` 按解析结果判断）不算外发；用户在设置里标为「本机可信」的主机（这个选项保留，默认没有；Wisdom 2026-10-30 20:57）不算外发；其余一律算外发，包括标为「本地」但地址不是回环的服务，以及远程 worker 本身。服务商身份是（`vendorId`, 主机）：主机不在该服务商登记的 `allowedHosts` 里，就按一个新服务商处理，重新询问。返回 `ask` 时这次不发请求，对话框排队等用户作答，这次请求按「未作答」记 `consent_required`，已做的预留随即释放（§7.8）。验收 PRD AC-65。
-   - 只发区域裁图、候选文本或我们渲染的页面图，不上传原 PDF，保证所有来源共用一个坐标帧（Q6）。对话框的布局与开关在设置里的位置由 Loom 定（DESIGN.md 待 Loom 产出）。
+6. **数据外发同意（Wisdom 2026-10-30 19:11 批准；19:30 改为按服务商；21:26 补充未作答与撤回）。** 规则全部在 `settings/domain/egress-consent.ts` 与 `egress-destination.ts`；发请求的一方经装配根注入的 `EgressCheck` 端口在连接前检查（业务切片不 import `settings`，§5）。
+   - **按服务商问一次，不是每一次请求都问。** 某个服务商第一次要收到数据前，弹一个对话框，列出当前选定把数据发给它的**全部**能力，每项写明会发什么（区域裁图、候选文本、我们渲染的页面图、待翻译文本或问答上下文），并写明不上传原 PDF。例：面壁开放平台一个对话框，列出 Jev 评分与引擎 B 文档解析。用户对整个对话框同意或拒绝。
+   - **新增能力要追加告知。** 已同意的服务商，之后又有能力要把数据发给它（例如用户把另一项能力改选到这家），该能力第一次请求前再弹一次，只列新增的能力。同意范围只覆盖对话框里列出过、并且用户点了允许的能力。
+   - **拒绝。** 只有 `answerEgressConsent` 的 `granted: false`（用户点「不允许」）才记为已拒绝。只影响这一个服务商、只影响该次对话框列出的能力：这些能力对该服务商的请求为 0，结果记 `unavailable`（原因码 `consent_required`），按下表最后一列降级，并提示可改选「本地」；也不改发给别的服务商。其他服务商上已同意的能力照常请求；追加告知被拒时，此前已同意的能力不受影响。开关保持开时，已拒绝的能力之后不再发 `settings.onEgressConsentRequired`，请求仍为 0。
+   - **未作答（Wisdom 2026-10-30 21:26）。** Esc、关闭弹窗、退出应用，以及 `answerEgressConsent` 的 `granted: null`（退出前来不及调用时，core 视同 `null`），都不记为已拒绝，也不记为已同意。这一次请求为 0，记 `consent_required`，预留释放。开关为开时，下次还要向该服务商发送这些能力之前，再发一次 `settings.onEgressConsentRequired`。未作答不进入「数据去向」列表。
+   - **撤回同意（Wisdom 2026-10-30 21:26）。** 每个已同意的服务商都可以撤回。命令是 `settings.withdrawEgressConsent({ vendorId })`（DESIGN.md 草案里的 `providerId` 即 `vendorId`）。撤回只清掉该服务商的已同意记录，不改写成已拒绝；没有已同意记录时返回 `consent_not_granted`，已拒绝记录不动。开关为开时，这些能力下一次要发送前重新询问，重新同意之前请求为 0。开关为关时不弹外发确认，请求仍照常发送。已经通过 `EgressCheck` 的在途请求不取消。
+   - **通知 UI 的事件。** 要弹对话框时，core 发 `settings.onEgressConsentRequired`，载荷是 `EgressConsentRequired`（本节末的类型；只有定义，没有实现）。UI 不自己判断该不该问。同一服务商已有未结束的 `requestId` 时不再发第二条。允许、不允许与未作答都经 `answerEgressConsent` 回传。
+   - **「外发前询问」开关。** 设置里有一个开关，默认开（弹对话框）。只有用户在设置里亲自操作才会关闭；新安装、升级、恢复默认都不会关闭它。关闭后不再弹任何外发确认，请求照常发送（含此前已拒绝或尚未同意的能力）；这些项显示「询问已关闭」，底层的同意或拒绝记录保留。开关为开时，已同意显示「已同意」，已拒绝显示「已拒绝」。无论开关状态，设置里都显示「数据去向」列表：每个会收到数据的服务商、发给它的能力、每项的状态（已同意 / 询问已关闭 / 已拒绝）。重新打开开关后，没有在对话框里同意过的「服务商 + 能力」（含已拒绝与未作答），下次使用前照常询问；已经同意过的不再询问（按架构评审 P1-1，Wisdom 2026-10-30 20:57 确认保留）。从开改为关时的确认框由 UI 在调用 `setEgressPromptEnabled({ enabled: false })` 之前显示（DESIGN DS-15），取消则不调用；core 不弹这个框。从关改为开直接调用，不确认。
+   - **统一检查端口与目的主机（架构评审 P1-2）。** 发请求的一方在连接之前调用 `contracts/src/egress.ts` 的 `EgressCheck.check({ vendorId, capability, host })`，返回 `allow`、`ask` 或 `refused`；实现是 `settings` 的 `check-egress` 用例，由装配根注入。调用点有三处：`ingest` 提交会让 worker 调用托管后端的作业之前；`packages/providers` 的传输层连接之前（§7.9.5）；`worker-client` 连接远程 worker 之前。目的主机的判定：回环地址（`127.0.0.0/8`、`::1`；`localhost` 按解析结果判断）不算外发；用户在设置里标为「本机可信」的主机（这个选项保留，默认没有；Wisdom 2026-10-30 20:57）不算外发；其余一律算外发，包括标为「本地」但地址不是回环的服务，以及远程 worker 本身。服务商身份是（`vendorId`, 主机）：主机不在该服务商登记的 `allowedHosts` 里，就按一个新服务商处理；开关为开时重新询问，开关为关时不弹确认。返回 `ask` 时这次不发请求，也不等待对话框：这次请求立即按「未作答」记 `consent_required`，已做的预留随即释放（§7.8）。若该服务商没有未结束的询问，同时发事件 `settings.onEgressConsentRequired`；已有未结束的询问则不再发第二条。用户之后的允许、不允许或未作答只影响再往后的请求。返回 `refused` 时同样不连接、释放预留，并且不发询问事件。开关为关时不返回 `ask` 或 `refused`，返回 `allow`（不再弹任何外发确认）。验收 PRD AC-61 ⑦、AC-65。
+   - 只发区域裁图、候选文本或我们渲染的页面图，不上传原 PDF，保证所有来源共用一个坐标帧（Q6）。对话框的布局与开关在设置里的位置由 Loom 定（[DESIGN.md](./DESIGN.md) §4.2、§4.3，DS-15、DS-16、DS-23、DS-24）。
 7. **开发机。** Windows，32 GB 内存，NVIDIA RTX 4070 12 GB（Wisdom 2026-10-30 17:56 告知配置，18:44 告知系统）。开发以 API 路径为准。API 路径的真实调用实测（§7.4「开发机」）已由 Wisdom 2026-10-30 19:11 决定延后，在 PRD M0 中记为「待执行」，不阻塞规格文档。某个模型在开发机上部署不了，或者官方文档没有覆盖 Windows 时，开发机上的本地部署标「不要求 / 未核实」，不作为开发前提；规格中的本地选项照常保留，由契约测试与达到官方要求的机器（有的话）验证。
 
 | 能力 | 默认：API（服务商） | 本地选项（同一接口） | 开发机（Windows）本地部署 | 没有可用 API 时 |
@@ -766,6 +769,110 @@ flowchart TB
 | 翻译 | 用户自带 Key 的对话模型（经服务商适配层，§7.9；不预选，用户在设置里从全部服务商中选） | 本机 OpenAI 兼容服务 | 不要求 | 不翻译，显示原文并提示去配置；可按 Q11 借用多模态（默认关） |
 | 文本问答（`qa` 的 `ChatProvider`；Wisdom 2026-10-30 19:11 确认纳入） | 用户自带 Key 的对话服务（经服务商适配层，§7.9；不预选，用户在设置里从全部服务商中选）；多模态模型与纯文本 LLM 都可以选，走同一个端口（§7.3） | 本机 OpenAI 兼容服务（同样可以是多模态或纯文本模型） | 不要求 | 功能不可用，提示去配置 |
 | TTS / ASR | 用户自带 Key 的服务（M7 选型） | 本机服务，同一端口（模型 M7 选型） | 不要求 | 功能不可用，提示去配置 |
+
+#### 外发同意的类型定义
+
+只有类型，没有实现。M1 建立 `packages/contracts` 时按下面写入 `contracts/src/egress.ts` 与 `contracts/src/ipc/settings.ts`。本 PR 不建包、不写用例、不写 UI。
+
+```ts
+// packages/contracts/src/egress.ts —— 拟议。只有类型。
+import type { Result } from '@oi/kernel';
+
+export type EgressDecision = 'allow' | 'ask' | 'refused';
+// 按这个顺序判定，先命中先返回：
+// 1. allow：目的主机是回环或用户标过的「本机可信」（不算外发，不看同意记录）。
+// 2. allow：「外发前询问」为关（不再弹任何外发确认，不看同意记录）。
+// 3. allow：开关为开，且该能力已同意。
+// 4. refused：开关为开，且该能力已拒绝。调用方这次不连接。
+// 5. ask：开关为开，且该能力既未同意也未拒绝。调用方这次不连接。
+
+export type EgressCheckInput = Readonly<{
+  vendorId: string;
+  capability: string;
+  host: string;
+}>;
+
+export interface EgressCheck {
+  check(input: EgressCheckInput): Promise<EgressDecision>;
+}
+
+/** 对话框里「会发什么」。界面文案由 UI 映射，core 不拼句子。 */
+export type EgressSendKind =
+  | 'region_crop_and_candidates' // 区域裁图与候选文本
+  | 'rendered_page_image' // 我们渲染的页面图
+  | 'text_to_translate' // 待翻译文本
+  | 'qa_context'; // 问答上下文
+
+export type EgressConsentCapability = Readonly<{
+  id: string;
+  name: string;
+  sends: readonly EgressSendKind[];
+}>;
+
+/** 事件 settings.onEgressConsentRequired 的载荷。DESIGN.md 草案里的 providerId 即 vendorId。 */
+export type EgressConsentRequired = Readonly<{
+  requestId: string;
+  vendorId: string;
+  providerName: string;
+  capabilities: readonly EgressConsentCapability[];
+  /** true：已同意的服务商追加能力，列表里只有新增项。 */
+  isAddition: boolean;
+}>;
+
+/** 数据去向徽标。未作答不出现。开关为关时，会发送的项用 prompt_disabled，底层记录仍保留。 */
+export type EgressConsentBadge = 'granted' | 'prompt_disabled' | 'refused';
+
+export type EgressDestination = Readonly<{
+  vendorId: string;
+  providerName: string;
+  capabilities: readonly Readonly<{
+    id: string;
+    name: string;
+    sends: readonly EgressSendKind[];
+    status: EgressConsentBadge;
+  }>[];
+}>;
+
+/** true 允许；false 不允许（记已拒绝）；null 未作答（Esc、关闭弹窗、退出应用）。 */
+export type AnswerEgressConsentInput = Readonly<{
+  requestId: string;
+  granted: boolean | null;
+}>;
+export type AnswerEgressConsentError = Readonly<{ code: 'unknown_request' }>;
+
+export type WithdrawEgressConsentInput = Readonly<{ vendorId: string }>;
+export type WithdrawEgressConsentError = Readonly<{ code: 'consent_not_granted' }>;
+
+export type SetEgressPromptEnabledInput = Readonly<{ enabled: boolean }>;
+
+// packages/contracts/src/ipc/settings.ts —— 拟议。只有定义，方法体不在本文件。
+// 事件 settings.onEgressConsentRequired 的载荷是 EgressConsentRequired。
+// 非幂等：同一 vendorId 已有未结束的 requestId 时不发第二条。
+export interface SettingsEgressCommands {
+  // 非幂等。同一 requestId 第二次返回 unknown_request。
+  // granted: null 只结束这次询问，不写已同意、不写已拒绝。
+  answerEgressConsent(
+    input: AnswerEgressConsentInput,
+  ): Promise<Result<Readonly<{ vendorId: string }>, AnswerEgressConsentError>>;
+  // 非幂等。没有已同意记录时返回 consent_not_granted，不改已拒绝记录。
+  withdrawEgressConsent(
+    input: WithdrawEgressConsentInput,
+  ): Promise<Result<Readonly<{ vendorId: string }>, WithdrawEgressConsentError>>;
+  // 幂等。默认值由 core 给出（开），UI 不写默认值。
+  setEgressPromptEnabled(
+    input: SetEgressPromptEnabledInput,
+  ): Promise<Result<Readonly<{ enabled: boolean }>, never>>;
+  // 幂等，只读。
+  listEgressDestinations(): Promise<Result<readonly EgressDestination[], never>>;
+}
+
+export type SettingsEgressChannel =
+  | 'settings.answerEgressConsent'
+  | 'settings.withdrawEgressConsent'
+  | 'settings.setEgressPromptEnabled'
+  | 'settings.listEgressDestinations'
+  | 'settings.onEgressConsentRequired';
+```
 
 ### 7.1 总体流水线
 
@@ -803,7 +910,7 @@ flowchart TD
 - **预算闸门**：图中每个发往外部服务商的模型调用（引擎 A 的托管 API、引擎 B 文档解析、云 OCR、Jev 评分、多模态补救、翻译）发出前都经 `BudgetGate` 预留，被拒时按 §7.8 的规则处理：Jev 记 `unavailable`（原因码 `budget`）并标「待评分」，不触发补救，不改用别的服务商。
 
 - **当前选型**（只写在 adapters 与配置里，F-13）：引擎 A = 版面模型 + PP-FormulaNet 系列 + PaddleOCR 兜底 + 阅读顺序（版面模型给出，`engines/reading_order/` 校验与兜底，§7.10）；引擎 B = MiniCPM-OCR 1.0（默认来源是面壁文档解析 API，见下条；「本地」用官方 SDK `minicpm-ocr`，版面后端用 `ppdoclayout3_torch`，不依赖 PaddlePaddle）；各能力的默认来源见 §7.0；质量评估 = MiniCPM-OCR Jev（部署见 §7.4）。按 Q1，MiniCPM-OCR 1.0 与 Jev 照用：锁定上游提交、SDK 版本与权重 sha256，记入 `EngineCapabilities.models[]` 与每次 `ParseRun`；Jev 在 M6a、MiniCPM-OCR 1.0 在 M6b 开工前各复核一次。
-- **引擎 B 的云端来源（Wisdom 2026-10-30 18:37、18:44）**：引擎 B 默认用面壁开放平台的 MiniCPM-OCR-1.0 文档解析 API，本机 SDK 是同一接口后的「本地」选项。文档解析 API（`POST https://api.modelbest.ai/v1/document-parse`，Bearer `MODELBEST_API_KEY`，与 Jev 共用同一个面壁 Key；[文档](https://platform.modelbest.ai/console/docs/api/document-parse)，2026-10-30 查阅，页面标注更新于 2026-10-27）。第一次使用前须确认数据外发；可在设置中改选「本地」（PRD §3.3；验收 AC-60）。引擎 B 什么时候运行不变：仍是对比与兜底。
+- **引擎 B 的云端来源（Wisdom 2026-10-30 18:37、18:44）**：引擎 B 默认用面壁开放平台的 MiniCPM-OCR-1.0 文档解析 API，本机 SDK 是同一接口后的「本地」选项。文档解析 API（`POST https://api.modelbest.ai/v1/document-parse`，Bearer `MODELBEST_API_KEY`，与 Jev 共用同一个面壁 Key；[文档](https://platform.modelbest.ai/console/docs/api/document-parse)，2026-10-30 查阅，页面标注更新于 2026-10-27）。「外发前询问」开着时，第一次使用前须确认数据外发（§7.0 第 6 条）；开关关闭后不再确认；可在设置中改选「本地」（PRD §3.3；验收 AC-60）。引擎 B 什么时候运行不变：仍是对比与兜底。
   - 输入是预处理渲染好的页面图（同步接口，`image` 用 data URI），**不上传原 PDF**，所有来源仍共用同一张页面图与 `CoordinateFrame`（Q6）。
   - 请求带 `upright: false`（平台默认 `true`，会自适应旋转并把坐标改到旋转后的页面上），让坐标直接落在我们的页面图上；页面方向由预处理负责。
   - 输出的 `ocr.blocks[]`（`order`、`label`、`bbox` / `regions`，像素坐标、左上原点，相对 `image_width` / `image_height`）经 `engines/e2e_b/mapping.py` 转成候选页，与本机 SDK 走同一套映射。防御：若仍返回 `rotation.applied = true`，按 `total_angle`（逆时针为正）换回我们的页面坐标，换算不了的页不产生候选；`image_width` / `image_height` 与我们发出的图不一致时同样不产生候选。块的 `status` 不是 `ok`（`failed` / `skipped_no_vlm` / `skipped_seal`）时只保留版面框，不产生文字候选。
@@ -960,7 +1067,7 @@ interface BudgetGate {                         // contracts/src/budget.ts；budg
 
 - **Key**：环境变量名 `MODELBEST_API_KEY`（登记在 §15.4）。开发与测试只从环境变量读取（云端 Agent 由 Cursor Secrets 注入，开发者本机见 §15.4）；CI 不调用付费 API，不需要它；应用里由用户在设置中填写，存入本机安全存储（`safeStorage`，§8.3），`ProviderConfig` 只存 `secretRef`。Key 绝不进仓库、fixtures、录制的响应、日志、任务 JSON、诊断包（RULES N-05、PRD AC-09、AC-59）。调用真实服务的测试只在该变量存在时运行，默认跳过；契约测试用去掉 `Authorization` 与图片内容的录制样例。
 - **同一个 Key 两处用**：面壁的 Jev 与 MiniCPM-OCR-1.0 文档解析（§7.1 引擎 B 云端来源）用同一个平台 Key，设置里是一个「面壁开放平台」服务商、一个 `secretRef`。
-- **数据外发同意**：按 §7.0 第 6 条，面壁开放平台只弹一个对话框（19:30 起按服务商），列出当前选定发往面壁的全部能力——默认就是 Jev 评分（区域裁图与候选文本）与引擎 B 文档解析（页面图）；某一项改选「本地」时就不列它，之后再改回 API 时按「追加告知」只问这一项。同意后才发请求；拒绝或未作答时列出能力的请求数为 0，按 §7.0 降级，并提示可改选「本地」。「外发前询问」开关被用户关闭时不弹对话框，设置里的「数据去向」列表仍显示面壁及其能力。
+- **数据外发同意**：按 §7.0 第 6 条，面壁开放平台只弹一个对话框（19:30 起按服务商），列出当前选定发往面壁的全部能力——默认就是 Jev 评分（区域裁图与候选文本）与引擎 B 文档解析（页面图）；某一项改选「本地」时就不列它，之后再改回 API 时按「追加告知」只问这一项。同意后才发请求。拒绝记已拒绝；未作答不记已拒绝，下次再问。两种情况下这一次列出能力的请求数都为 0，按 §7.0 降级，并提示可改选「本地」。已同意可以撤回（§7.0）。「外发前询问」开关被用户关闭时不再弹任何外发确认，请求照常发送，设置里的「数据去向」列表仍显示面壁及其能力。
 - **价格**：Jev 在平台上没有标价，**未核实**；不写死单价，按 `usage` 的 token 数记账，单价来自用户配置，否则记「未知」（PRD QM-10）。
 - `evaluatorVersion` 记部署方式 `modelbest-api`、模型名与 base URL 所属站点；国内站与国际站分别定标，分数不混用。
 
@@ -1399,7 +1506,7 @@ type FormulaCropRef = Readonly<{
 
 - `markdown` 字符串里只出现已核验公式（显示决定 `verified-latex`）的 `$…$` / `$$…$$`。未核验公式（`source-crop`）不把候选 LaTeX 写进去冒充已核验，也不在 Markdown 里发明图片或占位语法；`oi-md/1` 仍然不含图片与 HTML。
 - 片段表保存每个公式片段的显示决定，`source-crop` 时带当前采用版本的裁图 `assetId`。裁图在块里的位置记在记录的 `crops` 字段（`at` 是 `markdown` 中的插入位置）。
-- `getBlocks` 在 core 里生成每块的 `MdDocument`：先经 `markdown` 的 seam 解析 `markdown`，再在每个 `at` 处插入 `MdFormulaCrop` 节点（`{ type: 'formula_crop', display, assetId, fragmentId }`，源码区间是 `at` 处的零长度区间）。已核验公式是普通的 math 节点。reader 只渲染这个文档，裁图经 ui-kit 的裁图组件与 `oi-asset://` 显示；行内裁图的尺寸与基线对齐等视觉由 Loom 定（DESIGN.md 待 Loom 产出）。
+- `getBlocks` 在 core 里生成每块的 `MdDocument`：先经 `markdown` 的 seam 解析 `markdown`，再在每个 `at` 处插入 `MdFormulaCrop` 节点（`{ type: 'formula_crop', display, assetId, fragmentId }`，源码区间是 `at` 处的零长度区间）。已核验公式是普通的 math 节点。reader 只渲染这个文档，裁图经 ui-kit 的裁图组件与 `oi-asset://` 显示；行内裁图的尺寸与基线对齐等视觉由 Loom 定（DESIGN.md §3.3、§3.4、DS-14）。
 - 这是 `oi-md/1` 的一部分，不是以后的方言升级：缓存键里的 `formatVersion` 不因此改变。`formulaDigest` 继续覆盖显示决定与裁图内容哈希（「缓存键」一节）。
 
 **写入流程**（全部在 `translation` core，顺序固定）：
@@ -1414,15 +1521,15 @@ type FormulaCropRef = Readonly<{
 
 - 重译时先写一条新版本 `retranslating`，旧的 `success` 版本照常显示；新版本结束后转为 `success` 或 `failed`。状态转移只在 core。同一块已有 `retranslating` 版本时，`retranslateBlock` 返回 `already_retranslating`，不排第二个任务。
 - `retranslateBlock` 的 `Result` 只表示受理与否。每次状态转移后 core 发 `translation.onBlockChanged`（`{ documentId, revisionId, sourceBlockId, status, version, failureKind }`，普通数据）；UI 收到后用 `getBlocks({ sourceBlockIds: [id] })` 取该块。UI 不根据调用返回、计时或任务事件推断块状态（RULES §5 第 13 项）。
-- 显示规则（`adopted-version.ts`）：有 `success` 版本就显示最新的 `success`；没有时显示最新版本（`failed` 显示原文 + 「翻译未通过校验」+「重译」，`retranslating` 显示骨架）。
-- 重译失败（最新版本 `failed`，但还有更早的 `success`）时的界面，按 Loom 2026-10-30 结论（PRD AC-56，对应 MD-27）：
-  - 正文照常显示上一版 `success`；块左侧 2px 标记线，颜色用 `--oi-reader-warn`；块末一行次要文字「重译未成功，仍显示上一版 · 重试」。
-  - 「重试」是次级文字按钮，调 `retranslateBlock`；悬停显示原因，取自 `failureKind`：校验未通过 / 网络 / 模型错误。规格补充（待 Loom 确认）：键盘聚焦到「重试」时同样显示原因。
+- 显示规则（`adopted-version.ts`）：有 `success` 版本就显示最新的 `success`；没有时显示最新版本。`failed` 显示原文，状态行按 `failureKind`：`check_failed`「未翻译（校验没过）· 重译」、`network`「未翻译（网络问题）· 重译」、`model_error`「未翻译（模型出错）· 重译」；`failureKind` 为 `null` 时用「未翻译 · 重译」。`retranslating` 显示骨架。
+- 重译失败（最新版本 `failed`，但还有更早的 `success`）时的界面，按 Wisdom 2026-10-30 22:02（PRD AC-56，DESIGN §4.1，对应 MD-27）：
+  - 正文照常显示上一版 `success`；块左侧 2px 标记线，颜色用 `--oi-reader-warn`。块末提示行按 `failureKind`：`check_failed`「重译未成功（校验没过），仍显示上一版 · 重试」、`network`「重译未成功（网络问题），仍显示上一版 · 重试」、`model_error`「重译未成功（模型出错），仍显示上一版 · 重试」。`failureKind` 为 `null`（core 不应在失败时给出）时用「重译未成功，仍显示上一版 · 重试」。
+  - 「重试」是次级文字按钮，调 `retranslateBlock`。悬停或键盘聚焦状态行时显示该原因的详情（DESIGN §4.1）：`check_failed`「新译文里的公式、数字或引用编号和原文对不上，已丢弃。可以再试一次。」、`network`「没连上翻译服务或超时。请检查网络后重试。」、`model_error`「翻译服务返回了错误或看不懂的结果。可以重试，或到设置 › 模型来源 换一个翻译服务 / 改选本地。」、`null` 无详情。
   - 不弹 toast、弹窗或全局横幅。
   - 重试期间提示行显示「正在重译…」，「重试」禁用；成功后标记线与提示行消失，显示新版本；再次失败回到上面的样子。
-  - 从未成功的块：显示原文 + 「翻译未通过校验」+「重译」。
-  - 无障碍：提示行 `role="status"`；「重试」可用键盘聚焦，焦点环用 `--oi-reader-focus`；状态不只靠颜色区分（标记线之外还有提示文字）。两个 Token 由 Loom 定义（DESIGN.md，待 Loom 产出）。
-  - 以上是 reader UI 的样式；「显示哪个版本、要不要失败提示」由 core 判定：`getBlocks` 每块返回 `display`（`current` 正常、`retranslating` 显示上一版并提示「正在重译…」、`previous_with_failure` 重译失败仍显示上一版、`never_succeeded` 从未成功、`pending` 没有可显示的版本且正在翻译，显示骨架），UI 只按它选样式。
+  - 从未成功的块：显示原文 + 2px 标记线 + 按 `failureKind` 的提示行「未翻译（校验没过）· 重译」「未翻译（网络问题）· 重译」「未翻译（模型出错）· 重译」；`null` 用「未翻译 · 重译」。悬停或聚焦显示上一条的详情。
+  - 无障碍：提示行 `role="status"`；「重试」可用键盘聚焦，焦点环用 `--oi-reader-focus`；状态不只靠颜色区分（标记线之外还有提示文字）。两个 Token 由 Loom 定义（DESIGN.md §3.3、§3.4：`--oi-reader-warn`、`--oi-reader-focus`；色值待审批）。
+  - 以上是 reader UI 的样式；「显示哪个版本、要不要失败提示」由 core 判定：`getBlocks` 每块返回 `display`（`current` 正常、`retranslating` 显示上一版并提示「正在重译…」、`previous_with_failure` 重译失败仍显示上一版、`never_succeeded` 从未成功、`pending` 没有可显示的版本且正在翻译，显示骨架），UI 只按 `display` 选样式、只按 `failureKind` 选文案。
 
 **缓存键**（`cache-key.ts`）= 下列字段规范化后的 SHA-256：
 
@@ -1819,6 +1926,7 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | Q12 | 不接 Unlimited-OCR，上游支持坐标输出后再评估 | 不进本文；记录在差异清单 §2.6 |
 | 四项风险的决定（2026-10-30 19:11） | ① 任何外发数据的 API 能力第一次使用前弹出同意对话框，拒绝 = 请求 0 + 按能力降级（询问粒度 19:30 改为按服务商，见下一行）；② 引擎 A 的三条路径（托管 API〔核实通过后〕、本地部署、租用的 Linux 远程 worker）都保留可选，M3 前定最终选择；③ 文本问答纳入 API 优先，多模态模型与纯文本 LLM 共用 `ChatProvider`；④ M0 的面壁 API 实测延后，记「待执行」，不阻塞文档 | §2.5 `settings`、§4.2 `settings` / `qa`、§7.0 第 6、7 条与表、§7.3 `ChatProvider`、§7.4「面壁 API」「开发机」 |
 | 外发同意按服务商（2026-10-30 19:30） | 每个服务商一个对话框，列出发往它的全部能力（如面壁：Jev 评分 + 引擎 B）；已同意的服务商新增能力时再问一次、只列新增项；设置里有「外发前询问」开关，默认开，只能由用户关闭；设置始终显示「数据去向」列表；对话框布局与开关位置由 Loom 定 | §2.5 `settings`、§4.2 `settings/domain/egress-consent.ts`、§7.0 第 6 条、§7.4「面壁 API」 |
+| 外发同意的未作答与撤回（Wisdom 2026-10-30 21:26） | 未作答（Esc、关闭弹窗、退出应用）不记已拒绝，下次再问；每个已同意的服务商可 `settings.withdrawEgressConsent`；仍按服务商问一次，新增能力再问一次；「外发前询问」默认开，关闭后不再弹任何外发确认。事件 `settings.onEgressConsentRequired`。只有类型，没有实现 | §2.5 `settings`、§4.1 `egress.ts` / `ipc/settings.ts`、§4.2 `egress-consent.ts`、§7.0 第 6 条、§7.4「面壁 API」；PRD §3.3、AC-61 ⑦、§6.3 |
 | Markdown 阅读（2026-10-30 17:32） | 批准 Loom 方案并入 M0–M8：统一 `MarkdownView`；单个 `.md` 与笔记库只读阅读；KaTeX 与 formula 同一份安全选项；`.md` 独立入口、只链接库内 PDF；v2 只读、预留编辑接口；译文按区块存 Markdown（D1–D7） | §4.5、§8.1.1、§4.1 `latex-policy`、§4.3 新边、§9、G2；差异清单 §6.1 |
 | 译文区块四项结论（Loom 2026-10-30，经 Wisdom 转达） | 翻译块范围；`retranslateBlock` 与 `onBlockChanged.documentId`，状态只经事件推送；重译失败的界面（MD-27）；缓存键改用公式决定摘要 | §2.6 `TranslationSeam`、§8.1.1；差异清单 §6.2 |
 | 架构评审修复 A（Wisdom 2026-10-30 19:57 批准） | P0-1 新增无界面的编排切片 `ingest`，删除 `repair → quality`；P0-2 main 与 utility 的固定职责，密钥明文只在 main；P0-3 所有付费调用先经 `BudgetGate` 预留，账本移入新切片 `budget`，单价未知时按请求数 / 页数 / token 上限；P0-4 译文 `markdown` 不含未核验公式，裁图位置记在 `crops`，`getBlocks` 生成裁图节点；删除 G17，保留 G13–G16。20:57 按建议定下：采用 `budget` 切片；默认受限预算，各科目带保守的占位次数类上限，M0 实测后定标（§7.8 第 4 条）；评审建议的热点收窄（P1-11 后半）由 PR C 处理（本表末行） | §1、§2.5、§3、§4.1–§4.4、§5.2 F-16 / F-17、§7.1、§7.3、§7.8、§8.1.1、§8.2、§9、§10.2、§13；差异清单 §6.6 |

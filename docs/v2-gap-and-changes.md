@@ -2,7 +2,7 @@
 
 状态：v0.6。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC），Q3 / Q4 / Q9 相关补充查询与各服务商 API 格式查询 2026-10-30（§2.10）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定（§6）；Markdown 阅读方案于 2026-10-30 17:32 批准（§6.1）；Loom 同日对译文区块四项风险给出结论（§6.2）；Wisdom 同日 18:37 决定 Jev 远程默认用面壁开放平台托管 API（§2.3.1），18:44 定下「API 优先」原则（§0 第 4 条、§2.4.1、§6.3），19:11 对四项风险作出决定（§6.4），19:30 把数据外发同意改为按服务商询问并加入「外发前询问」开关（§6.5），19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修复：v0.4 修复 4 个 P0 并删除 G17（§6.6）；v0.5 修复 P1 项，并按 Wisdom 19:45、19:46 的要求新增服务商适配层（§0 第 13 条、§2.10、§6.7）；v0.6 按 Wisdom 21:12 批准的 PR C 写入阅读顺序、M6 拆分、BabelDOC 借鉴与评审其余项（§0 第 14 条、§2.4、§2.11、§6.8、§7），各评审项的处理状态见 [backlog](./backlog.md)。
 用途：把三类输入——用户提供的双引擎方案（[附件原文](./architecture/inputs/pdf_translation_architecture.md)）、`docs/architecture/` 下的 01 / 02 / 03 草案、v1 实际实现（见 [v1 审查](./v1-review.md)）——与上游模型的官方资料逐条对照，列出**需要改的地方、冲突点、未核实的说法**，并给出统一编号的决策问题（Q1–Q12，现已全部决定）。
-结论已写入根目录规格：[PRD.md](../PRD.md)、[ARCHITECTURE.md](../ARCHITECTURE.md)、[RULES.md](../RULES.md)。三份规格与本文冲突时以规格为准；本文记录「为什么这样改」。视觉与交互规格 [DESIGN.md](../DESIGN.md)、[docs/design-principles.md](./design-principles.md) **待 Loom 产出**，本文不涉及。
+结论已写入根目录规格：[PRD.md](../PRD.md)、[ARCHITECTURE.md](../ARCHITECTURE.md)、[RULES.md](../RULES.md)。三份规格与本文冲突时以规格为准；本文记录「为什么这样改」。视觉与交互规格 [DESIGN.md](../DESIGN.md)、[docs/design-principles.md](./design-principles.md) 已于 2026-10-30 入库（v0.6）。下文仍写「待 Loom 产出」的表格行是当时的记录，不改写。
 
 ---
 
@@ -363,7 +363,7 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | --- | --- | --- |
 | 「段落级文本块」包含哪些块 | 正文段落、标题、图表题注、脚注、列表项、引用块。表格和图用原文裁图，不进翻译块（只翻题注）；独立公式走公式回退链，不算翻译块 | ARCH §8.1.1「哪些块是翻译块」、`block-scope.ts`；PRD S3、AC-58 |
 | 规格在 Loom 的 seam 之外加的 `retranslateBlock` 与 `onBlockChanged.documentId` | 同意。`retranslateBlock` 返回 `Result`；状态变化只经 `onBlockChanged` 推送，UI 不自行推断状态 | ARCH §2.6 `TranslationSeam`、§8.1.1；RULES §5 第 13 项；PRD AC-56 |
-| 重译失败而旧版本还在时怎么显示 | 正文照常显示上一版；块左侧 2px 标记线（`--oi-reader-warn`）；块末次要文字「重译未成功，仍显示上一版 · 重试」，「重试」是次级文字按钮、调 `retranslateBlock`，悬停显示原因（校验未通过 / 网络 / 模型错误）；不弹 toast、弹窗或全局横幅；重试中显示「正在重译…」并禁用重试，成功后标记与提示行消失；从未成功的块显示原文 +「翻译未通过校验」+「重译」；提示行 `role="status"`，「重试」可键盘聚焦，焦点环 `--oi-reader-focus`，状态不只靠颜色。新增验收 MD-27 | ARCH §8.1.1「状态与显示版本」；PRD US-28、AC-03、AC-56 |
+| 重译失败而旧版本还在时怎么显示 | 正文照常显示上一版；块左侧 2px 标记线（`--oi-reader-warn`）；块末次要文字「重译未成功，仍显示上一版 · 重试」，「重试」是次级文字按钮、调 `retranslateBlock`，悬停显示原因（校验未通过 / 网络 / 模型错误）；不弹 toast、弹窗或全局横幅；重试中显示「正在重译…」并禁用重试，成功后标记与提示行消失；从未成功的块显示原文 +「翻译未通过校验」+「重译」；提示行 `role="status"`，「重试」可键盘聚焦，焦点环 `--oi-reader-focus`，状态不只靠颜色。新增验收 MD-27。已由 Wisdom 2026-10-30 22:02 改为按原因分开提示。 | ARCH §8.1.1「状态与显示版本」；PRD US-28、AC-03、AC-56 |
 | 缓存键不含采用版本号是否安全 | 在本文写清论证：片段表哈希是否覆盖所有公式变化（候选更换、采用版本变化、重解析）；不能覆盖就把采用版本或公式决定摘要加入缓存键，并加对应验收 | 本节 §6.2.1；ARCH §8.1.1「缓存键」；PRD AC-57 |
 
 为落实前三项，规格做了以下补充，需 Loom 知悉：
