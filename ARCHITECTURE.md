@@ -327,10 +327,10 @@ packages/features/<name>/
 | --- | --- |
 | `contracts/src/ids.ts` | 品牌化 ID 类型（DocumentId、PageRevisionId、BlockId、JobId…）与构造校验 |
 | `contracts/src/geometry.ts` | `NormalizedBBox`、`CoordinateFrame`、六元矩阵类型 |
-| `contracts/src/document.ts` | `ContentBlock`、`AcceptedPageRevision`、`SourceAudit`、`ReadingOrderResult`（阅读顺序的结果、来源与规则集版本，§7.10） |
+| `contracts/src/document.ts` | `ContentBlock`、`AcceptedPageRevision`、`SourceAudit`、`ReadingOrderResult`（阅读顺序的结果、来源与规则集版本，§7.10）、`PageTextLayer`（每页文字层 `trusted` / `untrusted` / `none`，§7.11） |
 | `contracts/src/formula.ts` | `FormulaCandidate`、`FormulaDecision` |
 | `contracts/src/evaluation.ts` | `EvaluationResult`（scored / error / unavailable / not-run） |
-| `contracts/src/translation.ts` | `StoredTranslationBlock`（译文区块记录，取代草案 02 的 `TranslationRecord`，§8.1.1；含裁图位置 `crops`）、`TranslationBlockView`、`TranslationBlockChanged`、受保护片段表（每个公式片段带显示决定，`source-crop` 时带 `assetId`） |
+| `contracts/src/translation.ts` | `StoredTranslationBlock`（译文区块记录，取代草案 02 的 `TranslationRecord`，§8.1.1；含裁图位置 `crops`）、`TranslationBlockView`、`TranslationBlockChanged`、受保护片段表（每个公式片段带显示决定，`source-crop` 时带 `assetId`）、`GlossaryEntry`（术语表条目；v2 只有接口，§7.11） |
 | `contracts/src/markdown.ts` | `MdDocument`、`MdBlock`、`MdInline`、`MdHeading`、`MdImageRef`、`MdFormulaCrop`（未核验公式的裁图节点，只出现在译文的 `MdDocument` 里，§8.1.1）、`ResolvedLink`、`VaultTree`、`MdFileEvent`、`MdCapabilities`、`MdError`；预留的 `WriteFileInput` / `WriteFileResult` / `MdEdit`（§4.5.7）。形状以 [Loom 方案](./docs/design/md-reader.md) §3.3 为起点 |
 | `contracts/src/latex-policy.ts` | KaTeX 安全选项的**唯一一份**常量（`KATEX_SAFE_OPTIONS`）、单个公式字符上限、不可信命令清单；只有数据，不 import `katex`。`formula`、`markdown`、`ui-kit` 都从这里读（§4.5.5） |
 | `contracts/src/anchor.ts` | `ContentAnchor`（笔记、问答、语音共用；写作预留，§4.4） |
@@ -378,14 +378,14 @@ packages/features/<name>/
 | `ingest` | 流水线编排：一次用户动作「打开 PDF」按 §7.1 依次调用其他切片的 seam；没有界面，没有自己的表 | `domain/ingest-policy.ts`（纯函数：输入是候选、评估记录、公式决定、采用版本、译文区块，以及本次预算与同意的结果；输出下一步：解析、取源码候选、评分、公式决定、补救、采用、翻译、停止，带停止原因；不调用网络）· `domain/ingest-steps.ts`（步骤与原因码的类型）· `application/use-cases/open-document.ts`（入库 → 提交解析 → 取源码候选 → 评分 → 公式决定 → 必要时补救并重新评分 → 采用 → 按块翻译；每一步只调对方的 `index.ts`）· `application/use-cases/resume-ingest.ts`（应用启动、评分服务恢复、预算或同意状态变化后，从已保存的事实重新算下一步续跑；`quality` 的 `reevaluate-pending` 由它触发）。进度与取消用 `jobs` 的任务（种类 `ingest`）；下一步总是由 `ingest-policy` 从已保存的事实重新算出，所以 `ingest` 不建表，重启后重算即可续跑 |
 | `library` | 文献导入、身份（SHA-256）、元数据、列表、阅读进度 | `domain/document-identity.ts`（哈希身份与去重规则）· `domain/library-record.ts`（元数据校验）· `application/use-cases/import-pdf.ts` · `application/use-cases/list-library.ts` · `application/use-cases/update-progress.ts` · `application/use-cases/get-bibliographic-records.ts`（按 ID 批量只读，写作预留，§4.4） · `application/ports/library-repository.ts` · `adapters/sqlite-library-repository.ts` · `ui/library-list.tsx`。不做 v1 数据迁移（Q8），没有 v1 导入器 |
 | `document` | 统一文档模型：解析运行、候选页、采用版本、来源审计、坐标帧 | `domain/accepted-revision.ts`（采用不变式）· `domain/source-audit.ts`（missing / duplicates）· `domain/coordinate-frame.ts`（矩阵与换算）· `domain/block-id.ts`（稳定块号）· `domain/adopt-policy.ts`（compare 与 adopt 区分）· `application/use-cases/adopt-page.ts`（乐观锁原子切换）· `application/ports/document-repository.ts` · `adapters/sqlite-document-repository.ts` |
-| `parsing` | 解析任务编排、引擎选择、文字层基础档、云 OCR 识别来源 | `domain/engine-capabilities.ts` · `domain/layout-profile.ts`（标准档 / 高质量档；高质量档只在基准证明后开放，Q10）· `domain/text-layer/`（文字层基础档的规则，每条规则一个文件，自 v1 移植：`columns`、`cross-column`、`xy-cut`、`page-furniture`、`caption-binding`、`continuation`、字形清洗，以及文字层启发式标签；顺序规则与 worker `engines/reading_order/` 属于同一规则集 `oi-rules/1`，以 `fixtures/parsing-rules/` 对拍，§7.10）· `application/use-cases/submit-parse.ts` · `application/ports/parse-gateway.ts` · `application/ports/ocr-provider.ts`（云 OCR，§7.7）· `adapters/worker-parse-gateway.ts` · `adapters/text-layer-engine.ts`（pdfjs-dist 提取 → domain 规则）· `adapters/cloud-ocr-provider.ts`（`OcrProvider` 的唯一实现，经 `@oi/providers` 的 `OcrTransport`；百度、智谱等服务商只在注册表里，§7.9） |
+| `parsing` | 解析任务编排、引擎选择、文字层基础档、云 OCR 识别来源 | `domain/engine-capabilities.ts` · `domain/layout-profile.ts`（标准档 / 高质量档；高质量档只在基准证明后开放，Q10）· `domain/text-layer/`（文字层基础档的规则，每条规则一个文件，自 v1 移植：`columns`、`cross-column`、`xy-cut`、`page-furniture`、`caption-binding`、`continuation`、`scan-detect`（每页文字层是否可信，§7.11）、`paragraphs`（行合并为段落，§7.11）、字形清洗，以及文字层启发式标签；顺序、扫描页判定与段落切分规则与 worker 的对应模块属于同一规则集 `oi-rules/1`，以 `fixtures/parsing-rules/` 对拍，§7.10）· `application/use-cases/submit-parse.ts` · `application/ports/parse-gateway.ts` · `application/ports/ocr-provider.ts`（云 OCR，§7.7）· `adapters/worker-parse-gateway.ts` · `adapters/text-layer-engine.ts`（pdfjs-dist 提取 → domain 规则）· `adapters/cloud-ocr-provider.ts`（`OcrProvider` 的唯一实现，经 `@oi/providers` 的 `OcrTransport`；百度、智谱等服务商只在注册表里，§7.9） |
 | `jobs` | 持久任务记录、状态机、重启恢复、事件流 | `domain/job-state-machine.ts` · `domain/idempotency.ts` · `application/use-cases/resume-jobs.ts` · `application/ports/job-store.ts` · `adapters/sqlite-job-store.ts` |
 | `formula` | 公式候选、校验、显示决策、兜底顺序 | `domain/formula-policy.ts`（候选优先级链与换层判据，§7.5）· `domain/charset-check.ts` · `domain/equation-number.ts` · `domain/render-equivalence.ts` · `domain/crop-geometry.ts`（裁图外扩与 18px 参考字号） · `application/use-cases/decide-formula.ts` · `application/ports/latex-renderer.ts` · `adapters/katex-renderer.ts`（安全配置见 §7.6） |
 | `formula-source` | arXiv 源码校准公式：编号与版本识别、源码下载缓存、TeX 解析、与版面区域对齐、对齐失败回落（Q4，§7.6） | `domain/arxiv-id.ts` · `domain/fetch-policy.ts`（间隔、超时、冷却）· `domain/archive-limits.ts`（解包安全上限）· `domain/tar-reader.ts`（纯 tar 读取，gunzip 经端口注入）· `domain/tex-units.ts`（TeX → 公式单元）· `domain/macro-table.ts`（导言区宏 → KaTeX 宏，带展开上限）· `domain/source-align.ts`（词序列对齐与覆盖率）· `domain/align-policy.ts`（逐公式核对与回落判定）· `application/use-cases/resolve-arxiv-source.ts` · `application/use-cases/align-source.ts` · `application/ports/arxiv-source-client.ts` · `application/ports/source-cache.ts` · `application/ports/gunzip.ts` · `adapters/arxiv-http-client.ts` · `adapters/node-gunzip.ts` · `adapters/sqlite-source-cache.ts` |
 | `quality` | 质量评估端口、结果规范化、全路径评分不变式、部署推荐 | `domain/evaluation-status.ts`（verdict → 规范状态）· `domain/scoring-coverage.ts`（每个识别候选必须有评估记录，Q1）· `domain/low-score-routing.ts`（阈值按类别与 `evaluatorVersion`）· `domain/deployment-recommendation.ts`（Jev 的「本地 / API」推荐与本地可行性标注，API 优先，Q9）· `application/ports/quality-evaluator.ts` · `application/use-cases/evaluate-regions.ts` · `application/use-cases/reevaluate-pending.ts`（评分服务恢复后补评；由 `ingest` 的 `resume-ingest` 调用）· `adapters/worker-quality-evaluator.ts`（唯一实现：经 worker-client 提交 `evaluate` 作业） |
 | `repair` | 低分 / 不确定区域的多模态补救：只产出新的识别候选，重新评分由 `ingest` 调 `quality` 完成 | `domain/repair-plan.ts` · `domain/repair-limits.ts`（次数、并发、超时上限）· `application/use-cases/run-repair.ts` · `application/ports/multimodal-provider.ts` · `adapters/llm-multimodal-provider.ts`（经 `@oi/providers` 的 `ChatTransport`，要求模型有 `chat` 与 `vision` 标记，§7.9.3） |
 | `budget` | 预算账本：所有付费调用的预留、结算、释放；金额上限与单价未知时的请求数 / 页数 / token 上限（§7.8） | `domain/budget-ledger.ts`（预留 / 结算 / 释放；已预留 + 已结算达到上限即拒绝）· `domain/budget-limits.ts`（预算模式、金额上限、按「服务商 + 能力」的请求数 / 页数 / token 上限）· `domain/default-caps.ts`（默认受限预算与各科目的占位次数类上限，§7.8 第 4 条）· `domain/price-book.ts`（单价来自用户配置；未知时金额记「未知」，不记为 0，不参与金额累加）· `domain/envelope.ts`（worker 作业的额度信封：最多请求数，含拆批与重试）· `application/use-cases/reserve.ts` · `settle.ts` · `release.ts` · `get-budget-status.ts` · `set-budget-limits.ts` · `application/ports/ledger-store.ts` · `adapters/sqlite-ledger-store.ts`（表前缀 `bud_`） |
-| `translation` | 自然语言翻译、占位保护、完整性校验、Markdown 还原、译文区块记录（D6，§8.1.1）、润色、缓存 | `domain/placeholder.ts`（抽取与恢复）· `domain/integrity-check.ts`（公式占位 / 数字 / 引用）· `domain/markdown-restore.ts`（占位还原为 `$…$` / `$$…$$`、模型文字中的 `$`、`<`、`[[` 转义、还原后公式与片段表逐个比对）· `domain/block-scope.ts`（按块类型判定是否为翻译块，§8.1.1）· `domain/block-status.ts`（success / failed / retranslating 状态转移）· `domain/adopted-version.ts`（显示哪个版本）· `domain/cache-key.ts`（§8.1.1 的键组成与公式决定摘要 `formulaDigest`）· `domain/segmenter.ts` · `application/use-cases/translate-page.ts` · `application/use-cases/retranslate-block.ts` · `application/use-cases/get-blocks.ts`（经 `markdown` 的 seam 解析出 `MdDocument`）· `application/use-cases/polish-translation.ts` · `application/ports/translation-provider.ts` · `application/ports/translation-store.ts` · `adapters/sqlite-translation-store.ts`（表前缀 `tr_`）· `adapters/llm-translation-provider.ts`（经 `@oi/providers` 的 `ChatTransport`；服务商只在注册表里，§7.9） |
+| `translation` | 自然语言翻译、占位保护、完整性校验、Markdown 还原、译文区块记录（D6，§8.1.1）、润色、缓存 | `domain/placeholder.ts`（抽取与恢复；原文里的 `⟦`、`⟧` 也作为字面片段保护，§7.11）· `domain/integrity-check.ts`（公式占位 / 数字 / 引用）· `domain/markdown-restore.ts`（占位还原为 `$…$` / `$$…$$`、模型文字中的 `$`、`<`、`[[` 转义、还原后公式与片段表逐个比对）· `domain/block-scope.ts`（按块类型判定是否为翻译块，§8.1.1）· `domain/block-status.ts`（success / failed / retranslating 状态转移）· `domain/adopted-version.ts`（显示哪个版本）· `domain/cache-key.ts`（§8.1.1 的键组成与公式决定摘要 `formulaDigest`）· `domain/segmenter.ts`（只按上下文窗口把块分批，不切分、不合并块，§7.11）· `domain/glossary.ts`（术语命中与摘要，§7.11）· `application/use-cases/translate-page.ts` · `application/use-cases/retranslate-block.ts` · `application/use-cases/get-blocks.ts`（经 `markdown` 的 seam 解析出 `MdDocument`）· `application/use-cases/polish-translation.ts` · `application/ports/translation-provider.ts` · `application/ports/translation-store.ts` · `application/ports/glossary-provider.ts`（v2 装配只注入空实现）· `adapters/sqlite-translation-store.ts`（表前缀 `tr_`）· `adapters/llm-translation-provider.ts`（经 `@oi/providers` 的 `ChatTransport`；服务商只在注册表里，§7.9） |
 | `markdown` | Markdown 解析为块级 AST、公式与 HTML 安全规则、单个 `.md` 与文件夹（笔记库）只读阅读、wikilink 与相对链接解析、文件监视、编辑接口预留（§4.5） | 文件清单见 §4.5.2 |
 | `reader` | PDF 显示、页面虚拟化、对照跳转、裁图显示（仅 renderer） | `domain/pairing.ts`（块配对与跟随；译文块按 `sourceBlockId` 对齐）· `domain/scroll-sync.ts` · `domain/viewport-mapping.ts` · `ui/pdf-page-canvas.tsx` · `ui/page-virtualizer.ts` · `ui/readout-pane.tsx`（每个译文块一个 ui-kit `MarkdownView`，按块状态显示）· `ui/formula-view.tsx` · `ui/selection-toolbar.tsx` · `ui/hooks/use-document-session.ts` |
 | `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `application/use-cases/get-notes-by-ids.ts`（按 ID 批量只读，写作预留，§4.4） · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx`（正文用 ui-kit `MarkdownView`） |
@@ -1288,6 +1288,54 @@ type ReadingOrderResult = Readonly<{
 
 **未决**（差异清单 §7）：V3 的开源输出若不带顺序，标准档的模型顺序从哪里来（改用 V2——V2 就是 plus-L 加 pointer network——还是走 XY-cut）；高质量档（plus-L）是否改用 V2 以获得模型顺序。两项待 M0 实测后由 Wisdom 定。校验与绑定的阈值待基准定标。
 
+### 7.11 BabelDOC 借鉴与防御（Wisdom 2026-10-30 21:12）
+
+[BabelDOC](https://github.com/funstory-ai/BabelDOC)（`main@38d3896`，0.6.4，2026-10-30 查阅）是 **AGPL-3.0**，并依赖 `pymupdf>=1.26.7`（其 `pyproject.toml`）。决定：只借思路，严禁复制或改写它的代码，不引入它与它的任何依赖（RULES §1.5、N-19）。本 PR 只读了它的仓库元数据、README 与目录名，没有读源码；下表「BabelDOC 对应」一栏只说明它有这项功能，不描述它的实现。验收 PRD AC-72–AC-77。
+
+| 思路 | BabelDOC 对应（README 选项或目录名） | v2 落点 | v2 的做法与它的不同 |
+| --- | --- | --- | --- |
+| 公式占位保护 | `--formular-font-pattern`、`--add-formula-placehold-hint`；`styles_and_formulas.py` | `translation/domain/placeholder.ts`、`integrity-check.ts`（§8.1.1） | 公式区域来自版面与公式识别，不靠字体模式；见下文「占位加固」 |
+| 翻译缓存 | `translator/cache.py`；`--ignore-cache` | `translation/domain/cache-key.ts`（§8.1.1） | 键覆盖公式决定摘要；单块重译不读缓存、写回覆盖（下文） |
+| 术语表 | `--glossary-files`（CSV，命中的术语进提示词）；默认自动抽取术语 | `translation/domain/glossary.ts` 与端口 `GlossaryProvider` | v2 只留接口，装配注入空实现；不做用 LLM 自动抽取术语 |
+| 扫描件检测 | `detect_scanned_file.py`；`--skip-scanned-detection` | worker `preprocess/scan_detect.py`；TS `parsing/domain/text-layer/scan-detect.ts` | 按页三态，只用 pypdfium2 / pdfjs-dist 给出的页面特征 |
+| 段落切分 | `paragraph_finder.py`；`--split-short-lines` | worker `engines/modular_a/paragraphs.py`；TS `parsing/domain/text-layer/paragraphs.ts` | 只在解析侧决定段落；翻译侧只分批 |
+| 可用程序校验的版本化 schema | 中间表示 `il_version_1.xsd` | `contracts` 的 TypeBox 定义 → JSON Schema（§10.2） | JSON Schema，`$id` 带主版本；worker 发出前、桌面收到后各校验一次 |
+
+**占位加固**（`placeholder.ts`、`integrity-check.ts`；PRD AC-72）：
+
+- 原文里本来就有的 `⟦`、`⟧` 作为字面片段（类型 `literal`）抽出，还原后与原文逐字节一致；模型输出里出现片段表之外的 `⟦…⟧` 判 `placeholder_unknown`。
+- 占位符只按字节精确匹配，不做模糊修复：模型加空格、换括号、改编号、全角半角互换都判 `placeholder_modified`，该块 `failed`（`check_failed`）。
+- 去掉占位符后只剩空白与标点的块（纯公式块）不发翻译请求，也不预留额度：直接按写入流程第 3–5 步还原并写 `success`，`model` 记 `{ providerId: 'identity', modelId: 'identity' }`。
+
+**重译与缓存**（`retranslate-block.ts`、`translate-page.ts`；PRD AC-73）：`translatePage` 先查缓存，命中就不发请求（AC-02）。`retranslateBlock` 不读缓存，照常经 `BudgetGate` 预留后发请求；结果是 `success` 时按同一个键写回 `tr_cache`，覆盖旧条目，之后的 `translatePage` 取到的是新结果。`failed` 仍然不写缓存。
+
+**术语表**（PRD AC-74）：
+
+- 端口 `GlossaryProvider.entriesFor(documentId)` 返回 `GlossaryEntry[]`（原文术语、译名、可选备注）；v2 没有录入界面，装配根只注入返回空数组的实现。
+- `glossary.ts` 只挑出本块原文里出现的条目放进提示词；没有命中时提示词里不出现术语段落，与没有术语表时逐字节相同。
+- 缓存键加一项「术语摘要」：本块命中条目规范化后的 SHA-256；没有命中时是固定值。只改未命中的条目，键不变（§8.1.1「进提示词的每一项都要进键」）。
+- 不用 LLM 自动抽取术语：v2 对任何服务商的「抽取术语」请求为 0。
+
+**扫描页判定**（PRD AC-75）：
+
+- 每页一个 `PageTextLayer`：`trusted`（文字层可直接用）、`untrusted`（有文字层但不可信，例如整页图片上覆盖不可见文字，或字符与页面图对不上）、`none`（没有文字层）。
+- 输入是页面特征：字符数、可见字符占比、不可见文字（渲染模式 3）占比、大图覆盖率、字符框落在图片区域内的比例。worker 用 pypdfium2 取特征，TS 用 pdfjs-dist 取；判定是纯规则，属于规则集 `oi-rules/1`，用 `fixtures/parsing-rules/scan-detect/` 的合成特征对拍（§7.10）。阈值待基准定标。
+- 用法：引擎 A 只对 `trusted` 页做文字层对齐，其余页走 OCR 兜底；文字层基础档对 `untrusted` 与 `none` 页显示页面图并提示「此页没有可用的文字层，需要解析服务」，不显示文字层文字，也不自己做 OCR；QM-02 按三态分开统计。
+
+**段落切分只在解析侧**（PRD AC-76）：
+
+- 段落即翻译块（§8.1.1），只由解析侧决定：worker `engines/modular_a/paragraphs.py` 与 TS `text-layer/paragraphs.ts` 按行距、缩进、行宽与栏宽之比、句末标点把行合并为段落，属于规则集 `oi-rules/1`，用 `fixtures/parsing-rules/paragraphs/` 对拍。
+- `translation/domain/segmenter.ts` 只把块按上下文窗口分批：不切开、不合并、不改写块。单块超过上限时整块单独成批；仍然超过时该块 `failed`，`check.codes` 含 `block_too_long`。
+- 跨栏、跨页的续接仍是 §7.10 的链接，不在任何一侧合并块。
+
+**版本化 schema**（PRD AC-77；与 §8.4、§10.4 的版本规则一致）：
+
+- 每种 worker 产物（候选页、`ReadingOrderResult`、评估结果、作业事件）在 `contracts` 有 TypeBox 定义，生成的 JSON Schema 带 `$id`，形如 `oi:schema/<产物名>/<主版本>`；产物本身带 `schemaVersion`。生成物进 G7 的漂移检查。
+- worker 发出前按 schema 校验，不合格的产物不发出，作业失败，错误码 `artifact_invalid`。
+- 桌面收到后在 `worker-client` 适配器里再校验一次：不合格或主版本超出支持范围的产物被拒，不进入候选与采用，记诊断事件 `artifact.schema_invalid`（只记产物名、版本与字段路径，不记内容）；次版本更高、带未知字段的照常接受并保留未知字段。
+
+**隔离**：v2 仓库、依赖树与 worker 环境中 BabelDOC 与 PyMuPDF 出现 0 次（G10）；夹具、测试与注释不得摘录它的代码。参考它的功能清单时只引用 README 选项名与目录名，并注明查阅的提交。
+
 ## 8. 数据模型与存储
 
 ### 8.1 权威数据
@@ -1380,6 +1428,7 @@ type FormulaCropRef = Readonly<{
 | 公式决定摘要 `formulaDigest` | 取代原先键里的「受保护片段表哈希」。片段表哈希只覆盖 LaTeX 字符串，覆盖不了「LaTeX 不变、显示决定变了」这类变化，论证见[差异清单](./docs/v2-gap-and-changes.md) §6.2.1 |
 | `providerId`、`modelId`、目标语言 | 换模型或语言就重译 |
 | 提示词模板版本、润色开关 | 翻译方式变了就重译 |
+| 术语摘要 | 本块命中的术语表条目进了提示词（§7.11）；没有命中时是固定值 |
 
 `formulaDigest` = 本块受保护片段按出现顺序规范化后的 SHA-256。每个片段取「还原时实际写进 `markdown` 或决定显示方式」的全部内容：
 
@@ -1390,12 +1439,12 @@ type FormulaCropRef = Readonly<{
 
 规则：
 
-- **进提示词的每一项都要进键。** v2 的提示词只含本块占位文本、区块类型、提示词模板与润色开关；以后加入上下文段落或术语表时，必须同时加进键，并补 AC-57 的用例。
+- **进提示词的每一项都要进键。** v2 的提示词只含本块占位文本、区块类型、命中的术语（v2 装配下为空）、提示词模板与润色开关；以后加入上下文段落时，必须同时加进键，并补 AC-57 的用例。
 - 键里**不含** `documentId`、`revisionId`、`sourceBlockId`：重解析后内容不变的块、或另一篇内容相同的块，命中缓存直接复用，不发请求（AC-02）。记录本身仍绑定（文献, 采用版本, 区块）。
 - 公式决定只随新的采用版本变化，不原地修改（§8.2 乐观锁）；`reevaluate-pending` 补评后显示决定若有变化，也要生成新的采用版本。规格补充。
 - 读取兜底：`getBlocks` 把记录上的 `formulaDigest` 与当前采用版本算出的摘要比对；不一致时不返回旧正文（该块按 `pending` 显示），并自动排队重译。正常情况下不会触发，触发即记诊断事件。
 - 在途结果：翻译请求按发出时的输入算键；结果回来时该块所属的采用版本已被替换，就只写缓存、不写 `tr_blocks`（与 §8.2「过期任务结果不能覆盖新版本」一致）。
-- 只有 `success` 结果进入可复用缓存；`failed` 不缓存，所以「重译」一定会重新请求。
+- 只有 `success` 结果进入可复用缓存；`failed` 不缓存。`retranslateBlock` 不读缓存，一定重新请求，成功后覆盖同键的缓存条目（§7.11，PRD AC-73）。
 - 未核验公式在译文中的表示已定（见上文「未核验公式的裁图」）：`markdown` 不含它们，`crops` 记位置，`getBlocks` 生成裁图节点。`crops` 由 `markdown` 与片段表确定，不单独进键。
 
 **存储**：SQLite，前缀 `tr_`，只有 `translation` 的 adapters 读写。
@@ -1510,7 +1559,7 @@ Q7 已决定：本机与远程同一协议 HTTP + SSE；stdio JSON-RPC 不采用
 | `GET /v1/artifacts/{id}` | 取候选页 JSON、裁图等产物 |
 
 - 请求头 `OI-Protocol: <主版本>.<次版本>`（第一版 `1.0`）；兼容规则、桌面的判定与 `426` 的响应体见 §10.4。
-- 所有消息 schema 来自 `contracts`（TypeBox 定义 → JSON Schema → `datamodel-code-generator` 生成 pydantic 模型），CI 校验生成物无漂移；`fixtures/protocol/` 的合法 / 非法样例在 TS 与 Python 两侧都跑。
+- 所有消息 schema 来自 `contracts`（TypeBox 定义 → JSON Schema → `datamodel-code-generator` 生成 pydantic 模型），CI 校验生成物无漂移；`fixtures/protocol/` 的合法 / 非法样例在 TS 与 Python 两侧都跑。产物的 JSON Schema 带主版本 `$id`，worker 发出前、桌面收到后各校验一次（§7.11）。
 - worker 只在自己的工作目录写临时文件，任务结束按 TTL 清理；不访问桌面数据目录。
 - 额度信封：worker 对上游的每次请求（含拆批与重试）都从信封里扣一次，扣完即停，剩下的项记 `unavailable`（原因码 `budget`）；每次上游调用的用量（`usage`、页数）随 SSE 事件与产物返回，供桌面结算（§7.8）。没有信封的作业不得调用付费上游。
 - 第三方服务凭据（如 `MODELBEST_API_KEY` 的值）只在 `local` 模式下经请求头 `OI-Provider-Authorization` 随作业传入（`server` 模式收到即拒绝，§10.1），不进作业 JSON、`idempotencyKey`、配置摘要、SSE 事件、产物与日志；作业结束即丢弃。`GET /v1/jobs/{id}` 的错误只报 `auth` / `quota` 等类别，不回显凭据（§7.4「面壁 API」，PRD AC-59）。
@@ -1526,10 +1575,10 @@ workers/parser/
 │  ├─ api/                   # FastAPI 路由：一个资源一个文件（health / jobs / assets / artifacts / auth / sse / protocol_version）
 │  ├─ protocol/              # 生成的 pydantic 模型，禁止手改
 │  ├─ jobs/                  # 任务注册、取消令牌、工作目录生命周期
-│  ├─ preprocess/            # 打开 PDF、文字层、页面渲染、坐标帧：一个职责一个文件；只用 pypdfium2（Q6，禁止 PyMuPDF）
+│  ├─ preprocess/            # 打开 PDF、文字层、页面渲染、坐标帧：一个职责一个文件；只用 pypdfium2（Q6，禁止 PyMuPDF）；scan_detect.py 是纯规则（§7.11）
 │  ├─ engines/
 │  │  ├─ base.py             # §7.2 的 Protocol
-│  │  ├─ modular_a/          # layout.py / text_align.py / ocr_fallback.py / formula.py / table.py / assemble.py
+│  │  ├─ modular_a/          # layout.py / text_align.py / ocr_fallback.py / formula.py / table.py / paragraphs.py（纯规则，§7.11）/ assemble.py
 │  │  │  └─ backends/        # 模型阶段的来源：paddle_local.py（本地）；托管 API 的后端文件在 M3 前核实通过后才加入（§7.0）
 │  │  ├─ reading_order/      # validate.py / page_furniture.py / caption_binding.py / continuation.py / cross_column.py / columns.py / xy_cut.py（纯规则，§7.10）
 │  │  └─ e2e_b/              # mapping.py（块级记录 → 候选页；block_id、order 只作运行内标识；两个后端共用）
@@ -1546,7 +1595,7 @@ workers/parser/
 
 **开发机上的本机 worker。** 开发机是 Windows + 32 GB 内存 + NVIDIA RTX 4070 12 GB（§7.0 第 7 条、§7.4「开发机」）。按 API 优先，开发机上的 worker 默认只装基础依赖，Jev、引擎 B 都走托管 API 后端；引擎 A 模型阶段在开发时走哪条路径（托管 API、开发机本地、租用的 Linux 远程 worker）M3 前定（§7.0）；`jev-local`、`engine-a`、`engine-b` 这些本地 extra 在开发机上**不要求**，能否在 Windows 上装好并跑通**未核实**，有意愿时按 §7.4 的可选步骤试。`runtime/` 的设备探测照常报出驱动与 CUDA 版本、可用显存，供「本地」的可行性标注使用。
 
-Python 分层用 `import-linter` 强制：`api → jobs → engines | quality → preprocess → protocol`，不允许反向；`engines/modular_a` 与 `engines/e2e_b` 互不 import；`quality/backends/local_engine` 与 `jev_http` 互不 import。`engines/e2e_b/backends/sdk_local` 与 `modelbest_api` 互不 import，`engines/modular_a/backends/` 下的各个后端互不 import。Python 侧的 core（`engines/reading_order/`、`engines/e2e_b/mapping.py`、`quality/batching.py`、`quality/http_errors.py`）另加 forbidden 契约：不得 import `fastapi`、`starlette`、`httpx`、`torch`、`paddle`、`pypdfium2` 等 IO 与推理依赖（§2.3）。不同引擎的重依赖可以拆成独立 venv / 容器，由 `runtime` 按引擎分别启动。
+Python 分层用 `import-linter` 强制：`api → jobs → engines | quality → preprocess → protocol`，不允许反向；`engines/modular_a` 与 `engines/e2e_b` 互不 import；`quality/backends/local_engine` 与 `jev_http` 互不 import。`engines/e2e_b/backends/sdk_local` 与 `modelbest_api` 互不 import，`engines/modular_a/backends/` 下的各个后端互不 import。Python 侧的 core（`engines/reading_order/`、`engines/modular_a/paragraphs.py`、`preprocess/scan_detect.py`、`engines/e2e_b/mapping.py`、`quality/batching.py`、`quality/http_errors.py`）另加 forbidden 契约：不得 import `fastapi`、`starlette`、`httpx`、`torch`、`paddle`、`pypdfium2` 等 IO 与推理依赖（§2.3）。不同引擎的重依赖可以拆成独立 venv / 容器，由 `runtime` 按引擎分别启动。
 
 ### 10.4 协议版本与升级（架构评审 P1-9）
 
