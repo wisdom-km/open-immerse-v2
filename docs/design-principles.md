@@ -1,6 +1,7 @@
 > **入库说明（Loom 草案 v0.2，与 DESIGN.md 同一批入库）**
 >
 > - 来源：上传附件。本说明之后的正文**逐字未改**。
+> - 规格校正（Wisdom 2026-10-31 07:45）：正文 P2 的状态示例仍缺「格式已核对」「源码核对」「未评分」「占位框」。正文不改，由 Loom 更新正文。
 > - 放置：`docs/design-principles.md`。正文指向 [DESIGN.md](../DESIGN.md)，相对链接对 `docs/` 是对的。
 > - 地位以正文为准：与 PRD / ARCHITECTURE / RULES 冲突时以那三份为准（RULES 优先级）。DS 与验收的对照见 [PRD §6.3](../PRD.md#63-视觉与交互验收对照) 与 [DESIGN.md](../DESIGN.md) 的入库说明。
 
