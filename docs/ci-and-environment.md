@@ -2,7 +2,7 @@
 
 ## 怎么用
 
-仓库还没有业务代码。这一节只说明怎么把 Node 与 Python worker 的工具链跑起来。项目许可证是 Apache-2.0。PDF 依赖锁定为 `pypdfium2`（Apache-2.0 OR BSD-3-Clause，当前 `5.14.0`）。禁止 PyMuPDF / `fitz`（AGPL-3.0）。CI 不调用付费 API，不读取密钥。
+仓库还没有业务代码。这一节只说明怎么把 Node 与 Python worker 的工具链跑起来。当前工作流全绿只说明工具链能跑，不等于 ARCHITECTURE §13 的 G1–G18 已生效。M1 门禁 PR 合入前不新建 `packages/features/**` 业务切片（RULES N-22）。项目许可证是 Apache-2.0。PDF 依赖锁定为 `pypdfium2`（Apache-2.0 OR BSD-3-Clause，当前 `5.14.0`）。禁止 PyMuPDF / `fitz`（AGPL-3.0）。CI 不调用付费 API，不读取密钥。
 
 ### 版本
 
