@@ -22,7 +22,7 @@
 
 最低设备目标：Windows 10/11 64 位（2021 年后 i5 / Ryzen 5 级、8 GB 内存、核显）；macOS 13+、Apple M1、8 GB。8 GB 设备**不要求**本地同时跑两套解析模型与质量评估，重计算默认走用户配置的远程服务。
 
-质量评估模型 Jev 本机与远程都支持，用户在设置中选择（Q9）：应用按硬件给出推荐——达到官方要求（NVIDIA ≥ 8 GB 显存，或 Apple M 系列 ≥ 16 GB 统一内存）推荐本机，8 GB 级设备推荐远程；推荐只是默认，用户随时可改。两种部署对应用是同一个 worker 接口。开发机（32 GB）必须能在本机跑通。依据见 [ARCHITECTURE §7.4](./ARCHITECTURE.md#74-质量评估的部署q9) 与[差异清单](./docs/v2-gap-and-changes.md) §2.3。
+质量评估模型 Jev 本机与远程都支持，用户在设置中选择（Q9）：应用按硬件给出推荐——达到官方要求（NVIDIA ≥ 8 GB 显存，或 Apple M 系列 ≥ 16 GB 统一内存）推荐本机，8 GB 级设备推荐远程；推荐只是默认，用户随时可改。两种部署对应用是同一个 worker 接口。开发机是 32 GB 内存 + NVIDIA RTX 4070 12 GB 独显（Wisdom 2026-10-30 17:56），按 CUDA 路线在本机跑 Jev，能否跑通在 M0 实测确认。依据见 [ARCHITECTURE §7.4](./ARCHITECTURE.md#74-质量评估的部署q9) 与[差异清单](./docs/v2-gap-and-changes.md) §2.3。
 
 ## 3. 范围
 
@@ -219,13 +219,13 @@
 
 | 里程碑 | 交付 | 退出条件（证据） |
 | --- | --- | --- |
-| M0 规格基线 | 本 PR：PRD / ARCHITECTURE / RULES、v1 审查、差异清单、Loom 的 Markdown 阅读方案入库（`docs/design/md-reader.md`）；`LICENSE` 改为 Apache-2.0（Q6） | §9 的 Q1–Q12 已于 2026-10-30 全部决定；DESIGN.md 与 design-principles.md 由 Loom 交付；确认开发机型号（决定 Jev 本机推理路线，Q9） |
+| M0 规格基线 | 本 PR：PRD / ARCHITECTURE / RULES、v1 审查、差异清单、Loom 的 Markdown 阅读方案入库（`docs/design/md-reader.md`）；`LICENSE` 改为 Apache-2.0（Q6） | §9 的 Q1–Q12 已于 2026-10-30 全部决定；DESIGN.md 与 design-principles.md 由 Loom 交付；开发机配置已确认：32 GB 内存 + NVIDIA RTX 4070 12 GB 独显（Wisdom 2026-10-30 17:56）；开发机按 CUDA 路线本机实测 Jev（Q9，ARCHITECTURE §7.4「开发机」）：记录操作系统、驱动与 CUDA 版本、总显存与可用显存，通过官方启动自检与参考样例比对（三项分数与参考值相差 ≤ 0.02），记录峰值显存与单批耗时；结果写入差异清单 §7，不通过时记录原因并由 Wisdom 决定换后端、换系统或改走远程 |
 | M1 工程骨架与门禁 | monorepo、契约包（含 `latex-policy`）、空的功能切片（含 `formula-source`、`markdown`）、Electron 外壳开窗、Python worker 健康检查、全部 CI 门禁（含 G13–G17 UI 与核心解耦、G10 许可证）、`pnpm test:core` | 故意违规的样例 PR 被 CI 拒绝：超行数、反向依赖、跨切片内部 import、密钥样例；core import React 类型、UI import application 用例、core 测试渲染组件、同一 PR 同时改 UI 与 core（Q3）；引入 PyMuPDF（Q6） |
 | M2 阅读与文献库基础 | 导入、文献库、PDF.js 阅读、文字层基础档通读、SQLite + 文件存储、设置与密钥、诊断包；**Markdown 基础**：`markdown` core（解析、HTML 屏蔽、KaTeX 安全选项、源码区间与往返、写入契约类型与 `write_disabled`）、ui-kit `MarkdownView`、打开单个 `.md`（菜单、拖入、最近打开、相对路径图片、监视重载、外链确认） | AC-01、AC-09、AC-10、AC-11 自动测试通过；AC-21 对本里程碑交付的切片成立（M3–M7 同此）；Markdown：AC-30（`.md` 部分）、AC-31–AC-34、AC-35（单文件部分）、AC-36、AC-42、AC-45、AC-46、AC-52–AC-55 通过；8 GB Windows 与 M1 真机打开 / 滚动 / 重开录屏（PDF 与 `.md` 各一） |
 | M3 引擎 A 与 worker 协议 | 预处理（pypdfium2）、引擎 A（标准档 PP-DocLayoutV3）、统一文档模型、采用版本、公式裁图显示、本机与远程同协议 HTTP + SSE；**笔记库**：文件树与过滤、wikilink 与标题链接、`![[img]]`、失效链接、后退 / 前进、大纲、库内 PDF 链接、大文件夹确认与可取消扫描 | AC-04、AC-12、AC-13（单引擎部分）、AC-14 通过；Markdown：AC-35（笔记库部分）、AC-37–AC-41、AC-43、AC-44 通过；QM-01 / QM-02 首次基线；PP-DocLayout_plus-L 对照基线（QM-13 首次数据）；QM-15、QM-16、QM-17 首次基线 |
 | M4 翻译、公式保护与公式来源 | 翻译 provider、占位符保护、完整性校验、两步润色、缓存键、重开恢复；**译文区块记录（D6）**：`StoredTranslationBlock`、翻译块范围、占位还原为 Markdown、公式决定摘要进缓存键、单块重译与重译失败显示、译文栏逐块接入 `MarkdownView` 与按 `sourceBlockId` 对齐；`formula-source` 切片：arXiv 编号与版本识别、源码下载缓存限流超时、解包、TeX 解析、与版面区域对齐、KaTeX 安全渲染、对齐失败回落（源码候选在 M6 前标「待评分」，不显示为已核验） | AC-02、AC-03、AC-22、AC-23、AC-24、AC-25 通过；AC-26 的回落部分通过；Markdown：AC-30（译文部分）、AC-48–AC-51、AC-56 通过；译文区块：AC-57、AC-58 通过；QM-08、QM-12 基线 |
 | M5 笔记与问答 | 锚点、重锚定、笔记导出、问答引用；笔记正文与问答回答接入 `MarkdownView`，流式回答的公式处理；写作辅助的保留接口（不实现写作） | AC-08、AC-15、AC-27 通过；Markdown：AC-30（全部四处）、AC-47 通过 |
-| M6 引擎 B、质量评估、补救与预算 | 开工前复核 MiniCPM-OCR 1.0 与 Jev 锁定版本（Q1）；引擎 B 适配；Jev 本机与远程两种部署、硬件推荐（Q9）；全路径评分，含 arXiv 源码候选进入优先级链；云 OCR 适配（百度、智谱）；低分补救；预算账本；A/B 对比；借用多模态翻译（Q11）；按基准决定是否开放高质量档（Q10） | AC-05、AC-06、AC-07、AC-13、AC-18、AC-19、AC-20、AC-26、AC-28、AC-29 通过；开发机（32 GB）本机模式通过官方启动自检与参考样例比对；QM-03 / QM-04 / QM-05 / QM-14 定标；QM-13 判据由用户拍板 |
+| M6 引擎 B、质量评估、补救与预算 | 开工前复核 MiniCPM-OCR 1.0 与 Jev 锁定版本（Q1）；引擎 B 适配；Jev 本机与远程两种部署、硬件推荐（Q9）；全路径评分，含 arXiv 源码候选进入优先级链；云 OCR 适配（百度、智谱）；低分补救；预算账本；A/B 对比；借用多模态翻译（Q11）；按基准决定是否开放高质量档（Q10） | AC-05、AC-06、AC-07、AC-13、AC-18、AC-19、AC-20、AC-26、AC-28、AC-29 通过；开发机（32 GB 内存 + RTX 4070 12 GB）在应用的本机模式下、按 M0 实测确定的路线通过官方启动自检与参考样例比对；QM-03 / QM-04 / QM-05 / QM-14 定标；QM-13 判据由用户拍板 |
 | M7 基础语音 | TTS 朗读 / 讲解、ASR 语音笔记 | AC-16、AC-17 通过 |
 | M8 打包准备 | Windows / macOS 安装包构建流水线 | 构建产物可安装；签名、公证、发版由人执行 |
 
@@ -257,7 +257,7 @@ Loom 方案「推荐范围」按 M2–M6 给了建议，下表对照本节的完
 - Q6 已决定（Wisdom 2026-10-30）：worker 用 pypdfium2 渲染与提取 PDF，MiniCPM SDK 以图片输入；项目许可证为 Apache-2.0（根目录 `LICENSE`）；禁止 GPL / AGPL 依赖，包括 PyMuPDF。（RULES §1.5）
 - Q7 已决定（Wisdom 2026-10-30）：本机与远程 worker 同一协议 HTTP + SSE。（S11）
 - Q8 已决定（Wisdom 2026-10-30）：不做 v1 迁移，v2 从零开始；迁移器相关里程碑与验收已删除，取舍见 §3.2。
-- Q9 已决定（Wisdom 2026-10-30）：Jev 本机与远程都支持，设置中可选；按硬件推荐（满足要求推荐本机，8 GB 级推荐远程），用户随时可改；开发机（32 GB）必须能本机跑通；两种部署对应用是同一个 worker 接口。（§2、US-19、AC-19、AC-20）
+- Q9 已决定（Wisdom 2026-10-30）：Jev 本机与远程都支持，设置中可选；按硬件推荐（满足要求推荐本机，8 GB 级推荐远程），用户随时可改；两种部署对应用是同一个 worker 接口。开发机（32 GB 内存 + RTX 4070 12 GB，Wisdom 2026-10-30 17:56 补充）按 CUDA 路线本机跑 Jev，原来的「必须能本机跑通」改为在 M0 实测确认。（§2、US-19、AC-19、AC-20、M0）
 - Q10 已决定（Wisdom 2026-10-30）：引擎 A 以 PP-DocLayoutV3 起步，基准中跑 PP-DocLayout_plus-L 对照，明显更好时作为「高质量档」供用户选择。（S2、US-21、AC-28、QM-13）
 - Q11 已决定（Wisdom 2026-10-30）：保留「未配置翻译时借用多模态服务翻译」，默认关闭，开启时提示会消耗多模态额度。（S3、US-22、AC-29）
 - Q12 已决定（Wisdom 2026-10-30）：不接入 Unlimited-OCR，上游支持坐标输出后再评估。（§3.2）

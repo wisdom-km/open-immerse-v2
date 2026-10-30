@@ -791,7 +791,7 @@ interface LatexRenderer { check(latex: string): RenderCheck }   // 只证明语�
 
 ### 7.4 质量评估的部署（Q9）
 
-决定：Jev 同时支持本机与远程运行，用户在设置里选择；默认按机器硬件推荐，用户随时可改。开发机（32 GB）必须能在本机跑通。
+决定：Jev 同时支持本机与远程运行，用户在设置里选择；默认按机器硬件推荐，用户随时可改。开发机（32 GB 内存 + NVIDIA RTX 4070 12 GB 独显，Wisdom 2026-10-30 17:56 告知）按 CUDA 路线在本机跑 Jev，能否跑通在 M0 实测确认（见本节末「开发机」）。
 
 **worker 接口对两种部署一致。** 桌面端只有一个适配器 `quality/adapters/worker-quality-evaluator.ts`：经 `worker-client` 向 worker 提交 `POST /v1/jobs`（`kind: "evaluate"`），请求与产物使用同一份 schema（`contracts/src/worker/evaluate.ts`）。本机与远程的差别只在 worker 地址与鉴权（§10.1），与解析作业完全相同。worker 内部由 `quality/backends/` 选择后端，两种后端实现同一个 `QualityEvaluatorBackend`（§7.2）：
 
@@ -824,7 +824,30 @@ interface LatexRenderer { check(latex: string): RenderCheck }   // 只证明语�
 - 适配器在健康检查时记录 Docker API 返回的 `template_md5` 与本机渲染环境指纹；指纹变化视为新的 `evaluatorVersion`，旧阈值不再适用。
 - 适配器按 64 项分批；单次请求失败只影响该批，按 `error/service_failed` 记录，不扩大为整页失败。
 
-**开发机（32 GB）本机跑通。** 开发机若是 Apple M 系列，或带 ≥ 8 GB 显存的 NVIDIA 显卡，满足官方要求（上游自测环境之一是 Apple M5 / 16 GB，`docs/SKILL_jev_en.md:556`）。若开发机是没有 NVIDIA 独显的 x86 机器，官方文档没有 CPU 推理路线，能否本机跑**未核实**；需要先确认开发机型号。M6 的退出条件要求开发机在本机模式下通过启动自检与参考样例比对（PRD §8）。
+**开发机。** 配置：32 GB 内存 + NVIDIA RTX 4070 12 GB 独显（Wisdom 2026-10-30 17:56 告知）；操作系统、驱动与 CUDA 版本未告知，M0 记录。按推荐规则第 2 条，它会被推荐本机。
+
+对照官方文档（MiniCPM-OCR `1269e4f`），12 GB 显存是否满足 Jev 要求取决于后端：
+
+| 后端 | 官方显存下限 | 其他官方要求 | 平台（官方） | 12 GB 是否满足 |
+| --- | --- | --- | --- | --- |
+| llama.cpp（GGUF，CUDA 构建 `-DGGML_CUDA=ON`） | ≥ 8 GB | 驱动 ≥ 535；CUDA Toolkit ≥ 12.0（Linux） | Linux + NVIDIA / macOS | 满足；F16 语言模型 3.78 GB，另有 `mmproj` |
+| Ollama（GGUF，自带 GPU 运行时） | ≥ 8 GB | 驱动 ≥ 535；不需要 CUDA Toolkit | Linux + NVIDIA / macOS（安装说明另给了 Windows 下载链接） | 满足 |
+| vLLM | ≥ 12 GB | 驱动 ≥ 535 | 仅 Linux + NVIDIA | 名义上恰好等于下限；扣除桌面显示等占用后的可用显存是否 ≥ 12 GB **未核实** |
+| 官方 Docker（渲染 + 评分） | ≥ 12 GB | 驱动 ≥ 535；NVIDIA Container Toolkit | Linux + NVIDIA | 同 vLLM，**未核实** |
+| SGLang | ≥ 16 GB | 驱动 ≥ 535；系统级 CUDA Toolkit | 仅 Linux + NVIDIA | 不满足，不用 |
+
+出处：`docs/llamacpp_deploy_jev_en.md:34-36`、`:101`；`docs/ollama_deploy_jev_en.md:34-36`、`:64-65`；`docs/vllm_deploy_jev_en.md:30-31`；`docs/minicpm_ocr_jev_tutorial_en.md:17-18`；`docs/SKILL_jev_en.md:31`、`:86-91`、`:116`；`docs/sglang_deploy_jev_en.md:30`。文档写的是「GB」，没有说明是 GB 还是 GiB。
+
+CUDA 路线：首选 llama.cpp 的 CUDA 构建，与上表「本机」一行的 GGUF 路线一致；Ollama 作备选。两者用的是同一个推理实现，上游提醒不能互相验证。vLLM 只有在实测可用显存 ≥ 12 GB 且系统是 Linux 时才作对照。官方的 CUDA 路线都只写了 Linux + NVIDIA；开发机若是 Windows，CUDA 构建与 Ollama Windows 版能否跑 Jev **未核实**，文档也没有提到 WSL2。
+
+M0 实测（结果写入差异清单 §7，PRD §8 M0 退出条件）：
+
+1. 记录操作系统、驱动版本、CUDA 版本，以及空闲时 `nvidia-smi` 报告的总显存与可用显存。
+2. 按选定后端启动 Jev，通过官方启动自检。
+3. 跑参考样例比对：三项分数与参考值相差 0.02 以内（`docs/llamacpp_deploy_jev_en.md:326`）。
+4. 记录峰值显存与单批（64 项）耗时。
+
+全部通过，开发机就以这条路线作为本机模式的开发与定标环境。任一项不通过，记录原因，由 Wisdom 决定换后端、换系统或改走远程。M6 的退出条件仍要求开发机在应用的本机模式下通过启动自检与参考样例比对（PRD §8）。
 
 **macOS 与 Windows 的本机渲染。** 上游「渲染 + 评分」服务依赖 `apt-get` 固定字体环境，只支持 Linux；macOS 只能跑纯评分服务、由调用方提供渲染图。桌面的两个目标平台都不是 Linux，所以本机模式下由 worker 的 `quality/render/` 自己把候选文本渲染成图，渲染器与字体包版本固定并写入 `evaluatorVersion`。具体渲染实现 M6 选定，这是本机模式最大的实现风险。
 
@@ -1051,7 +1074,7 @@ Q7 已决定：本机与远程同一协议 HTTP + SSE；stdio JSON-RPC 不采用
 | 方法与路径 | 作用 |
 | --- | --- |
 | `GET /v1/health` | 存活与协议版本 |
-| `GET /v1/capabilities` | 可用引擎、模型清单（名称、版本、权重摘要）、是否支持区域解析、取消方式、资源限制；设备探测结果（GPU 厂商、显存）；可用的质量评估后端与 `evaluatorVersion`（§7.4） |
+| `GET /v1/capabilities` | 可用引擎、模型清单（名称、版本、权重摘要）、是否支持区域解析、取消方式、资源限制；设备探测结果（GPU 厂商与型号、总显存与可用显存、驱动版本、CUDA 版本）；可用的质量评估后端与 `evaluatorVersion`（§7.4） |
 | `POST /v1/assets` | 上传 PDF / 页面图，返回 `ArtifactRef {id, sha256, mediaType}` |
 | `POST /v1/jobs` | 提交 `parse` / `evaluate` / `render`，带 `idempotencyKey`、`engineId`、页范围、配置摘要；返回 `202 {jobId}` |
 | `GET /v1/jobs/{id}` | 阶段、已完成页、错误、是否可重试 |
@@ -1087,6 +1110,8 @@ workers/parser/
 │  └─ runtime/               # 模型清单（含权重 sha256）、设备探测、内存限制
 └─ tests/                    # pytest；与包结构镜像
 ```
+
+**开发机上的本机 worker。** 开发机是 32 GB 内存 + NVIDIA RTX 4070 12 GB（§7.4「开发机」）。`jev-local` extra 在开发机上走 CUDA 路线：首选 llama.cpp 的 CUDA 构建，Ollama 备选，具体后端在 M0 实测后定。`runtime/` 的设备探测要报出驱动与 CUDA 版本、可用显存，供推荐规则与 M0 记录使用。M0 实测通过之前，开发机不承诺能本机跑 Jev；规格中「本机模式」的开发与定标以 M0 的实测结论为准。
 
 Python 分层用 `import-linter` 强制：`api → jobs → engines | quality → preprocess → protocol`，不允许反向；`engines/modular_a` 与 `engines/e2e_b` 互不 import；`quality/backends/local_engine` 与 `jev_http` 互不 import。Python 侧的 core（`engines/reading_order/`、`engines/e2e_b/mapping.py`、`quality/batching.py`）另加 forbidden 契约：不得 import `fastapi`、`starlette`、`httpx`、`torch`、`paddle`、`pypdfium2` 等 IO 与推理依赖（§2.3）。不同引擎的重依赖可以拆成独立 venv / 容器，由 `runtime` 按引擎分别启动。
 
