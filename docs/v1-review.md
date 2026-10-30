@@ -83,7 +83,7 @@
 | `formula-schedule.js` | 241 | 单个公式块走链 | 核心 | 按职责重写 | formula/application |
 | `formula-cache.js` | 618 | 决策缓存（只缓存多模态 / OCR） | 核心 | 复用键规则，存储重写 | formula/adapters |
 | `formula-cache-client.js` | 76 | 阅读器侧缓存客户端（经 service worker） | 核心 | 丢弃 | — |
-| `formula-mm-ledger.js` | 191 | 每页多模态计数账本（非金额） | 核心 | 复用思路；v2 账本改为金额 / 次数双口径 | repair/domain/budget-ledger.ts |
+| `formula-mm-ledger.js` | 191 | 每页多模态计数账本（非金额） | 核心 | 复用思路；v2 账本改为金额 / 次数双口径 | budget/domain/budget-ledger.ts（架构评审 P0-3 后账本移入 `budget` 切片） |
 | `formula-context-crop.js` | 624 | 行内公式上下文窗与红框 | 核心 | **复用规则**（几何），渲染重写 | formula/domain/crop-geometry.ts + worker render |
 | `formula-vision-crop.js` | 396 | 发给多模态的裁图（4 倍栅格、留边） | 核心 | **复用规则** | repair/domain |
 | `formula-crop-png.js` | 91 | PNG data URL 校验（拒绝 http URL） | 核心 | 复用规则 | repair/adapters |
