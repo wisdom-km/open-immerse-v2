@@ -1,6 +1,6 @@
 # open-immerse v2 架构规格（ARCHITECTURE）
 
-状态：v0.4，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。v0.3 并入 Wisdom 2026-10-30 17:32 批准的 Markdown 阅读方案（Loom，[docs/design/md-reader.md](./docs/design/md-reader.md)）：新增 `markdown` 切片（§4.5），译文改为按区块存 Markdown（§8.1.1）；同日并入 Loom 对译文区块四项风险的结论（§8.1.1，§16）；同日 18:37 并入 Jev 远程默认面壁开放平台（§7.4），18:44 并入「API 优先」原则（§7.0），19:11 并入 Wisdom 对四项风险的决定（数据外发同意对话框、引擎 A 三条路径、问答同时支持多模态与纯文本模型、M0 API 实测延后；§2.5、§4.2、§7.0、§7.3、§7.4、§16），19:30 把外发同意改为按服务商询问并加入「外发前询问」开关（§7.0 第 6 条）。Wisdom 2026-10-30 19:57 批准按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修改；本版改 P0 四项并删除 G17：新增无界面的编排切片 `ingest` 与预算切片 `budget`（§2.5、§4.2、§4.3），main 与 utility 进程的固定职责（§1），所有付费调用先预留（§7.8），译文中未核验公式的裁图表示（§8.1.1），CI 门禁（§13）。
+状态：v0.5，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。v0.3 并入 Wisdom 2026-10-30 17:32 批准的 Markdown 阅读方案（Loom，[docs/design/md-reader.md](./docs/design/md-reader.md)）：新增 `markdown` 切片（§4.5），译文改为按区块存 Markdown（§8.1.1）；同日并入 Loom 对译文区块四项风险的结论（§8.1.1，§16）；同日 18:37 并入 Jev 远程默认面壁开放平台（§7.4），18:44 并入「API 优先」原则（§7.0），19:11 并入 Wisdom 对四项风险的决定（数据外发同意对话框、引擎 A 三条路径、问答同时支持多模态与纯文本模型、M0 API 实测延后；§2.5、§4.2、§7.0、§7.3、§7.4、§16），19:30 把外发同意改为按服务商询问并加入「外发前询问」开关（§7.0 第 6 条）。Wisdom 2026-10-30 19:57 批准按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修改；v0.4 改 P0 四项并删除 G17：新增无界面的编排切片 `ingest` 与预算切片 `budget`（§2.5、§4.2、§4.3），main 与 utility 进程的固定职责（§1），所有付费调用先预留（§7.8），译文中未核验公式的裁图表示（§8.1.1），CI 门禁（§13）。v0.5 改评审的 P1 项，并按 Wisdom 2026-10-30 19:45、19:46 的要求新增服务商适配层：外发同意的措辞统一（§7.0 第 6 条），外发检查端口 `EgressCheck` 与远程 worker 不接收桌面的服务商 Key（§1、§7.0、§10.1），删除已被取代的旧表述（§7.4、§16），存储与协议的版本升级规则（§8.4、§10.4），Electron 加固（§9），服务商适配层 `packages/providers`（§7.9），开发者本机的 Key 注入（§15.4）。
 同级规格：[PRD.md](./PRD.md)（做什么）、[RULES.md](./RULES.md)（怎么协作）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；本文只规定 UI 代码放在哪、依赖谁，不规定长什么样。
 本文与 `docs/architecture/0x_*_草案.md` 冲突时以本文为准，差异逐条列在 [docs/v2-gap-and-changes.md](./docs/v2-gap-and-changes.md)。本文中的目录、接口、协议均为**拟议设计**，M1 起按本文落地；落地前不代表已存在。
 
@@ -26,11 +26,11 @@ flowchart LR
     M["Main 进程<br/>装配根 · 窗口 · IPC 校验<br/>safeStorage · 对话框 · shell · oi-asset://<br/>本机 worker 拉起与关闭"]
     U["Utility 进程（M3 起按实测启用）<br/>用例 · SQLite · 出站 HTTP · worker-client<br/>（启用前同样的代码在 main 内运行）"]
   end
-  W1["Python worker（本机）<br/>预处理 / 引擎 A / 引擎 B / Jev<br/>默认转发托管 API；选「本地」时本机推理"]
-  W2["Python worker（远程，自建，高级）<br/>同一代码、同一协议<br/>在服务器上推理"]
+  W1["Python worker（本机）<br/>预处理 / 引擎 A / 引擎 B / Jev<br/>默认转发托管 API；选「本地」时本机推理<br/>只监听 127.0.0.1"]
+  W2["Python worker（远程，自建，高级）<br/>同一代码、同一协议<br/>只用服务器上配置的推理或托管后端<br/>不接收桌面的服务商 Key"]
   QE["面壁开放平台（默认）<br/>Jev 托管 API · MiniCPM-OCR-1.0 文档解析（引擎 B）<br/>高级：用户自建 Jev Docker"]
   PB["百度 AI Studio PaddleOCR 托管 API<br/>引擎 A 的模型阶段（候选，未核实，§7.0）"]
-  API["第三方 API（默认，用户自带 Key）<br/>翻译 / 多模态 / 云 OCR / TTS / ASR<br/>选「本地」时为本机 OpenAI 兼容服务"]
+  API["第三方 API（默认，用户自带 Key）<br/>翻译 / 多模态 / 问答 / 云 OCR / TTS / ASR<br/>OpenAI 兼容 · Anthropic · Gemini · 百度 · 智谱 …<br/>选「本地」时为本机 OpenAI 兼容服务"]
   ARX["arXiv<br/>（源码包）"]
 
   R -- "contextBridge" --> P
@@ -38,11 +38,11 @@ flowchart LR
   M -- "MessagePort（seam 形状的请求与事件）" --> U
   M -- "拉起 / 关闭；stdin 传一次性令牌" --> W1
   U -- "HTTP + SSE（oi-parse/1）<br/>127.0.0.1 + 一次性令牌" --> W1
-  U -- "HTTPS + SSE（oi-parse/1）<br/>服务令牌" --> W2
+  U -- "HTTPS + SSE（oi-parse/1）<br/>服务令牌；不带服务商 Key" --> W2
   W1 -- "HTTPS（jev_http / 引擎 B 云端后端）" --> QE
-  W2 -- "HTTPS（jev_http / 引擎 B 云端后端）" --> QE
+  W2 -. "HTTPS（服务器上配置的托管后端，可选）" .-> QE
   W1 -. "HTTPS（引擎 A 云端后端，候选）" .-> PB
-  U -- "HTTPS（provider 适配器）" --> API
+  U -- "HTTPS（服务商适配层 packages/providers，§7.9）<br/>先过 EgressCheck 与 BudgetGate" --> API
   U -- "HTTPS，≥3 s 一次、单连接<br/>（formula-source 适配器）" --> ARX
 ```
 
@@ -54,16 +54,17 @@ flowchart LR
   - 系统对话框（`path-picker`）、`shell.openExternal` 与「在文件管理器中显示」（`external-opener`）；
   - `oi-asset://` 协议处理器（§9）；
   - 本机 worker 的拉起与关闭（`worker-supervisor`），一次性令牌由 main 生成、经 stdin 传给 worker。
-- **Utility 进程**：可以搬出 main 的部分是用例（domain + application）、SQLite 仓储、出站 HTTP 的服务商适配器、`worker-client`、文件资产，以及 `.md` 文件的读取、扫描与监视。M1–M2 这些仍在 main 内装配运行；M3 起若长任务影响 main 的响应（以实测为准，阈值待定标），把这一组整体搬到 Electron `utilityProcess`，main 只转发 seam 形状的请求与事件（§2.4 的普通数据规则保证它们可以跨进程）。M1 起目录与端口就按这条边界放：可搬迁的代码只经端口使用 main 的能力（`SecretStore` 授权、`PathPicker`、`ExternalOpener`、资产路径解析），搬迁时换的是这些端口的注入方式（同进程调用改为 MessagePort 代理），不改用例，也不改适配器的业务逻辑。
+- **Utility 进程**：可以搬出 main 的部分是用例（domain + application）、SQLite 仓储、出站 HTTP 的服务商适配层（`packages/providers`，§7.9）、`worker-client`、文件资产，以及 `.md` 文件的读取、扫描与监视。M1–M2 这些仍在 main 内装配运行；M3 起若长任务影响 main 的响应（以实测为准，阈值待定标），把这一组整体搬到 Electron `utilityProcess`，main 只转发 seam 形状的请求与事件（§2.4 的普通数据规则保证它们可以跨进程）。M1 起目录与端口就按这条边界放：可搬迁的代码只经端口使用 main 的能力（`SecretStore` 授权、`PathPicker`、`ExternalOpener`、资产路径解析），搬迁时换的是这些端口的注入方式（同进程调用改为 MessagePort 代理），不改用例，也不改适配器的业务逻辑。
 - **密钥明文只在 main 的内存里。** utility 里的适配器要发带凭据的请求时，经 MessagePort 向 main 要「本次调用」的授权：main 核对目标主机与该服务商配置里登记的主机一致，再返回请求头的值；适配器只用于这一次请求，不缓存、不写日志、不放进任务记录。契约测试：同一适配器发两次请求，向 main 要两次授权；目标主机与登记不符时 main 拒绝。
 - **资产**：`oi-asset://` 的处理器在 main；资产登记表在 SQLite（随用例搬到 utility）。utility 启用后，main 收到请求时经 MessagePort 用 `assetId` 换取登记的路径与允许的根目录，再自己做真实路径检查（§9）。
 
 | 组件 | M1–M2 | utility 启用后 |
 | --- | --- | --- |
 | 窗口、preload、IPC 校验、`SecretStore`（`safeStorage`）、对话框、`shell`、`oi-asset://` 处理器、`worker-supervisor` | main | main（不搬） |
-| 用例（全部切片的 domain + application）、SQLite 仓储、服务商 HTTP 适配器、`worker-client`、文件资产、`.md` 读取 / 扫描 / 监视 | main | utility |
-- **Python worker**：无状态计算服务。不写用户文献库、不决定采用版本、不持久化用户的第三方 API 密钥（面壁 API Key 等凭据由 main 在每个 `evaluate` / `parse` 作业的请求头中传入，worker 只在内存中使用，不落盘、不进日志、不进产物，§7.4「面壁 API」）。本机与远程运行同一份代码、同一协议（Q7）。
+| 用例（全部切片的 domain + application）、SQLite 仓储、服务商适配层（`packages/providers`）、`worker-client`、文件资产、`.md` 读取 / 扫描 / 监视 | main | utility |
+- **Python worker**：无状态计算服务。不写用户文献库、不决定采用版本、不持久化用户的第三方 API 密钥（本机 worker 由 main 拉起、只监听 127.0.0.1；它转发托管 API 时，面壁 API Key 等凭据由 main 按次授权，随作业请求头经回环地址传入，worker 只在内存中使用，不落盘、不进日志、不进产物。远程 worker 一律不接收桌面的服务商 Key，只用服务器上自己配置的后端，§10.1）。本机与远程运行同一份代码、同一协议（Q7）。
 - **API 优先**（Wisdom 2026-10-30 18:44，§7.0）：每个由模型提供的能力，有托管 API 时默认用托管 API；「本地」是同一接口后面的一等选项，用户在设置里按能力选「本地 / API」。
+- **外发检查**（架构评审 P1-2，§7.0 第 6 条）：任何连接发出前，由 `contracts` 的 `EgressCheck` 端口按「服务商 + 能力 + 目的主机」判定能否发送。回环地址之外的主机一律算外发，包括标为「本地」但不在回环地址上的服务，以及远程 worker 本身。
 - **质量评估一律经 worker**（Q9）：桌面端只通过 `oi-parse/1` 的 `evaluate` 作业请求评分，无论 Jev 在本机推理、在远程 worker 所在服务器推理，还是由 worker 转发给面壁 API / 用户 Docker 服务。桌面端没有第二条评分通路（§7.4）。
 
 ## 2. 分层
@@ -72,7 +73,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | **domain** | 实体、值对象、纯规则（公式占位校验、阅读顺序几何、锚点匹配、状态转换、预算计算） | `contracts`、`kernel`、本切片 domain | Node 内置模块、Electron、React、DOM、PDF.js、数据库驱动、HTTP、任何厂商 SDK、其他切片的 domain |
 | **application** | 用例（use case）、端口接口（ports）、编排、事务边界 | 本切片 domain、`contracts`、`kernel`、其他切片的**公开入口** `index.ts` | 任何 adapters、ui、Electron、Node IO |
-| **adapters** | 端口实现：SQLite 仓储、文件资产、HTTP provider、worker 客户端、IPC 处理器 | 本切片 application（实现其 ports）与 domain、`platform-node`、`contracts`、`kernel` | ui、其他切片的 adapters |
+| **adapters** | 端口实现：SQLite 仓储、文件资产、服务商端口实现（经 `providers`）、worker 客户端、IPC 处理器 | 本切片 application（实现其 ports）与 domain、`platform-node`、`providers`（只经 `@oi/providers` 入口，§7.9）、`contracts`、`kernel` | ui、其他切片的 adapters；服务商的主机名、请求格式、鉴权头（只在 `providers`，F-18） |
 | **ui** | React 组件、hooks、视图模型；通过 `window.oi` 调命令、订阅事件 | 本切片的展示 seam `src/pure.ts`（纯函数与类型，§2.4）、`contracts`、`ui-kit`、React、PDF.js（仅 reader 切片） | 本切片 domain / application 的内部文件、adapters、`platform-node`、Electron、Node 内置模块、其他切片的 ui |
 | **workers**（Python） | 预处理、引擎、质量评估的计算 | worker 内部分层（§10.3）与生成的协议模型 | 任何 TS 代码、用户文献库、桌面数据目录 |
 
@@ -146,20 +147,20 @@ Q3 的要求是映射到 5 层与 14 个切片；Q4 决定新增 `formula-source
 | `ingest` | `ingest-policy`（状态转移：由已保存的候选、评估记录、采用版本、译文区块算出下一步——解析、取源码候选、评分、公式决定、补救、采用、翻译或停止；失败条件：预算被拒、未同意外发、服务不可用时停在哪一步、记什么原因） | `openDocument`（打开 PDF 的唯一用户入口）、`resumeIngest`（启动时与评分恢复后续跑） | 无（进度由 reader 经 `jobs` 事件显示） | 无（只调用其他切片的 seam） |
 | `library` | `document-identity`（校验：哈希身份）、`library-record`（校验：元数据） | `importPdf`（由 `ingest` 调用，不是 IPC 命令）、`listLibrary`、`updateProgress`、`getBibliographicRecords`（§4.4 预留） | `ui/library-list.tsx` | `sqlite-library-repository`、文件资产 |
 | `document` | `accepted-revision`（失败条件）、`adopt-policy`（状态转移、权限：compare 与 adopt）、`source-audit`（失败条件） | `adoptPage`、`compareCandidates`、`getAcceptedRevision` | 无（由 reader 渲染） | `sqlite-document-repository` |
-| `parsing` | `engine-capabilities`、`layout-profile`（权限：高质量档是否可选，Q10）、`text-layer/*` | `submitParse`、`getParseCapabilities` | 无（状态显示在 reader） | `worker-parse-gateway`、`text-layer-engine`、`cloud-ocr/*` |
+| `parsing` | `engine-capabilities`、`layout-profile`（权限：高质量档是否可选，Q10）、`text-layer/*` | `submitParse`、`getParseCapabilities` | 无（状态显示在 reader） | `worker-parse-gateway`、`text-layer-engine`、`cloud-ocr-provider`（经 `providers`，§7.9） |
 | `jobs` | `job-state-machine`（状态转移）、`idempotency`（失败条件：能否重发） | `cancelJob`、`listJobs`、事件 `onJobEvent` | 无 | `sqlite-job-store` |
 | `formula` | `formula-policy`（失败条件：候选优先级链，§7.5）、`charset-check`、`equation-number`、`render-equivalence`（校验） | `decideFormula`；`pure.ts`：`formulaDisplayMode` | 无（`reader/ui/formula-view.tsx` 渲染） | `katex-renderer` |
 | `formula-source` | `arxiv-id`（校验）、`fetch-policy`（状态转移：限流与冷却）、`archive-limits`、`align-policy`（失败条件） | `resolveArxivSource`、`alignSource` | 无（来源标注由 reader 显示，开关在 settings） | `arxiv-http-client`、`sqlite-source-cache`、`node-gunzip` |
 | `quality` | `evaluation-status`（状态转移：verdict 规范化）、`scoring-coverage`（失败条件：未评分不得算已核验，Q1）、`low-score-routing`、`deployment-recommendation`（Q9） | `evaluateRegions`；`pure.ts`：`recommendEvaluatorDeployment` | 无（设置页属于 settings） | `worker-quality-evaluator` |
-| `repair` | `repair-plan`（权限：是否允许补救）、`repair-limits`（失败条件） | `runRepair` | 无（入口在 reader） | `openai-compatible-multimodal` |
+| `repair` | `repair-plan`（权限：是否允许补救）、`repair-limits`（失败条件） | `runRepair` | 无（入口在 reader） | `llm-multimodal-provider`（经 `providers`） |
 | `budget` | `budget-ledger`（计价：预留、结算、释放）、`budget-limits`（失败条件：金额上限，以及按「服务商 + 能力」的请求数 / 页数 / token 上限）、`price-book`（计价：单价已知或未知，未知不记为 0） | `getBudgetStatus`、`setBudgetLimits`；其他切片只经 `contracts` 的 `BudgetGate` 端口使用（装配根注入，§7.8） | 无（预算设置页在 settings，经 `window.oi.budget.*`） | `sqlite-ledger-store` |
-| `translation` | `placeholder`、`integrity-check`（校验、失败条件）、`markdown-restore`（校验：占位还原后公式与片段表一致）、`block-scope`（哪些块是翻译块）、`block-status`（状态转移：success / failed / retranslating）、`adopted-version`（采用哪个版本）、`cache-key`（含公式决定摘要） | `translatePage`、`retranslateBlock`、`getBlocks`、`polishTranslation`、事件 `onBlockChanged` | 无（译文由 reader 渲染） | `providers/<vendor>`、`sqlite-translation-store` |
+| `translation` | `placeholder`、`integrity-check`（校验、失败条件）、`markdown-restore`（校验：占位还原后公式与片段表一致）、`block-scope`（哪些块是翻译块）、`block-status`（状态转移：success / failed / retranslating）、`adopted-version`（采用哪个版本）、`cache-key`（含公式决定摘要） | `translatePage`、`retranslateBlock`、`getBlocks`、`polishTranslation`、事件 `onBlockChanged` | 无（译文由 reader 渲染） | `llm-translation-provider`（经 `providers`）、`sqlite-translation-store` |
 | `markdown` | `html-policy`（校验：原始 HTML 一律屏蔽）、`math-syntax`（失败条件：不可信命令、超长公式）、`link-resolve`（失败条件：not_found / ambiguous / outside_vault）、`vault-path-policy`（权限：越界、符号链接）、`vault-limits`（失败条件：文件数、单文件大小）、`watch-debounce`（状态转移）、`nav-history`（状态转移）、`write-capability`（权限：v2 恒为只读） | `render`、`openFile`、`openVault`、`readFile`、`listRecent`、`close`、`getCapabilities`、事件 `onFileEvent`；`pure.ts`：`renderMarkdown`、`navigate` | `ui/md-file-page.tsx`、`ui/vault-page.tsx`、`file-tree`、`outline-panel`、`reload-toast`、`editor-slot`；共享渲染组件在 `ui-kit/src/markdown/`（§4.5.4） | `node-md-file-reader`、`node-vault-scanner`、`node-file-watcher`、`sqlite-md-recent-store`、`vault-asset-registrar` |
 | `reader` | `pairing`、`scroll-sync`、`viewport-mapping`（纯几何，经 `pure.ts` 在 renderer 运行） | `pure.ts` | `pdf-page-canvas`、`readout-pane`（译文块交给 ui-kit 的 `MarkdownView`）、`formula-view`、`selection-toolbar` | 无（数据经 `window.oi`） |
 | `notes` | `anchor-match`（失败条件：无法唯一重定位）、`note`（校验）、`markdown-export` | `createNote`、`reanchorNotes`、`exportNotes`、`getNotesByIds`（§4.4 预留）；读笔记时随结果返回正文的 `MdDocument` | `ui/notes-panel.tsx`（正文交给 `MarkdownView`） | `sqlite-notes-repository` |
-| `qa` | `context-selection`、`citation`（失败条件：引用必须可定位） | `ask`；回答事件带已闭合块的 `MdBlock[]` 与未闭合尾部文本（§4.5.4） | `ui/ask-panel.tsx`（回答交给 `MarkdownView`） | `chat-provider` 适配器 |
+| `qa` | `context-selection`、`citation`（失败条件：引用必须可定位） | `ask`；回答事件带已闭合块的 `MdBlock[]` 与未闭合尾部文本（§4.5.4） | `ui/ask-panel.tsx`（回答交给 `MarkdownView`） | `llm-chat-provider`（经 `providers`） |
 | `voice` | `speech-script`、`audio-segment`（校验：段落必须带锚点） | `generateNarration`、`transcribeNote` | `ui/narration-player.tsx`、`ui/voice-note-recorder.tsx` | TTS / ASR 适配器 |
-| `settings` | `provider-config-validate`（校验）、`translation-fallback`（权限，Q11）、`backend-choice`（每个模型能力的「本地 / API」默认值与切换，API 优先，§7.0；Q9）、`egress-consent`（权限：按服务商的数据外发同意、追加告知、「外发前询问」开关，§7.0 第 6 条） | `saveProvider`、`testConnection`、`setBackendChoice`、`answerEgressConsent`、`setEgressPromptEnabled`、`listEgressDestinations` | `ui/settings-pages/*` | `safe-storage-secret-store` |
+| `settings` | `provider-config-validate`（校验）、`translation-fallback`（权限，Q11）、`backend-choice`（每个模型能力的「本地 / API」默认值与切换，API 优先，§7.0；Q9）、`egress-consent`（权限：按服务商的数据外发同意、追加告知、「外发前询问」开关，§7.0 第 6 条）、`egress-destination`（权限：目的主机是否算外发，服务商身份按（服务商, 主机）判定，§7.0 第 6 条） | `saveProvider`、`testConnection`、`setBackendChoice`、`answerEgressConsent`、`setEgressPromptEnabled`、`listEgressDestinations`、`listProviderPresets`；`EgressCheck` 端口的实现（装配根注入，不是 IPC 命令） | `ui/settings-pages/*` | `safe-storage-secret-store`、`providers-catalog` |
 | `diagnostics` | `redaction-rules`（校验）、`retention`（失败条件：超限删除） | `exportBundle` | `ui/diagnostics-page.tsx` | `file-logger` |
 | `writing`（预留，v2 不建） | 引用必须解析到锚点（复用 `qa/citation` 规则） | §4.4 草案 | — | — |
 
@@ -270,6 +271,7 @@ open-immerse-v2/
 │  ├─ kernel/                         # 最小运行时无关原语：Result、AppError、Logger 接口、Clock、Id
 │  ├─ platform-node/                  # Node 侧基础设施：SQLite、文件资产、safeStorage、HTTP 客户端、日志落盘
 │  ├─ worker-client/                  # oi-parse/1 的 TS 客户端（本机 / 远程共用）
+│  ├─ providers/                      # 服务商适配层：注册表、按 API 格式的适配器、鉴权方式、契约测试套件（§7.9）
 │  ├─ ui-kit/                         # 设计令牌与基础组件（按 Loom 的 DESIGN.md 实现）；markdown/ 为共享 MarkdownView（§4.5.4）
 │  └─ features/                       # 按功能切片，见 §4
 │     ├─ ingest/                   # 无界面的流水线编排（§4.2）
@@ -280,7 +282,8 @@ open-immerse-v2/
 ├─ workers/
 │  └─ parser/                         # Python worker（uv 项目），见 §10.3
 ├─ fixtures/
-│  ├─ protocol/                       # TS 与 Python 共用的协议样例（合法 / 非法）
+│  ├─ protocol/                       # TS 与 Python 共用的协议样例（合法 / 非法；含 provider-errors/、versions/）
+│  ├─ providers/                      # 各服务商的契约测试样例（合成数据，不含真实 Key 与论文页面，§7.9.7）
 │  └─ corpus/                         # 基准论文清单（只存清单与 sha256，不存 PDF）
 └─ tools/
    ├─ check-file-size/                # 行数门禁
@@ -332,7 +335,9 @@ packages/features/<name>/
 | `contracts/src/anchor.ts` | `ContentAnchor`（笔记、问答、语音共用；写作预留，§4.4） |
 | `contracts/src/citation.ts` | `Citation`（锚点 + 文献引用元数据：标题、作者、年份、DOI / arXiv 编号与版本、页、块）；问答与笔记导出共用，写作预留 |
 | `contracts/src/jobs.ts` | 任务种类、状态、事件 |
-| `contracts/src/provider-config.ts` | `ProviderConfig`（只含 `secretRef`，不含密钥） |
+| `contracts/src/provider-config.ts` | `ProviderConfig`（`vendorId`、API 格式、Base URL、模型与能力标记、`secretRef`；不含密钥） |
+| `contracts/src/provider.ts` | 服务商中立类型：`ApiFormat`（品牌化字符串）、`ModelCapabilities`、`ModelPreset`、`ProviderDescriptor`、`ChatRequest` / `ChatChunk`、`OcrRequest` / `OcrResult`、`ProviderFailure`、`ProviderAuthorizer`（§7.9） |
+| `contracts/src/egress.ts` | `EgressCheck` 端口与 `EgressDecision`（`allow` / `ask` / `refused`）（§7.0 第 6 条） |
 | `contracts/src/budget.ts` | `BudgetGate` 端口（`reserve` / `settle` / `release`）、`ReserveRequest`、`Reservation`、`UsageReport`、`BudgetRefusal`、worker 作业的额度信封 `BudgetEnvelope`（§7.8） |
 | `contracts/src/errors.ts` | 错误码枚举与 `{code, message, retryable}` 形状 |
 | `contracts/src/diag-events.ts` | 诊断事件名与字段白名单 |
@@ -347,11 +352,18 @@ packages/features/<name>/
 | `platform-node/src/assets/file-asset-store.ts` | 暂存 → 校验摘要 → 提交引用 |
 | `platform-node/src/secrets/safe-storage-secret-store.ts` | Electron `safeStorage` 加密存取 |
 | `platform-node/src/http/http-client.ts` | 超时、有界重试、取消、按幂等性决定能否重发 |
-| `platform-node/src/http/redact.ts` | 请求 / 响应日志脱敏 |
+| `platform-node/src/http/redact.ts` | 请求 / 响应日志脱敏；URL 查询参数 `access_token`、`key`、`client_id`、`client_secret` 一律打码（§7.9.5） |
 | `platform-node/src/logging/file-logger.ts` | JSON 行日志落盘、按天滚动、总量上限 |
-| `worker-client/src/client.ts` | 提交、查询、取消、取产物 |
+| `worker-client/src/client.ts` | 提交、查询、取消、取产物；只对 main 拉起的回环 worker 附 `OI-Provider-Authorization`，其他地址拒绝附带（§10.1） |
 | `worker-client/src/sse.ts` | SSE 订阅与断线续传 |
-| `worker-client/src/supervisor-protocol.ts` | 健康检查、能力协商、版本检查 |
+| `worker-client/src/supervisor-protocol.ts` | 健康检查、能力协商、协议版本检查（支持的主版本范围常量，§10.4） |
+| `providers/src/index.ts` | 唯一入口：`createChatTransport`、`createOcrTransport`、`listPresets`；不导出格式的内部文件 |
+| `providers/src/registry/registry.ts` | 汇总 `vendors/*` 并校验：能力标记是该格式所支持能力的子集、Base URL 的主机在 `allowedHosts` 里、`devEnvVars` 已在 §15.4 登记 |
+| `providers/src/registry/vendors/<vendor>.ts` | 一家服务商一个文件，只有数据：端点与格式、`allowedHosts`、鉴权方式与密钥槽、预置模型与能力标记、开发用环境变量名、未核实项 |
+| `providers/src/formats/<format>/request.ts`、`response.ts`、`stream.ts`、`errors.ts` | 一种 API 格式一个目录：中立请求 → 线上请求体；响应 → 中立结果与用量；流式解析；HTTP 状态与厂商错误体 → `ProviderFailure` |
+| `providers/src/auth/<scheme>.ts` | 一种鉴权方式一个文件（`bearer`、`x-api-key`、`x-goog-api-key`、`baidu-access-token`）：向 main 要本次调用的请求头值，自己不读密钥 |
+| `providers/src/transports.ts` | `ChatTransport`、`OcrTransport`：发送要求 `Reservation`，连接前调 `EgressCheck`，经 `platform-node/http` 发出 |
+| `providers/src/testing/` | 按能力的共享契约测试套件（§7.9.7） |
 | `ui-kit/src/markdown/markdown-view.tsx` | 遍历 `MdDocument` 的块并分派给下面的组件；不解析字符串、不做业务判断（§4.5.4） |
 | `ui-kit/src/markdown/math.tsx` | `MathInline` / `MathBlock`：用 `contracts` 的 `KATEX_SAFE_OPTIONS` 调 KaTeX；抛错时显示原始 LaTeX + 错误标记；只挂载 KaTeX 生成的 DOM |
 | `ui-kit/src/markdown/code-block.tsx`、`md-image.tsx`、`md-link.tsx`、`blocked-html.tsx`、`md-table.tsx` | 各渲染一种节点；`md-link` 只把 `ResolvedLink` 回调给宿主，不自己导航 |
@@ -365,20 +377,20 @@ packages/features/<name>/
 | `ingest` | 流水线编排：一次用户动作「打开 PDF」按 §7.1 依次调用其他切片的 seam；没有界面，没有自己的表 | `domain/ingest-policy.ts`（纯函数：输入是候选、评估记录、公式决定、采用版本、译文区块，以及本次预算与同意的结果；输出下一步：解析、取源码候选、评分、公式决定、补救、采用、翻译、停止，带停止原因；不调用网络）· `domain/ingest-steps.ts`（步骤与原因码的类型）· `application/use-cases/open-document.ts`（入库 → 提交解析 → 取源码候选 → 评分 → 公式决定 → 必要时补救并重新评分 → 采用 → 按块翻译；每一步只调对方的 `index.ts`）· `application/use-cases/resume-ingest.ts`（应用启动、评分服务恢复、预算或同意状态变化后，从已保存的事实重新算下一步续跑；`quality` 的 `reevaluate-pending` 由它触发）。进度与取消用 `jobs` 的任务（种类 `ingest`）；下一步总是由 `ingest-policy` 从已保存的事实重新算出，所以 `ingest` 不建表，重启后重算即可续跑 |
 | `library` | 文献导入、身份（SHA-256）、元数据、列表、阅读进度 | `domain/document-identity.ts`（哈希身份与去重规则）· `domain/library-record.ts`（元数据校验）· `application/use-cases/import-pdf.ts` · `application/use-cases/list-library.ts` · `application/use-cases/update-progress.ts` · `application/use-cases/get-bibliographic-records.ts`（按 ID 批量只读，写作预留，§4.4） · `application/ports/library-repository.ts` · `adapters/sqlite-library-repository.ts` · `ui/library-list.tsx`。不做 v1 数据迁移（Q8），没有 v1 导入器 |
 | `document` | 统一文档模型：解析运行、候选页、采用版本、来源审计、坐标帧 | `domain/accepted-revision.ts`（采用不变式）· `domain/source-audit.ts`（missing / duplicates）· `domain/coordinate-frame.ts`（矩阵与换算）· `domain/block-id.ts`（稳定块号）· `domain/adopt-policy.ts`（compare 与 adopt 区分）· `application/use-cases/adopt-page.ts`（乐观锁原子切换）· `application/ports/document-repository.ts` · `adapters/sqlite-document-repository.ts` |
-| `parsing` | 解析任务编排、引擎选择、文字层基础档、云 OCR 识别来源 | `domain/engine-capabilities.ts` · `domain/layout-profile.ts`（标准档 / 高质量档；高质量档只在基准证明后开放，Q10）· `domain/text-layer/`（阅读顺序、栏判定、跨页续接、页眉页脚剔除、字形清洗；每条规则一个文件，自 v1 移植）· `application/use-cases/submit-parse.ts` · `application/ports/parse-gateway.ts` · `application/ports/ocr-provider.ts`（云 OCR，§7.7）· `adapters/worker-parse-gateway.ts` · `adapters/text-layer-engine.ts`（pdfjs-dist 提取 → domain 规则）· `adapters/cloud-ocr/<vendor>.ts`（一家一个文件：百度、智谱） |
+| `parsing` | 解析任务编排、引擎选择、文字层基础档、云 OCR 识别来源 | `domain/engine-capabilities.ts` · `domain/layout-profile.ts`（标准档 / 高质量档；高质量档只在基准证明后开放，Q10）· `domain/text-layer/`（阅读顺序、栏判定、跨页续接、页眉页脚剔除、字形清洗；每条规则一个文件，自 v1 移植）· `application/use-cases/submit-parse.ts` · `application/ports/parse-gateway.ts` · `application/ports/ocr-provider.ts`（云 OCR，§7.7）· `adapters/worker-parse-gateway.ts` · `adapters/text-layer-engine.ts`（pdfjs-dist 提取 → domain 规则）· `adapters/cloud-ocr-provider.ts`（`OcrProvider` 的唯一实现，经 `@oi/providers` 的 `OcrTransport`；百度、智谱等服务商只在注册表里，§7.9） |
 | `jobs` | 持久任务记录、状态机、重启恢复、事件流 | `domain/job-state-machine.ts` · `domain/idempotency.ts` · `application/use-cases/resume-jobs.ts` · `application/ports/job-store.ts` · `adapters/sqlite-job-store.ts` |
 | `formula` | 公式候选、校验、显示决策、兜底顺序 | `domain/formula-policy.ts`（候选优先级链与换层判据，§7.5）· `domain/charset-check.ts` · `domain/equation-number.ts` · `domain/render-equivalence.ts` · `domain/crop-geometry.ts`（裁图外扩与 18px 参考字号） · `application/use-cases/decide-formula.ts` · `application/ports/latex-renderer.ts` · `adapters/katex-renderer.ts`（安全配置见 §7.6） |
 | `formula-source` | arXiv 源码校准公式：编号与版本识别、源码下载缓存、TeX 解析、与版面区域对齐、对齐失败回落（Q4，§7.6） | `domain/arxiv-id.ts` · `domain/fetch-policy.ts`（间隔、超时、冷却）· `domain/archive-limits.ts`（解包安全上限）· `domain/tar-reader.ts`（纯 tar 读取，gunzip 经端口注入）· `domain/tex-units.ts`（TeX → 公式单元）· `domain/macro-table.ts`（导言区宏 → KaTeX 宏，带展开上限）· `domain/source-align.ts`（词序列对齐与覆盖率）· `domain/align-policy.ts`（逐公式核对与回落判定）· `application/use-cases/resolve-arxiv-source.ts` · `application/use-cases/align-source.ts` · `application/ports/arxiv-source-client.ts` · `application/ports/source-cache.ts` · `application/ports/gunzip.ts` · `adapters/arxiv-http-client.ts` · `adapters/node-gunzip.ts` · `adapters/sqlite-source-cache.ts` |
 | `quality` | 质量评估端口、结果规范化、全路径评分不变式、部署推荐 | `domain/evaluation-status.ts`（verdict → 规范状态）· `domain/scoring-coverage.ts`（每个识别候选必须有评估记录，Q1）· `domain/low-score-routing.ts`（阈值按类别与 `evaluatorVersion`）· `domain/deployment-recommendation.ts`（Jev 的「本地 / API」推荐与本地可行性标注，API 优先，Q9）· `application/ports/quality-evaluator.ts` · `application/use-cases/evaluate-regions.ts` · `application/use-cases/reevaluate-pending.ts`（评分服务恢复后补评；由 `ingest` 的 `resume-ingest` 调用）· `adapters/worker-quality-evaluator.ts`（唯一实现：经 worker-client 提交 `evaluate` 作业） |
-| `repair` | 低分 / 不确定区域的多模态补救：只产出新的识别候选，重新评分由 `ingest` 调 `quality` 完成 | `domain/repair-plan.ts` · `domain/repair-limits.ts`（次数、并发、超时上限）· `application/use-cases/run-repair.ts` · `application/ports/multimodal-provider.ts` · `adapters/openai-compatible-multimodal.ts` |
+| `repair` | 低分 / 不确定区域的多模态补救：只产出新的识别候选，重新评分由 `ingest` 调 `quality` 完成 | `domain/repair-plan.ts` · `domain/repair-limits.ts`（次数、并发、超时上限）· `application/use-cases/run-repair.ts` · `application/ports/multimodal-provider.ts` · `adapters/llm-multimodal-provider.ts`（经 `@oi/providers` 的 `ChatTransport`，要求模型有 `chat` 与 `vision` 标记，§7.9.3） |
 | `budget` | 预算账本：所有付费调用的预留、结算、释放；金额上限与单价未知时的请求数 / 页数 / token 上限（§7.8） | `domain/budget-ledger.ts`（预留 / 结算 / 释放；已预留 + 已结算达到上限即拒绝）· `domain/budget-limits.ts`（预算模式、金额上限、按「服务商 + 能力」的请求数 / 页数 / token 上限）· `domain/default-caps.ts`（默认受限预算与各科目的占位次数类上限，§7.8 第 4 条）· `domain/price-book.ts`（单价来自用户配置；未知时金额记「未知」，不记为 0，不参与金额累加）· `domain/envelope.ts`（worker 作业的额度信封：最多请求数，含拆批与重试）· `application/use-cases/reserve.ts` · `settle.ts` · `release.ts` · `get-budget-status.ts` · `set-budget-limits.ts` · `application/ports/ledger-store.ts` · `adapters/sqlite-ledger-store.ts`（表前缀 `bud_`） |
-| `translation` | 自然语言翻译、占位保护、完整性校验、Markdown 还原、译文区块记录（D6，§8.1.1）、润色、缓存 | `domain/placeholder.ts`（抽取与恢复）· `domain/integrity-check.ts`（公式占位 / 数字 / 引用）· `domain/markdown-restore.ts`（占位还原为 `$…$` / `$$…$$`、模型文字中的 `$`、`<`、`[[` 转义、还原后公式与片段表逐个比对）· `domain/block-scope.ts`（按块类型判定是否为翻译块，§8.1.1）· `domain/block-status.ts`（success / failed / retranslating 状态转移）· `domain/adopted-version.ts`（显示哪个版本）· `domain/cache-key.ts`（§8.1.1 的键组成与公式决定摘要 `formulaDigest`）· `domain/segmenter.ts` · `application/use-cases/translate-page.ts` · `application/use-cases/retranslate-block.ts` · `application/use-cases/get-blocks.ts`（经 `markdown` 的 seam 解析出 `MdDocument`）· `application/use-cases/polish-translation.ts` · `application/ports/translation-provider.ts` · `application/ports/translation-store.ts` · `adapters/sqlite-translation-store.ts`（表前缀 `tr_`）· `adapters/providers/<vendor>.ts`（一家一个文件） |
+| `translation` | 自然语言翻译、占位保护、完整性校验、Markdown 还原、译文区块记录（D6，§8.1.1）、润色、缓存 | `domain/placeholder.ts`（抽取与恢复）· `domain/integrity-check.ts`（公式占位 / 数字 / 引用）· `domain/markdown-restore.ts`（占位还原为 `$…$` / `$$…$$`、模型文字中的 `$`、`<`、`[[` 转义、还原后公式与片段表逐个比对）· `domain/block-scope.ts`（按块类型判定是否为翻译块，§8.1.1）· `domain/block-status.ts`（success / failed / retranslating 状态转移）· `domain/adopted-version.ts`（显示哪个版本）· `domain/cache-key.ts`（§8.1.1 的键组成与公式决定摘要 `formulaDigest`）· `domain/segmenter.ts` · `application/use-cases/translate-page.ts` · `application/use-cases/retranslate-block.ts` · `application/use-cases/get-blocks.ts`（经 `markdown` 的 seam 解析出 `MdDocument`）· `application/use-cases/polish-translation.ts` · `application/ports/translation-provider.ts` · `application/ports/translation-store.ts` · `adapters/sqlite-translation-store.ts`（表前缀 `tr_`）· `adapters/llm-translation-provider.ts`（经 `@oi/providers` 的 `ChatTransport`；服务商只在注册表里，§7.9） |
 | `markdown` | Markdown 解析为块级 AST、公式与 HTML 安全规则、单个 `.md` 与文件夹（笔记库）只读阅读、wikilink 与相对链接解析、文件监视、编辑接口预留（§4.5） | 文件清单见 §4.5.2 |
 | `reader` | PDF 显示、页面虚拟化、对照跳转、裁图显示（仅 renderer） | `domain/pairing.ts`（块配对与跟随；译文块按 `sourceBlockId` 对齐）· `domain/scroll-sync.ts` · `domain/viewport-mapping.ts` · `ui/pdf-page-canvas.tsx` · `ui/page-virtualizer.ts` · `ui/readout-pane.tsx`（每个译文块一个 ui-kit `MarkdownView`，按块状态显示）· `ui/formula-view.tsx` · `ui/selection-toolbar.tsx` · `ui/hooks/use-document-session.ts` |
 | `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `application/use-cases/get-notes-by-ids.ts`（按 ID 批量只读，写作预留，§4.4） · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx`（正文用 ui-kit `MarkdownView`） |
-| `qa` | 论文问答、上下文选取、引用 | `domain/context-selection.ts`（按 `ChatCapabilities.acceptsImages` 决定上下文只含文本，还是文本加区域裁图，§7.3）· `domain/citation.ts` · `application/use-cases/ask.ts`（流式回答经 `markdown` 的 seam 切分为已闭合块与未闭合尾部）· `application/ports/chat-provider.ts`（多模态模型与纯文本 LLM 共用一个端口，Wisdom 2026-10-30 19:11）· `adapters/openai-compatible-chat.ts`（API 与本机 OpenAI 兼容服务共用）· `ui/ask-panel.tsx`（回答用 ui-kit `MarkdownView`） |
+| `qa` | 论文问答、上下文选取、引用 | `domain/context-selection.ts`（按 `ChatCapabilities.acceptsImages` 决定上下文只含文本，还是文本加区域裁图，§7.3）· `domain/citation.ts` · `application/use-cases/ask.ts`（流式回答经 `markdown` 的 seam 切分为已闭合块与未闭合尾部）· `application/ports/chat-provider.ts`（多模态模型与纯文本 LLM 共用一个端口，Wisdom 2026-10-30 19:11）· `adapters/llm-chat-provider.ts`（经 `@oi/providers` 的 `ChatTransport`；API 与本机 OpenAI 兼容服务共用，`acceptsImages` 取自模型的 `vision` 标记）· `ui/ask-panel.tsx`（回答用 ui-kit `MarkdownView`） |
 | `voice` | TTS 朗读 / 讲解、ASR 语音笔记 | `domain/speech-script.ts` · `domain/audio-segment.ts` · `application/ports/tts-port.ts` · `application/ports/asr-port.ts` · `application/use-cases/generate-narration.ts` · `application/use-cases/transcribe-note.ts` |
-| `settings` | 非密钥设置、provider 配置、密钥引用绑定（预算上限的规则与存储在 `budget`，设置页只经 `window.oi.budget.*` 读写） | `domain/provider-config-validate.ts` · `domain/translation-fallback.ts`（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/backend-choice.ts`（每个模型能力的「本地 / API」选择：有托管 API 时默认「API」，本地是同一接口后的一等选项，高级自建选项与推荐值的关系；覆盖 Jev、引擎 A 模型阶段、引擎 B、多模态、翻译、问答、TTS / ASR；API 优先，§7.0；Q9，§7.4）· `domain/egress-consent.ts`（按服务商记录数据外发同意：每个服务商一条记录，含已告知并同意的能力集合与时间；判断要不要弹对话框、对话框列哪些能力（首次列出全部、之后只列新增）；「外发前询问」开关（默认开，只能由用户在设置里关闭）；生成「数据去向」列表；未同意的能力对该服务商的请求为 0；Wisdom 2026-10-30 19:11、19:30，§7.0 第 6 条）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
+| `settings` | 非密钥设置、provider 配置、密钥引用绑定（预算上限的规则与存储在 `budget`，设置页只经 `window.oi.budget.*` 读写） | `domain/provider-config-validate.ts` · `domain/translation-fallback.ts`（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/backend-choice.ts`（每个模型能力的「本地 / API」选择：有托管 API 时默认「API」，本地是同一接口后的一等选项，高级自建选项与推荐值的关系；覆盖 Jev、引擎 A 模型阶段、引擎 B、多模态、翻译、问答、TTS / ASR；API 优先，§7.0；Q9，§7.4）· `domain/egress-consent.ts`（按服务商记录数据外发同意：每个服务商一条记录，含已告知并同意的能力集合与时间；判断要不要弹对话框、对话框列哪些能力（首次列出全部、之后只列新增）；「外发前询问」开关（默认开，只能由用户在设置里关闭）；生成「数据去向」列表；未同意的能力对该服务商的请求为 0；Wisdom 2026-10-30 19:11、19:30，§7.0 第 6 条）· `domain/egress-destination.ts`（目的主机分类：回环地址与用户标为「本机可信」的主机不算外发，其余都算；服务商身份按（`vendorId`, 主机）判定，主机不在该服务商的 `allowedHosts` 里就按新服务商处理；架构评审 P1-2）· `application/use-cases/check-egress.ts`（`EgressCheck` 的实现，由装配根注入到业务切片、`providers` 与 `worker-client`）· `application/use-cases/list-provider-presets.ts` · `application/ports/provider-catalog.ts` · `adapters/providers-catalog.ts`（经 `@oi/providers` 列出注册表里的服务商与模型）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
 | `diagnostics` | 诊断事件记录、诊断包导出、脱敏 | `domain/redaction-rules.ts`（自 v1 移植）· `domain/retention.ts`（保留天数与体积上限）· `application/use-cases/export-bundle.ts` · `ui/diagnostics-page.tsx` |
 
 ### 4.3 切片之间的依赖（允许的方向）
@@ -434,7 +446,7 @@ flowchart TD
 - 箭头表示「可以 import 对方的 `index.ts`」。图上没有的边一律禁止，CI 用 dependency-cruiser 按此矩阵检查。虚线是 `writing` 的预留边（§4.4），v2 不进 dependency-cruiser 矩阵。
 - `formula-source` 依赖 `formula` 的公开核对函数（字符集、编号、可渲染性），而不是反过来：`formula` 只从 `document` 读取候选，不知道候选来自 arXiv 还是引擎。
 - `ingest` 是唯一同时看得到 `library`、`parsing`、`document`、`quality`、`formula`、`formula-source`、`repair`、`translation`、`jobs` 的切片，只做编排；分支规则写在 `ingest/domain/ingest-policy.ts`。任何切片都不依赖 `ingest`。编排不放进 `jobs`（它只管任务状态机）、`document`（它不依赖任何切片）、装配根（F-02）或 UI（§2.1）。`repair` 不再依赖 `quality`：补救只产出候选，重新评分由 `ingest` 调用。
-- `document` 与 `jobs` 不依赖任何其他切片。`settings`、`diagnostics`、`budget` 不被业务切片 import：业务切片通过端口拿到配置、日志器、外发同意的检查与预算闸门（`contracts` 的 `BudgetGate`，§7.8），由装配根注入。
+- `document` 与 `jobs` 不依赖任何其他切片。`settings`、`diagnostics`、`budget` 不被业务切片 import：业务切片通过端口拿到配置、日志器、外发检查（`contracts` 的 `EgressCheck`，§7.0 第 6 条）与预算闸门（`contracts` 的 `BudgetGate`，§7.8），由装配根注入。`packages/providers` 不是切片，只被切片的 adapters 与装配根使用（§7.9.2）。
 - `markdown`（§4.5）被 `translation`、`notes`、`qa` 依赖：它们在 core 里调用 `markdown` 的 seam 把正文解析成 `MdDocument`，随自己的 seam 结果一起返回，UI 拿到的已经是解析好的普通数据。`markdown` 依赖 `library`（只用于「链接指向库内 PDF」的匹配，Markdown 文件本身不进文献库，D5）与 `jobs`（大文件夹扫描可取消）；它不依赖 `document`、`formula`：KaTeX 安全选项来自 `contracts/src/latex-policy.ts`，不经 `formula` 的 seam。
 - `reader` 只有 ui 与纯 domain，不出现在图中：它通过 `window.oi` 调用其他切片的 IPC 命令，不 import 其他切片。译文块的 `MdDocument` 由 `translation.getBlocks` 返回，reader 不 import `markdown`。
 - 新增一条边需要 ADR，并在同一个 PR 里更新本图与 dependency-cruiser 配置。`ingest` 的九条边与删除 `repair → quality` 在 M1 建立 `docs/adr/` 时登记（§16）。
@@ -630,6 +642,7 @@ flowchart TB
     DOM["features/*/domain"]
     PN["platform-node"]
     WC["worker-client"]
+    PV["providers"]
     UK["ui-kit"]
     C["contracts"]
     K["kernel"]
@@ -643,10 +656,12 @@ flowchart TB
   MAIN --> ADP
   MAIN --> APP
   MAIN --> PN
+  MAIN --> PV
   ADP --> APP
   ADP --> DOM
   ADP --> PN
   ADP --> WC
+  ADP --> PV
   APP --> DOM
   APP --> C
   DOM --> C
@@ -654,11 +669,14 @@ flowchart TB
   APP --> K
   PN --> K
   WC --> C
+  PV --> PN
+  PV --> C
+  PV --> K
   ADP -. "HTTP（oi-parse/1）" .-> PY
   PY -. "生成的协议模型" .-> C
 ```
 
-只允许箭头方向。反方向（例如 domain → application、application → adapters、ui → application、platform-node → features）一律禁止。ui 到 domain 的箭头只能经过本切片的 `src/pure.ts`（§2.4），不得 import domain 内部文件。
+只允许箭头方向。反方向（例如 domain → application、application → adapters、ui → application、platform-node → features、providers → features）一律禁止。ui 到 domain 的箭头只能经过本切片的 `src/pure.ts`（§2.4），不得 import domain 内部文件。
 
 ### 5.2 禁止事项（CI 强制或评审一票否决）
 
@@ -676,11 +694,12 @@ flowchart TB
 | F-10 | 密钥进入 renderer、日志、任务 JSON、诊断包、仓库 | 安全 | 类型（`ProviderConfig` 只有 `secretRef`）+ 脱敏 + gitleaks + AC-09 测试 |
 | F-11 | 手改生成文件（契约生成的 JSON Schema、Python 模型、preload API） | 两份定义漂移 | CI 重新生成并 `git diff --exit-code` |
 | F-12 | `any`、`@ts-ignore`、`eslint-disable` 无理由 | 绕过类型与规则 | ESLint：必须带说明；`@ts-expect-error` 需描述 |
-| F-13 | 引擎 / 模型 / 服务商名写死在 domain 或 application | 可替换性 | 名称只出现在 adapters 与配置 |
+| F-13 | 引擎 / 模型 / 服务商名写死在 domain 或 application | 可替换性 | 名称只出现在 adapters、`packages/providers` 的注册表与配置 |
 | F-14 | core（domain、application、seam、`contracts`、`kernel`）import UI、React、框架组件、DOM、路由、样式，包括 type-only 导入 | Q3 约束（§2.1）；v1 `lib/pdf-blocks.js` 把 DOM 裁图混进块规则 | G13、G14 |
 | F-15 | 业务规则（校验、计价、状态转移、权限、失败条件）写在组件、hooks 或 `ipc-handlers.ts` 里 | Q3 执行规则 1；v1 `viewer.js` 中状态判定与渲染写在同一组函数（§14.2 第 4 条） | 评审清单（RULES §5）+ G16：规则必须有经 seam 的 core 测试 |
 | F-16 | UI 任务里改 core 文件；为迁就页面改 seam 参数或返回形状 | Q3 执行规则 2、3 | 评审清单（RULES §5 第 11 条）+ UI–core 交接说明（RULES §8.4）；同一切片的 UI 与 core 可以在一个 PR 里，seam 的类型变更先单独合入（RULES §3 契约先行） |
 | F-17 | 流水线编排（按顺序调用多个切片的 seam、按结果分支）写在 UI、hooks、装配根、`jobs` 或某个业务切片里 | 架构评审 P0-1：没有归属的编排会落进装配根或 UI hook，回到 v1 `translateWholeDocument()` 的写法 | 只在 `ingest`（§4.2）；G5 `feature-dependency-matrix` 只给 `ingest` 这些边；F-02 |
+| F-18 | 服务商细节（主机名、请求体格式、鉴权头、错误码表）写在切片里；为一家服务商新建切片适配器 | 服务商会越来越多（Wisdom 2026-10-30 19:45、19:46）；格式代码散在各切片，会重复实现鉴权、重试、用量与错误映射，新增一家要改多处 | 只在 `packages/providers`（§7.9）；G5 `providers-boundary`；G2 检查切片代码中不出现注册表登记的服务商主机名 |
 
 ### 5.3 UI 组合：插槽而不是互相 import
 
@@ -720,12 +739,13 @@ flowchart TB
 2. **本地是一等选项。** 两种来源实现同一个端口或同一种 worker 作业，都有契约测试与部署文档（`docs/deploy/<能力>.md`，随该能力的实现里程碑交付）。切换只影响之后的请求；结果记录来源（`ParseRun` 的后端、`evaluatorVersion`、provider id）。「高级」只放用户自建的远程服务，「本地」不放进「高级」，也不隐藏。
 3. **按硬件推荐。** 硬件画像只做两件事：给「本地」标可行性（达到官方要求 / 不在官方要求内 / 官方文档未覆盖该平台），以及在没有托管 API 或用户拒绝数据外发时，决定推荐本地还是降级。规则是纯函数，Jev 的规则见 §7.4，其他能力随各自里程碑补齐；补齐前「本地」标「硬件要求未评估」。
 4. **没有 Key、拒绝外发或 API 不可用时**，不静默改用另一个付费服务，也不静默改成本地，按下表最后一列降级，界面提示去填 Key 或改选本地。
-5. **密钥。** 最终用户的 Key 只存本机安全存储（§8.3）。开发与测试用的 Key 只经 Cursor Secrets 注入为环境变量，变量名先登记在 §15.4 再使用；仓库不放、也不读取 `.env` 文件。CI 不调用付费 API（§12）。
-6. **数据外发同意（Wisdom 2026-10-30 19:11 批准；19:30 改为按服务商）。** 规则全部在 `settings/domain/egress-consent.ts`；业务切片经装配根注入的端口在发请求前检查（业务切片不 import `settings`，§5）。
+5. **密钥。** 最终用户的 Key 只存本机安全存储（§8.3）。开发与测试用的 Key 只以环境变量提供：云端 Agent 经 Cursor Secrets 注入，开发者本机由开发者自己设置（§15.4）；变量名先登记在 §15.4 再使用；仓库不放、也不读取 `.env` 文件。CI 不调用付费 API（§12）。
+6. **数据外发同意（Wisdom 2026-10-30 19:11 批准；19:30 改为按服务商）。** 规则全部在 `settings/domain/egress-consent.ts` 与 `egress-destination.ts`；发请求的一方经装配根注入的 `EgressCheck` 端口在连接前检查（业务切片不 import `settings`，§5）。
    - **按服务商问一次。** 某个服务商第一次要收到数据前，弹一个对话框，列出当前选定把数据发给它的**全部**能力，每项写明会发什么（区域裁图、候选文本、我们渲染的页面图、待翻译文本或问答上下文），并写明不上传原 PDF。例：面壁开放平台一个对话框，列出 Jev 评分与引擎 B 文档解析。用户对整个对话框同意或拒绝。
    - **新增能力要追加告知。** 已同意的服务商，之后又有能力要把数据发给它（例如用户把另一项能力改选到这家），该能力第一次请求前再弹一次，只列新增的能力。同意范围只覆盖对话框里列出过的能力。
-   - **拒绝或未作答。** 对话框列出的能力对该服务商的请求为 0，结果记 `unavailable`（原因码 `consent_required`），按下表最后一列降级，并提示可改选「本地」；不改用别的服务商。追加告知被拒时，此前已同意的能力不受影响。
-   - **「外发前询问」开关。** 设置里有一个开关，默认开（弹对话框）。只有用户在设置里亲自操作才会关闭；新安装、升级、恢复默认都不会关闭它。关闭后不再弹对话框，请求照常发送。无论开关状态，设置里都显示「数据去向」列表：每个服务商、发给它的能力、每项的状态（已同意 / 询问已关闭 / 已拒绝）。规格补充（待 Wisdom 确认）：重新打开开关后，没有在对话框里同意过的「服务商 + 能力」，下次使用前照常询问。
+   - **拒绝或未作答。** 只影响这一个服务商、只影响对话框里列出的能力：这些能力对该服务商的请求为 0，结果记 `unavailable`（原因码 `consent_required`），按下表最后一列降级，并提示可改选「本地」；被拒的能力也不改发给别的服务商。其他服务商上已同意的能力照常请求；追加告知被拒时，此前已同意的能力不受影响。对话框弹出后、用户作答之前，按「未作答」处理。
+   - **「外发前询问」开关。** 设置里有一个开关，默认开（弹对话框）。只有用户在设置里亲自操作才会关闭；新安装、升级、恢复默认都不会关闭它。关闭后不再弹对话框，请求照常发送。无论开关状态，设置里都显示「数据去向」列表：每个服务商、发给它的能力、每项的状态（已同意 / 询问已关闭 / 已拒绝）。重新打开开关后，没有在对话框里同意过的「服务商 + 能力」，下次使用前照常询问（按架构评审 P1-1，Wisdom 2026-10-30 20:57 确认保留）。
+   - **统一检查端口与目的主机（架构评审 P1-2）。** 发请求的一方在连接之前调用 `contracts/src/egress.ts` 的 `EgressCheck.check({ vendorId, capability, host })`，返回 `allow`、`ask` 或 `refused`；实现是 `settings` 的 `check-egress` 用例，由装配根注入。调用点有三处：`ingest` 提交会让 worker 调用托管后端的作业之前；`packages/providers` 的传输层连接之前（§7.9.5）；`worker-client` 连接远程 worker 之前。目的主机的判定：回环地址（`127.0.0.0/8`、`::1`；`localhost` 按解析结果判断）不算外发；用户在设置里标为「本机可信」的主机（这个选项保留，默认没有；Wisdom 2026-10-30 20:57）不算外发；其余一律算外发，包括标为「本地」但地址不是回环的服务，以及远程 worker 本身。服务商身份是（`vendorId`, 主机）：主机不在该服务商登记的 `allowedHosts` 里，就按一个新服务商处理，重新询问。返回 `ask` 时这次不发请求，对话框排队等用户作答，这次请求按「未作答」记 `consent_required`，已做的预留随即释放（§7.8）。验收 PRD AC-65。
    - 只发区域裁图、候选文本或我们渲染的页面图，不上传原 PDF，保证所有来源共用一个坐标帧（Q6）。对话框的布局与开关在设置里的位置由 Loom 定（DESIGN.md 待 Loom 产出）。
 7. **开发机。** Windows，32 GB 内存，NVIDIA RTX 4070 12 GB（Wisdom 2026-10-30 17:56 告知配置，18:44 告知系统）。开发以 API 路径为准。API 路径的真实调用实测（§7.4「开发机」）已由 Wisdom 2026-10-30 19:11 决定延后，在 PRD M0 中记为「待执行」，不阻塞规格文档。某个模型在开发机上部署不了，或者官方文档没有覆盖 Windows 时，开发机上的本地部署标「不要求 / 未核实」，不作为开发前提；规格中的本地选项照常保留，由契约测试与达到官方要求的机器（有的话）验证。
 
@@ -734,10 +754,10 @@ flowchart TB
 | Jev 质量评分 | 面壁开放平台 `MiniCPM-OCR-Jev`（§7.4「面壁 API」） | worker `local_engine`：llama.cpp CUDA 构建首选，Ollama 备选，macOS 走 Metal | **不要求 / 未核实**：官方部署文档只覆盖 Linux + NVIDIA 与 macOS（§7.4「开发机」） | 记 `unavailable`，标「待评分」，不触发补救（PRD AC-05） |
 | 引擎 B（MiniCPM-OCR 1.0） | 面壁开放平台文档解析 `MiniCPM-OCR-1.0`（§7.1） | worker 内 SDK（`ppdoclayout3_torch`） | **不要求 / 未核实**：上游只写了 Linux vLLM（RTX 5090 32 GB）与 macOS ARM64 llama.cpp 两个验证环境 | 不运行引擎 B，只用引擎 A 或文字层基础档 |
 | 引擎 A 的模型阶段（版面、公式识别、OCR 兜底、表格） | 三条路径都保留、都可在设置中选（Wisdom 2026-10-30 19:11）：托管 API（核实通过后）、本地部署、租用的 Linux 远程 worker（「高级」里的远程 worker，跑同一份 worker 代码与 `paddle_local` 后端）；M3 开工前由 Wisdom 定最终选择（默认值与开发用的路径）。托管 API 的**候选**是百度 AI Studio 的 PaddleOCR 托管 API（异步任务，PP-StructureV3 / PaddleOCR-VL-1.5 / PP-OCRv5，Bearer access token）。异步文档的示例只取每页的 Markdown，没有写区域框字段；能否返回我们需要的区域框与公式 LaTeX、版本能否锁定、托管版面模型对应哪个档位（Q10）、价格与每日页数配额都**未核实**（差异清单 §2.4.1）；M3 开工前核实，不合用就不出现在选项里。阅读顺序与文字层对齐仍由我们自己的代码完成，不用托管流水线给出的顺序 | worker 内 PaddleOCR / PaddleX（`engine-a` extra） | **不要求 / 未实测**：Paddle 3.3 有官方 Windows GPU 包（CUDA 11.8 / 12.6 / 12.9，要求 GPU 计算能力高于 7.5），PaddleOCR 整条流水线在 Windows 上未实测。开发用哪条路径（托管 API / 开发机本地 / 租用的 Linux 远程 worker）随 M3 前的最终选择一起定 | 文字层基础档（Q2） |
-| 多模态补救 | 用户自带 Key 的多模态服务（OpenAI 兼容等；预置服务商名单待定） | 本机 OpenAI 兼容服务（例如 Ollama、llama.cpp server 加用户自选的视觉模型） | 不要求 | 不补救，未核验公式保留原图（PRD AC-04、AC-05） |
-| 云 OCR（额外识别来源，§7.7） | 百度、智谱（用户自带 Key） | 本身就是 API；对应的本地能力是引擎 A 的 OCR 兜底 | — | 不请求（PRD AC-18） |
-| 翻译 | 用户自带 Key 的翻译服务（预置服务商名单待定） | 本机 OpenAI 兼容服务 | 不要求 | 不翻译，显示原文并提示去配置；可按 Q11 借用多模态（默认关） |
-| 文本问答（`qa` 的 `chat-provider`；Wisdom 2026-10-30 19:11 确认纳入） | 用户自带 Key 的对话服务（OpenAI 兼容等；预置服务商名单待定）；多模态模型与纯文本 LLM 都可以选，走同一个端口（§7.3） | 本机 OpenAI 兼容服务（同样可以是多模态或纯文本模型） | 不要求 | 功能不可用，提示去配置 |
+| 多模态补救 | 用户自带 Key 的多模态服务（经服务商适配层，§7.9：OpenAI 兼容、Anthropic、Gemini、千帆、智谱等；不预选，用户在设置里从全部服务商中选） | 本机 OpenAI 兼容服务（例如 Ollama、llama.cpp server 加用户自选的视觉模型） | 不要求 | 不补救，未核验公式保留原图（PRD AC-04、AC-05） |
+| 云 OCR（额外识别来源，§7.7） | 百度 OCR、智谱 GLM-OCR（用户自带 Key，经服务商适配层，§7.9） | 本身就是 API；对应的本地能力是引擎 A 的 OCR 兜底 | — | 不请求（PRD AC-18） |
+| 翻译 | 用户自带 Key 的对话模型（经服务商适配层，§7.9；不预选，用户在设置里从全部服务商中选） | 本机 OpenAI 兼容服务 | 不要求 | 不翻译，显示原文并提示去配置；可按 Q11 借用多模态（默认关） |
+| 文本问答（`qa` 的 `ChatProvider`；Wisdom 2026-10-30 19:11 确认纳入） | 用户自带 Key 的对话服务（经服务商适配层，§7.9；不预选，用户在设置里从全部服务商中选）；多模态模型与纯文本 LLM 都可以选，走同一个端口（§7.3） | 本机 OpenAI 兼容服务（同样可以是多模态或纯文本模型） | 不要求 | 功能不可用，提示去配置 |
 | TTS / ASR | 用户自带 Key 的服务（M7 选型） | 本机服务，同一端口（模型 M7 选型） | 不要求 | 功能不可用，提示去配置 |
 
 ### 7.1 总体流水线
@@ -776,11 +796,11 @@ flowchart TD
 - **预算闸门**：图中每个发往外部服务商的模型调用（引擎 A 的托管 API、引擎 B 文档解析、云 OCR、Jev 评分、多模态补救、翻译）发出前都经 `BudgetGate` 预留，被拒时按 §7.8 的规则处理：Jev 记 `unavailable`（原因码 `budget`）并标「待评分」，不触发补救，不改用别的服务商。
 
 - **当前选型**（只写在 adapters 与配置里，F-13）：引擎 A = 版面模型 + PP-FormulaNet 系列 + PaddleOCR 兜底 + 自写阅读顺序；引擎 B = MiniCPM-OCR 1.0（默认来源是面壁文档解析 API，见下条；「本地」用官方 SDK `minicpm-ocr`，版面后端用 `ppdoclayout3_torch`，不依赖 PaddlePaddle）；各能力的默认来源见 §7.0；质量评估 = MiniCPM-OCR Jev（部署见 §7.4）。按 Q1，MiniCPM-OCR 1.0 与 Jev 照用：锁定上游提交、SDK 版本与权重 sha256，记入 `EngineCapabilities.models[]` 与每次 `ParseRun`，M6 开工前复核一次。
-- **引擎 B 的云端来源（Wisdom 2026-10-30 18:37 加入；18:44 按 API 优先改为默认）**：引擎 B 默认用面壁开放平台的 MiniCPM-OCR-1.0 文档解析 API，本机 SDK 是同一接口后的「本地」选项。文档解析 API（`POST https://api.modelbest.ai/v1/document-parse`，Bearer `MODELBEST_API_KEY`，与 Jev 共用同一个面壁 Key；[文档](https://platform.modelbest.ai/console/docs/api/document-parse)，2026-10-30 查阅，页面标注更新于 2026-10-27）。第一次使用前须确认数据外发；可在设置中改选「本地」（PRD §3.3；验收 AC-60）。引擎 B 什么时候运行不变：仍是对比与兜底。
+- **引擎 B 的云端来源（Wisdom 2026-10-30 18:37、18:44）**：引擎 B 默认用面壁开放平台的 MiniCPM-OCR-1.0 文档解析 API，本机 SDK 是同一接口后的「本地」选项。文档解析 API（`POST https://api.modelbest.ai/v1/document-parse`，Bearer `MODELBEST_API_KEY`，与 Jev 共用同一个面壁 Key；[文档](https://platform.modelbest.ai/console/docs/api/document-parse)，2026-10-30 查阅，页面标注更新于 2026-10-27）。第一次使用前须确认数据外发；可在设置中改选「本地」（PRD §3.3；验收 AC-60）。引擎 B 什么时候运行不变：仍是对比与兜底。
   - 输入是预处理渲染好的页面图（同步接口，`image` 用 data URI），**不上传原 PDF**，所有来源仍共用同一张页面图与 `CoordinateFrame`（Q6）。
   - 请求带 `upright: false`（平台默认 `true`，会自适应旋转并把坐标改到旋转后的页面上），让坐标直接落在我们的页面图上；页面方向由预处理负责。
   - 输出的 `ocr.blocks[]`（`order`、`label`、`bbox` / `regions`，像素坐标、左上原点，相对 `image_width` / `image_height`）经 `engines/e2e_b/mapping.py` 转成候选页，与本机 SDK 走同一套映射。防御：若仍返回 `rotation.applied = true`，按 `total_angle`（逆时针为正）换回我们的页面坐标，换算不了的页不产生候选；`image_width` / `image_height` 与我们发出的图不一致时同样不产生候选。块的 `status` 不是 `ok`（`failed` / `skipped_no_vlm` / `skipped_seal`）时只保留版面框，不产生文字候选。
-  - 错误处理沿用 §7.4「面壁 API」表，差别两处：413 表示单张图过大，没有批可拆，记 `error/invalid_request`；409 只出现在异步作业的幂等键冲突，v2 不用异步作业。5xx 时把响应头 `X-Request-Id` 记入诊断事件（它不是凭据）。
+  - 错误处理沿用 §7.4「面壁 API」表，差别两处：413（`too_large`）表示单张图过大，没有批可拆，不重试，记 `error/too_large`；409 只出现在异步作业的幂等键冲突，v2 不用异步作业。5xx 时把响应头 `X-Request-Id` 记入诊断事件（它不是凭据）。
   - `EngineId` 仍是 `e2e-b`；`ParseRun` 记录后端（`sdk-local` / `modelbest-api`）与返回的模型名。产出的候选照常送 Jev 评分（Q1）。
   - 平台显示限时免费；长期价格**未核实**。计价不写死：按平台返回的用量记账，单价来自用户配置，否则记「未知」（PRD QM-10）。
   - 托管 API 背后的版本与流水线是否与锁定的 SDK（`1269e4f`，版面用 PP-DocLayoutV3）一致**未核实**，对比视图按「版面可能同源」标注。文档页自己声明「描述的是已实现的契约，不证明生产部署或线上连通」，真实可用性在 M6 冒烟时确认（PRD M6）。
@@ -855,7 +875,7 @@ interface TranslationProvider {                // features/translation/applicati
   translate(input: TranslationInput, signal: AbortSignal): AsyncIterable<TranslationChunk>;
 }
 interface ChatProvider {                       // features/qa/application/ports；多模态模型与纯文本 LLM 共用（Wisdom 2026-10-30 19:11）
-  capabilities(): ChatCapabilities;            // acceptsImages（是否接受图片输入）、是否流式、上下文长度
+  capabilities(): ChatCapabilities;            // acceptsImages（= 所选模型的 vision 标记，§7.9.3）、是否流式、上下文长度
   ask(input: ChatInput, signal: AbortSignal): AsyncIterable<ChatChunk>; // 只有 acceptsImages 为真时 ChatInput 才带图片部分
 }
 interface LatexRenderer { check(latex: string): RenderCheck }   // 只证明语法可渲染，不证明正确
@@ -873,29 +893,30 @@ interface BudgetGate {                         // contracts/src/budget.ts；budg
 - `EngineId` 是配置值（如 `modular-a`、`e2e-b`、`text-layer`），模型名、权重版本记在 `EngineCapabilities.models[]` 与每次 `ParseRun` 中。
 - 引擎不支持区域级解析时必须在 `capabilities` 里声明；用例据此拒绝或显示「需整页运行」及估算费用，不能隐式扩大收费范围。
 - 质量评估的 `error` / `unavailable` / `not-run` 不得触发补救（AC-05）。
-- 上游 verdict 的规范化只在 `quality/domain/evaluation-status.ts` 做，上游原值保存在 `providerVerdict`。以 Jev 为例：`scored` → `scored`（带 `rawScore`）；`precheck_reject` → `error/invalid_candidate`；`render_error` → `error/render_failed`；`missing_original_image` → `error/missing_image`；`encode_error` → `error/encode_failed`；`forward_error` → `error/service_failed`；其他任何值 → `error/unknown_verdict`。上游返回的 0.0 / -1.0 占位分一律丢弃。HTTP 层的失败（鉴权、额度、限流等）按 §7.4「面壁 API」表映射为 `error` 或 `unavailable`，同样不带分数、不触发补救。
+- 上游 verdict 的规范化只在 `quality/domain/evaluation-status.ts` 做，上游原值保存在 `providerVerdict`。以 Jev 为例：`scored` → `scored`（带 `rawScore`）；`precheck_reject` → `error/invalid_candidate`；`render_error` → `error/render_failed`；`missing_original_image` → `error/missing_image`；`encode_error` → `error/encode_failed`；`forward_error` → `error/service_failed`；其他任何值 → `error/unknown_verdict`。上游返回的 0.0 / -1.0 占位分一律丢弃。HTTP 层的失败先由适配器映射为 `contracts/src/provider.ts` 的 `ProviderFailure`（TS 侧在 `packages/providers` 的 `formats/<format>/errors.ts`，worker 侧在 `quality/http_errors.py`，§7.9.5），再在这里规范化：`auth`、`quota` → `unavailable`（原因码同名），其余 → `error/<kind>`；同样不带分数、不触发补救。
 - 阈值按（类别, `evaluatorVersion`）分别定标；`evaluatorVersion` 包含模型版本、部署方式、推理后端与量化档、渲染环境。上游默认阈值 0.5 不使用（PRD QM-05）。某个 `evaluatorVersion` 尚无定标阈值时，分数照常记录，但 `low-score-routing` 返回「未定标」，不触发补救。
 - 所有发往外部服务商的模型调用（不只补救与翻译）发出前都经 `BudgetGate.reserve`；规则见 §7.8。
-- 问答的 `ChatProvider` 不区分「多模态」与「纯文本」两种实现：同一个适配器，差别只在 `acceptsImages`。这个值来自服务商预置信息或用户配置时的明确选择，不靠探测猜；不确定时按 `false` 处理。`qa/domain/context-selection.ts` 据此组上下文：纯文本模型只收原文、译文、已核验 LaTeX 与图表题注，图、表、未核验公式以「题注 + 区域编号」代替并注明「图像未提供给模型」；多模态模型另收这些区域的裁图（只发裁图，不上传原 PDF；同样受 §7.0 第 6 条的外发同意约束）。两种模型的回答走同一条引用定位规则（PRD AC-15）。
+- 问答的 `ChatProvider` 不区分「多模态」与「纯文本」两种实现：同一个适配器，差别只在 `acceptsImages`。这个值就是所选模型的 `vision` 能力标记（§7.9.3），来自注册表的预置信息或用户添加模型时的明确选择，不靠探测猜；不确定时按 `false` 处理。`qa/domain/context-selection.ts` 据此组上下文：纯文本模型只收原文、译文、已核验 LaTeX 与图表题注，图、表、未核验公式以「题注 + 区域编号」代替并注明「图像未提供给模型」；多模态模型另收这些区域的裁图（只发裁图，不上传原 PDF；同样受 §7.0 第 6 条的外发同意约束）。两种模型的回答走同一条引用定位规则（PRD AC-15）。
+- `OcrProvider`、`MultimodalRepairProvider`、`TranslationProvider`、`ChatProvider` 各只有一个适配器，经 `@oi/providers` 发请求；换服务商、加服务商只动注册表（§7.9.4），不新增切片适配器（F-18）。
 
 ### 7.4 质量评估的部署（Q9）
 
-决定：Jev 同时支持本机与远程运行，用户在设置里选择，用户随时可改。Wisdom 2026-10-30 18:37 补充：远程默认用面壁开放平台的托管 API（模型 `MiniCPM-OCR-Jev`，见下文「面壁 API」）；本地部署保留，llama.cpp CUDA 构建首选；两者走同一个 `evaluate` 作业接口；原来的「远程：自建 worker」「远程：自建 Docker」放到「高级」里，不删。18:44 按「API 优先」（§7.0）统一为：设置主选项是「本地 / API」，默认「API」，Jev 的 API 服务商是面壁开放平台；硬件画像只用来给「本地」标可行性。开发机是 Windows + 32 GB 内存 + RTX 4070 12 GB，开发走 API 路径；开发机上的本地 Jev 标「不要求 / 未核实」（见本节末「开发机」）。
+决定（Q9，Wisdom 2026-10-30）：设置主选项是「本地 / API」，默认「API」，Jev 的 API 服务商是面壁开放平台（模型 `MiniCPM-OCR-Jev`，见下文「面壁 API」）。「本地」是同一个 `evaluate` 作业接口后的一等选项，llama.cpp CUDA 构建首选；自建远程 worker 与自建 Jev Docker 在「高级」里。硬件画像只用来给「本地」标可行性，不决定默认值；用户随时可改。开发机是 Windows + 32 GB 内存 + RTX 4070 12 GB，开发走 API 路径；开发机上的本地 Jev 标「不要求 / 未核实」（见本节末「开发机」）。
 
-**worker 接口对两种部署一致。** 桌面端只有一个适配器 `quality/adapters/worker-quality-evaluator.ts`：经 `worker-client` 向 worker 提交 `POST /v1/jobs`（`kind: "evaluate"`），请求与产物使用同一份 schema（`contracts/src/worker/evaluate.ts`）。本机与远程的差别只在 worker 地址与鉴权（§10.1），与解析作业完全相同。worker 内部由 `quality/backends/` 选择后端，两种后端实现同一个 `QualityEvaluatorBackend`（§7.2）：
+**worker 接口对两种部署一致。** 桌面端只有一个适配器 `quality/adapters/worker-quality-evaluator.ts`：经 `worker-client` 向 worker 提交 `POST /v1/jobs`（`kind: "evaluate"`），请求与产物使用同一份 schema（`contracts/src/worker/evaluate.ts`）。本机与远程的差别只在 worker 地址、鉴权与能否接收桌面的服务商 Key（§10.1），与解析作业完全相同。worker 内部由 `quality/backends/` 选择后端，两种后端实现同一个 `QualityEvaluatorBackend`（§7.2）：
 
 | 设置中的选择 | 请求发往 | worker 内后端 | 分数可比性 | 硬件（官方说法） |
 | --- | --- | --- | --- | --- |
 | 本地 | 本机 worker（`127.0.0.1`） | `local_engine`：本机推理引擎（llama.cpp CUDA 构建首选，Ollama 备选；macOS 走 Metal）+ Jev 评分服务层 | 排序稳定，绝对值与 Docker / 面壁 API 可能不同；渲染图由 worker 自备，分数不能与官方数值比较，必须单独定标 | NVIDIA ≥ 8 GB 显存，或 Apple M 系列 ≥ 16 GB 统一内存 |
-| API（默认；服务商：面壁开放平台） | 本机或远程 worker | `jev_http`：面壁开放平台托管 API（OpenAI 兼容 `POST /v1/chat/completions`，图片用 `data:image/png;base64,` 形式） | 服务端渲染；上游说云 API 与 Docker 一致、可与官方数值比较（本 PR 未实测） | 本机无要求；需要面壁 API Key；价格**未核实** |
+| API（默认；服务商：面壁开放平台） | 本机 worker（Key 由 main 按次授权，经回环地址随作业传入）；远程 worker 只在服务器自己配置了面壁后端时可用 | `jev_http`：面壁开放平台托管 API（OpenAI 兼容 `POST /v1/chat/completions`，图片用 `data:image/png;base64,` 形式） | 服务端渲染；上游说云 API 与 Docker 一致、可与官方数值比较（本 PR 未实测） | 本机无要求；需要面壁 API Key；价格**未核实** |
 | 高级：自建远程 worker | 远程 worker | `local_engine`（在服务器上推理，可用 vLLM / SGLang） | 同「本地」，按服务器环境单独定标 | vLLM ≥ 12 GB、SGLang ≥ 16 GB、llama.cpp / Ollama ≥ 8 GB 显存 |
 | 高级：自建 Docker 服务 | 本机或远程 worker | `jev_http`（图片**不带**前缀） | 与面壁 API 一致 | Linux + NVIDIA ≥ 12 GB、驱动 ≥ 535 |
 
 - 本机 worker 只做转发时不加载任何模型，只装基础依赖；基础安装体积**未实测**，M1 统计。
-- `jev_http` 统一处理面壁 API 与 Docker 两种请求形态（图片前缀、端点），由契约测试覆盖两种形态；面壁 API Key 按 §1、§10.1 的约定只随作业的请求头传入。
+- `jev_http` 统一处理面壁 API 与 Docker 两种请求形态（图片前缀、端点），由契约测试覆盖两种形态。面壁 API Key 只由 main 按次授权，经回环地址随本机 worker 的作业请求头传入（§10.1）。远程 worker 不接收桌面的 Key；它若在服务器上配置了面壁 API 等托管后端，Key 由服务器自己管理，`GET /v1/capabilities` 报出该后端的服务商与主机，桌面把它列入「数据去向」并按 §7.0 第 6 条询问（架构评审 P1-3）。
 - 两种后端都把上游 verdict 与原始分原样放进产物；规范化只在 TS 的 `quality/domain/evaluation-status.ts` 做（§7.3），本机与远程走同一条规范化路径。
 
-**推荐规则**（`quality/domain/deployment-recommendation.ts`，纯函数，示例见 §2.6；按 §7.0 的 API 优先，18:44 起替换原来「达标推荐本机」的规则）：
+**推荐规则**（`quality/domain/deployment-recommendation.ts`，纯函数，示例见 §2.6；按 §7.0 的 API 优先）：
 
 1. 托管 API 可用（Jev 有面壁 API；只有用户关掉 API 来源或拒绝数据外发时才算不可用）→ 推荐「API」（`api-first`），不论硬件。
 2. 同时给「本地」标可行性：Apple Silicon 且统一内存 ≥ 16 GB，或 NVIDIA 独显且显存 ≥ 8 GB → `meetsOfficialHardware = true`。Jev 官方部署文档只覆盖 Linux + NVIDIA 与 macOS，Windows 上 `platformDocumented = false`，界面注明「官方文档未覆盖 Windows」。
@@ -926,9 +947,9 @@ interface BudgetGate {                         // contracts/src/budget.ts；budg
 | `threshold` | 只影响 `summary`，不改原始分 | 不依赖；只取每项的 `verdict` 与 `prob_yes`（§7.3） |
 | 上限 | 单请求 ≤ 64 项（`score` 数 `items`，选择模式数全部候选）；不支持 SSE | `quality/batching.py` 按 64 分批；`stream` 恒为 `false` |
 | 响应 | `choices[0].message.content` 是 JSON 字符串，要再解析一次；`results[i]` 对应 `items[i]`；`usage.prompt_tokens` 在顶层 | 解析失败的整批记 `error/service_failed`；用量记入预算账本 |
-| HTTP 错误 | 400 / 422 请求错；401 / 403 Key 或权限；402 额度或计费；404 端点或模型；413 过大；429 限流；5xx 服务端 | 400 / 404 / 422 不重试，记 `error/invalid_request`；401 / 403 / 402 不重试，整批记 `unavailable`（原因码 `auth` / `quota`），提示用户；413 拆半重试；429 按响应提示退避；5xx（含用量无效时的 502）有限次退避重试，重试用尽记 `error/service_failed`，响应头 `X-Request-Id` 记入诊断事件。每次重试都是新的计费调用，从作业的额度信封里扣一次请求（§7.8），信封用完即停；部分失败只重试失败项 |
+| HTTP 错误 | 400 / 422 请求错；401 / 403 Key 或权限；402 额度或计费；404 端点或模型；413 过大；429 限流；5xx 服务端 | 先映射为 `ProviderFailure`（§7.9.5；worker 侧映射在 `quality/http_errors.py`，与 TS 侧共用 `fixtures/protocol/provider-errors/` 的样例）：400 / 422 → `invalid_request`；404 → `invalid_request`（`vendorCode` 记 `not_found`）；401 / 403 → `auth`；402 → `quota`；413 → `too_large`；429 → `rate_limited`（`retryAfterMs` 取自响应）；5xx（含用量无效时的 502）→ `service_failed`；超时 → `timeout`。处理：`invalid_request`、`auth`、`quota` 不重试；`auth`、`quota` 整批记 `unavailable`（原因码同名）并提示用户；`invalid_request` 记 `error/invalid_request`；`too_large` 拆半重试；`rate_limited` 按 `retryAfterMs` 退避；`service_failed` 与 `timeout` 有限次退避重试，重试用尽记 `error/<kind>`；响应头 `X-Request-Id` 记入 `requestId` 与诊断事件。每次重试都是新的计费调用，从作业的额度信封里扣一次请求（§7.8），信封用完即停；部分失败只重试失败项 |
 
-- **Key**：环境变量名 `MODELBEST_API_KEY`（登记在 §15.4）。开发与测试只从 Cursor Secrets 注入的环境变量读取；CI 不调用付费 API，不需要它；应用里由用户在设置中填写，存入本机安全存储（`safeStorage`，§8.3），`ProviderConfig` 只存 `secretRef`。Key 绝不进仓库、fixtures、录制的响应、日志、任务 JSON、诊断包（RULES N-05、PRD AC-09、AC-59）。调用真实服务的测试只在该变量存在时运行，默认跳过；契约测试用去掉 `Authorization` 与图片内容的录制样例。
+- **Key**：环境变量名 `MODELBEST_API_KEY`（登记在 §15.4）。开发与测试只从环境变量读取（云端 Agent 由 Cursor Secrets 注入，开发者本机见 §15.4）；CI 不调用付费 API，不需要它；应用里由用户在设置中填写，存入本机安全存储（`safeStorage`，§8.3），`ProviderConfig` 只存 `secretRef`。Key 绝不进仓库、fixtures、录制的响应、日志、任务 JSON、诊断包（RULES N-05、PRD AC-09、AC-59）。调用真实服务的测试只在该变量存在时运行，默认跳过；契约测试用去掉 `Authorization` 与图片内容的录制样例。
 - **同一个 Key 两处用**：面壁的 Jev 与 MiniCPM-OCR-1.0 文档解析（§7.1 引擎 B 云端来源）用同一个平台 Key，设置里是一个「面壁开放平台」服务商、一个 `secretRef`。
 - **数据外发同意**：按 §7.0 第 6 条，面壁开放平台只弹一个对话框（19:30 起按服务商），列出当前选定发往面壁的全部能力——默认就是 Jev 评分（区域裁图与候选文本）与引擎 B 文档解析（页面图）；某一项改选「本地」时就不列它，之后再改回 API 时按「追加告知」只问这一项。同意后才发请求；拒绝或未作答时列出能力的请求数为 0，按 §7.0 降级，并提示可改选「本地」。「外发前询问」开关被用户关闭时不弹对话框，设置里的「数据去向」列表仍显示面壁及其能力。
 - **价格**：Jev 在平台上没有标价，**未核实**；不写死单价，按 `usage` 的 token 数记账，单价来自用户配置，否则记「未知」（PRD QM-10）。
@@ -1007,11 +1028,12 @@ flowchart LR
 
 | 服务 | 官方文档（2026-10-30 查阅） | 已从文档确认 | 未核实 |
 | --- | --- | --- | --- |
-| 百度智能云「通用文字识别（高精度含位置版）」 | [文档](https://cloud.baidu.com/doc/OCR/s/tk3h7y2aq) | `POST https://aip.baidubce.com/rest/2.0/ocr/v1/accurate`，`access_token` 鉴权；图片 / URL / PDF / OFD 四选一，base64 + urlencode 后 ≤ 10 MB；返回 `words_result[].words` 与行级 `location`（左上原点）；可选单字位置、行置信度、段落 | 学术公式（LaTeX）识别能力；计价与免费额度的当前值 |
-| 智谱 GLM-OCR 文档解析 | [API 参考](https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90)、[模型介绍](https://docs.bigmodel.cn/cn/guide/models/vlm/glm-ocr) | `POST https://open.bigmodel.cn/api/paas/v4/layout_parsing`，Bearer 鉴权，`model: "glm-ocr"`；PDF / JPG / PNG，单图 ≤ 10 MB、PDF ≤ 50 MB、≤ 100 页；返回 `md_results`、`layout_details[].bbox_2d` / `label` / `content` 与 `usage` | 公式输出格式与质量；官方宣称的 OmniDocBench V1.5 94.62 分（官方自测）；价格稳定性 |
+| 百度智能云「通用文字识别（高精度含位置版）」 | [文档](https://cloud.baidu.com/doc/OCR/s/tk3h7y2aq) | `POST https://aip.baidubce.com/rest/2.0/ocr/v1/accurate`；`access_token` 放在 URL 查询参数，由 `POST https://aip.baidubce.com/oauth/2.0/token`（`grant_type=client_credentials`）用 API Key 与 Secret Key 换取，有效期 30 天，换取与缓存只在 main（§7.9.5）；图片 / URL / PDF / OFD 四选一，base64 + urlencode 后 ≤ 10 MB；返回 `words_result[].words` 与行级 `location`（左上原点）；可选单字位置、行置信度、段落 | 学术公式（LaTeX）识别能力；计价与免费额度的当前值；百度新的「API Key」鉴权方式用于 OCR 时的请求头写法 |
+| 智谱 GLM-OCR 文档解析 | [API 参考](https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90)、[模型介绍](https://docs.bigmodel.cn/cn/guide/models/vlm/glm-ocr) | `POST https://open.bigmodel.cn/api/paas/v4/layout_parsing`，`Authorization` 鉴权（OpenAPI 定义为 Bearer），`model: "glm-ocr"`；PDF / JPG / PNG，单图 ≤ 10 MB、PDF ≤ 50 MB、≤ 100 页；返回 `md_results`、`layout_details[].bbox_2d` / `label` / `content` 与 `usage` | 公式输出格式与质量；官方宣称的 OmniDocBench V1.5 94.62 分（官方自测）；价格稳定性；指南示例的 `Authorization` 不带 `Bearer` 前缀，哪种写法被接受 |
 | 智谱 OCR 服务 | [文档](https://docs.bigmodel.cn/cn/guide/tools/zhipu-ocr) | `POST https://open.bigmodel.cn/api/paas/v4/files/ocr`，`tool_type` 目前只有 `hand_write`（手写体）；返回行级 `location` 与 `words` | 是否适用于印刷体论文；v2 只登记、默认不接入 |
 
 - 计价不写死：适配器上报计费单位（次 / 页 / token），单价来自用户配置，否则记「未知」（PRD QM-10）；每次调用都先经 `BudgetGate` 预留（§7.8）。
+- 两家都只是 `packages/providers` 注册表里的记录（格式 `baidu-ocr`、`zhipu-layout-parsing`）；`parsing` 只有一个 `cloud-ocr-provider` 适配器（§7.9）。
 - M6 接入前按当时的官方文档逐字段复核；与本表不符时先更新本表与差异清单 §7，再写适配器（RULES §7）。
 
 ### 7.8 预算闸门：所有付费调用先预留（架构评审 P0-3）
@@ -1031,6 +1053,182 @@ API 优先之后，Jev 与引擎 B 是默认就会出网的路径，单价又都
 6. **经 worker 的作业。** `evaluate` 作业与走托管后端的 `parse` 作业，由桌面在提交前按作业的上限预留一个额度信封（`BudgetEnvelope`：最多请求数，含拆批与重试；有 token 估计时另带 token 上限），随作业提交（§10.2）。worker 只在信封内发上游请求，拆批与每次重试都算一次请求；信封用完即停，剩下的项记 `unavailable`（原因码 `budget`）。每次上游调用的用量随 SSE 事件与产物返回，桌面据此结算，没用完的部分释放。worker 不持有账本。
 7. **超时与重启。** 不支持幂等的请求超时后不自动重发（PRD AC-07），这次预留按「已发出」结算，不释放。应用重启时，未结算的预留按对应任务的状态结算或释放（`jobs` 记录）。
 8. **规则只在一处。** 计价、预留、上限只在 `budget/domain`；其他切片只调用 `BudgetGate`，自己不算钱（F-15）。
+
+### 7.9 服务商适配层（Wisdom 2026-10-30 19:45、19:46）
+
+决定：支持所有主流 API 格式——OpenAI 兼容、Anthropic Claude Messages、Google Gemini、百度（千帆 / 文心、百度 OCR、PaddleOCR）、智谱（GLM 与 GLM-OCR）、面壁（Jev、MiniCPM-OCR），以及已在范围内的 OCR API。新增一家服务商 = 一个适配器（格式已有时不需要）+ 一条注册表记录，核心零改动。每个模型带能力标记（chat、vision、ocr、scoring、streaming）；每个适配器有契约测试。验收 PRD AC-64。
+
+#### 7.9.1 格式与服务商分开
+
+- **格式**（API format）是线上的请求与响应形状：端点路径、请求体、流式协议、用量字段、错误体。适配器按格式写，一种格式一份代码。
+- **服务商**（vendor）是一家公司的一个接入点：Base URL、允许的主机、鉴权方式、预置模型与能力标记、计费单位。服务商按注册表记录写，只有数据，没有逻辑。
+- 很多服务商共用一种格式。OpenAI 兼容格式 `openai-chat` 同时服务 OpenAI、智谱 GLM、百度千帆 v2、Gemini 的 OpenAI 兼容端点，以及本机的 Ollama 与 llama.cpp server；面壁 Jev 也是 OpenAI 兼容形态，但它的评分请求体特殊，在 worker 侧实现（§7.4）。所以「新增一家」多数时候只加一条注册表记录。
+
+#### 7.9.2 包与目录
+
+新包 `packages/providers`，属于 shell 层（§2）：依赖 `contracts`、`kernel`、`platform-node`；不依赖任何切片、Electron、React。只有切片的 adapters 与装配根经 `@oi/providers` 入口使用它（G5 `providers-boundary`）。utility 进程启用后它随适配器一起搬（§1），密钥明文仍只在 main。
+
+```text
+packages/providers/
+├─ src/
+│  ├─ index.ts                  # 唯一入口：createChatTransport、createOcrTransport、listPresets
+│  ├─ registry/
+│  │  ├─ registry.ts            # 汇总 vendors/*，测试与启动时校验（7.9.4）
+│  │  └─ vendors/<vendor>.ts    # 一家一个文件，只有数据
+│  ├─ formats/<format>/         # 一种格式一个目录
+│  │  ├─ request.ts             # 中立请求 → 线上请求体
+│  │  ├─ response.ts            # 响应 → 中立结果与用量
+│  │  ├─ stream.ts              # 流式解析（格式不支持流式时没有这个文件）
+│  │  └─ errors.ts              # HTTP 状态与错误体 → ProviderFailure
+│  ├─ auth/<scheme>.ts          # bearer / x-api-key / x-goog-api-key / baidu-access-token
+│  ├─ transports.ts             # ChatTransport、OcrTransport：要求 Reservation、调 EgressCheck、发送
+│  └─ testing/                  # 按能力的共享契约测试套件（7.9.7）
+└─ test/
+```
+
+`ApiFormat` 在 `contracts` 里是品牌化字符串，格式清单只在 `providers` 里登记，所以新增格式不改 `contracts`。worker 侧的格式（Jev、面壁文档解析、AI Studio PaddleOCR）实现在 worker 的 `backends/` 里（§10.3）；注册表同样登记这些服务商，桌面经 `ProviderDescriptor` 把选中的服务商告诉本机 worker（§10.2）。
+
+#### 7.9.3 能力标记
+
+```ts
+// packages/contracts/src/provider.ts —— 拟议
+type ModelCapabilities = Readonly<{
+  chat: boolean;        // 文本对话 / 生成
+  vision: boolean;      // 对话请求里可以带图片
+  ocr: boolean;         // 专用识别接口：输入图片，输出文字与位置
+  scoring: boolean;     // 质量评分（目前只有 Jev）
+  streaming: boolean;   // 支持流式返回
+}>;
+type ModelPreset = Readonly<{
+  modelId: string;
+  displayName?: string;
+  capabilities: ModelCapabilities;
+  billingUnit: 'token' | 'request' | 'page' | 'unknown';
+  contextTokens?: number;
+}>;
+```
+
+- 标记按（服务商, 模型）给，不按服务商给：同一家既有纯文本模型也有视觉模型。OCR 专用模型是 `ocr: true`、`vision: false`，它不是能带图的对话模型。
+- 来源只有两个：注册表预置，或用户添加模型时逐项勾选。不探测，不猜；未知一律按 `false`。
+- 注册表校验：模型的标记必须是该格式所支持能力的子集（例如 `baidu-ocr` 格式只支持 `ocr`）。
+- 各能力要求的标记：翻译要 `chat`；多模态补救要 `chat` 与 `vision`；问答要 `chat`，`acceptsImages` 就是 `vision`（§7.3）；云 OCR 要 `ocr`；Jev 要 `scoring`。设置页只列出满足要求的模型。
+- 强制点在传输层：`vision` 为 `false` 却带了图片部分时，直接返回 `invalid_request`，请求为 0；`streaming` 为 `false` 时改发非流式请求，结果作为一个块交给调用方，调用方的代码不变。
+
+#### 7.9.4 新增服务商
+
+| 情况 | 要改的 | 不改的 |
+| --- | --- | --- |
+| 格式已有（多数情况，例如又一家 OpenAI 兼容服务） | 一个 `registry/vendors/<vendor>.ts`；`fixtures/providers/<vendor>/`；需要 `@live` 冒烟时在 §15.4 登记变量名 | `contracts`、所有切片、装配根、preload、设置页 |
+| 新格式 | 另加一个 `formats/<format>/`；鉴权方式没有时加一个 `auth/<scheme>.ts` | 同上 |
+| worker 侧的新格式 | worker 加一个 `backends/<format>.py` 与 `fixtures/protocol/` 样例 | 协议（`ProviderDescriptor` 已带 `format`） |
+| 新的能力种类（例如 TTS） | 要改 `contracts`：新的中立请求类型与能力标记，按契约先行（RULES §3） | — |
+
+- 设置页经 `settings` 的 `listProviderPresets` 列出注册表里的服务商与模型（端口 `provider-catalog`，实现 `settings/adapters/providers-catalog.ts`），所以加一条注册表记录，设置页自动出现，不改 UI。
+- 用户也可以在设置里添加「自定义服务商」：选一个已有格式，填 Base URL、模型名，勾选能力标记。它的 Base URL 主机就是它的 `allowedHosts`；同样经过外发同意（§7.0 第 6 条）与预算（§7.8）。
+- `registry.ts` 在测试与启动时校验：每条记录的 Base URL 主机都在 `allowedHosts` 里；`devEnvVars` 与 §15.4 的表一致；`unverified` 不为空的服务商在设置里标「未核实」。
+- M4 退出条件：一个样例 PR 新增一家假的 OpenAI 兼容服务商，改动只落在 `packages/providers/src/registry/vendors/**` 与 `fixtures/providers/**`，全部门禁通过（PRD AC-64）。
+
+注册表记录示例（字段是拟议；未核实项照实写进 `unverified`）：
+
+```ts
+// packages/providers/src/registry/vendors/zhipu.ts —— 拟议
+export default defineVendor({
+  vendorId: 'zhipu',
+  displayName: '智谱开放平台',
+  endpoints: {
+    chat: { format: 'openai-chat', baseUrl: 'https://open.bigmodel.cn/api/paas/v4' },
+    ocr: { format: 'zhipu-layout-parsing', baseUrl: 'https://open.bigmodel.cn/api/paas/v4' },
+  },
+  allowedHosts: ['open.bigmodel.cn'],
+  auth: { scheme: 'bearer', secretSlot: 'apiKey' },
+  models: [
+    { modelId: 'glm-ocr', endpoint: 'ocr', billingUnit: 'unknown',
+      capabilities: { chat: false, vision: false, ocr: true, scoring: false, streaming: false } },
+    // 对话模型清单与价格在 M5 实现时按当时的官方文档填写
+  ],
+  devEnvVars: { apiKey: 'ZHIPU_API_KEY' },
+  verifiedAt: '2026-10-30',
+  unverified: ['layout_parsing 的 Authorization 是否带 Bearer 前缀'],
+});
+```
+
+#### 7.9.5 规则
+
+1. **鉴权。** 适配器不读密钥。鉴权方式（`auth/<scheme>.ts`）每次请求向 main 要请求头的值：`ProviderAuthorizer.authorize({ vendorId, host, slot })`；main 核对 `host` 在该服务商的 `allowedHosts` 里才返回（§1）。Key 只放请求头，不放 URL：Gemini 用 `x-goog-api-key` 请求头，不用 `?key=` 查询参数。唯一的例外是百度 OCR 的 `access_token`（官方文档给的是查询参数写法）：用 API Key 与 Secret Key 换取 token 的请求由 main 发出，这两个值不出 main；token 只缓存在 main 的内存里，到期（`expires_in`）前重新换取；带 token 的完整 URL 不进日志，`platform-node/src/http/redact.ts` 对查询参数 `access_token`、`key`、`client_id`、`client_secret` 一律打码。
+2. **错误。** 每种格式的 `errors.ts` 把 HTTP 状态与厂商错误体映射为 `ProviderFailure`，只在这一处映射；规范化见 §7.3。重试只在本次预留与额度信封之内（§7.8）；不支持幂等的请求超时后不重发（PRD AC-07）。
+3. **用量。** 响应里的用量（token、页数、次数）交给 `BudgetGate.settle`；服务商没有返回的用量记「未知」，不估成 0。
+4. **预留与外发检查。** 传输层的 `send` 必须带 `Reservation` 参数，缺了编译不过；预留由用例先做，因为被拒之后怎么降级是用例的事（§7.8 第 5 条）。传输层在连接之前调用 `EgressCheck`；结果不是 `allow` 时不连接，并释放这次预留。
+5. **流式。** 每种格式有自己的流式解析器：OpenAI 兼容是 SSE、以 `data: [DONE]` 结束；Anthropic 是带事件名的 SSE；Gemini 是 `:streamGenerateContent?alt=sse`。流中途断开记 `service_failed`，已收到的部分不当作完整结果。
+6. **能力闸门。** 见 7.9.3；闸门在传输层，切片不必各自检查。
+7. **本地。** 「本地」就是一个 `openai-chat` 格式、Base URL 在回环地址上的服务商（Ollama、llama.cpp server），没有单独的本地适配器。它不算外发（§7.0 第 6 条），不花钱，也不经预算（§7.8 第 1 条）。
+
+中立类型（`contracts/src/provider.ts`，拟议）：
+
+```ts
+type ProviderDescriptor = Readonly<{     // 非密钥；随本机 worker 的作业发送（§10.2）
+  vendorId: string; format: ApiFormat; baseUrl: string; modelId: string;
+  capabilities: ModelCapabilities; credentialSlot: string;
+}>;
+type ChatPart =
+  | Readonly<{ type: 'text'; text: string }>
+  | Readonly<{ type: 'image'; assetId: AssetId; mediaType: 'image/png' | 'image/jpeg' }>;
+type ChatRequest = Readonly<{
+  messages: ReadonlyArray<Readonly<{ role: 'system' | 'user' | 'assistant'; parts: readonly ChatPart[] }>>;
+  maxOutputTokens: number;
+  stream: boolean;
+}>;
+type ChatChunk = Readonly<{ textDelta: string; done: boolean; usage?: UsageReport }>;
+type ProviderFailure = Readonly<{
+  kind: 'auth' | 'quota' | 'rate_limited' | 'invalid_request' | 'too_large' | 'service_failed' | 'timeout';
+  retryable: boolean;
+  retryAfterMs: number | null;
+  httpStatus: number | null;
+  vendorCode: string | null;     // 厂商错误码原值，例如 Anthropic 的 request_too_large、AI Studio 的 12002
+  requestId: string | null;      // 厂商返回的请求 ID，只进诊断事件
+}>;
+interface ProviderAuthorizer {     // main 实现（§1）
+  authorize(req: Readonly<{ vendorId: string; host: string; slot: string }>):
+    Promise<Result<Readonly<Record<string, string>>, 'host_not_allowed' | 'secret_missing'>>;
+}
+// OcrRequest / OcrResult：区域裁片（assetId）→ 行文字与行框（相对裁片）；字段 M6 按 §7.7 定
+```
+
+#### 7.9.6 格式与服务商
+
+2026-10-30 查阅各家官方文档，没有做真实调用（PRD M0 的真实调用实测已延后）。完整的核实记录（含每个页面的更新日期）在差异清单 §2.10。
+
+| 格式 | 服务商（注册表记录） | 已从文档确认 | 未核实 |
+| --- | --- | --- | --- |
+| `openai-chat` | OpenAI（[Chat Completions](https://platform.openai.com/docs/api-reference/chat/create)）；智谱 GLM（[对话补全](https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E5%AF%B9%E8%AF%9D%E8%A1%A5%E5%85%A8)）；百度千帆 v2（[视觉理解](https://cloud.baidu.com/doc/qianfan-api/s/rm7u7qdiq)）；Gemini 的 OpenAI 兼容端点（[文档](https://ai.google.dev/gemini-api/docs/openai)）；本机 Ollama / llama.cpp server | OpenAI：`POST https://api.openai.com/v1/chat/completions`，`Authorization: Bearer`；图片用 `image_url`（URL 或 data URI）；流式是 SSE，以 `data: [DONE]` 结束，设 `stream_options.include_usage` 时结束前多一个用量块。智谱：`POST https://open.bigmodel.cn/api/paas/v4/chat/completions`，Bearer，流式同样以 `[DONE]` 结束。千帆 v2：`POST https://qianfan.baidubce.com/v2/chat/completions`，`Authorization: Bearer` 加千帆 API Key（形如 `bce-v3/…`）；`image_url` 收 URL 或 data URI，单图 ≤ 10 MB；错误体 `{code, message, type}`；响应头带 `X-Ratelimit-*`。Gemini 兼容端点的 Base URL 是 `https://generativelanguage.googleapis.com/v1beta/openai/` | 千帆：`detail` 只对 ERNIE 4.5 有效、`stream_options.include_usage` 只有部分模型支持，逐模型清单未核实；千帆文本生成页的当前地址未核实（以视觉理解页为准）；Gemini 兼容端点与原生端点在用量与错误体上的差异未核实 |
+| `anthropic-messages` | Anthropic（[Messages](https://docs.claude.com/en/api/messages)、[概览](https://docs.claude.com/en/api/overview)） | `POST https://api.anthropic.com/v1/messages`；`Authorization: Bearer`（`x-api-key` 是仍受支持的旧写法）；必须带 `anthropic-version` 请求头（文档示例 `2026-10-21`）；未限定工作区的 Key 还要带 `anthropic-workspace-id`；图片块 `source.type: "base64"` 加 `media_type`；流式事件 `message_start`、`content_block_delta`、`message_delta`、`message_stop`；用量 `input_tokens` / `output_tokens`；过大返回 413 `request_too_large`；响应头 `request-id` | 锁定哪个 `anthropic-version`（实现时按当时文档定，写进注册表）；用户的 Key 是否限定工作区由用户配置 |
+| `gemini-generate-content` | Google Gemini API（[generateContent](https://ai.google.dev/api/generate-content)、[API Key](https://ai.google.dev/gemini-api/docs/api-key)） | `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`；流式 `:streamGenerateContent?alt=sse`；请求头 `x-goog-api-key`；图片 `inline_data { mime_type, data }`；用量 `usageMetadata.promptTokenCount` / `candidatesTokenCount`。Key 页面写明：2026-05-28 起新建的是鉴权 Key，未加限制的标准 Key 会被拒绝；闲置的未限制 Key 自 2026-05-07 起被封 | 默认用原生格式，OpenAI 兼容端点保留为备选（Wisdom 2026-10-30 20:57）；Interactions API（`/v1beta/interactions`）v2 不用 |
+| `baidu-ocr` | 百度智能云文字识别（[高精度含位置版](https://cloud.baidu.com/doc/OCR/s/tk3h7y2aq)、[接口说明](https://cloud.baidu.com/doc/OCR/s/7kibizyfm)、[鉴权](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)） | `POST https://aip.baidubce.com/rest/2.0/ocr/v1/accurate`（或 `accurate_basic`），表单字段 `image` 为 base64 后再 urlencode；`access_token` 放查询参数，由 `POST https://aip.baidubce.com/oauth/2.0/token`（`grant_type=client_credentials`，`client_id` 为 API Key、`client_secret` 为 Secret Key）换取，有效期 30 天（`expires_in`）；鉴权失败返回 `invalid_client` | 百度鉴权文档列出三种方式（access_token、API Key、AK/SK 签名），API Key 方式覆盖 OCR，但它用于 OCR 时的请求头写法未核实；现在用 access_token，API Key 方式核实后再加入（Wisdom 2026-10-30 20:57） |
+| `zhipu-layout-parsing` | 智谱 GLM-OCR（[文档解析](https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90)） | `POST https://open.bigmodel.cn/api/paas/v4/layout_parsing`，`model: "glm-ocr"`；单图 ≤ 10 MB，PDF ≤ 50 MB、≤ 100 页（§7.7） | OpenAPI 定义为 Bearer，指南示例的 `Authorization` 不带 `Bearer` 前缀：哪种写法被接受未核实 |
+| `modelbest-jev`（worker 侧） | 面壁开放平台 Jev（§7.4「面壁 API」） | `POST https://api.modelbest.ai/v1/chat/completions`，Bearer | 见 §7.4 |
+| `modelbest-document-parse`（worker 侧） | 面壁开放平台 MiniCPM-OCR-1.0 文档解析（§7.1 引擎 B） | `POST https://api.modelbest.ai/v1/document-parse`，Bearer | 见 §7.1 |
+| `paddleocr-aistudio-jobs`（worker 侧，候选） | 百度 AI Studio PaddleOCR（[文档](https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5)） | `POST https://paddleocr.aistudio-app.com/api/v2/ocr/jobs` 提交，`GET /api/v2/ocr/jobs/{jobId}` 查询 `state` 与 `resultUrl.jsonUrl`；`Authorization: bearer`；模型 PP-OCRv5、PP-StructureV3、PaddleOCR-VL、PaddleOCR-VL-1.5；错误 12001（每日页数上限，403）、12002（429） | 区域框与公式 LaTeX 是否返回、版本锁定、价格（§7.0 引擎 A 行，差异清单 §2.4.1） |
+
+TTS / ASR 的格式在 M7 选型时加入本表。
+
+#### 7.9.7 契约测试
+
+- `packages/providers/src/testing/` 按能力提供共享套件：`chat`、`vision`、`streaming`、`ocr`、`errors`、`auth`、`budget-egress`。每个格式适配器跑它支持的能力对应的套件；每条注册表记录至少跑 `auth` 与 `errors`。
+- 样例放在 `fixtures/providers/<vendor>/`：请求体与响应体（含流式分块与各类错误体），由官方文档的示例改写，**全部是合成数据**：假 Key 用固定的测试前缀（登记在 gitleaks allowlist），图片用合成图，不用真实论文页面。每个目录的 `README.md` 记来源文档链接与查阅日期。
+- 必测项：
+  - `vision: false` 时带图请求的请求数为 0；`streaming: false` 时退化为一个块；
+  - 每类 HTTP 错误映射到正确的 `ProviderFailure`；
+  - Key 不出现在 URL 里（百度 `access_token` 例外，且日志里被打码）；
+  - 没有 `Reservation` 不能发送（类型测试）；`EgressCheck` 返回 `ask` 或 `refused` 时连接数为 0，且预留被释放；
+  - 主机不在 `allowedHosts` 里时 main 拒绝授权。
+- 调用真实服务的 `@live` 冒烟只在对应环境变量存在时运行，按 RULES §4 的 `@paid` 对待；CI 不跑。
+- worker 侧格式的样例在 `fixtures/protocol/`，TS 与 Python 两侧都跑（§12）。
+
+#### 7.9.8 默认值（Wisdom 2026-10-30 20:57）
+
+- 服务商不预选：翻译、多模态补救、问答、云 OCR，设置里列出注册表中满足该能力要求的全部服务商，不预选，由用户选；没选之前该能力按 §7.0 表最后一列降级。Jev 与引擎 B 的 API 服务商仍是面壁开放平台（Q9、§7.0），不受这条影响。
+- Gemini：注册表默认用原生格式 `gemini-generate-content`；OpenAI 兼容端点（`openai-chat`）作为同一服务商的备选端点保留，用户可以改选。两种格式都实现，差别只在注册表。
+- 百度 OCR：现在用 access_token（7.9.5 第 1 条）；API Key 方式在它用于 OCR 时的请求头写法核实后，作为新的 `auth/<scheme>.ts` 加入，不改格式适配器。
+- 预置模型清单与价格在实现时按当时的官方文档填写，并在注册表记录里写 `verifiedAt`；单价未核实的按 §7.8 的次数类上限管。
 
 ## 8. 数据模型与存储
 
@@ -1176,12 +1374,24 @@ type FormulaCropRef = Readonly<{
 | 类别 | 存哪 | 谁能读 | 能否导出 / 进日志 |
 | --- | --- | --- | --- |
 | 非密钥设置（语言、主题、开关、预算） | SQLite `set_*` | settings 用例 | 可导出；可进诊断摘要 |
-| Provider 配置（厂商、Base URL、模型、能力） | SQLite `set_providers` | settings 用例 | 可导出；URL 中 token 脱敏 |
-| 密钥（API key、服务令牌；含面壁开放平台 Key） | `secrets.bin`（safeStorage） | 仅 adapters 在发请求的瞬间通过 `SecretStore.read(secretRef)` 读取；面壁 Key 由提交 `evaluate` / `parse` 作业的适配器读出，经 `worker-client` 放进作业请求头交给 worker（§10.1） | **永不**：不回传 renderer（只回「已设置 / 未设置」）、不进日志、不进任务 JSON、不进导出 |
+| Provider 配置（`vendorId`、API 格式、Base URL、模型、能力标记、`allowedHosts`；§7.9） | SQLite `set_providers` | settings 用例 | 可导出；URL 查询参数中的 `access_token`、`key` 等打码 |
+| 密钥（API key、服务令牌；含面壁开放平台 Key） | `secrets.bin`（safeStorage） | 明文只在 main（§1）：只有 main 的 `SecretStore` 实现读取；适配器经 `ProviderAuthorizer` 按次拿到请求头的值（§7.9.5）；本机 worker 的作业凭据由 main 按次授权，经 `worker-client` 放进请求头，只走回环地址；远程 worker 永不接收（§10.1） | **永不**：不回传 renderer（只回「已设置 / 未设置」）、不进日志、不进任务 JSON、不进导出 |
 | 本机 worker 令牌 | 进程内存 | main 与 worker-client | 永不落盘 |
-| 开发 / 测试密钥 | 只经 Cursor Secrets 注入的环境变量；变量名登记在 §15.4（如 `MODELBEST_API_KEY`）。仓库不放、也不读取 `.env` 文件（`.gitignore` 仍忽略 `.env`，作为兜底） | 开发与 `@live` 冒烟测试；CI 不调用付费 API，不配置这些变量（§12） | 永不入库 |
+| 开发 / 测试密钥 | 环境变量：云端 Agent 只经 Cursor Secrets 注入，开发者本机由开发者设为系统用户级或会话级环境变量（§15.4）；变量名登记在 §15.4（如 `MODELBEST_API_KEY`）。仓库不放、也不读取 `.env` 文件（`.gitignore` 仍忽略 `.env`，作为兜底） | 开发与 `@live` 冒烟测试；CI 不调用付费 API，不配置这些变量（§12） | 永不入库 |
 
 `safeStorage` 不可用时（例如 Linux 无密钥环），要求用户每次会话输入或拒绝保存，**不得**静默明文落盘。
+
+### 8.4 版本与升级（架构评审 P1-9）
+
+用户数据要能随应用升级迁移，也要防止旧版应用写坏新版写过的数据。
+
+- **数据库版本。** `app_meta` 表的 `app_schema` 是一个整数，只增不减。各切片迁移的执行记录仍在 `schema_migrations`（§8.2）；`app_schema` 记整个应用的数据版本。
+- **迁移前备份。** 要执行迁移时，先把数据库文件复制到 `staging/`，迁移在一个事务里执行。失败时回滚，原文件不动，界面显示错误页并允许导出诊断包（不含正文与密钥）。成功后只保留最近一份备份。
+- **数据比应用新。** 打开时发现 `app_schema` 高于本应用支持的版本（例如用户装回了旧版），以只读方式打开，写入次数为 0，提示升级应用。
+- **JSON 文档。** 持久化的 JSON（候选页、采用版本、片段表等）带主版本号 `schemaVersion`。读到不认识的字段原样保留，写回时不丢；主版本高于本应用支持的版本时，该文档只读。
+- **其他格式。** 译文 Markdown 的方言版本按 §8.1.1 的 `formatVersion`；`secrets.bin` 的格式变化另立 ADR。
+- **测试。** 注入迁移失败后，原数据库文件逐字节不变；用 `app_schema` 更高的样例库打开，写入次数为 0；未知字段读入再写出后仍在。验收 PRD AC-66 ①。
+- 本节与 §10.4 合为一个 ADR，在 M2 建第一张业务表之前合入。
 
 ## 9. IPC 协议（renderer ↔ main）
 
@@ -1191,9 +1401,20 @@ type FormulaCropRef = Readonly<{
 - 返回给 renderer 的数据不含密钥、不含绝对文件路径（用 `assetId` 换取受控的 `oi-asset://` 协议 URL）。
 - 长任务一律返回 `jobId`，进度走事件，不在一个 invoke 里等待整篇完成。
 - 打开 PDF 只有一条用户入口 `ingest.openDocument`（返回 `jobId`）；`library.importPdf`、`parsing.submitParse`、`quality.evaluateRegions` 等是 `ingest` 调用的 seam，不注册为 IPC 命令。
-- `oi-asset://` 只服务两类资产：应用自有的内容寻址资产（`<userData>/assets/`），以及 `markdown` 切片登记的笔记库图片。后者每次读取都重新检查真实路径仍在登记的库根内、扩展名与内容嗅探都是图片；不满足即 404。处理器在 main（§1）；utility 启用后，资产登记表随 SQLite 在 utility，main 经 MessagePort 用 `assetId` 换取路径与允许的根目录后再做上述检查。renderer 中不出现 `file://`（AC-35）。
+- `oi-asset://` 只服务两类资产：应用自有的内容寻址资产（`<userData>/assets/`），以及 `markdown` 切片登记的笔记库图片。处理器在 main（§1）；utility 启用后，资产登记表随 SQLite 在 utility，main 经 MessagePort 用 `assetId` 换取路径与允许的根目录后再做下列检查。renderer 中不出现 `file://`（AC-35）。处理规则（架构评审 P1-10，PRD AC-67 ②）：
+  - 注册：`protocol.registerSchemesAsPrivileged` 只给 `standard: true`、`secure: true`（`standard` 是否必要待 M2 实测）；不给 `bypassCSP`、`supportFetchAPI`、`corsEnabled`、`allowServiceWorkers`、`stream`。M7 的 TTS 播放若需要 `stream`，经 ADR 再加。
+  - 处理：用 `protocol.handle`；只接受 GET 与 HEAD；URL 形如 `oi-asset://<assetId>`，只服务已登记的 `assetId`，其他一律 404；不重定向，不列目录。
+  - 路径：每次读取都取文件与根目录的真实路径（`realpath`），文件必须仍在根目录内；符号链接指到根外即 404。
+  - 类型：笔记库图片只放行 PNG、JPEG、GIF、WebP（不放行 SVG），扩展名与内容嗅探都要符合；响应带 `X-Content-Type-Options: nosniff`。
+  - 测试：符号链接越界、未登记的 `assetId`、`../` 与 `%2e%2e` 编码穿越，都返回 404。
 - 外部链接：renderer 不导航、不 `window.open`；用户确认后调用 `markdown.openExternal`，main 只放行 `http` / `https` / `mailto` 并交给 `shell.openExternal`（§4.5.5）。
-- Electron 安全基线：`contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`、严格 CSP、禁止任意导航与 `window.open`、权限请求默认拒绝。具体以锁定版本的 [Electron 安全清单](https://www.electronjs.org/docs/latest/tutorial/security) 逐条验证。
+- Electron 安全基线（架构评审 P1-10，PRD AC-67）。以锁定版本的 [Electron 安全清单](https://www.electronjs.org/docs/latest/tutorial/security) 逐条验证：
+  - 窗口：`contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`，`webSecurity` 保持默认开启；不启用 `<webview>`。
+  - 导航：`will-navigate` 一律阻止；`setWindowOpenHandler` 一律返回 `deny`（外部链接走 `markdown.openExternal`）；`will-attach-webview` 一律阻止。
+  - 权限：`session.setPermissionRequestHandler` 与 `setPermissionCheckHandler` 一律拒绝；M7 的 ASR 若需要麦克风，经 ADR 只对它放行。
+  - 页面来源：应用页面由自定义协议 `oi-app://` 提供（安全清单第 18 条），不用 `file://` 加载，因此下面的 `GrantFileProtocolExtraPrivileges` 可以关闭。
+  - CSP：由 main 给 `oi-app://` 的响应加 `Content-Security-Policy` 头，常量在 `apps/desktop/src/main/security/csp.ts`。草案：`default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' oi-asset:; font-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'`。不允许 `unsafe-eval`，PDF.js 以 `isEvalSupported: false` 运行。下列三项**待 M2 实测**：KaTeX 的行内样式是否需要 `style-src 'unsafe-inline'`；PDF.js 是否需要 `wasm-unsafe-eval` 与 `blob:` 的 worker；PDF 数据经 `oi-asset://` 加载是否需要 `supportFetchAPI` 与 `connect-src oi-asset:`。任何放宽都要 ADR，并写到期里程碑。PRD AC-67 ① 在 M1 用 e2e 读出窗口实际生效的 CSP，与常量逐字一致。
+  - Fuses：打包时用 `@electron/fuses` 设置——`RunAsNode` 关、`EnableNodeOptionsEnvironmentVariable` 关、`EnableNodeCliInspectArguments` 关、`EnableCookieEncryption` 开、`OnlyLoadAppFromAsar` 开、`EnableEmbeddedAsarIntegrityValidation` 开（各平台是否支持**未核实**）、`GrantFileProtocolExtraPrivileges` 关。依据 Electron `docs/tutorial/fuses.md`（2026-10-30 查阅 main 分支），M1 按锁定版本复核；M8 打包后用 `npx @electron/fuses read --app <应用路径>` 核对（PRD AC-67 ③）。
 
 ## 10. Python worker 协议（oi-parse/1）
 
@@ -1207,7 +1428,13 @@ type FormulaCropRef = Readonly<{
 | 地址 | `127.0.0.1` + 随机端口（worker 启动后在 stdout 打印一行 JSON 报告端口） | 用户配置的 HTTPS 地址 |
 | 鉴权 | 每次启动生成的一次性 Bearer 令牌（经 stdin 传入，不进命令行参数） | 服务令牌（`secretRef`） |
 | 资产 | 统一上传，不传本机路径 | 统一上传 |
-| 第三方服务凭据 | 面壁 API Key 等随每个 `evaluate` / `parse` 作业放在请求头 `OI-Provider-Authorization`，只在作业内存里使用 | 同左；远程 worker 同样不落盘 |
+| 部署模式（`/v1/health` 的 `mode`） | `local`：只监听 `127.0.0.1` | `server` |
+| 第三方服务凭据 | 面壁 API Key 等由 main 按次授权，随作业放在请求头 `OI-Provider-Authorization`，只经回环地址传输，只在作业内存里使用 | **不接收**：请求带 `OI-Provider-Authorization` 即返回 400 `provider_credential_not_accepted`，不创建作业（架构评审 P1-3） |
+| 托管后端 | 可转发 Jev、引擎 B 与（核实通过后）引擎 A 的托管 API，Key 来自桌面 | 只用服务器上配置的本地推理或托管后端，Key 由服务器管理；`GET /v1/capabilities` 报出每个托管后端的 `vendorId` 与主机，桌面把它们列入「数据去向」并按 §7.0 第 6 条询问；额度信封照常适用（§7.8） |
+
+- `worker-client` 只在目标是 main 拉起的本机 worker（回环地址，且端口与令牌属于本次启动）时附 `OI-Provider-Authorization`。其他任何地址都不附，包括用户配置的远程 worker 和指向本机的「远程」地址；用例若要求附带，`worker-client` 失败关闭，返回 `credential_to_remote_refused`，请求为 0（契约测试，PRD AC-65）。
+- 远程 worker 的地址本身也是外发目的地：连接前经 `EgressCheck`（§7.0 第 6 条）。
+- 为什么不把桌面的 Key 发给远程 worker：Key 会离开本机，落到用户不一定完全控制的主机上，日志、内存转储、反向代理都可能留下它。改为服务器只用自己配置的后端后，Key 的管理与费用都归服务器的部署者，桌面不需要信任远程主机。
 
 Q7 已决定：本机与远程同一协议 HTTP + SSE；stdio JSON-RPC 不采用（取舍见差异清单 §6）。
 
@@ -1215,20 +1442,21 @@ Q7 已决定：本机与远程同一协议 HTTP + SSE；stdio JSON-RPC 不采用
 
 | 方法与路径 | 作用 |
 | --- | --- |
-| `GET /v1/health` | 存活与协议版本 |
-| `GET /v1/capabilities` | 可用引擎、模型清单（名称、版本、权重摘要）、是否支持区域解析、取消方式、资源限制；设备探测结果（GPU 厂商与型号、总显存与可用显存、驱动版本、CUDA 版本）；可用的质量评估后端与 `evaluatorVersion`（§7.4） |
+| `GET /v1/health` | 存活；返回 `protocol`（如 `1.0`）、`workerVersion`、`mode`（`local` / `server`）（§10.4） |
+| `GET /v1/capabilities` | 可用引擎、模型清单（名称、版本、权重摘要）、是否支持区域解析、取消方式、资源限制；设备探测结果（GPU 厂商与型号、总显存与可用显存、驱动版本、CUDA 版本）；可用的质量评估后端与 `evaluatorVersion`（§7.4）；`server` 模式另报每个托管后端的 `vendorId` 与主机（§10.1） |
 | `POST /v1/assets` | 上传 PDF / 页面图，返回 `ArtifactRef {id, sha256, mediaType}` |
-| `POST /v1/jobs` | 提交 `parse` / `evaluate` / `render`，带 `idempotencyKey`、`engineId`、页范围、配置摘要；会调用付费上游的作业另带额度信封 `budgetEnvelope`（最多请求数，可选 token 上限；§7.8）；返回 `202 {jobId}` |
+| `POST /v1/jobs` | 提交 `parse` / `evaluate` / `render`，带 `idempotencyKey`、`engineId`、页范围、配置摘要；会调用付费上游的作业另带额度信封 `budgetEnvelope`（最多请求数，可选 token 上限；§7.8）；`local` 模式下调用托管 API 的作业带 `ProviderDescriptor`（非密钥：`vendorId`、格式、Base URL、模型、能力标记、密钥槽，§7.9.5），`server` 模式只能引用 worker 报出的后端；返回 `202 {jobId}` |
 | `GET /v1/jobs/{id}` | 阶段、已完成页、错误、是否可重试 |
 | `GET /v1/jobs/{id}/events` | SSE；支持 `Last-Event-ID` 断线续传 |
 | `POST /v1/jobs/{id}/cancel` | 区分「已请求取消」与「已停止」 |
 | `GET /v1/artifacts/{id}` | 取候选页 JSON、裁图等产物 |
 
-- 请求头 `OI-Protocol: 1`；不兼容版本返回 `426`，桌面端提示升级 worker。
+- 请求头 `OI-Protocol: <主版本>.<次版本>`（第一版 `1.0`）；兼容规则、桌面的判定与 `426` 的响应体见 §10.4。
 - 所有消息 schema 来自 `contracts`（TypeBox 定义 → JSON Schema → `datamodel-code-generator` 生成 pydantic 模型），CI 校验生成物无漂移；`fixtures/protocol/` 的合法 / 非法样例在 TS 与 Python 两侧都跑。
 - worker 只在自己的工作目录写临时文件，任务结束按 TTL 清理；不访问桌面数据目录。
 - 额度信封：worker 对上游的每次请求（含拆批与重试）都从信封里扣一次，扣完即停，剩下的项记 `unavailable`（原因码 `budget`）；每次上游调用的用量（`usage`、页数）随 SSE 事件与产物返回，供桌面结算（§7.8）。没有信封的作业不得调用付费上游。
-- 第三方服务凭据（如 `MODELBEST_API_KEY` 的值）只经请求头 `OI-Provider-Authorization` 随作业传入，不进作业 JSON、`idempotencyKey`、配置摘要、SSE 事件、产物与日志；作业结束即丢弃。`GET /v1/jobs/{id}` 的错误只报 `auth` / `quota` 等类别，不回显凭据（§7.4「面壁 API」，PRD AC-59）。
+- 第三方服务凭据（如 `MODELBEST_API_KEY` 的值）只在 `local` 模式下经请求头 `OI-Provider-Authorization` 随作业传入（`server` 模式收到即拒绝，§10.1），不进作业 JSON、`idempotencyKey`、配置摘要、SSE 事件、产物与日志；作业结束即丢弃。`GET /v1/jobs/{id}` 的错误只报 `auth` / `quota` 等类别，不回显凭据（§7.4「面壁 API」，PRD AC-59）。
+- 上游失败：worker 把每次对托管 API 的失败先映射为 `ProviderFailure`（`contracts/src/provider.ts`，§7.9.5），随 SSE 事件与产物返回；TS 与 Python 两侧用 `fixtures/protocol/provider-errors/` 的同一批样例断言同一映射。
 
 ### 10.3 worker 内部结构
 
@@ -1237,7 +1465,7 @@ workers/parser/
 ├─ pyproject.toml            # uv；重依赖放 optional extras：engine-a（Paddle）、engine-b（torch + minicpm-ocr，不含其 pdf extra）、jev-local（本机推理）；基础安装只含 FastAPI、pypdfium2 等轻依赖
 ├─ oi_worker/
 │  ├─ __main__.py            # 入口：读配置 → 装配 → 启动服务（≤150 行）
-│  ├─ api/                   # FastAPI 路由：一个资源一个文件（health / jobs / assets / artifacts / auth / sse）
+│  ├─ api/                   # FastAPI 路由：一个资源一个文件（health / jobs / assets / artifacts / auth / sse / protocol_version）
 │  ├─ protocol/              # 生成的 pydantic 模型，禁止手改
 │  ├─ jobs/                  # 任务注册、取消令牌、工作目录生命周期
 │  ├─ preprocess/            # 打开 PDF、文字层、页面渲染、坐标帧：一个职责一个文件；只用 pypdfium2（Q6，禁止 PyMuPDF）
@@ -1250,7 +1478,7 @@ workers/parser/
 │  │     └─ backends/        # sdk_local.py（以页面图调用 SDK）/ modelbest_api.py（面壁 document-parse，只发页面图，处理 rotation；§7.1）
 │  ├─ quality/               # Jev 评分（§7.4）：本机与远程 worker 同一代码
 │  │  ├─ backends/           # local_engine.py（本机推理 + 评分服务层）/ jev_http.py（面壁 API 的 OpenAI 兼容 chat/completions，与用户自建 Docker API；处理请求形态与前缀差异）
-│  │  ├─ http_errors.py      # HTTP 状态 → error / unavailable / 拆批 / 退避的映射表（纯规则，§7.4「面壁 API」）
+│  │  ├─ http_errors.py      # HTTP 状态与厂商错误体 → ProviderFailure，并决定拆批 / 退避（纯规则；与 TS 共用 fixtures/protocol/provider-errors/，§7.4「面壁 API」）
 │  │  ├─ render/             # 本机模式自备渲染图：固定渲染器与字体版本，写入 evaluatorVersion
 │  │  ├─ batching.py         # 64 项分批（纯规则）
 │  │  └─ self_check.py       # 官方启动自检与参考样例比对
@@ -1261,6 +1489,18 @@ workers/parser/
 **开发机上的本机 worker。** 开发机是 Windows + 32 GB 内存 + NVIDIA RTX 4070 12 GB（§7.0 第 7 条、§7.4「开发机」）。按 API 优先，开发机上的 worker 默认只装基础依赖，Jev、引擎 B 都走托管 API 后端；引擎 A 模型阶段在开发时走哪条路径（托管 API、开发机本地、租用的 Linux 远程 worker）M3 前定（§7.0）；`jev-local`、`engine-a`、`engine-b` 这些本地 extra 在开发机上**不要求**，能否在 Windows 上装好并跑通**未核实**，有意愿时按 §7.4 的可选步骤试。`runtime/` 的设备探测照常报出驱动与 CUDA 版本、可用显存，供「本地」的可行性标注使用。
 
 Python 分层用 `import-linter` 强制：`api → jobs → engines | quality → preprocess → protocol`，不允许反向；`engines/modular_a` 与 `engines/e2e_b` 互不 import；`quality/backends/local_engine` 与 `jev_http` 互不 import。`engines/e2e_b/backends/sdk_local` 与 `modelbest_api` 互不 import，`engines/modular_a/backends/paddle_local` 与 `aistudio_api` 互不 import。Python 侧的 core（`engines/reading_order/`、`engines/e2e_b/mapping.py`、`quality/batching.py`、`quality/http_errors.py`）另加 forbidden 契约：不得 import `fastapi`、`starlette`、`httpx`、`torch`、`paddle`、`pypdfium2` 等 IO 与推理依赖（§2.3）。不同引擎的重依赖可以拆成独立 venv / 容器，由 `runtime` 按引擎分别启动。
+
+### 10.4 协议版本与升级（架构评审 P1-9）
+
+桌面与远程 worker 各自升级，版本迟早会错开。规则：
+
+- **版本号。** 每个请求带请求头 `OI-Protocol: <主版本>.<次版本>`，第一版是 `1.0`。`GET /v1/health` 返回 `protocol`（worker 实现的版本）、`workerVersion` 与 `mode`（`local` / `server`）。
+- **兼容规则。** 次版本只新增可选字段与新端点；双方都接受并忽略不认识的字段。删除字段、改字段含义、把可选改为必填，都要升主版本。
+- **桌面的判定。** 桌面声明自己支持的主版本范围（常量在 `worker-client/src/supervisor-protocol.ts`）。连接后先调 `/v1/health`：主版本不在范围内时，不提交任何作业，界面提示「worker 版本过旧」或「桌面版本过旧」，相关能力记「不可用（版本不兼容）」，按 §7.0 表最后一列降级。本机 worker 随桌面一起发布，版本总是匹配。
+- **按次版本开功能。** 依赖新端点或新字段的功能，按 worker 报出的次版本决定是否启用，不靠试探请求。
+- **worker 的判定。** 请求的主版本 worker 不支持时返回 `426`，响应体 `{ "supported": ["1.0"] }` 列出它支持的版本。
+- **测试。** `fixtures/protocol/versions/`：主版本不符时作业数为 0；次版本更高的响应带未知字段时照常解析；`426` 响应体可解析。验收 PRD AC-66 ②。
+- 与 §8.4 合为一个 ADR（§16）。
 
 ## 11. 可观测性
 
@@ -1279,7 +1519,8 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 | core（domain + application，经 seam） | Vitest 工程 `core`（`environment: 'node'`）/ pytest | 测试文件放 `test/core/`，只 import `src/index.ts`、`src/pure.ts`、`src/testing/**`；不渲染 UI、不启动 Electron、不联网、不加载模型；每条从 v1 移植的规则带原 v1 用例。这是 Q3 的完成标准（G16） |
 | core 属性与病态输入 | fast-check（MIT）；子线程 + 超时 | `markdown` 的往返不变 `serialize(parse(t)) === t`（AC-52）与 `translation` 的「还原后公式与片段表一致」（AC-49）用随机生成文本跑；Markdown 解析对病态输入（深层嵌套、超长行、大量 `$`）在子线程运行并设超时，超时即失败（沿用 v1 `tests/helpers/render-guard.mjs` 的做法） |
 | adapters | 契约测试套件 | 每个端口在 `testing/` 提供一份共享契约测试，内存实现与 SQLite 实现都跑同一份 |
-| 协议 | TS + Python 双侧 | `fixtures/protocol/` 合法样例通过、非法样例拒绝 |
+| 协议 | TS + Python 双侧 | `fixtures/protocol/` 合法样例通过、非法样例拒绝；含 `provider-errors/`（`ProviderFailure` 映射）与 `versions/`（协议版本协商，§10.4） |
+| 服务商适配层 | `packages/providers/src/testing/` 的共享套件 | 每个格式适配器跑它支持的能力对应的套件（chat、vision、streaming、ocr、errors、auth、budget-egress）；每条注册表记录至少跑 auth 与 errors；样例在 `fixtures/providers/<vendor>/`，全部是合成数据（§7.9.7） |
 | ui | Vitest + Testing Library | 组件只依赖 fake 的 `window.oi`；只断言「调用了哪个 seam、怎么画结果」，不断言业务规则（规则已由 core 测试覆盖） |
 | e2e | Playwright Electron | 只做少量冒烟：开窗、导入、阅读、重开 |
 | 基准 | 独立脚本 | 不作为 CI 门禁；结果写入 `docs/acceptance/` |
@@ -1296,14 +1537,14 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 | 门禁 | 工具 | 内容 |
 | --- | --- | --- |
 | G1 格式 | Prettier、ruff format | 格式一致 |
-| G2 Lint | ESLint（typescript-eslint strict-type-checked）、ruff | 含 F-06、F-08、F-12、`max-lines-per-function`、`complexity`、`no-restricted-imports`；Markdown 相关（§4.5）：renderer 全局 `react/no-danger` 为 error；`katex` 只能在 `ui-kit/src/markdown/math.tsx` 与 `formula/adapters/katex-renderer.ts` 导入；Markdown 解析库只能在 `features/markdown/src/domain/parse/` 导入；`features/markdown/src/adapters/**` 禁止导入 `fs` 的写入类 API |
+| G2 Lint | ESLint（typescript-eslint strict-type-checked）、ruff | 含 F-06、F-08、F-12、`max-lines-per-function`、`complexity`、`no-restricted-imports`；Markdown 相关（§4.5）：renderer 全局 `react/no-danger` 为 error；`katex` 只能在 `ui-kit/src/markdown/math.tsx` 与 `formula/adapters/katex-renderer.ts` 导入；Markdown 解析库只能在 `features/markdown/src/domain/parse/` 导入；`features/markdown/src/adapters/**` 禁止导入 `fs` 的写入类 API；切片代码（`packages/features/**`）中出现注册表登记的服务商主机名即失败（F-18） |
 | G3 类型检查 | `tsc -b`（strict）、mypy `--strict` 或 pyright strict | 0 错误 |
 | G4 行数 | `tools/check-file-size` | §6 的硬上限；allowlist 必须有 ADR 与到期里程碑 |
-| G5 依赖方向 | dependency-cruiser | `no-circular`、`layer-direction`、`no-cross-feature-internals`、`feature-dependency-matrix`（§4.3；含 `ingest` 的九条出边，任何切片 import `ingest` 或 `budget` 即失败）、`renderer-isolation`、`electron-only-in-desktop`、`contracts-is-leaf`；Q3 相关规则单列为 G13、G15、G16 |
+| G5 依赖方向 | dependency-cruiser | `no-circular`、`layer-direction`、`no-cross-feature-internals`、`feature-dependency-matrix`（§4.3；含 `ingest` 的九条出边，任何切片 import `ingest` 或 `budget` 即失败）、`renderer-isolation`、`electron-only-in-desktop`、`contracts-is-leaf`、`providers-boundary`（`packages/providers` 只被 `features/*/src/adapters/` 与 `apps/desktop/src/main/` 导入，只经 `@oi/providers` 入口；它自己不导入任何切片、Electron 与 UI，§7.9.2）；Q3 相关规则单列为 G13、G15、G16 |
 | G6 Python 分层 | import-linter | §10.3 的层次契约，含 Python core 的 forbidden 契约 |
 | G7 生成物无漂移 | `pnpm codegen && git diff --exit-code` | 契约、preload、pydantic 模型 |
 | G8 单元与契约测试 | Vitest、pytest | 按 RULES.md §4 的运行纪律 |
-| G9 密钥扫描 | gitleaks | 0 命中 |
+| G9 密钥扫描 | gitleaks | 0 命中；契约测试样例里的假 Key 用固定测试前缀，登记在 gitleaks allowlist（§7.9.7） |
 | G10 依赖许可证 | license-checker、pip-licenses；`runtime` 模型清单校验 | 项目许可证为 Apache-2.0（Q6）：依赖必须与之兼容；GPL / AGPL 一律拒绝（包括 PyMuPDF，以及经上游 extras 间接引入的情况）；LGPL、非商用、自定义许可证（如 MinerU Open Source License）未经用户批准即拒绝；模型权重的许可证在模型清单登记并按同一规则检查（RULES §1.5） |
 | G11 热点文件 | `tools/check-hotspots` | 改动热点文件（装配根、`slots.ts`、契约）的 PR 必须在描述中声明，且单 PR 对每个热点文件的改动 ≤ 30 行 |
 | G12 PR 体量 | 脚本 | 非生成代码改动 > 600 行时要求拆分或写明理由 |
@@ -1399,13 +1640,23 @@ G13–G16 与 5 层、18 个切片的关系：规则全部按通配路径写（`
 ### 15.4 开发机与密钥（API 优先，Wisdom 2026-10-30 18:44）
 
 - 开发机：Windows，32 GB 内存，NVIDIA RTX 4070 12 GB。日常开发与 `@live` 冒烟都走托管 API；各模型在开发机上的本地部署状态见 §7.0 表，凡是「不要求 / 未核实」的都不作为开发前提。
-- 开发与测试用的 Key 只经 Cursor Secrets 注入为环境变量，不写进仓库、`.env`、命令行参数、日志、测试快照或 PR 描述（RULES N-05）。新服务商接入前先在下表登记变量名：
+- 开发与测试用的 Key 只以环境变量的形式提供，不写进仓库、`.env`、命令行参数、日志、测试快照或 PR 描述（RULES N-05）：
+  - 云端 Agent：只经 Cursor Secrets 注入。
+  - 开发者本机（Windows）：由开发者自己设为系统的用户级环境变量，或只在当前终端会话里设置；值不写进仓库里的脚本、`.vscode/launch.json` 或任务文件。Cursor Secrets 能否注入本机的 Cursor 会话**未核实**；现在只用环境变量；Windows 凭据管理器的支持之后再加（Wisdom 2026-10-30 20:57）。
+  - 代码只按下表登记的变量名读取 `process.env` / `os.environ`；不读 `.env`，不接受从命令行参数传 Key。
+- 新服务商接入前先在下表登记变量名；`packages/providers` 注册表里的 `devEnvVars` 必须与下表一致（`registry.ts` 的校验，§7.9.4）。下表新增的变量都是预留名：Wisdom 尚未提供，对应的 `@live` 冒烟一律跳过。
 
 | 环境变量 | 服务 | 用于 | 状态 |
 | --- | --- | --- | --- |
 | `MODELBEST_API_KEY` | 面壁开放平台 | Jev 评分、引擎 B 文档解析 | 已定（Wisdom 2026-10-30 18:37） |
 | `PADDLEOCR_ACCESS_TOKEN`（暂定名） | 百度 AI Studio PaddleOCR 托管 API | 引擎 A 的模型阶段 | 候选，M3 前核实后再定 |
-| 其他（翻译、多模态、问答、云 OCR、TTS / ASR） | 用户自选服务商 | 对应能力的 `@live` 冒烟 | 选定服务商时登记 |
+| `OPENAI_API_KEY` | OpenAI | `openai-chat` 格式的 `@live` 冒烟 | 预留（Wisdom 未提供，测试跳过） |
+| `ANTHROPIC_API_KEY` | Anthropic | `anthropic-messages` 格式 | 预留（同上） |
+| `GEMINI_API_KEY` | Google Gemini API | `gemini-generate-content` 格式与 Gemini 的 OpenAI 兼容端点 | 预留（同上） |
+| `QIANFAN_API_KEY` | 百度智能云千帆 | `openai-chat` 格式（千帆 v2） | 预留（同上） |
+| `BAIDU_OCR_API_KEY`、`BAIDU_OCR_SECRET_KEY` | 百度智能云文字识别 | `baidu-ocr` 格式（main 用这两个值换取 `access_token`） | 预留（同上） |
+| `ZHIPU_API_KEY` | 智谱开放平台 | `openai-chat` 格式（GLM）与 `zhipu-layout-parsing` 格式（GLM-OCR） | 预留（同上） |
+| 其他（TTS / ASR，以及以后新增的服务商） | — | 对应能力的 `@live` 冒烟 | 加入注册表时登记 |
 
 ## 16. 决策记录与变更
 
@@ -1421,8 +1672,8 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | Q6 | pypdfium2；项目许可证 Apache-2.0；禁止 GPL / AGPL（含 PyMuPDF） | §7.1、§10.3、G10 |
 | Q7 | 本机与远程同一协议 HTTP + SSE | §1、§10.1 |
 | Q8 | 不做 v1 迁移，v2 从零开始 | §4.2 `library`（无导入器） |
-| Q9 | Jev 本机 / 远程可选，worker 接口一致；设置主选项「本地 / API」，默认 API，服务商是面壁开放平台（Wisdom 2026-10-30 18:37、18:44）；硬件只用于标注「本地」的可行性；自建 worker / Docker 归入「高级」 | §1、§2.6 示例、§4.2 `settings`、§7.0、§7.4「面壁 API」、§10.1、§10.2、§10.3 |
-| API 优先（2026-10-30 18:44） | 每个模型能力有托管 API 时默认 API，本地是同一接口后的一等选项（设置「本地 / API」）；开发机 Windows + 32 GB + RTX 4070 12 GB 上部署不了的模型不要求本地，标「不要求 / 未核实」；开发与测试 Key 只经 Cursor Secrets | §1、§2.6、§4.2 `settings/domain/backend-choice.ts`、§7.0、§7.1、§7.4、§7.7、§8.3、§10.3、§12、§15.4 |
+| Q9 | 设置主选项「本地 / API」，默认「API」，Jev 的 API 服务商是面壁开放平台；「本地」与 API 走同一个 `evaluate` 作业接口；自建远程 worker 与 Jev Docker 在「高级」；硬件画像只给「本地」标可行性；用户随时可改（Wisdom 2026-10-30） | §1、§2.6 示例、§4.2 `settings`、§7.0、§7.4「面壁 API」、§10.1、§10.2、§10.3 |
+| API 优先（2026-10-30 18:44） | 每个模型能力有托管 API 时默认 API，本地是同一接口后的一等选项（设置「本地 / API」）；开发机 Windows + 32 GB + RTX 4070 12 GB 上部署不了的模型不要求本地，标「不要求 / 未核实」；开发与测试 Key 只以环境变量提供（云端 Agent 经 Cursor Secrets，开发者本机见 §15.4） | §1、§2.6、§4.2 `settings/domain/backend-choice.ts`、§7.0、§7.1、§7.4、§7.7、§8.3、§10.3、§12、§15.4 |
 | Q10 | PP-DocLayoutV3 起步，plus-L 对照，明显更好时作为高质量档 | §7.1「版面档位」、`parsing/domain/layout-profile.ts` |
 | Q11 | 未配置翻译时借用多模态：保留、默认关、开启时提示消耗多模态额度 | §4.2 `settings/domain/translation-fallback.ts` |
 | Q12 | 不接 Unlimited-OCR，上游支持坐标输出后再评估 | 不进本文；记录在差异清单 §2.6 |
@@ -1431,6 +1682,7 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | Markdown 阅读（2026-10-30 17:32） | 批准 Loom 方案并入 M0–M8：统一 `MarkdownView`；单个 `.md` 与笔记库只读阅读；KaTeX 与 formula 同一份安全选项；`.md` 独立入口、只链接库内 PDF；v2 只读、预留编辑接口；译文按区块存 Markdown（D1–D7） | §4.5、§8.1.1、§4.1 `latex-policy`、§4.3 新边、§9、G2；差异清单 §6.1 |
 | 译文区块四项结论（Loom 2026-10-30，经 Wisdom 转达） | 翻译块范围；`retranslateBlock` 与 `onBlockChanged.documentId`，状态只经事件推送；重译失败的界面（MD-27）；缓存键改用公式决定摘要 | §2.6 `TranslationSeam`、§8.1.1；差异清单 §6.2 |
 | 架构评审修复 A（Wisdom 2026-10-30 19:57 批准） | P0-1 新增无界面的编排切片 `ingest`，删除 `repair → quality`；P0-2 main 与 utility 的固定职责，密钥明文只在 main；P0-3 所有付费调用先经 `BudgetGate` 预留，账本移入新切片 `budget`，单价未知时按请求数 / 页数 / token 上限；P0-4 译文 `markdown` 不含未核验公式，裁图位置记在 `crops`，`getBlocks` 生成裁图节点；删除 G17，保留 G13–G16。20:57 按建议定下：采用 `budget` 切片；默认受限预算，各科目带保守的占位次数类上限，M0 实测后定标（§7.8 第 4 条）；评审建议的热点收窄（P1-11 后半）留到之后的 PR | §1、§2.5、§3、§4.1–§4.4、§5.2 F-16 / F-17、§7.1、§7.3、§7.8、§8.1.1、§8.2、§9、§10.2、§13；差异清单 §6.6 |
+| 架构评审修复 B 与服务商适配层（Wisdom 2026-10-30 19:45、19:46、19:57） | P1-1 同意规则措辞统一：拒绝只让该服务商对列出能力的请求为 0，其他服务商上已同意的能力照常；采纳「重新打开开关后照常询问」；P1-2 外发检查端口 `EgressCheck` 与目的主机分类；P1-3 远程 worker 不接收桌面的服务商 Key，本机 worker 只经回环地址接收；P1-4 删除已被取代的旧表述；P1-8 `ProviderFailure`；P1-9 存储与协议的版本升级规则；P1-10 Electron 加固；新增服务商适配层 `packages/providers`：按 API 格式写适配器、按服务商写注册表、能力标记、每个适配器的契约测试。20:57 按建议定下：各能力列出全部服务商、不预选；Gemini 默认原生格式，OpenAI 兼容端点为备选；百度 OCR 现在用 access_token；开发者本机的 Key 现在用环境变量；保留「本机可信」选项（默认没有）与「重新打开开关后照常询问」（§7.9.8、§15.4） | §1、§2、§2.5、§3、§4.1–§4.3、§5.1、§5.2 F-18、§7.0、§7.3、§7.4、§7.7、§7.9、§8.3、§8.4、§9、§10.1–§10.4、§12、§13、§15.4；差异清单 §6.7 |
 
 - 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3 / M6 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
-- 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、架构评审新增的 `ingest` 切片及其九条出边、`budget` 切片与删除的 `repair → quality`，在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。
+- 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、架构评审新增的 `ingest` 切片及其九条出边、`budget` 切片与删除的 `repair → quality`，以及修复 B 新增的 `packages/providers` 包与 `providers-boundary` 规则、`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。
