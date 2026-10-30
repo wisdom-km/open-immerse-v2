@@ -95,9 +95,31 @@
 | 可延后 2 | QM-03、QM-04 不按评分开关分开报告 | 已处理（随「源码核对」一起改口径） | PRD QM-03、QM-04、QM-12 |
 | 可延后 3 | US-20 与两处 Q1 的措辞 | 已处理（开关直接影响这几句，随决定一起改） | PRD §9、US-20；差异清单 §6 Q1 |
 
-## 6. 全面审查（PR #11，2026-10-30）的 P2
+## 6. 全面审查（PR #11，2026-10-30）
 
-P0 与 P1 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）。下面只记 P2，不在这次改规格正文。P2-10 例外：23:55 明确要求 PR 模板，所以模板已经加上，不留在本表。
+P0 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）。P1 的逐条落点见下表（Wisdom 2026-10-31 00:21）。P2 不在这次改规格正文。P2-10 例外：23:55 明确要求 PR 模板，所以模板已经加上，不留在 P2 表。
+
+### P1
+
+| 编号 | 落点 | 状态 |
+| --- | --- | --- |
+| P1-1 | ARCHITECTURE §7.12 `RouteConfig`；§8.4 `ing_route` 的 `schemaVersion` 与 `ParseRun` 路线快照。换预设不迁移文档模型 | 已处理 |
+| P1-2 | ARCHITECTURE §7.4「评分开关」、§7.12；PRD AC-85 ①、AC-97。读的时候开关优先，两处都不自动改写 | 已处理 |
+| P1-3 | ARCHITECTURE §4.2 `ingest` 行：`open-document.ts` 只取路线、循环 `ingest-policy`、调切片 `index.ts`；步骤在 `ingest-steps.ts` | 已处理 |
+| P1-4 | ARCHITECTURE §7.4「锁定版本」；PRD AC-99、M0。当前锁 `1269e4f`，复核只记差异，更换须先对比并单独开 PR | 已处理 |
+| P1-5 | ARCHITECTURE §8.1.1 `ProviderFailure.kind` 到 `failureKind` 的表。与 P1-13 同一张表 | 已处理 |
+| P1-6 | ARCHITECTURE §8.1.1「提示词正文只在一处」：`packages/features/translation/src/domain/prompts/`，文件头 `promptVersion` | 已处理 |
+| P1-7 | ARCHITECTURE §12.1 `EvalRecord` | 已处理，算完成。形状已写：文献 id、PDF sha256、路线 id、各来源请求数、评估状态计数、显示决定计数、失败原因码；合成样例位置与 v1 语料只读 clone 也写了。不填数字。`fixtures/eval/` 里的样例文件和 `docs/acceptance/` 目录不在这条改法里，留到 M0（§7 E-P1-8） |
+| P1-8 | ARCHITECTURE §7.8 第 4 条；`budget/domain/default-caps.ts` | 已处理，算完成。占位上限的计量单位必须覆盖每页区块请求，这一句已经写上。具体 N 不是这条的完成条件，留到 M0 之后经 Wisdom 批准再写入，批准前不得自填（N-14） |
+| P1-9 | PRD §3.3「自动补救」行，默认开；AC-05 的「补救关闭」指这一行；AC-98 | 已处理 |
+| P1-10 | RULES N-22；docs/ci-and-environment.md「当前是空跑」；README「CI 与云端环境」。`eslint.config.js` 按审查留到 M1，不在这条里改 | 已处理 |
+| P1-11 | README 阅读顺序；AGENTS.md；.github/ISSUE_TEMPLATE/task.md；.github/PULL_REQUEST_TEMPLATE.md。审查里的 `.cursor/rules` 是可选，没有加（N-11） | 已处理 |
+| P1-12 | PRD AC-20；ARCHITECTURE §7.4 推荐规则 1。没有名为「关掉 API 来源」的总开关 | 已处理 |
+| P1-13 | 与 P1-5 同一张表：ARCHITECTURE §8.1.1。解析、OCR、Jev 的用户可见词只有校验失败、网络错误、模型错误 | 已处理 |
+| P1-14 | DESIGN.md 文首（第 16 行）仍写「Loom 交付前 UI 只搭结构」。RULES 文首已写以 RULES 为准 | 未处理。过时句需 Loom 修改。本 PR 不改 DESIGN 正文（N-10）。负责人：Loom |
+| P1-15 | README「历史草案」。该目录不授权实现，冲突时以根目录三份规格为准 | 已处理 |
+
+### P2
 
 | 编号 | 发现 | 状态 | 留给 |
 | --- | --- | --- | --- |
