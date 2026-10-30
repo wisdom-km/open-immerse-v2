@@ -3,7 +3,7 @@
 日期：2026-10-30（Asia/Shanghai）。状态：审查结论，供 v2 实施引用。
 审查对象：旧仓库 [wisdom-km/open-immerse](https://github.com/wisdom-km/open-immerse) `main@96f1dfe`（父提交 `e9e00e4` = 标签 `v0.3.0`）。以只读方式 clone 到临时目录，push 地址已置为无效值；**未修改、未推送、未在旧仓库开任何 PR / Issue / 评论**。
 本文所有 `路径:行号` 均指上述快照，并已逐个抽查。链接前缀：`https://github.com/wisdom-km/open-immerse/blob/96f1dfe263fd1138775cb84053e97dff707ae09a/`。
-相关规格：[PRD.md](../PRD.md)、[ARCHITECTURE.md](../ARCHITECTURE.md)、[RULES.md](../RULES.md)；设计文件 [DESIGN.md](../DESIGN.md) 与 [design-principles.md](./design-principles.md) 待 Loom 产出。
+相关规格：[PRD.md](../PRD.md)、[ARCHITECTURE.md](../ARCHITECTURE.md)、[RULES.md](../RULES.md)；设计文件 [DESIGN.md](../DESIGN.md) 与 [design-principles.md](./design-principles.md) 已于 2026-10-30 入库。下文写成「待 Loom 产出」的句子是审查当时的状态。
 
 ---
 
