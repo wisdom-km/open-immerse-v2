@@ -1,7 +1,7 @@
 > **入库说明（Wisdom 2026-10-30 17:32 批准并入 v2 M0–M8）**
 >
 > - 来源：Loom 的方案草案 v0.2（上传附件 `PLAN.md`）。2026-10-30 Wisdom 再次上传 Loom 更新 D6 后的版本（译文按段落分块存储，以该版本为准），与此处正文逐字节一致。本说明之后的正文**逐字未改**；线框图原样放在 [wireframe-vault.svg](./wireframe-vault.svg)（正文 §4 末尾提到的 S-D 线框图）。正文由 Loom 维护，其他人不改（[RULES](../../RULES.md) N-10）。
-> - 分工：布局、组件拆分、文案、空 / 错 / 加载态、Token 这类**设计细节以本文为准**；需求、验收、里程碑以 [PRD](../../PRD.md) 为准（S13、US-23–US-28、AC-30–AC-55、QM-15–QM-16、§8）；切片、seam、存储、安全以 [ARCHITECTURE](../../ARCHITECTURE.md) 为准（§4.5、§8、§9）。
+> - 分工：布局、组件拆分、文案、空 / 错 / 加载态、Token 这类**设计细节以本文为准**；需求、验收、里程碑以 [PRD](../../PRD.md) 为准（S13、US-23–US-28、AC-30–AC-58、QM-15–QM-17、§8）；切片、seam、存储、安全以 [ARCHITECTURE](../../ARCHITECTURE.md) 为准（§4.5、§8、§9）。
 > - 规格对本文做的校正（不影响 Loom 的界面设计；正文仍保留原写法以便追溯）：
 >   1. **KaTeX 选项**：D2 写 `throwOnError:false`。按 Wisdom「与 formula 同一份安全选项」，规格只保留一份选项，即公式闸门用的 `throwOnError:true`，放在 `contracts/src/latex-policy.ts`。渲染组件捕获异常后显示原始 LaTeX 加错误标记，用户看到的效果与 D2 相同。§3.2 说的「core 的 `pure.ts` 导出常量 `KATEX_OPTIONS`」也改为从 `contracts` 读取。
 >   2. **组件归属**：§3.2 把 `MarkdownView`、`MathInline`/`MathBlock`、`CodeBlock`、`MdImage`、`MdLink`、`BlockedHtml` 放在 `features/markdown/src/ui`。但切片 UI 不能 import 其他切片的 UI（ARCHITECTURE §2 分层表、F-05、G15），笔记、译文、问答又都要用，所以这几个共享组件放到 `packages/ui-kit/src/markdown/`。`FileTree`、`OutlinePanel`、`ReloadToast`、`EditorSlot` 和两个阅读页仍在 `features/markdown/src/ui`。
@@ -13,6 +13,12 @@
 >   8. **谁调用解析**：§2 主路径 0 写的「translation core 返回已存储的 Markdown → `markdown.render` → `MarkdownView`」，规格中改为 `translation.getBlocks` 在 core 里经 `markdown` 的 seam 解析，随结果返回每块的 `MdDocument`；笔记、问答同理。其他切片的 UI 不调用 Markdown 解析，reader 也不依赖 `markdown`（ARCHITECTURE §4.3、§4.5.4）。
 >   9. **契约补充**：公式节点加 `blocked` 字段；失效链接原因加 `unsupported_scheme`；`openVault` 改为返回 `jobId`（扫描是长任务），树另用 `getVaultTree` 取；新增 `openExternal`、`revealInFolder` 两条命令；`StoredTranslationBlock` 补 `revisionId`、`targetLang`（ARCHITECTURE §4.5.3、§8.1.1）。
 >   10. **调研表**：Logseq 与 VS Code 两栏有一部分来自已有的产品知识（正文已注明）。其他条目虽然附了来源，本 PR 也没有逐条复核，规格里一律视为「未核实」（[v2-gap-and-changes](../v2-gap-and-changes.md) §7）。
+> - Loom 2026-10-30 的后续结论（经 Wisdom 转达，正文尚未收录，由 Loom 自行更新正文）：
+>   1. **翻译块范围**：正文段落、标题、图表题注、脚注、列表项、引用块；表格和图用原文裁图，只翻题注；独立公式走公式回退链，不算翻译块（ARCHITECTURE §8.1.1、PRD AC-58）。
+>   2. **seam**：同意 `retranslateBlock` 与 `onBlockChanged.documentId`；`retranslateBlock` 返回 `Result`，状态只经 `onBlockChanged` 推送，UI 不自行推断。正文 §3.3.2 注释里的事件字段以 ARCHITECTURE §8.1.1 为准。
+>   3. **重译失败的界面**：补充正文 §4.1 译文栏的块状态（标记线、提示行、重试、无障碍）；新增验收 **MD-27**，并入 PRD 为 AC-56。
+>   4. **缓存键**：改用公式决定摘要，不加采用版本号，论证见 [v2-gap-and-changes](../v2-gap-and-changes.md) §6.2.1。
+>   5. 规格为落实以上几项做的补充（`failureKind`、`display`、错误码、键盘聚焦显示原因等）列在 [v2-gap-and-changes](../v2-gap-and-changes.md) §6.2，其中需要 Loom 确认的已标明。
 
 ---
 
