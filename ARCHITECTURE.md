@@ -1,6 +1,6 @@
 # open-immerse v2 架构规格（ARCHITECTURE）
 
-状态：v0.3，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。v0.3 并入 Wisdom 2026-10-30 17:32 批准的 Markdown 阅读方案（Loom，[docs/design/md-reader.md](./docs/design/md-reader.md)）：新增 `markdown` 切片（§4.5），译文改为按区块存 Markdown（§8.1.1）；同日并入 Loom 对译文区块四项风险的结论（§8.1.1，§16）；同日 18:37 并入 Jev 远程默认面壁开放平台（§7.4），18:44 并入「API 优先」原则（§7.0），19:11 并入 Wisdom 对四项风险的决定（数据外发同意对话框、引擎 A 三条路径、问答同时支持多模态与纯文本模型、M0 API 实测延后；§2.5、§4.2、§7.0、§7.3、§7.4、§16）。
+状态：v0.3，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。v0.3 并入 Wisdom 2026-10-30 17:32 批准的 Markdown 阅读方案（Loom，[docs/design/md-reader.md](./docs/design/md-reader.md)）：新增 `markdown` 切片（§4.5），译文改为按区块存 Markdown（§8.1.1）；同日并入 Loom 对译文区块四项风险的结论（§8.1.1，§16）；同日 18:37 并入 Jev 远程默认面壁开放平台（§7.4），18:44 并入「API 优先」原则（§7.0），19:11 并入 Wisdom 对四项风险的决定（数据外发同意对话框、引擎 A 三条路径、问答同时支持多模态与纯文本模型、M0 API 实测延后；§2.5、§4.2、§7.0、§7.3、§7.4、§16），19:30 把外发同意改为按服务商询问并加入「外发前询问」开关（§7.0 第 6 条）。
 同级规格：[PRD.md](./PRD.md)（做什么）、[RULES.md](./RULES.md)（怎么协作）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；本文只规定 UI 代码放在哪、依赖谁，不规定长什么样。
 本文与 `docs/architecture/0x_*_草案.md` 冲突时以本文为准，差异逐条列在 [docs/v2-gap-and-changes.md](./docs/v2-gap-and-changes.md)。本文中的目录、接口、协议均为**拟议设计**，M1 起按本文落地；落地前不代表已存在。
 
@@ -144,7 +144,7 @@ Q3 的要求是映射到 5 层与 14 个切片；Q4 决定新增 `formula-source
 | `notes` | `anchor-match`（失败条件：无法唯一重定位）、`note`（校验）、`markdown-export` | `createNote`、`reanchorNotes`、`exportNotes`、`getNotesByIds`（§4.4 预留）；读笔记时随结果返回正文的 `MdDocument` | `ui/notes-panel.tsx`（正文交给 `MarkdownView`） | `sqlite-notes-repository` |
 | `qa` | `context-selection`、`citation`（失败条件：引用必须可定位） | `ask`；回答事件带已闭合块的 `MdBlock[]` 与未闭合尾部文本（§4.5.4） | `ui/ask-panel.tsx`（回答交给 `MarkdownView`） | `chat-provider` 适配器 |
 | `voice` | `speech-script`、`audio-segment`（校验：段落必须带锚点） | `generateNarration`、`transcribeNote` | `ui/narration-player.tsx`、`ui/voice-note-recorder.tsx` | TTS / ASR 适配器 |
-| `settings` | `provider-config-validate`（校验）、`budget-settings`（计价上限）、`translation-fallback`（权限，Q11）、`backend-choice`（每个模型能力的「本地 / API」默认值与切换，API 优先，§7.0；Q9）、`egress-consent`（权限：数据外发同意，§7.0 第 6 条） | `saveProvider`、`testConnection`、`setBackendChoice`、`answerEgressConsent` | `ui/settings-pages/*` | `safe-storage-secret-store` |
+| `settings` | `provider-config-validate`（校验）、`budget-settings`（计价上限）、`translation-fallback`（权限，Q11）、`backend-choice`（每个模型能力的「本地 / API」默认值与切换，API 优先，§7.0；Q9）、`egress-consent`（权限：按服务商的数据外发同意、追加告知、「外发前询问」开关，§7.0 第 6 条） | `saveProvider`、`testConnection`、`setBackendChoice`、`answerEgressConsent`、`setEgressPromptEnabled`、`listEgressDestinations` | `ui/settings-pages/*` | `safe-storage-secret-store` |
 | `diagnostics` | `redaction-rules`（校验）、`retention`（失败条件：超限删除） | `exportBundle` | `ui/diagnostics-page.tsx` | `file-logger` |
 | `writing`（预留，v2 不建） | 引用必须解析到锚点（复用 `qa/citation` 规则） | §4.4 草案 | — | — |
 
@@ -359,7 +359,7 @@ packages/features/<name>/
 | `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `application/use-cases/get-notes-by-ids.ts`（按 ID 批量只读，写作预留，§4.4） · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx`（正文用 ui-kit `MarkdownView`） |
 | `qa` | 论文问答、上下文选取、引用 | `domain/context-selection.ts`（按 `ChatCapabilities.acceptsImages` 决定上下文只含文本，还是文本加区域裁图，§7.3）· `domain/citation.ts` · `application/use-cases/ask.ts`（流式回答经 `markdown` 的 seam 切分为已闭合块与未闭合尾部）· `application/ports/chat-provider.ts`（多模态模型与纯文本 LLM 共用一个端口，Wisdom 2026-10-30 19:11）· `adapters/openai-compatible-chat.ts`（API 与本机 OpenAI 兼容服务共用）· `ui/ask-panel.tsx`（回答用 ui-kit `MarkdownView`） |
 | `voice` | TTS 朗读 / 讲解、ASR 语音笔记 | `domain/speech-script.ts` · `domain/audio-segment.ts` · `application/ports/tts-port.ts` · `application/ports/asr-port.ts` · `application/use-cases/generate-narration.ts` · `application/use-cases/transcribe-note.ts` |
-| `settings` | 非密钥设置、provider 配置、密钥引用绑定、预算设置 | `domain/provider-config-validate.ts` · `domain/budget-settings.ts` · `domain/translation-fallback.ts`（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/backend-choice.ts`（每个模型能力的「本地 / API」选择：有托管 API 时默认「API」，本地是同一接口后的一等选项，高级自建选项与推荐值的关系；覆盖 Jev、引擎 A 模型阶段、引擎 B、多模态、翻译、问答、TTS / ASR；API 优先，§7.0；Q9，§7.4）· `domain/egress-consent.ts`（按「能力 + 服务商」记录数据外发同意；未同意或未作答时该能力对该服务商的请求为 0；Wisdom 2026-10-30 19:11，§7.0 第 6 条）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
+| `settings` | 非密钥设置、provider 配置、密钥引用绑定、预算设置 | `domain/provider-config-validate.ts` · `domain/budget-settings.ts` · `domain/translation-fallback.ts`（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/backend-choice.ts`（每个模型能力的「本地 / API」选择：有托管 API 时默认「API」，本地是同一接口后的一等选项，高级自建选项与推荐值的关系；覆盖 Jev、引擎 A 模型阶段、引擎 B、多模态、翻译、问答、TTS / ASR；API 优先，§7.0；Q9，§7.4）· `domain/egress-consent.ts`（按服务商记录数据外发同意：每个服务商一条记录，含已告知并同意的能力集合与时间；判断要不要弹对话框、对话框列哪些能力（首次列出全部、之后只列新增）；「外发前询问」开关（默认开，只能由用户在设置里关闭）；生成「数据去向」列表；未同意的能力对该服务商的请求为 0；Wisdom 2026-10-30 19:11、19:30，§7.0 第 6 条）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
 | `diagnostics` | 诊断事件记录、诊断包导出、脱敏 | `domain/redaction-rules.ts`（自 v1 移植）· `domain/retention.ts`（保留天数与体积上限）· `application/use-cases/export-bundle.ts` · `ui/diagnostics-page.tsx` |
 
 ### 4.3 切片之间的依赖（允许的方向）
@@ -691,7 +691,12 @@ flowchart TB
 3. **按硬件推荐。** 硬件画像只做两件事：给「本地」标可行性（达到官方要求 / 不在官方要求内 / 官方文档未覆盖该平台），以及在没有托管 API 或用户拒绝数据外发时，决定推荐本地还是降级。规则是纯函数，Jev 的规则见 §7.4，其他能力随各自里程碑补齐；补齐前「本地」标「硬件要求未评估」。
 4. **没有 Key、拒绝外发或 API 不可用时**，不静默改用另一个付费服务，也不静默改成本地，按下表最后一列降级，界面提示去填 Key 或改选本地。
 5. **密钥。** 最终用户的 Key 只存本机安全存储（§8.3）。开发与测试用的 Key 只经 Cursor Secrets 注入为环境变量，变量名先登记在 §15.4 再使用；仓库不放、也不读取 `.env` 文件。CI 不调用付费 API（§12）。
-6. **数据外发同意（Wisdom 2026-10-30 19:11 批准）。** 任何会把数据发出本机的 API 能力，第一次使用前弹出同意对话框，按「能力 + 服务商」各问一次（例如 Jev 与引擎 B 虽然同是面壁，也各问一次）。对话框写明：哪个能力、发给哪个服务商、会发什么（区域裁图、候选文本、我们渲染的页面图、待翻译文本或问答上下文），以及不上传原 PDF。同意记录在 `settings/domain/egress-consent.ts`；业务切片经装配根注入的端口在发请求前检查（业务切片不 import `settings`，§5）。拒绝或尚未作答时，该能力对该服务商的请求为 0，结果记 `unavailable`（原因码 `consent_required`），按下表最后一列降级，并提示可改选「本地」；不改用别的服务商。只发区域裁图、候选文本或我们渲染的页面图，不上传原 PDF，保证所有来源共用一个坐标帧（Q6）。对话框的布局与文案样式由 Loom 定（DESIGN.md 待 Loom 产出）。
+6. **数据外发同意（Wisdom 2026-10-30 19:11 批准；19:30 改为按服务商）。** 规则全部在 `settings/domain/egress-consent.ts`；业务切片经装配根注入的端口在发请求前检查（业务切片不 import `settings`，§5）。
+   - **按服务商问一次。** 某个服务商第一次要收到数据前，弹一个对话框，列出当前选定把数据发给它的**全部**能力，每项写明会发什么（区域裁图、候选文本、我们渲染的页面图、待翻译文本或问答上下文），并写明不上传原 PDF。例：面壁开放平台一个对话框，列出 Jev 评分与引擎 B 文档解析。用户对整个对话框同意或拒绝。
+   - **新增能力要追加告知。** 已同意的服务商，之后又有能力要把数据发给它（例如用户把另一项能力改选到这家），该能力第一次请求前再弹一次，只列新增的能力。同意范围只覆盖对话框里列出过的能力。
+   - **拒绝或未作答。** 对话框列出的能力对该服务商的请求为 0，结果记 `unavailable`（原因码 `consent_required`），按下表最后一列降级，并提示可改选「本地」；不改用别的服务商。追加告知被拒时，此前已同意的能力不受影响。
+   - **「外发前询问」开关。** 设置里有一个开关，默认开（弹对话框）。只有用户在设置里亲自操作才会关闭；新安装、升级、恢复默认都不会关闭它。关闭后不再弹对话框，请求照常发送。无论开关状态，设置里都显示「数据去向」列表：每个服务商、发给它的能力、每项的状态（已同意 / 询问已关闭 / 已拒绝）。规格补充（待 Wisdom 确认）：重新打开开关后，没有在对话框里同意过的「服务商 + 能力」，下次使用前照常询问。
+   - 只发区域裁图、候选文本或我们渲染的页面图，不上传原 PDF，保证所有来源共用一个坐标帧（Q6）。对话框的布局与开关在设置里的位置由 Loom 定（DESIGN.md 待 Loom 产出）。
 7. **开发机。** Windows，32 GB 内存，NVIDIA RTX 4070 12 GB（Wisdom 2026-10-30 17:56 告知配置，18:44 告知系统）。开发以 API 路径为准。API 路径的真实调用实测（§7.4「开发机」）已由 Wisdom 2026-10-30 19:11 决定延后，在 PRD M0 中记为「待执行」，不阻塞规格文档。某个模型在开发机上部署不了，或者官方文档没有覆盖 Windows 时，开发机上的本地部署标「不要求 / 未核实」，不作为开发前提；规格中的本地选项照常保留，由契约测试与达到官方要求的机器（有的话）验证。
 
 | 能力 | 默认：API（服务商） | 本地选项（同一接口） | 开发机（Windows）本地部署 | 没有可用 API 时 |
@@ -885,7 +890,7 @@ interface LatexRenderer { check(latex: string): RenderCheck }   // 只证明语�
 
 - **Key**：环境变量名 `MODELBEST_API_KEY`（登记在 §15.4）。开发与测试只从 Cursor Secrets 注入的环境变量读取；CI 不调用付费 API，不需要它；应用里由用户在设置中填写，存入本机安全存储（`safeStorage`，§8.3），`ProviderConfig` 只存 `secretRef`。Key 绝不进仓库、fixtures、录制的响应、日志、任务 JSON、诊断包（RULES N-05、PRD AC-09、AC-59）。调用真实服务的测试只在该变量存在时运行，默认跳过；契约测试用去掉 `Authorization` 与图片内容的录制样例。
 - **同一个 Key 两处用**：面壁的 Jev 与 MiniCPM-OCR-1.0 文档解析（§7.1 引擎 B 云端来源）用同一个平台 Key，设置里是一个「面壁开放平台」服务商、一个 `secretRef`。
-- **数据外发同意**：按 §7.0 第 6 条，Jev 与引擎 B 第一次用面壁 API 前各弹一次同意对话框，说明会把区域裁图与候选文本（Jev）或页面图（引擎 B）发到面壁平台；同意后才发请求；拒绝或未作答时请求数为 0，按 §7.0 降级，并提示可改选「本地」。
+- **数据外发同意**：按 §7.0 第 6 条，面壁开放平台只弹一个对话框（19:30 起按服务商），列出当前选定发往面壁的全部能力——默认就是 Jev 评分（区域裁图与候选文本）与引擎 B 文档解析（页面图）；某一项改选「本地」时就不列它，之后再改回 API 时按「追加告知」只问这一项。同意后才发请求；拒绝或未作答时列出能力的请求数为 0，按 §7.0 降级，并提示可改选「本地」。「外发前询问」开关被用户关闭时不弹对话框，设置里的「数据去向」列表仍显示面壁及其能力。
 - **价格**：Jev 在平台上没有标价，**未核实**；不写死单价，按 `usage` 的 token 数记账，单价来自用户配置，否则记「未知」（PRD QM-10）。
 - `evaluatorVersion` 记部署方式 `modelbest-api`、模型名与 base URL 所属站点；国内站与国际站分别定标，分数不混用。
 
@@ -1346,7 +1351,8 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | Q10 | PP-DocLayoutV3 起步，plus-L 对照，明显更好时作为高质量档 | §7.1「版面档位」、`parsing/domain/layout-profile.ts` |
 | Q11 | 未配置翻译时借用多模态：保留、默认关、开启时提示消耗多模态额度 | §4.2 `settings/domain/translation-fallback.ts` |
 | Q12 | 不接 Unlimited-OCR，上游支持坐标输出后再评估 | 不进本文；记录在差异清单 §2.6 |
-| 四项风险的决定（2026-10-30 19:11） | ① 任何外发数据的 API 能力第一次使用前弹出同意对话框，按「能力 + 服务商」各问一次，拒绝 = 请求 0 + 按能力降级；② 引擎 A 的三条路径（托管 API〔核实通过后〕、本地部署、租用的 Linux 远程 worker）都保留可选，M3 前定最终选择；③ 文本问答纳入 API 优先，多模态模型与纯文本 LLM 共用 `ChatProvider`；④ M0 的面壁 API 实测延后，记「待执行」，不阻塞文档 | §2.5 `settings`、§4.2 `settings` / `qa`、§7.0 第 6、7 条与表、§7.3 `ChatProvider`、§7.4「面壁 API」「开发机」 |
+| 四项风险的决定（2026-10-30 19:11） | ① 任何外发数据的 API 能力第一次使用前弹出同意对话框，拒绝 = 请求 0 + 按能力降级（询问粒度 19:30 改为按服务商，见下一行）；② 引擎 A 的三条路径（托管 API〔核实通过后〕、本地部署、租用的 Linux 远程 worker）都保留可选，M3 前定最终选择；③ 文本问答纳入 API 优先，多模态模型与纯文本 LLM 共用 `ChatProvider`；④ M0 的面壁 API 实测延后，记「待执行」，不阻塞文档 | §2.5 `settings`、§4.2 `settings` / `qa`、§7.0 第 6、7 条与表、§7.3 `ChatProvider`、§7.4「面壁 API」「开发机」 |
+| 外发同意按服务商（2026-10-30 19:30） | 每个服务商一个对话框，列出发往它的全部能力（如面壁：Jev 评分 + 引擎 B）；已同意的服务商新增能力时再问一次、只列新增项；设置里有「外发前询问」开关，默认开，只能由用户关闭；设置始终显示「数据去向」列表；对话框布局与开关位置由 Loom 定 | §2.5 `settings`、§4.2 `settings/domain/egress-consent.ts`、§7.0 第 6 条、§7.4「面壁 API」 |
 | Markdown 阅读（2026-10-30 17:32） | 批准 Loom 方案并入 M0–M8：统一 `MarkdownView`；单个 `.md` 与笔记库只读阅读；KaTeX 与 formula 同一份安全选项；`.md` 独立入口、只链接库内 PDF；v2 只读、预留编辑接口；译文按区块存 Markdown（D1–D7） | §4.5、§8.1.1、§4.1 `latex-policy`、§4.3 新边、§9、G2；差异清单 §6.1 |
 | 译文区块四项结论（Loom 2026-10-30，经 Wisdom 转达） | 翻译块范围；`retranslateBlock` 与 `onBlockChanged.documentId`，状态只经事件推送；重译失败的界面（MD-27）；缓存键改用公式决定摘要 | §2.6 `TranslationSeam`、§8.1.1；差异清单 §6.2 |
 
