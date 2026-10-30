@@ -219,7 +219,7 @@
 | AC-53 | （MD-24）契约中存在 `WriteFileInput`、`WriteFileResult`、`MdFileWriter`、`MdCapabilities` 类型且有契约测试；v2 preload 中没有 `writeFile`，main 没有注册其处理器 | — |
 | AC-54 | （MD-25）调用写入用例返回 `write_disabled`；`getCapabilities` 返回 `canWrite:false`；`markdown` 的 adapters 中没有写入适配器，也没有 `fs` 写入类导入（G2 检查） | — |
 | AC-55 | （MD-26）`EditorSlot` 存在且在 v2 渲染为空；UI 中没有编辑按钮或快捷键（e2e） | — |
-| AC-56 | （MD-27）重译失败保留上一版：对已有 `success` 版本的块注入三种失败（校验未通过、网络、模型错误），每种都满足：正文与上一版 `markdown` 逐字节一致；块左侧出现 2px 标记线（`--oi-reader-warn`），块末出现提示行「重译未成功，仍显示上一版 · 重试」，提示行 `role="status"`；悬停「重试」显示对应原因；toast、弹窗、全局横幅为 0。点「重试」后提示行变为「正在重译…」且「重试」禁用；成功后标记线与提示行消失并显示新版本，再次失败回到失败样式。从未成功的块显示原文 +「翻译未通过校验」+「重译」。「重试」可用键盘聚焦，焦点环用 `--oi-reader-focus`；灰度快照中失败块仍可与正常块区分。UI 的块样式只由 `getBlocks` 返回的 `display` 决定，状态变化只经 `onBlockChanged` 到达（core 测试 + 组件测试 + e2e）。界面结构见 DESIGN DS-12、DS-13；`never_succeeded` 状态行的验收文案以本条「翻译未通过校验」+「重译」为准（DESIGN §4.1 写「未能翻译 · 重试」，裁决见 DESIGN.md 入库说明与 §6.3） | US-28 |
+| AC-56 | （MD-27）重译失败保留上一版：对已有 `success` 版本的块注入三种失败（校验未通过、网络、模型错误），每种都满足：正文与上一版 `markdown` 逐字节一致；块左侧出现 2px 标记线（`--oi-reader-warn`），块末出现提示行「重译未成功，仍显示上一版 · 重试」，提示行 `role="status"`；悬停「重试」显示对应原因；toast、弹窗、全局横幅为 0。点「重试」后提示行变为「正在重译…」且「重试」禁用；成功后标记线与提示行消失并显示新版本，再次失败回到失败样式。从未成功的块显示原文 +「翻译未通过校验」+「重译」。「重试」可用键盘聚焦，焦点环用 `--oi-reader-focus`；灰度快照中失败块仍可与正常块区分。UI 的块样式只由 `getBlocks` 返回的 `display` 决定，状态变化只经 `onBlockChanged` 到达（core 测试 + 组件测试 + e2e）。界面结构见 DESIGN DS-12、DS-13；`never_succeeded` 状态行的验收文案为本条「翻译未通过校验」+「重译」，与 DESIGN §4.1 一致 | US-28 |
 
 #### 6.1.2 译文区块（D6 补充，AC-57–AC-58）
 
@@ -315,15 +315,15 @@ Loom 的 [DESIGN.md](./DESIGN.md) DS-01–DS-26 与 §6.1、§6.2 验收的对�
 | DS-09 | 无 AC | 对话框按钮按平台排序。 |
 | DS-10 | 无 AC | 快捷键符号随平台。 |
 | DS-11 | 无 AC | 每屏主按钮不超过 1 个。 |
-| DS-12 | AC-56 | 五种 `display` 只按 `getBlocks` 分支。`never_succeeded` 的验收文案以 AC-56「翻译未通过校验」+「重译」为准，不以 DESIGN §4.1 的「未能翻译 · 重试」为准。 |
+| DS-12 | AC-56 | 五种 `display` 只按 `getBlocks` 分支。`never_succeeded` 的文案「翻译未通过校验」+「重译」，DESIGN §4.1 与 AC-56 一致。 |
 | DS-13 | AC-56 | `previous_with_failure` 的上一版、2px `--oi-reader-warn`、文案「重译未成功，仍显示上一版 · 重试」、`role=status`、无 toast / 对话框。与 AC-56 一致。原因短句以 AC-56 为准。 |
-| DS-14 | AC-04、AC-31 | 裁图不随正文字号变化是 DS-14，没有单独的 AC 数字。未核验公式不把 LaTeX 写进译文正文见 AC-04；非法 LaTeX 显示原文见 AC-31。 |
+| DS-14 | AC-04、AC-31 | 裁图固定 18px 参考字号、不随正文字号变化是 DS-14（Wisdom 2026-10-24 12:06；ARCHITECTURE `crop-geometry.ts`），没有单独的 AC 数字。未核验公式不把 LaTeX 写进译文正文见 AC-04；非法 LaTeX 显示原文见 AC-31。 |
 | DS-15 | AC-61 ⑦e、⑦f | 开关默认开；关时外发确认 0 次；数据去向始终显示。从开到关的那一次确认是 UI，core 不弹（⑦e）。 |
 | DS-16 | AC-61 ⑦a、AC-60 ② | 对话框只在 `settings.onEgressConsentRequired` 之后出现；不上传原 PDF。 |
 | DS-17 | AC-59 ⑤ | Key 不回显，只显示「已设置 / 未设置」。 |
 | DS-18 | 无 AC | 界面放大 200% 不丢内容。 |
 | DS-19 | 无 AC | 可点击目标 ≥ 24×24。 |
-| DS-20 | AC-21 | DS-20 正文引用已删除的 G17。验收以 AC-21 与 ARCHITECTURE §13 的 G13–G16 为准：只改 UI 的 PR，core 改动为 0 行；同一切片的 UI 与 core 可以在一个 PR，seam 类型先合入。 |
+| DS-20 | AC-21 | 验收以 AC-21 与 ARCHITECTURE §13 的 G13–G16 为准（DS-20 已不引用 G17）：只改 UI 的 PR，core 改动为 0 行；同一切片的 UI 与 core 可以在一个 PR，seam 类型先合入。 |
 | DS-21 | 无 AC | 标题栏与工具栏合并。 |
 | DS-22 | 无 AC | 强调色跟随系统。 |
 | DS-23 | AC-61 ⑦h | Esc、关闭弹窗、退出应用 = 未作答，下次再问；点「不允许」才是已拒绝。默认焦点在「不允许」没有单独的 AC，以 DS-23 为准。 |

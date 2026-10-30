@@ -1,16 +1,11 @@
 > **入库说明（Wisdom 2026-10-30 21:26 批准的 Loom 草案 v0.2；本 PR 入库）**
 >
-> - 来源：Loom 的视觉与交互规格草案 v0.2（上传附件）。本说明之后的正文**逐字未改**。本次没有需要改的链接或格式：正文指向 [docs/design-principles.md](./docs/design-principles.md)，相对链接对仓库根目录是对的。正文由 Loom 维护，其他人不改（[RULES](./RULES.md) N-10）。
+> - 来源：Loom 的视觉与交互规格草案 v0.2（上传附件）。本说明之后的正文为 Loom v0.2 加走查修正。本次没有需要改的链接或格式：正文指向 [docs/design-principles.md](./docs/design-principles.md)，相对链接对仓库根目录是对的。正文由 Loom 维护，其他人不改（[RULES](./RULES.md) N-10）。
 > - 分工：界面细节以正文为准；需求、验收、里程碑以 [PRD](./PRD.md) 为准；切片、seam、外发同意的状态转移以 [ARCHITECTURE](./ARCHITECTURE.md) 为准。
 > - DS-01–DS-26 与 PRD 验收的对照表在 [PRD §6.3](./PRD.md#63-视觉与交互验收对照)。PRD 里对应的 AC 回引本文件的 DS 编号。
-> - 正文仍保留原写法。下面这些差异以规格为准，不改正文：
->   1. **G17**：DS-20 写「UI PR 不改 core 文件（G17）」。G17 已删除（Wisdom 2026-10-30 19:57）。只改 UI 的 PR 仍然 core 改动为 0 行（PRD AC-21）；同一切片的 UI 与 core 可以在一个 PR 里，seam 的类型变更先合入（RULES §8、ARCHITECTURE §13）。
->   2. **从未成功的译文文案**：§4.1 `never_succeeded` 的状态行是「未能翻译 · 重试」。PRD AC-03、AC-56 的验收文案是原文 +「翻译未通过校验」+「重译」。验收断言以 AC-56 为准。`failureKind` 的短句同样以 AC-56（校验未通过 / 网络 / 模型错误）为准；正文里较长的说法是界面草案。`previous_with_failure` 的「重译未成功，仍显示上一版 · 重试」与 AC-56、DS-13 一致。
->   3. **询问粒度**：§6 仍写「待核对」是每次请求还是每个服务商首次。Wisdom 在本任务中确认：仍按服务商问一次，新增能力再问一次，不是每一次请求都问（PRD §3.3、AC-61 ⑦a、⑦b）。
->   4. **重新打开开关**：附注第 2 条说 PRD 仍标「待 Wisdom 确认」。该项已由 Wisdom 2026-10-30 20:57 确认保留（PRD AC-61 ⑦g）。
->   5. **seam**：§4.2、§4.3 与附注写 `settings.onEgressConsentRequired`、`settings.withdrawEgressConsent` 尚无定义。二者已写入 ARCHITECTURE §7.0 与 PRD §3.3 / AC-61，只有类型、没有实现。正文载荷里的 `providerId` 在契约中名为 `vendorId`（与 `EgressCheck` 相同）。`answerEgressConsent` 的 `granted` 为 `boolean | null`：`true` / `false` 即正文的允许 / 不允许，`null` 为未作答。
->   6. **公式裁图参考字号**：token `--oi-reader-formula-ref-size` 写 20（待审批）。ARCHITECTURE 的 `crop-geometry.ts` 仍写 v1 的 18px。DS-14 只要求显示尺寸不随正文字号变化，与 PRD 的 AC 没有数字冲突。18 与 20 本 PR 不改架构句子。
->   7. **人日**：§3.2a 的「+1 人日」是 Loom 的粗估，不进 PRD / ARCHITECTURE。
+> - 正文已按 Loom 2026-10-30 对 PR #9 @ a6830bf 的走查修正（Loom 走查记录 PR9-a6830bf-LOOM.md：公式裁图参考字号 18px、DS-20 不再引用 G17、`never_succeeded` 文案对齐 AC-56、外发同意的 `vendorId` / `granted: null` / 撤回与开关文案对齐 ARCHITECTURE §7.0 第 6 条、删除已解决的「待核对」与附注）。剩余说明：
+>   1. **seam**：`settings.onEgressConsentRequired`、`settings.withdrawEgressConsent` 已写入 ARCHITECTURE §7.0 与 PRD §3.3 / AC-61，只有类型、没有实现；正文已改用契约字段名。
+>   2. **人日**：§3.2a 的「+1 人日」是 Loom 的粗估，不进 PRD / ARCHITECTURE。
 >
 > 未作答（Esc、关闭弹窗、退出应用）下次再问、每个已同意的服务商可撤回、开关默认开且关闭后不再弹任何外发确认，已按 §6 的 21:26 决定写入 PRD 与 ARCHITECTURE。
 
@@ -60,7 +55,7 @@
 | 设置里 AI 连接集中一页（v1「AI 模型」页方案）：一个服务商填一次 Key，各能力只「选用」 | v1 审查发现同一 Key 填两遍是主要痛点；v2 面壁 Key 本来就由 Jev 与引擎 B 共用 |
 | 行内状态 + `aria-live` 代替页底 toast（AUDIT 决策 4）；按钮忙碌态固定最小宽度避免跳宽（DIAG-UI） | 反馈在视线内（P5） |
 | 卡片一种样式：面板底 + 1px 线 + 无阴影（AUDIT 决策 1） | 阴影不传达信息，顺从内容（P1） |
-| 公式裁图固定参考字号，不跟随正文字号滑杆（FORMULA-REF-SIZE） | 公式原图清晰度与可读性优先；v2 中由 `--oi-reader-formula-ref-size` 表达 |
+| 公式裁图固定参考字号 18px，不跟随正文字号滑杆；KaTeX 渲染的公式跟随（FORMULA-REF-SIZE §8，Wisdom 2026-10-24 12:06） | 公式原图清晰度与可读性优先；v2 中由 `--oi-reader-formula-ref-size` 表达 |
 | 容器焦点用 1px 内缩发丝线，小控件用 2px 强焦点环（black-frame SPEC） | 鼠标阅读无框、键盘可见 |
 | 诊断导出放「关于」、行内说明「包含 / 不包含」、不弹预览框 | 低频项放置（原则 §2） |
 
@@ -187,7 +182,7 @@ flowchart TD
 | `--oi-reader-line-height` | 随字号 1.9→1.5（沿用 v1 公式） | 译文行高 |
 | `--oi-reader-measure` | 最大 38em（中文约 38 字） | 译文行宽上限 |
 | `--oi-reader-status-fs` | 12 | 块状态行 |
-| `--oi-reader-formula-ref-size` | 20（固定，不随 `--oi-reader-fs`） | 公式裁图参考字号（v1 FORMULA-REF-SIZE） |
+| `--oi-reader-formula-ref-size` | **18**（固定，不随 Aa / `--oi-reader-fs`；Wisdom 2026-10-24 12:06，FORMULA-REF-SIZE §8；宽行间公式先等比缩到栏宽，下限 13.5，再放不下才横滚） | 公式**裁图**参考字号。arXiv 源码 / 已核验 LaTeX 用 KaTeX 渲染时**跟随** Aa（`--oi-reader-fs`） |
 
 ### 3.5 间距、圆角、阴影、动效、焦点（待审批）
 
@@ -240,7 +235,7 @@ flowchart TD
 | `current` | 当前版本 `MarkdownView` | 无 | 无 | 悬停/聚焦出现：重译、复制、写笔记 |
 | `retranslating` | 上一版 | 无 | 「正在重译…」+ 小型指示 | 重译按钮禁用（`aria-disabled`） |
 | `previous_with_failure` | **上一版（保留）** | **2px `--oi-reader-warn` 左边线** | 「重译未成功，仍显示上一版 · 重试」；「重试」是文字按钮，可聚焦，焦点环 `--oi-reader-focus`；悬停/聚焦状态行显示失败原因（`failureKind` 的文案映射：`check_failed`「公式或数字核对未通过」、`network`「网络或超时」、`model_error`「服务商返回错误」） | 重试 |
-| `never_succeeded` | 原文（英文，`--oi-reader-ink-2`） | 2px `--oi-reader-warn` | 「未能翻译 · 重试」+ 原因 | 重试 |
+| `never_succeeded` | 原文（英文，`--oi-reader-ink-2`） | 2px `--oi-reader-warn` | 「翻译未通过校验」+ 文字按钮「重译」（与 PRD AC-56 / AC-03 原文一致：「从未成功的块显示原文 +「翻译未通过校验」+「重译」」）；悬停「重译」显示原因 | 重译 |
 | `pending` | 骨架（3 行灰条，reduced-motion 下不闪动） | 无 | 无 | — |
 
   **不使用 toast，不弹对话框**（US-28）。失败原因文案映射是展示层（允许在 UI），但「是否失败、显示哪一版」只来自 `display`。
@@ -275,11 +270,10 @@ flowchart TD
   - 第 1 组「数据外发」：
     - 行「外发前询问」— `Switch`。**默认：开**（由 core 保证，UI 不写默认值）。
       - **(a) 开关对外发的作用**：**开** = 外发前要确认——任何服务商第一次收到数据前、以及已同意的服务商新增一项能力前，都会弹出外发同意对话框，用户同意后才发送；**关** = 不再弹出任何外发确认，数据照常发送。行内说明文案：「开：发送数据前先问你。关：不再询问，直接发送。」
-      - **(b) 拨动开关本身是否要确认**：**从开改为关**时弹一次确认对话框（因为降低保护）；**从关改为开**不需要确认，立即生效。确认框标题「关闭外发前询问？」正文「关闭后，发送数据前不再询问你。你仍可在下方「数据去向」查看和撤回。」按钮：次「保持开启」（默认焦点）、危险「关闭询问」。取消则开关保持「开」。调用 `setEgressPromptEnabled`。
+      - **(b) 拨动开关本身是否要确认**：**从开改为关**时弹一次确认对话框（因为降低保护）；**从关改为开**不需要确认，立即生效。确认框标题「关闭外发前询问？」正文「关闭后，发送数据前不再询问你；此前选了「不允许」或还没同意的功能也会照常发送。你仍可在下方「数据去向」查看。」按钮：次「保持开启」（默认焦点）、危险「关闭询问」。取消则开关保持「开」。调用 `setEgressPromptEnabled`。
       - 注（Loom 建议）：(b) 中「关时确认一次、开时不确认」是 Loom 的建议，Wisdom 21:26 保留此做法。
-      - 核对说明：v0.1 的说明文字为「某个服务商第一次收到数据前先问你。关闭后不再询问」，方向本身没有反（开 = 询问）。但「第一次」一词容易误读为「只问一次就永不再问」，现改为 (a) 的写法。另：PRD §3.3 / AC-61 ⑦ 规定的询问粒度是「每个服务商一次 + 新增能力追加一次」，不是「每一次请求都问」；(a) 按 PRD 写。若 Forge 所说的「every egress shows a confirm」指的是每次请求都问，那与 PRD 冲突，需要 Wisdom 另行决定。
   - 第 2 组「数据去向」（`listEgressDestinations`，开关任何状态都显示）：每个服务商一项：名称；下列能力，每项「发送内容」（如「区域裁图与候选文本」「我们渲染的页面图」「待翻译文本」「问答上下文」）+ 状态徽标「已同意 / 询问已关闭 / 已拒绝」（文字徽标，不只靠颜色）。固定说明一行「不会上传原 PDF 文件」。空态：「还没有服务商收到过数据」。
-  - **撤回同意**（Wisdom 21:26）：「数据去向」每个状态为「已同意」的服务商行，右侧有危险类文字按钮「撤回同意」（不放在主按钮位置；危险类放置，原则 §2）。点击弹确认对话框：标题「撤回对 {服务商} 的同意？」正文列出受影响能力，并说明「撤回后这些功能不再向 {服务商} 发送数据，会按无法使用处理；之后需要时会重新询问你（询问开关为开时）」。按钮：次「取消」（默认焦点）、危险「撤回同意」。确认后状态行 `role=status` 显示「已撤回」。撤回的规则（记录状态、后续是否再问、正在进行的请求如何处理）全部在 core。**依赖**：需要 core 提供撤回命令（如 `settings.withdrawEgressConsent({ providerId })`），PRD/ARCHITECTURE 尚无，随 Forge 的 seam PR 一并补。
+  - **撤回同意**（Wisdom 21:26）：「数据去向」中徽标为「已同意」的服务商行（开关为开时才会出现该徽标），右侧有危险类文字按钮「撤回同意」（不放在主按钮位置；危险类放置，原则 §2）。开关为关时徽标为「询问已关闭」，不显示此按钮。点击弹确认对话框：标题「撤回对 {服务商} 的同意？」正文列出受影响能力，并说明「撤回后，这些功能下次要向 {服务商} 发送数据前会重新询问你；在你重新同意之前不会发送。」按钮：次「取消」（默认焦点）、危险「撤回同意」。调用 `settings.withdrawEgressConsent({ vendorId })`；成功后状态行 `role=status` 显示「已撤回」；返回 `consent_not_granted` 时状态行说明「该服务商没有已同意的记录」。撤回只清除已同意记录、不记为已拒绝，在途请求不取消——规则全部在 core（ARCHITECTURE §7.0 第 6 条）。
 - **AI 服务 / 模型来源页**：每个能力一行 `Segmented`「API / 本地」；「本地」旁显示 core 给的可行性标注（「达到官方要求 / 不在官方要求内 / 未评估」）；Key 只显示「已设置 / 未设置」（AC-59 ⑤），`SecretField` 不回显。
 - **空态**：未配置任何服务 → AI 服务页顶部 `EmptyState`「填一个 API Key 就能开始翻译和评估」+ 主按钮「添加服务商」。
 - **错态**：测试连接失败 → 行内 `StatusLine` 错误 + 原因（`auth`「Key 无效」、`quota`「额度不足」、网络）；保存失败回滚控件并说明。
@@ -291,7 +285,7 @@ flowchart TD
 ### 4.3 首次外发同意对话框（按服务商）
 
 - **目的**：在数据第一次发给某个服务商前，让用户清楚「发给谁、发什么、不发什么」并作决定。
-- **触发**：只由 core 判定（`egress-consent.ts`），经事件 `settings.onEgressConsentRequired` 通知 UI，载荷拟为 `{ requestId, providerId, providerName, capabilities: { id, name, sends: SendKind[] }[], isAddition: boolean }`。**依赖**：该事件由 Forge 另开 seam PR 定义（Wisdom 21:26）；合入前本屏只做结构，载荷以 PR 为准。
+- **触发**：只由 core 判定（`egress-consent.ts`），经事件 `settings.onEgressConsentRequired` 通知 UI，载荷为 `EgressConsentRequired`（ARCHITECTURE §7.0 第 6 条，以契约为准；服务商标识字段名是 `vendorId`）。同一服务商已有未结束的询问时 core 不发第二条，UI 不做去重判断。
 - **布局**：模态 `Dialog`（宽 480，待审批）。
   1. 标题：首次「允许向 {服务商} 发送数据？」；追加告知「{服务商} 还需要接收以下数据」。
   2. 正文：一句「以下功能会把数据发送到 {服务商}：」
@@ -300,7 +294,7 @@ flowchart TD
   5. 说明链接（次）：「可以在设置 › 隐私与数据 查看或关闭询问」。
   6. 操作：主「允许」，次「不允许」。按平台排序（D4）。
 - **默认焦点**：「不允许」（Wisdom 21:26 决定；危险类：外发数据，原则 §2）。误按 Enter 不会外发。
-- **行为**：「允许」/「不允许」调用 `answerEgressConsent({ requestId, granted })`。Esc、关闭按钮或应用退出 = **未作答**：本次请求为 0、该能力就地降级，**下次需要发送时再问**（Wisdom 21:26）；只有点「不允许」才记为「已拒绝」。以上判定全部在 core，UI 只回传用户的动作。
+- **行为**：「允许」= `answerEgressConsent({ requestId, granted: true })`；「不允许」= `granted: false`（记为已拒绝）；Esc、关闭按钮 = `granted: null`（**未作答**：本次请求为 0、该能力就地降级，**下次需要发送时再问**，Wisdom 21:26）；应用退出来不及回传时 core 视同 `null`。以上判定全部在 core，UI 只回传用户的动作。
 - **空态**：无（无能力则 core 不触发）。**错态**：提交失败 → 对话框内 `role=alert` 错误行 + 保持打开。**加载**：主按钮加载态。
 - **拒绝后**：对话框关闭；相关能力所在位置显示 `InlineNotice`（降级提示 + 「改选本地」「去设置」）；不弹第二个对话框。
 - **Win / mac 差异**：按钮顺序（D4）；两平台均为窗口内居中模态（设置是应用内页，不用 mac sheet 以保持一致，待审批）。
@@ -341,7 +335,7 @@ flowchart TD
 | DS-17 | Key 输入框不回显已保存值，只显示「已设置 / 未设置」 | e2e |
 | DS-18 | 界面放大 200% 不丢内容 | 手动 |
 | DS-19 | 所有可点击目标 ≥ 24×24 | 自动（axe target-size） |
-| DS-20 | UI PR 不改 core 文件（G17），组件里无业务条件判断（评审清单） | CI + 评审 |
+| DS-20 | 组件里无业务条件判断（Q3 执行规则 1–3）：依赖方向与 core 测试由 CI G13–G16 检查，「改 UI 不改 core」由评审清单 RULES §5 第 11 条与 §8 交接说明检查（原 G17 已于 2026-10-30 19:57 删除，ARCHITECTURE §13） | CI + 评审 |
 
 ## 6 需要 Wisdom 拍板的事 —— **已决定（Wisdom，2026-10-30 21:26 Asia/Shanghai，经 Forge 转达）**
 
@@ -352,11 +346,11 @@ flowchart TD
 | Q3 同意对话框默认焦点 | **「不允许」**（原方案 A） | §4.3；DS-23 |
 | 同批决定 | 未作答 = 下次再问；设置「隐私与数据」增加每服务商「撤回同意」；阅读主题 3 套；设置为应用内页 | D8、D12、D13；§4.2、§4.3；DS-23–DS-26 |
 
-当前无待拍板事项。待核对一项：「外发前询问」开时是「每个服务商首次 + 新增能力」询问（PRD），还是「每次请求」询问（见 §4.2 核对说明）。
+当前无待拍板事项。「外发前询问」按 PRD：每个服务商问一次、新增能力再问一次（不是每次发送都问）；拨动确认按 Loom 建议（开→关确认一次，关→开不确认）——均已于 PR #9 定稿。
 
-### 附：PRD / ARCHITECTURE 冲突、空白与依赖
+### 附：与 PRD / ARCHITECTURE 的对齐（PR #9 @ a6830bf）
 
-1. **依赖**：外发同意触发事件 `settings.onEgressConsentRequired` 由 Forge 另开 seam PR（Wisdom 21:26）；撤回命令（如 `settings.withdrawEgressConsent`）同样需要 seam，建议并入该 PR。
-2. **重新打开「外发前询问」后的语义**在 PRD 标「待 Wisdom 确认」——UI 不受影响（只显示 core 给的状态）。
-3. 「未作答 = 下次再问」「撤回同意」需要回写 PRD §3.3 / AC-61 与 ARCHITECTURE §7.0 第 6 条（不在本稿范围，提示 Forge）。
-4. `--oi-reader-warn` 与状态行 token 在 ARCHITECTURE §8.1.1 写「由 Loom 定义」——本稿 §3.3、§3.4 已给出。
+1. 外发同意事件 `settings.onEgressConsentRequired`、撤回命令 `settings.withdrawEgressConsent`、`granted: boolean | null`、`vendorId` 已在 ARCHITECTURE §7.0 第 6 条定义（只有类型）；本稿 §4.2、§4.3 已按契约写。
+2. 重新打开「外发前询问」后的语义已由 Wisdom 2026-10-30 20:57 确认（PRD AC-61 ⑦g）；UI 只显示 core 给的徽标。
+3. `--oi-reader-warn` 与状态行 token 在 ARCHITECTURE §8.1.1 写「由 Loom 定义」——本稿 §3.3、§3.4 已给出。
+4. 公式裁图参考字号 18px 与 ARCHITECTURE `formula/domain/crop-geometry.ts`（18px 参考字号）一致。
