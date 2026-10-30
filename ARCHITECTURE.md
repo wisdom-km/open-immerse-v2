@@ -1,6 +1,6 @@
 # open-immerse v2 架构规格（ARCHITECTURE）
 
-状态：v0.2，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。
+状态：v0.3，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。v0.3 并入 Wisdom 2026-10-30 17:32 批准的 Markdown 阅读方案（Loom，[docs/design/md-reader.md](./docs/design/md-reader.md)）：新增 `markdown` 切片（§4.5），译文改为按区块存 Markdown（§8.1.1）。
 同级规格：[PRD.md](./PRD.md)（做什么）、[RULES.md](./RULES.md)（怎么协作）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；本文只规定 UI 代码放在哪、依赖谁，不规定长什么样。
 本文与 `docs/architecture/0x_*_草案.md` 冲突时以本文为准，差异逐条列在 [docs/v2-gap-and-changes.md](./docs/v2-gap-and-changes.md)。本文中的目录、接口、协议均为**拟议设计**，M1 起按本文落地；落地前不代表已存在。
 
@@ -121,9 +121,9 @@ flowchart LR
 6. **小而深**：每个切片一个 `index.ts`、一个 `pure.ts`，导出清单登记在切片 `README.md`。新增或修改导出按执行规则 3 处理：先停下说明缺什么，再单独提 seam PR（契约先行，RULES §3），合入后再做 UI。
 7. **renderer 只用两种 seam**：`pure.ts`（同进程纯函数，例如滚动跟随的几何计算）与 `window.oi`（跨进程命令）。renderer 不直接调用 application 用例。
 
-### 2.5 与 5 层、15 个切片的映射
+### 2.5 与 5 层、16 个切片的映射
 
-Q3 的要求是映射到 5 层与 14 个切片；Q4 决定新增 `formula-source` 切片后共 15 个，`writing` 为预留位（§4.4，v2 不建）。下表「core」列给出执行规则 1 的五类规则所在文件；CI 规则用通配路径覆盖全部切片，新增切片只要遵守 §3.1 模板即自动受约束。
+Q3 的要求是映射到 5 层与 14 个切片；Q4 决定新增 `formula-source` 切片，Markdown 阅读方案（Wisdom 2026-10-30 17:32）新增 `markdown` 切片，共 16 个；`writing` 为预留位（§4.4，v2 不建）。下表「core」列给出执行规则 1 的五类规则所在文件；CI 规则用通配路径覆盖全部切片，新增切片只要遵守 §3.1 模板即自动受约束。
 
 | 切片 | core：规则所在（校验 / 计价 / 状态转移 / 权限 / 失败条件） | seam | UI adapter | shell 适配器 |
 | --- | --- | --- | --- | --- |
@@ -135,10 +135,11 @@ Q3 的要求是映射到 5 层与 14 个切片；Q4 决定新增 `formula-source
 | `formula-source` | `arxiv-id`（校验）、`fetch-policy`（状态转移：限流与冷却）、`archive-limits`、`align-policy`（失败条件） | `resolveArxivSource`、`alignSource` | 无（来源标注由 reader 显示，开关在 settings） | `arxiv-http-client`、`sqlite-source-cache`、`node-gunzip` |
 | `quality` | `evaluation-status`（状态转移：verdict 规范化）、`scoring-coverage`（失败条件：未评分不得算已核验，Q1）、`low-score-routing`、`deployment-recommendation`（Q9） | `evaluateRegions`；`pure.ts`：`recommendEvaluatorDeployment` | 无（设置页属于 settings） | `worker-quality-evaluator` |
 | `repair` | `repair-plan`（权限：是否允许补救）、`budget-ledger`（计价）、`repair-limits`（失败条件） | `runRepair`、`getBudgetStatus` | 无（入口在 reader） | `openai-compatible-multimodal` |
-| `translation` | `placeholder`、`integrity-check`（校验、失败条件）、`cache-key` | `translatePage`、`polishTranslation` | 无（译文由 reader 渲染） | `providers/<vendor>` |
-| `reader` | `pairing`、`scroll-sync`、`viewport-mapping`（纯几何，经 `pure.ts` 在 renderer 运行） | `pure.ts` | `pdf-page-canvas`、`readout-pane`、`formula-view`、`selection-toolbar` | 无（数据经 `window.oi`） |
-| `notes` | `anchor-match`（失败条件：无法唯一重定位）、`note`（校验）、`markdown-export` | `createNote`、`reanchorNotes`、`exportNotes`、`getNotesByIds`（§4.4 预留） | `ui/notes-panel.tsx` | `sqlite-notes-repository` |
-| `qa` | `context-selection`、`citation`（失败条件：引用必须可定位） | `ask` | `ui/ask-panel.tsx` | `chat-provider` 适配器 |
+| `translation` | `placeholder`、`integrity-check`（校验、失败条件）、`markdown-restore`（校验：占位还原后公式与片段表一致）、`block-status`（状态转移：success / failed / retranslating）、`adopted-version`（采用哪个版本）、`cache-key` | `translatePage`、`retranslateBlock`、`getBlocks`、`polishTranslation`、事件 `onBlockChanged` | 无（译文由 reader 渲染） | `providers/<vendor>`、`sqlite-translation-store` |
+| `markdown` | `html-policy`（校验：原始 HTML 一律屏蔽）、`math-syntax`（失败条件：不可信命令、超长公式）、`link-resolve`（失败条件：not_found / ambiguous / outside_vault）、`vault-path-policy`（权限：越界、符号链接）、`vault-limits`（失败条件：文件数、单文件大小）、`watch-debounce`（状态转移）、`nav-history`（状态转移）、`write-capability`（权限：v2 恒为只读） | `render`、`openFile`、`openVault`、`readFile`、`listRecent`、`close`、`getCapabilities`、事件 `onFileEvent`；`pure.ts`：`renderMarkdown`、`navigate` | `ui/md-file-page.tsx`、`ui/vault-page.tsx`、`file-tree`、`outline-panel`、`reload-toast`、`editor-slot`；共享渲染组件在 `ui-kit/src/markdown/`（§4.5.4） | `node-md-file-reader`、`node-vault-scanner`、`node-file-watcher`、`sqlite-md-recent-store`、`vault-asset-registrar` |
+| `reader` | `pairing`、`scroll-sync`、`viewport-mapping`（纯几何，经 `pure.ts` 在 renderer 运行） | `pure.ts` | `pdf-page-canvas`、`readout-pane`（译文块交给 ui-kit 的 `MarkdownView`）、`formula-view`、`selection-toolbar` | 无（数据经 `window.oi`） |
+| `notes` | `anchor-match`（失败条件：无法唯一重定位）、`note`（校验）、`markdown-export` | `createNote`、`reanchorNotes`、`exportNotes`、`getNotesByIds`（§4.4 预留）；读笔记时随结果返回正文的 `MdDocument` | `ui/notes-panel.tsx`（正文交给 `MarkdownView`） | `sqlite-notes-repository` |
+| `qa` | `context-selection`、`citation`（失败条件：引用必须可定位） | `ask`；回答事件带已闭合块的 `MdBlock[]` 与未闭合尾部文本（§4.5.4） | `ui/ask-panel.tsx`（回答交给 `MarkdownView`） | `chat-provider` 适配器 |
 | `voice` | `speech-script`、`audio-segment`（校验：段落必须带锚点） | `generateNarration`、`transcribeNote` | `ui/narration-player.tsx`、`ui/voice-note-recorder.tsx` | TTS / ASR 适配器 |
 | `settings` | `provider-config-validate`（校验）、`budget-settings`（计价上限）、`translation-fallback`（权限，Q11）、`evaluator-deployment`（Q9） | `saveProvider`、`testConnection`、`setEvaluatorDeployment` | `ui/settings-pages/*` | `safe-storage-secret-store` |
 | `diagnostics` | `redaction-rules`（校验）、`retention`（失败条件：超限删除） | `exportBundle` | `ui/diagnostics-page.tsx` | `file-logger` |
@@ -148,7 +149,7 @@ Q3 的要求是映射到 5 层与 14 个切片；Q4 决定新增 `formula-source
 
 ```ts
 // packages/features/translation/src/index.ts —— 拟议 seam（用例 seam）
-import type { DocumentId, PageRevisionId, JobId, Result } from '@oi/contracts';
+import type { BlockId, DocumentId, PageRevisionId, JobId, Result } from '@oi/contracts';
 
 export type TranslatePageInput = Readonly<{
   documentId: DocumentId;
@@ -167,7 +168,14 @@ export type TranslatePageError =
 
 export interface TranslationSeam {
   translatePage(input: TranslatePageInput): Promise<Result<TranslatePageAccepted, TranslatePageError>>;
+  // 译文区块（§8.1.1）：每块带 core 已解析好的 MdDocument，reader 不再解析 Markdown
+  getBlocks(input: Readonly<{ documentId: DocumentId; revisionId: PageRevisionId; sourceBlockIds?: readonly BlockId[] }>):
+    Promise<Result<readonly TranslationBlockView[], GetBlocksError>>;
+  retranslateBlock(input: Readonly<{ documentId: DocumentId; revisionId: PageRevisionId; sourceBlockId: BlockId }>):
+    Promise<Result<{ jobId: JobId }, TranslatePageError>>;
 }
+// TranslationBlockView = { block: StoredTranslationBlock; doc: MdDocument | null }（类型在 contracts，§4.1）
+// GetBlocksError = { code: 'revision_stale'; currentRevisionId: PageRevisionId }
 export declare function createTranslationSeam(deps: TranslationDeps): TranslationSeam; // deps 只含端口，由装配根注入
 ```
 
@@ -215,6 +223,7 @@ open-immerse-v2/
 ├─ DESIGN.md                          # 待 Loom 产出
 ├─ docs/
 │  ├─ design-principles.md            # 待 Loom 产出
+│  ├─ design/                         # Loom 的功能级设计文档（md-reader.md、wireframe-vault.svg）
 │  ├─ v1-review.md  v2-gap-and-changes.md
 │  ├─ adr/                            # 架构决策记录：NNNN-标题.md
 │  ├─ acceptance/                     # AC / QM 到测试用例的映射
@@ -230,11 +239,11 @@ open-immerse-v2/
 │  ├─ kernel/                         # 最小运行时无关原语：Result、AppError、Logger 接口、Clock、Id
 │  ├─ platform-node/                  # Node 侧基础设施：SQLite、文件资产、safeStorage、HTTP 客户端、日志落盘
 │  ├─ worker-client/                  # oi-parse/1 的 TS 客户端（本机 / 远程共用）
-│  ├─ ui-kit/                         # 设计令牌与基础组件（按 Loom 的 DESIGN.md 实现）
+│  ├─ ui-kit/                         # 设计令牌与基础组件（按 Loom 的 DESIGN.md 实现）；markdown/ 为共享 MarkdownView（§4.5.4）
 │  └─ features/                       # 按功能切片，见 §4
 │     ├─ library/  document/  parsing/  jobs/
 │     ├─ formula/  formula-source/  quality/  repair/  translation/
-│     ├─ reader/  notes/  qa/  voice/
+│     ├─ markdown/  reader/  notes/  qa/  voice/
 │     └─ settings/  diagnostics/       # writing/ 为预留位，v2 不建目录（§4.4）
 ├─ workers/
 │  └─ parser/                         # Python worker（uv 项目），见 §10.3
@@ -285,7 +294,9 @@ packages/features/<name>/
 | `contracts/src/document.ts` | `ContentBlock`、`AcceptedPageRevision`、`SourceAudit` |
 | `contracts/src/formula.ts` | `FormulaCandidate`、`FormulaDecision` |
 | `contracts/src/evaluation.ts` | `EvaluationResult`（scored / error / unavailable / not-run） |
-| `contracts/src/translation.ts` | `TranslationRecord`、受保护片段表 |
+| `contracts/src/translation.ts` | `StoredTranslationBlock`（译文区块记录，取代草案 02 的 `TranslationRecord`，§8.1.1）、`TranslationBlockView`、受保护片段表 |
+| `contracts/src/markdown.ts` | `MdDocument`、`MdBlock`、`MdInline`、`MdHeading`、`MdImageRef`、`ResolvedLink`、`VaultTree`、`MdFileEvent`、`MdCapabilities`、`MdError`；预留的 `WriteFileInput` / `WriteFileResult` / `MdEdit`（§4.5.7）。形状以 [Loom 方案](./docs/design/md-reader.md) §3.3 为起点 |
+| `contracts/src/latex-policy.ts` | KaTeX 安全选项的**唯一一份**常量（`KATEX_SAFE_OPTIONS`）、单个公式字符上限、不可信命令清单；只有数据，不 import `katex`。`formula`、`markdown`、`ui-kit` 都从这里读（§4.5.5） |
 | `contracts/src/anchor.ts` | `ContentAnchor`（笔记、问答、语音共用；写作预留，§4.4） |
 | `contracts/src/citation.ts` | `Citation`（锚点 + 文献引用元数据：标题、作者、年份、DOI / arXiv 编号与版本、页、块）；问答与笔记导出共用，写作预留 |
 | `contracts/src/jobs.ts` | 任务种类、状态、事件 |
@@ -308,6 +319,9 @@ packages/features/<name>/
 | `worker-client/src/client.ts` | 提交、查询、取消、取产物 |
 | `worker-client/src/sse.ts` | SSE 订阅与断线续传 |
 | `worker-client/src/supervisor-protocol.ts` | 健康检查、能力协商、版本检查 |
+| `ui-kit/src/markdown/markdown-view.tsx` | 遍历 `MdDocument` 的块并分派给下面的组件；不解析字符串、不做业务判断（§4.5.4） |
+| `ui-kit/src/markdown/math.tsx` | `MathInline` / `MathBlock`：用 `contracts` 的 `KATEX_SAFE_OPTIONS` 调 KaTeX；抛错时显示原始 LaTeX + 错误标记；只挂载 KaTeX 生成的 DOM |
+| `ui-kit/src/markdown/code-block.tsx`、`md-image.tsx`、`md-link.tsx`、`blocked-html.tsx`、`md-table.tsx` | 各渲染一种节点；`md-link` 只把 `ResolvedLink` 回调给宿主，不自己导航 |
 
 `kernel` 有文件白名单；新增文件需要 ADR。**不存在** `utils`、`helpers`、`common`、`shared/state` 这类目录。
 
@@ -323,10 +337,11 @@ packages/features/<name>/
 | `formula-source` | arXiv 源码校准公式：编号与版本识别、源码下载缓存、TeX 解析、与版面区域对齐、对齐失败回落（Q4，§7.6） | `domain/arxiv-id.ts` · `domain/fetch-policy.ts`（间隔、超时、冷却）· `domain/archive-limits.ts`（解包安全上限）· `domain/tar-reader.ts`（纯 tar 读取，gunzip 经端口注入）· `domain/tex-units.ts`（TeX → 公式单元）· `domain/macro-table.ts`（导言区宏 → KaTeX 宏，带展开上限）· `domain/source-align.ts`（词序列对齐与覆盖率）· `domain/align-policy.ts`（逐公式核对与回落判定）· `application/use-cases/resolve-arxiv-source.ts` · `application/use-cases/align-source.ts` · `application/ports/arxiv-source-client.ts` · `application/ports/source-cache.ts` · `application/ports/gunzip.ts` · `adapters/arxiv-http-client.ts` · `adapters/node-gunzip.ts` · `adapters/sqlite-source-cache.ts` |
 | `quality` | 质量评估端口、结果规范化、全路径评分不变式、部署推荐 | `domain/evaluation-status.ts`（verdict → 规范状态）· `domain/scoring-coverage.ts`（每个识别候选必须有评估记录，Q1）· `domain/low-score-routing.ts`（阈值按类别与 `evaluatorVersion`）· `domain/deployment-recommendation.ts`（本机 / 远程推荐，Q9）· `application/ports/quality-evaluator.ts` · `application/use-cases/evaluate-regions.ts` · `application/use-cases/reevaluate-pending.ts`（评分服务恢复后补评）· `adapters/worker-quality-evaluator.ts`（唯一实现：经 worker-client 提交 `evaluate` 作业） |
 | `repair` | 低分 / 不确定区域的多模态补救、预算账本 | `domain/repair-plan.ts` · `domain/budget-ledger.ts`（预留 / 结算 / 上限）· `domain/repair-limits.ts`（次数、并发、超时上限）· `application/use-cases/run-repair.ts` · `application/ports/multimodal-provider.ts` · `adapters/openai-compatible-multimodal.ts` |
-| `translation` | 自然语言翻译、占位保护、完整性校验、润色、缓存 | `domain/placeholder.ts`（抽取与恢复）· `domain/integrity-check.ts`（公式 / 数字 / 引用）· `domain/cache-key.ts` · `domain/segmenter.ts` · `application/use-cases/translate-page.ts` · `application/use-cases/polish-translation.ts` · `application/ports/translation-provider.ts` · `adapters/providers/<vendor>.ts`（一家一个文件） |
-| `reader` | PDF 显示、页面虚拟化、对照跳转、裁图显示（仅 renderer） | `domain/pairing.ts`（块配对与跟随）· `domain/scroll-sync.ts` · `domain/viewport-mapping.ts` · `ui/pdf-page-canvas.tsx` · `ui/page-virtualizer.ts` · `ui/readout-pane.tsx` · `ui/formula-view.tsx` · `ui/selection-toolbar.tsx` · `ui/hooks/use-document-session.ts` |
-| `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `application/use-cases/get-notes-by-ids.ts`（按 ID 批量只读，写作预留，§4.4） · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx` |
-| `qa` | 论文问答、上下文选取、引用 | `domain/context-selection.ts` · `domain/citation.ts` · `application/use-cases/ask.ts` · `application/ports/chat-provider.ts` · `ui/ask-panel.tsx` |
+| `translation` | 自然语言翻译、占位保护、完整性校验、Markdown 还原、译文区块记录（D6，§8.1.1）、润色、缓存 | `domain/placeholder.ts`（抽取与恢复）· `domain/integrity-check.ts`（公式占位 / 数字 / 引用）· `domain/markdown-restore.ts`（占位还原为 `$…$` / `$$…$$`、模型文字中的 `$`、`<`、`[[` 转义、还原后公式与片段表逐个比对）· `domain/block-status.ts`（success / failed / retranslating 状态转移）· `domain/adopted-version.ts`（显示哪个版本）· `domain/cache-key.ts`（§8.1.1 的键组成）· `domain/segmenter.ts` · `application/use-cases/translate-page.ts` · `application/use-cases/retranslate-block.ts` · `application/use-cases/get-blocks.ts`（经 `markdown` 的 seam 解析出 `MdDocument`）· `application/use-cases/polish-translation.ts` · `application/ports/translation-provider.ts` · `application/ports/translation-store.ts` · `adapters/sqlite-translation-store.ts`（表前缀 `tr_`）· `adapters/providers/<vendor>.ts`（一家一个文件） |
+| `markdown` | Markdown 解析为块级 AST、公式与 HTML 安全规则、单个 `.md` 与文件夹（笔记库）只读阅读、wikilink 与相对链接解析、文件监视、编辑接口预留（§4.5） | 文件清单见 §4.5.2 |
+| `reader` | PDF 显示、页面虚拟化、对照跳转、裁图显示（仅 renderer） | `domain/pairing.ts`（块配对与跟随；译文块按 `sourceBlockId` 对齐）· `domain/scroll-sync.ts` · `domain/viewport-mapping.ts` · `ui/pdf-page-canvas.tsx` · `ui/page-virtualizer.ts` · `ui/readout-pane.tsx`（每个译文块一个 ui-kit `MarkdownView`，按块状态显示）· `ui/formula-view.tsx` · `ui/selection-toolbar.tsx` · `ui/hooks/use-document-session.ts` |
+| `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `application/use-cases/get-notes-by-ids.ts`（按 ID 批量只读，写作预留，§4.4） · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx`（正文用 ui-kit `MarkdownView`） |
+| `qa` | 论文问答、上下文选取、引用 | `domain/context-selection.ts` · `domain/citation.ts` · `application/use-cases/ask.ts`（流式回答经 `markdown` 的 seam 切分为已闭合块与未闭合尾部）· `application/ports/chat-provider.ts` · `ui/ask-panel.tsx`（回答用 ui-kit `MarkdownView`） |
 | `voice` | TTS 朗读 / 讲解、ASR 语音笔记 | `domain/speech-script.ts` · `domain/audio-segment.ts` · `application/ports/tts-port.ts` · `application/ports/asr-port.ts` · `application/use-cases/generate-narration.ts` · `application/use-cases/transcribe-note.ts` |
 | `settings` | 非密钥设置、provider 配置、密钥引用绑定、预算设置 | `domain/provider-config-validate.ts` · `domain/budget-settings.ts` · `domain/translation-fallback.ts`（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/evaluator-deployment.ts`（Jev 本机 / 远程选择与推荐值的关系，Q9）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
 | `diagnostics` | 诊断事件记录、诊断包导出、脱敏 | `domain/redaction-rules.ts`（自 v1 移植）· `domain/retention.ts`（保留天数与体积上限）· `application/use-cases/export-bundle.ts` · `ui/diagnostics-page.tsx` |
@@ -353,9 +368,14 @@ flowchart TD
   translation --> document
   translation --> formula
   translation --> jobs
+  translation --> markdown
+  markdown --> library
+  markdown --> jobs
   notes --> document
+  notes --> markdown
   qa --> document
   qa --> notes
+  qa --> markdown
   voice --> document
   voice --> notes
   voice --> jobs
@@ -370,7 +390,8 @@ flowchart TD
 - 箭头表示「可以 import 对方的 `index.ts`」。图上没有的边一律禁止，CI 用 dependency-cruiser 按此矩阵检查。虚线是 `writing` 的预留边（§4.4），v2 不进 dependency-cruiser 矩阵。
 - `formula-source` 依赖 `formula` 的公开核对函数（字符集、编号、可渲染性），而不是反过来：`formula` 只从 `document` 读取候选，不知道候选来自 arXiv 还是引擎。
 - `document` 与 `jobs` 不依赖任何其他切片。`settings`、`diagnostics` 不被业务切片 import：业务切片通过端口拿到配置与日志器，由装配根注入。
-- `reader` 只有 ui 与纯 domain，不出现在图中：它通过 `window.oi` 调用其他切片的 IPC 命令，不 import 其他切片。
+- `markdown`（§4.5）被 `translation`、`notes`、`qa` 依赖：它们在 core 里调用 `markdown` 的 seam 把正文解析成 `MdDocument`，随自己的 seam 结果一起返回，UI 拿到的已经是解析好的普通数据。`markdown` 依赖 `library`（只用于「链接指向库内 PDF」的匹配，Markdown 文件本身不进文献库，D5）与 `jobs`（大文件夹扫描可取消）；它不依赖 `document`、`formula`：KaTeX 安全选项来自 `contracts/src/latex-policy.ts`，不经 `formula` 的 seam。
+- `reader` 只有 ui 与纯 domain，不出现在图中：它通过 `window.oi` 调用其他切片的 IPC 命令，不 import 其他切片。译文块的 `MdDocument` 由 `translation.getBlocks` 返回，reader 不 import `markdown`。
 - 新增一条边需要 ADR，并在同一个 PR 里更新本图与 dependency-cruiser 配置。
 
 ### 4.4 预留切片 `writing`（Q5）
@@ -422,6 +443,132 @@ export interface WritingSeam {
 3. 引用核对复用 `qa/domain/citation.ts`（经 `qa` 的 seam 导出），写作不复制规则。
 4. 导出以 `notes/domain/markdown-export.ts` 的引用格式为基础；BibTeX 在写作阶段新增。
 5. 依赖方向：`writing` 只读依赖 `notes`、`library`、`document`、`qa` 的 seam；任何切片不得依赖 `writing`（§4.3 虚线）。
+
+### 4.5 Markdown 阅读（`markdown` 切片）
+
+决定：Wisdom 2026-10-30 17:32 批准 Loom 的 Markdown 阅读方案，并入 v2 M0–M8。方案原文（含页面地图、组件、逐屏规格、线框图）在 [docs/design/md-reader.md](./docs/design/md-reader.md)，界面细节以该文为准；本节只规定切片、seam、规则落点、安全与存储。验收是 PRD AC-30–AC-55（对应方案的 MD-01–MD-26），里程碑见 PRD §8。
+
+#### 4.5.1 已定事项与落点
+
+| 方案编号 | 决定 | 本文落点 |
+| --- | --- | --- |
+| D1 | 应用内一个共享渲染组件 `MarkdownView`，笔记、译文、问答回答、`.md` 阅读器四处共用 | `ui-kit/src/markdown/`（§4.1、§4.5.4）；解析在 core，UI 只拿 `MdDocument` |
+| D2 | 公式用 KaTeX，和 `formula` 用**同一份**安全选项；渲染失败显示原始 LaTeX 加错误标记，不留空白 | `contracts/src/latex-policy.ts`（§4.5.5）。方案原文写的是 `throwOnError:false`，规格统一用公式闸门的 `throwOnError:true`，由组件捕获异常后显示原文，用户看到的效果相同 |
+| D3 | `.md` 阅读器只读；文件在外部被改后自动重载，保留滚动位置 | `domain/watch-debounce.ts`、事件 `markdown.onFileEvent` |
+| D4 | 文件夹即笔记库：文件树、`[[wikilink]]`、`![[img]]`、`[[x#标题]]`；链接在 core 解析好再给 UI | `domain/link-resolve.ts`、`domain/vault-path-policy.ts` |
+| D5 | `.md` 不进 PDF 文献库，是独立入口，只能链接到库内 PDF | 边 `markdown → library`（只读查询）；`lib_` 表不变 |
+| D6 | 译文按原文区块结构化存储，正文字段是 Markdown；整篇导出延后 | §8.1.1；`translation` 切片（§4.2） |
+| D7 | v2 只读，但预留编辑接口 | §4.5.7 |
+
+#### 4.5.2 切片文件
+
+结构同 §3.1 模板。表中每个文件一个职责；单文件仍受 §6 上限约束，解析器因此拆成块级、行内、公式语法、wikilink 语法四个文件。
+
+| 位置 | 文件 | 唯一职责 |
+| --- | --- | --- |
+| domain | `parse/block-parse.ts` | 文本 → `MdBlock[]`，每个节点带源码区间 `src` |
+| domain | `parse/inline-parse.ts` | 行内节点 `MdInline[]` |
+| domain | `parse/math-syntax.ts` | `$…$` / `$$…$$` 的识别：代码块、行内代码、链接目标里的 `$` 不算公式；没有配对的 `$` 或 `$$` 是普通文字；行内公式不跨行。规则移植自 v1 `lib/markdown-render.js:148-396`（[v1 审查](./docs/v1-review.md) §4.21） |
+| domain | `parse/wikilink-syntax.ts` | `[[x]]`、`[[x\|别名]]`、`[[x#标题]]`、`![[img]]` 的语法；只识别，不查目标 |
+| domain | `html-policy.ts` | 原始 HTML（含 `<script>`、`<iframe>`、`on*` 属性）一律变成 `html_blocked` 节点；core 不产生任何 HTML 字符串 |
+| domain | `math-policy.ts` | 按 `latex-policy` 判定：超长或含不可信命令的公式节点标 `blocked`，UI 不调用 KaTeX |
+| domain | `heading-slug.ts` | 标题 ID 生成（同名标题去重），供大纲与 `[[x#标题]]` 使用 |
+| domain | `link-resolve.ts` | 链接解析：wikilink 按文件名匹配，同名多个时取最短路径，并列则 `ambiguous`；相对路径、`#标题` 锚点；`http` / `https` / `mailto` 是外部链接；其他协议一律判失效 |
+| domain | `vault-path-policy.ts` | 越界判定：规范化后不在库根内、绝对路径、真实路径在库外的符号链接 → `outside_vault`；默认忽略 `.git`、`.obsidian`、`node_modules` |
+| domain | `vault-limits.ts` | 文件数确认阈值、单文件大小上限与截断（§4.5.6） |
+| domain | `tree-order.ts` | 文件树排序与显示名（文件名 / 标题）；UI 不排序 |
+| domain | `watch-debounce.ts` | 文件事件去抖、重命名合并、按 `revision` 判断是否需要重载 |
+| domain | `nav-history.ts` | 后退 / 前进栈（纯函数，经 `pure.ts` 给 UI） |
+| domain | `source-span.ts` | 源码区间、`serialize`、`sliceSource`；保证 `serialize(parse(t)) === t`（D7） |
+| domain | `streaming-split.ts` | 流式文本切成「已闭合块 + 未闭合尾部」，未闭合的 `$$` 不当公式（问答，AC-47） |
+| domain | `write-capability.ts` | 写入能力判定：没有注入写入端口时恒为只读，写入请求返回 `write_disabled` |
+| application | `use-cases/open-file.ts`、`open-vault.ts`、`read-file.ts`、`get-vault-tree.ts`、`list-recent.ts`、`close.ts`、`get-capabilities.ts`、`open-external.ts`、`reveal-in-folder.ts`、`write-file.ts` | 每个命令一个用例；`write-file.ts` 在 v2 恒返回 `write_disabled` |
+| application | `ports/md-file-reader.ts`、`vault-scanner.ts`、`file-watcher.ts`、`recent-store.ts`、`asset-registrar.ts`、`path-picker.ts`、`external-opener.ts`、`md-file-writer.ts` | 每个端口一个文件。`path-picker`（系统打开对话框）与 `external-opener`（系统浏览器、文件管理器）由 `apps/desktop/src/main/` 实现并注入，因为 Electron 只能出现在 desktop 包内（G5 `electron-only-in-desktop`）；`md-file-writer` 在 v2 不注入 |
+| adapters | `ipc-handlers.ts`、`node-md-file-reader.ts`、`node-vault-scanner.ts`、`node-file-watcher.ts`、`sqlite-md-recent-store.ts`、`vault-asset-registrar.ts` | 读文件（大小检查、UTF-8 解码）、扫描目录（`lstat`，不跟随指向库外的链接，分批报告进度，可取消）、监视（Node `fs.watch` 或 chokidar，M2 选型）、最近列表（表前缀 `md_`）、把库内图片登记为只读外部资产。**没有**写入适配器 |
+| ui | `md-file-page.tsx`、`vault-page.tsx`、`file-tree.tsx`、`outline-panel.tsx`、`reload-toast.tsx`、`editor-slot.tsx`、`external-link-dialog.tsx`、`hooks/use-vault-session.ts` | 只画 seam 给的数据。`file-tree` 是虚拟列表；`editor-slot` 在 `canWrite:false` 时渲染为空 |
+
+#### 4.5.3 seam
+
+用例 seam（`index.ts`）与跨进程命令（`contracts/src/ipc/markdown.ts`）。数据形状以方案 §3.3 为起点，落在 `contracts/src/markdown.ts`；每条命令返回 `Result`，错误码 `not_found`、`not_markdown`、`too_large`、`outside_vault`、`permission_denied`、`vault_too_big`、`decode_failed`。
+
+| 命令 / 导出 | 输入 → 输出 | core 规则 |
+| --- | --- | --- |
+| `markdown.render` | `{ text, context: 'note' \| 'translation' \| 'answer' }` → `MdDocument` | 解析、HTML 屏蔽、公式抽取与判定；`translation` 上下文按 `oi-md/1` 方言解析（不认 wikilink 与图片，§8.1.1） |
+| `markdown.openFile` | `{}`（main 弹对话框）、`{ recentId }` 或 `{ dropped: true }`（拖入，见下）→ `{ source, doc }` | 扩展名、大小、编码 |
+| `markdown.openVault` | `{}` 或 `{ recentId }`，`confirmLarge?` → `{ vaultId, jobId }` | 扫描是长任务（§2.4 第 3 条）：先计数，超过阈值以 `vault_too_big { approxCount }` 结束，用户确认后带 `confirmLarge:true` 重开；进度与取消走 `jobs` |
+| `markdown.getVaultTree` | `{ vaultId }` → `VaultTree` | 扫描完成后取树；排序、显示名、忽略目录在 core |
+| `markdown.readFile` | `{ source }` → `MdDocument` | 链接解析、越界检查、库内 PDF 匹配（经 `library` 的 seam 按文件名或 SHA-256 查询） |
+| `markdown.listRecent` / `close` / `getCapabilities` | 见方案 §3.3 | `close` 停止监视；`getCapabilities` 在 v2 恒为 `{ canWrite:false }` |
+| `markdown.openExternal` | `{ url }` → `void` | 规格补充：UI 确认后调用；main 再次只放行 `http` / `https` / `mailto`，交给系统浏览器 |
+| `markdown.revealInFolder` | `{ fileId }` → `void` | 规格补充：「在文件管理器中显示」，由 main 执行 |
+| 事件 `markdown.onFileEvent` | → `MdFileEvent` | 去抖后推送（§4.5.6） |
+| （预留）`markdown.writeFile` | `WriteFileInput` → `WriteFileResult` | v2 只有类型，不注册（§4.5.7） |
+| `index.ts` 另导出给其他切片 | `renderMarkdown(text, context)`、`extractMath(text)`、`splitStreaming(text)` | `translation` 用前两个做完整性复核与 `getBlocks`；`notes` 用第一个；`qa` 用第三个 |
+| `pure.ts` | `renderMarkdown`、`navigate(history, action)`、`sliceSource` | 只给本切片 UI 与测试；其他切片的 UI 不调用 Markdown 解析（§4.5.4） |
+
+规格对方案 §3.3 形状的调整（都是加字段或加命令，不改已有字段）：
+
+1. 公式节点（块级 `math`、行内 `math`）加可选字段 `blocked?: 'untrusted_command' | 'too_long'`，判定在 core。
+2. `ResolvedLink` 的 `broken.reason` 加 `'unsupported_scheme'`（`file:`、`javascript:`、`data:` 等）。
+3. `openVault` 改为返回 `{ vaultId, jobId }`，树由 `getVaultTree` 取，以符合「长任务立即返回 jobId」。
+4. 新增 `openExternal`、`revealInFolder` 两条命令，承接方案「危险」与「低频」两类操作。
+5. seam 不返回绝对路径（§9）：面包屑用库内相对路径；单个文件只显示文件名与所在文件夹名。
+6. 拖入：preload 用 Electron 的 `webUtils.getPathForFile` 取路径，直接随 `openFile` 发给 main，不写入 renderer 状态；main 按 `md-file-reader` 的规则重新校验。该 API 的可用性随锁定的 Electron 版本核实（M2）。
+
+#### 4.5.4 谁解析、谁渲染
+
+规则：**UI 不解析 Markdown，也不调用 Markdown 解析库**。解析在 core 完成，UI 拿到的永远是 `MdDocument`（或其中的块），交给 `ui-kit/src/markdown/markdown-view.tsx` 画出来。共享组件放 `ui-kit` 而不是 `features/markdown/src/ui`，因为切片 UI 不能互相 import（F-05、G15），而笔记、译文、问答都要用它。
+
+| 场景 | 谁调用解析 | UI 拿到什么 | 里程碑 |
+| --- | --- | --- | --- |
+| 单个 `.md`、笔记库 | `markdown` 用例 `readFile` | `MdDocument` | M2（单文件）、M3（笔记库） |
+| 译文 | `translation` 用例 `getBlocks`：读出 `StoredTranslationBlock`，经 `markdown` 的 seam 解析 `success` 块的 `markdown` 字段 | 每块 `{ block, doc }`；reader 按 `sourceBlockId` 对齐 | M4 |
+| 笔记 | `notes` 用例读笔记时解析正文 | 笔记 + `MdDocument` | M5 |
+| 问答回答 | `qa` 用例在流式输出时调用 `splitStreaming` | 事件载荷：新闭合的 `MdBlock[]` + 未闭合尾部文本（UI 按原文样式显示）；结束时给完整 `MdDocument` | M5 |
+
+- `MdDocument` 不落库，按需解析；解析结果可在进程内按 `cacheKey`（译文）或 `revision`（文件）缓存。
+- KaTeX 只能在 `ui-kit/src/markdown/math.tsx` 与 `formula/adapters/katex-renderer.ts` 两处 import；`reader/ui/formula-view.tsx` 显示 LaTeX 时也用 ui-kit 的 `MathBlock`（ESLint `no-restricted-imports`，G2）。
+- Markdown 解析库（markdown-it 或 micromark / mdast，均为 MIT，M2 选型，选型条件是能给出源码位置以支持 §4.5.7 的往返）只能出现在 `features/markdown/src/domain/parse/`。该库纯 JS、不碰 DOM 与 Node，在 dependency-cruiser 的 domain 第三方白名单中登记。
+
+#### 4.5.5 安全
+
+| 风险 | 规则 | 落点 |
+| --- | --- | --- |
+| 公式里的可执行内容 | 唯一一份选项：`throwOnError: true`、`trust: false`、`strict: 'ignore'`、`output: 'html'`、`maxSize: 20`、`maxExpand: 1000`；单个公式 ≤ 8000 字符；不可信命令清单 `\href`、`\url`、`\includegraphics`、`\htmlClass`、`\htmlId`、`\htmlStyle`、`\htmlData`。命中清单或超长的公式由 core 标 `blocked`，UI 显示原文与错误标记，不调用 KaTeX；KaTeX 输出含错误色时同样按失败处理 | `contracts/src/latex-policy.ts`；`markdown/domain/math-policy.ts`；`formula/domain/render-equivalence.ts`。v1 有两份不一致的选项（`lib/formula-katex.js:24-32` 为 `throwOnError:true`，`lib/markdown-render.js:16-24` 为 `false`），v2 合为一份 |
+| 文件里的 HTML | 一律 `html_blocked`，按文字显示并标「已屏蔽 HTML」；renderer 全局 ESLint `react/no-danger` 为 error，0 处 `dangerouslySetInnerHTML` | `html-policy.ts`、G2 |
+| 图片 | 相对路径与 `![[img]]` 由 core 解析到库内文件，经 `vault-asset-registrar` 登记为只读外部资产，UI 只拿 `assetId`、经 `oi-asset://` 取；协议处理器取文件时**再查一次**真实路径仍在库内且是图片类型；远程图片不加载（`remote_blocked`）；renderer 中不出现 `file://` | §9 |
+| 链接 | 外部链接只放行 `http` / `https` / `mailto`，先确认（显示完整 URL）再由 main 交给系统浏览器；应用内不导航（§9 的导航禁令） | `link-resolve.ts`、`open-external.ts` |
+| 路径穿越 | `../` 越界、绝对路径、真实路径在库外的符号链接返回 `outside_vault`，且不读取内容 | `vault-path-policy.ts`；扫描用 `lstat` |
+| 误扫大目录 | 先计数，超过阈值确认；忽略 `.git`、`.obsidian`、`node_modules`；可取消 | `vault-limits.ts`、`jobs` |
+| 超大文件、病态输入 | 单文件超过上限只解析前一部分并标 `truncated`；core 测试含病态输入的超时用例（沿用 v1 `tests/helpers/render-guard.mjs` 的思路：在子线程渲染、超时即失败）。解析若明显拖慢 main，按 §1 把 markdown 用例迁到 utility 进程 | `vault-limits.ts`、§12 |
+| 隐私 | seam 不返回绝对路径；最近列表的绝对路径只存本机 `md_recent`，不进日志、不进诊断包；日志只记 `FileId`、文件数、耗时 | §8.2、§11 |
+| 写用户文件 | v2 不写、不删、不改名任何 `.md`；任何功能不得以「保存」「导出」等名义写入用户笔记库（应用自有数据目录除外） | §4.5.7、RULES N-18 |
+
+#### 4.5.6 待定标参数
+
+下列数值来自 Loom 方案的建议，**均未实测**。定标前按建议值实现并在设置里可调；定标结果写入 `docs/acceptance/`，再回填本表与 PRD。
+
+| 参数 | 方案建议值 | 状态 | 关联 |
+| --- | --- | --- | --- |
+| 文件事件去抖 | 300 ms | 待定标（M2：用常见编辑器的「原子替换保存」实测） | `watch-debounce.ts` |
+| 外部修改到界面更新 | ≤ 1 秒 | 待定标 | PRD QM-15、AC-36 |
+| 笔记库文件数确认阈值 | 1 万个 | 待定标 | `vault-limits.ts`、AC-37 |
+| 1 万个文件的扫描时长（8 GB 基准机） | 方案未给 | 待定标 | PRD QM-16、AC-44 |
+| 单文件大小上限（超过即截断） | 5 MB | 待定标；还要保证 `MdDocument` 不超过 §11 的 IPC 载荷阈值 | `vault-limits.ts`；方案 §4.3 的 `too_large` 错态 |
+| 每个文档的公式数 / 公式总字符预算 | v1 问答为 30 个 / 4000 字符（`lib/markdown-render.js:13-14`），方案未提 | 待定：`.md` 文件不宜沿用，问答是否沿用 M5 前定 | `math-policy.ts` |
+| 非 UTF-8 编码（如 GBK） | 方案只说「编码检测」 | 待定：v2 先只支持 UTF-8（含 BOM），其他返回 `decode_failed` | `node-md-file-reader.ts` |
+
+#### 4.5.7 编辑接口预留（D7）
+
+- **v2 就要产出**：所有块与行内节点带 `src` 区间（UTF-16 偏移）；`serialize(parse(t)) === t` 对语料与随机生成文本成立（属性测试，fast-check，MIT）；`pure.ts` 导出 `sliceSource`。
+- **只定义、不实现**：契约里有 `WriteFileInput`（含 `baseRevision` 乐观并发与基于区间的 `edits`）、`WriteFileResult`、`MdFileWriter` 端口、`MdCapabilities`，并有契约测试。v2 preload 不暴露 `writeFile`，main 不注册处理器，装配根不注入 `MdFileWriter`，`write-file` 用例返回 `write_disabled`。
+- **机器检查**：ESLint 对 `features/markdown/src/adapters/**` 禁止从 `fs` / `fs/promises` 导入 `writeFile`、`appendFile`、`rename`、`unlink`、`rm`、`mkdir`、`copyFile`、`createWriteStream`（G2）；preload 生成物中出现 `writeFile` 即失败（G7 的生成物检查）。
+- **UI**：`EditorSlot` 存在且 v2 渲染为空；不出现编辑按钮或快捷键。
+- **以后做编辑**：另立项；seam 形状不变，只新增写入适配器、注入端口、把 `canWrite` 置真。
+
+#### 4.5.8 不在 v2 内
+
+全文搜索、反向链接、块引用 `^id`、嵌入笔记 / 嵌入 PDF 页、Mermaid、front-matter 属性面板、标签、整篇「导出译文为 .md」、编辑与保存、关系图谱、Obsidian 插件语法（callout 先按引用块显示）。清单与理由见 PRD §3.2。
 
 ## 5. 依赖方向与禁止事项
 
@@ -491,7 +638,7 @@ flowchart TB
 
 ### 5.3 UI 组合：插槽而不是互相 import
 
-- 应用外壳（`apps/desktop/src/renderer/`）定义布局插槽：`reader.main`、`reader.side`、`toolbar.document`、`settings.pages`。
+- 应用外壳（`apps/desktop/src/renderer/`）定义布局插槽：`reader.main`、`reader.side`、`toolbar.document`、`settings.pages`；Markdown 阅读另用 `markdown.main`（单文件与笔记库标签页）与 `home.recent`（首页最近列表中的本地 Markdown 组）。「文件 → 打开文件… / 打开文件夹…」菜单由 main 注册，按扩展名分流到 `library.importPdf` 或 `markdown.openFile`。
 - 每个切片的 `ui/index.ts` 导出 `contributions`（要放进哪个插槽、用哪个组件、排序权重）。外壳的 `slots.ts` 只是一个注册数组，**一行一个切片**，因此多人同时加入口只会各加一行。
 - 切片间 UI 交互通过类型化事件总线（`contracts/src/ui-events.ts` 定义事件名与载荷），例如 reader 发出 `selection.changed`，notes 订阅。
 
@@ -543,8 +690,8 @@ flowchart TD
   Q2 -- "通过" --> ACC
   Q2 -- "不过" --> FB
   FB --> ACC
-  ACC --> TR["翻译：占位保护 → LLM → 完整性校验 → 恢复"]
-  TR --> OUT["阅读视图 · Markdown / LaTeX 导出"]
+  ACC --> TR["翻译（按原文区块）：占位保护 → LLM → 完整性校验<br/>→ 还原为 Markdown + LaTeX（oi-md/1）→ 译文区块记录（§8.1.1）"]
+  TR --> OUT["阅读视图（译文逐块经 MarkdownView）<br/>· 笔记 Markdown 导出（整篇译文导出延后）"]
 ```
 
 流水线约束（上游核实结论见差异清单 §2）：
@@ -706,7 +853,7 @@ flowchart LR
 | 解包 | 只接受 gzip（tar 或单个 tex）；拒绝路径穿越、绝对路径、符号链接与硬链接、设备文件；文件数 ≤ 2000、解压后 ≤ 50 MB、单个资源 ≤ 30 MB；只写缓存目录 | `node-gunzip.ts`（Node `zlib`，带解压输出上限）；tar 读取是 domain 纯函数 `tar-reader.ts`（与 v1 相同，gunzip 注入），不引入新依赖 | `lib/arxiv-src-unpack.js:18`、`:262-302` |
 | TeX 解析 | 找主文件；跟随 `\input` / `\include`（只在包内、有深度上限）；数学环境与 `$…$`、`\[…\]` 抽成公式单元，带行内 / 行间、编号、所在节；导言区 `\newcommand` / `\def` 转成 KaTeX `macros`，展开次数受 `maxExpand` 限制 | — | `lib/latex-units.js:6-18`、`:40-75`、`:145-163` |
 | 与版面区域对齐 | n-gram 锚点分段的词序列对齐；整体词覆盖率 < 0.85 则整篇不用源码；逐公式核对：位置（落在版面公式区域内）、字符集、编号、可渲染，任一不过则该公式回落 | — | `lib/source-align.js:7-13`、`:17`；`lib/formula-tiers/arxiv.js:35-75`；`lib/formula-arxiv-gate.js:18-30` |
-| KaTeX 安全渲染 | `throwOnError: true`、`trust: false`、`maxSize: 20`、`maxExpand: 1000`、单个公式 ≤ 8000 字符；`\href`、`\url`、`\includegraphics`、`\html*` 一律判为不可渲染（KaTeX 在 `trust: false` 下不抛错，而是用错误色绘制，所以必须显式检查）；显示时只挂载 KaTeX 生成的 DOM，不把 HTML 字符串赋给节点 | `formula/adapters/katex-renderer.ts`（核对）与 `reader/ui/formula-view.tsx`（显示）共用 `formula` 的同一份选项常量 | `lib/formula-katex.js:1-30`、`:40-77` |
+| KaTeX 安全渲染 | `throwOnError: true`、`trust: false`、`maxSize: 20`、`maxExpand: 1000`、单个公式 ≤ 8000 字符；`\href`、`\url`、`\includegraphics`、`\html*` 一律判为不可渲染（KaTeX 在 `trust: false` 下不抛错，而是用错误色绘制，所以必须显式检查）；显示时只挂载 KaTeX 生成的 DOM，不把 HTML 字符串赋给节点 | `formula/adapters/katex-renderer.ts`（核对）与 ui-kit 的 `MathInline` / `MathBlock`（显示；`reader/ui/formula-view.tsx` 与 `MarkdownView` 都用它）共用 `contracts/src/latex-policy.ts` 的同一份选项常量（§4.5.5） | `lib/formula-katex.js:1-30`、`:40-77` |
 | 回落 | 对齐失败、版本不符、超时、冷却中、解包被拒、KaTeX 不可渲染、Jev 低分：只让该公式（或整篇）回到识别链路，记录原因码；不弹错、不打断阅读 | — | `lib/formula-tiers/arxiv.js:66-75` |
 
 - **使用条款**：arXiv API 使用条款允许为个人使用或研究检索、存储、使用 e-print 内容，禁止在自己的服务器上存储并对外提供（[Terms of Use for arXiv APIs](https://info.arxiv.org/help/api/tou.html)，2026-10-30 查阅）。因此源码只缓存在用户本机：不上传远程 worker、不进诊断包、不随导出分发；导出的 Markdown 只含采用的公式 LaTeX。
@@ -730,7 +877,72 @@ flowchart LR
 
 ### 8.1 权威数据
 
-结构化 JSON 文档模型是权威；Markdown / LaTeX 是导出投影。核心类型沿用 [草案 02](./docs/architecture/02_数据协议与高精度规格迁移_草案.md) §3–§9 的 `ContentBlock`、`AcceptedPageRevision`、`FormulaCandidate`、`FormulaDecision`、`EvaluationResult`、`TranslationRecord`、`ContentAnchor`、`CoordinateFrame`，落入 `contracts`。坐标统一为「CropBox 经旋转后的可见页面，左上原点，0–1 归一化」。
+结构化 JSON 文档模型是权威；Markdown / LaTeX 是导出投影。核心类型沿用 [草案 02](./docs/architecture/02_数据协议与高精度规格迁移_草案.md) §3–§9 的 `ContentBlock`、`AcceptedPageRevision`、`FormulaCandidate`、`FormulaDecision`、`EvaluationResult`、`ContentAnchor`、`CoordinateFrame`，落入 `contracts`；草案 02 的 `TranslationRecord` 由 `StoredTranslationBlock` 取代（§8.1.1）。坐标统一为「CropBox 经旋转后的可见页面，左上原点，0–1 归一化」。
+
+唯一的例外是译文正文：每个译文区块的 `markdown` 字段以 Markdown 存储（D6）。这只是**区块内**的显示格式；块号、顺序、坐标、公式决策仍由 JSON 模型给出，译文通过 `sourceBlockId` 挂在采用版本的块上。
+
+#### 8.1.1 译文区块记录（D6）
+
+决定（Wisdom 2026-10-30 17:27，17:32 修订）：译文不存成整篇 `.md`，而是每个原文区块的每个译文版本一条记录；正文字段是 Markdown，其余是结构化字段。左右对照、点击互跳、单块重译、缓存都以区块为单位。
+
+```ts
+// packages/contracts/src/translation.ts —— 拟议；字段以方案 §3.3.2 为起点
+type StoredTranslationBlock = Readonly<{
+  documentId: DocumentId;
+  revisionId: PageRevisionId;            // 规格补充：绑定采用版本；重解析后内容不变的块按 cacheKey 复用
+  sourceBlockId: BlockId;                // 对齐键：左右对照、点击互跳、滚动同步
+  version: number;                       // 同一区块的译文版本号，重译 +1
+  status: 'success' | 'failed' | 'retranslating';
+  markdown: string | null;               // 只有 success 才有值
+  formatVersion: 'oi-md/1';
+  model: Readonly<{ providerId: string; modelId: string }>;
+  targetLang: 'zh-CN';                   // 规格补充
+  cacheKey: string;
+  check: Readonly<{ result: 'passed' | 'failed' | 'not_run'; codes: readonly string[] }>;
+  updatedAt: string;                     // ISO 8601
+}>;
+```
+
+**方言 `oi-md/1`**：CommonMark + GFM 表格与删除线 + `$…$` / `$$…$$` 公式；不含 HTML、wikilink、图片。图、表、公式本身是单独的区块，不进译文文字。
+
+**写入流程**（全部在 `translation` core，顺序固定）：
+
+1. 抽取：原文区块 → 占位文本（`⟦fN⟧`）+ 受保护片段表（公式 LaTeX、编号、引用）+ 片段表哈希（v1 审查 §4.9）。
+2. 完整性校验 `integrity-check.ts`：占位符的数量、顺序、对应关系与原文 100% 一致，数字与引用一致（AC-03）。不过 → 写一条 `failed` 记录，`markdown` 为 `null`，`check.codes` 记原因。
+3. 还原 `markdown-restore.ts`：先用 CommonMark 的反斜杠转义处理模型文字中的 `$`、`<`、`&` 与 `[[`（模型生成的 HTML 因此只会显示为文字），再把占位符还原为片段表里的 LaTeX：行内写 `$…$`，行间写独占一行的 `$$…$$`。顺序不能反：先还原再转义会把公式里的符号也转义掉。
+4. 复核：经 `markdown` 的 seam 调 `extractMath(markdown)`，得到的公式序列必须与片段表逐个相等；`renderMarkdown(markdown, 'translation')` 不得出现 `html_blocked` 节点。任一不过 → `failed`（`math_mismatch` / `html_leak`）。
+5. 通过 → `success`，写入 `markdown`，`check.result = 'passed'`。存储与读出逐字节一致（AC-48）。
+
+**状态与显示版本**（`block-status.ts`、`adopted-version.ts`）：
+
+- 重译时先写一条新版本 `retranslating`，旧的 `success` 版本照常显示；新版本结束后转为 `success` 或 `failed`。状态转移只在 core。
+- 显示规则：有 `success` 版本就显示最新的 `success`；没有时显示最新版本（`failed` 显示原文 + 「翻译未通过校验」+「重译」，`retranslating` 显示骨架）。
+- 规格补充（方案未覆盖）：重译失败而旧 `success` 还在时，继续显示旧版本，并在块上标「重译未通过校验」。具体怎么标由 Loom 定（待 Loom）。
+
+**缓存键**（`cache-key.ts`）= 下列字段规范化后的 SHA-256：
+
+| 字段 | 为什么在键里 |
+| --- | --- |
+| `formatVersion`（`oi-md/1`） | 方言变了，旧正文不能直接用 |
+| 占位协议版本与公式切块版本 | v1 事故教训：缺这两项会显示旧公式（v1 审查 §4.18） |
+| 原文区块占位文本的哈希 | 原文变了就重译 |
+| 受保护片段表哈希 | 公式决策变了（例如 arXiv 源码替换了 LaTeX）就重译 |
+| `providerId`、`modelId`、目标语言 | 换模型或语言就重译 |
+| 提示词模板版本、润色开关 | 翻译方式变了就重译 |
+
+- 键里**不含** `documentId`、`revisionId`、`sourceBlockId`：重解析后内容不变的块、或另一篇内容相同的块，命中缓存直接复用，不发请求（AC-02）。记录本身仍绑定（文献, 采用版本, 区块）。
+- 只有 `success` 结果进入可复用缓存；`failed` 不缓存，所以「重译」一定会重新请求。
+
+**存储**：SQLite，前缀 `tr_`，只有 `translation` 的 adapters 读写。
+
+| 表 | 主键 | 内容 |
+| --- | --- | --- |
+| `tr_blocks` | （`document_id`, `revision_id`, `source_block_id`, `version`） | 上面类型的全部字段；`markdown` 为 TEXT |
+| `tr_cache` | `cache_key` | `success` 结果的 `markdown`、`check`、`model`、`created_at` |
+
+- 诊断包与日志只记长度、哈希、计数与状态码，不记 `markdown` 正文（AC-10）。
+- 事件 `translation.onBlockChanged`：`{ documentId, sourceBlockId, status, version }`。
+- 整篇「导出译文为 .md」不在 v2（PRD §3.2）；将来做时由 core 按阅读顺序拼接各块 `markdown`。
 
 ### 8.2 桌面存储布局
 
@@ -744,7 +956,8 @@ flowchart LR
 └─ secrets.bin                  # safeStorage 密文；不入 SQLite、不随导出
 ```
 
-- 表按切片加前缀（`lib_`、`doc_`、`job_`、`fsrc_`、`tr_`、`note_`、`qa_`、`voice_`、`set_`、`diag_`；`wr_` 为 writing 预留），只有拥有该前缀的切片的 adapters 可以读写。跨切片查询走对方的用例，不跨前缀 JOIN。
+- 表按切片加前缀（`lib_`、`doc_`、`job_`、`fsrc_`、`tr_`、`md_`、`note_`、`qa_`、`voice_`、`set_`、`diag_`；`wr_` 为 writing 预留），只有拥有该前缀的切片的 adapters 可以读写。跨切片查询走对方的用例，不跨前缀 JOIN。
+- 用户的 `.md` 文件与笔记库**不复制**进 `<userData>`：`md_` 表只存最近打开列表与已登记的外部图片资产（绝对路径只在本机，§4.5.5）；`assets/` 不保存笔记库图片的副本，`oi-asset://` 按登记的路径实时读取并重新做库内检查。
 - 迁移文件放在各切片 `migrations/`，运行器按（切片, 版本号）排序执行并记录在 `schema_migrations`；**两个切片的迁移永远不会改同一个文件**。
 - 写入顺序：资产写暂存 → 校验摘要 → 事务内写引用 → 提交。失败不留半份文献。
 - 采用版本切换使用乐观锁（比较旧 `revisionId`）；过期任务结果不能覆盖新版本。
@@ -768,6 +981,8 @@ flowchart LR
 - main 端 `ipc-router.ts` 统一做：校验发送方（只接受本应用窗口的 frame）、按 schema 校验载荷、调用切片的 `adapters/ipc-handlers.ts`、把异常映射为 `{code, message, retryable}`。
 - 返回给 renderer 的数据不含密钥、不含绝对文件路径（用 `assetId` 换取受控的 `oi-asset://` 协议 URL）。
 - 长任务一律返回 `jobId`，进度走事件，不在一个 invoke 里等待整篇完成。
+- `oi-asset://` 只服务两类资产：应用自有的内容寻址资产（`<userData>/assets/`），以及 `markdown` 切片登记的笔记库图片。后者每次读取都重新检查真实路径仍在登记的库根内、扩展名与内容嗅探都是图片；不满足即 404。renderer 中不出现 `file://`（AC-35）。
+- 外部链接：renderer 不导航、不 `window.open`；用户确认后调用 `markdown.openExternal`，main 只放行 `http` / `https` / `mailto` 并交给 `shell.openExternal`（§4.5.5）。
 - Electron 安全基线：`contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`、严格 CSP、禁止任意导航与 `window.open`、权限请求默认拒绝。具体以锁定版本的 [Electron 安全清单](https://www.electronjs.org/docs/latest/tutorial/security) 逐条验证。
 
 ## 10. Python worker 协议（oi-parse/1）
@@ -831,7 +1046,7 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 
 ## 11. 可观测性
 
-- **日志**：`kernel` 只定义 `Logger` 接口；`platform-node/logging/file-logger.ts` 输出 JSON 行。字段：`ts`、`level`、`event`（来自 `contracts/src/diag-events.ts` 白名单）、`feature`、`requestId`、`jobId`、`parseRunId`、`durationMs`、`errorCode`。不记录正文、译文、提示词、密钥。
+- **日志**：`kernel` 只定义 `Logger` 接口；`platform-node/logging/file-logger.ts` 输出 JSON 行。字段：`ts`、`level`、`event`（来自 `contracts/src/diag-events.ts` 白名单）、`feature`、`requestId`、`jobId`、`parseRunId`、`durationMs`、`errorCode`。不记录正文、译文、提示词、密钥；Markdown 阅读只记 `FileId`、文件数、耗时与错误码，不记文件路径与内容。
 - **IPC 载荷**：单条 IPC 消息或 worker 产物超过阈值（默认 1 MB，可配置）记诊断事件 `ipc.oversize`，带通道名与字节数，不带内容；大数据一律走 `assetId`（§2.4）。
 - **关联**：每次 IPC 调用生成 `requestId`，透传到 worker（请求头 `OI-Request-Id`）与 provider 调用日志。
 - **Python worker**：结构化 JSON 写 stderr，supervisor 收集并加上 `source: worker`。
@@ -844,6 +1059,7 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 | 层 | 工具 | 要求 |
 | --- | --- | --- |
 | core（domain + application，经 seam） | Vitest 工程 `core`（`environment: 'node'`）/ pytest | 测试文件放 `test/core/`，只 import `src/index.ts`、`src/pure.ts`、`src/testing/**`；不渲染 UI、不启动 Electron、不联网、不加载模型；每条从 v1 移植的规则带原 v1 用例。这是 Q3 的完成标准（G16） |
+| core 属性与病态输入 | fast-check（MIT）；子线程 + 超时 | `markdown` 的往返不变 `serialize(parse(t)) === t`（AC-52）与 `translation` 的「还原后公式与片段表一致」（AC-49）用随机生成文本跑；Markdown 解析对病态输入（深层嵌套、超长行、大量 `$`）在子线程运行并设超时，超时即失败（沿用 v1 `tests/helpers/render-guard.mjs` 的做法） |
 | adapters | 契约测试套件 | 每个端口在 `testing/` 提供一份共享契约测试，内存实现与 SQLite 实现都跑同一份 |
 | 协议 | TS + Python 双侧 | `fixtures/protocol/` 合法样例通过、非法样例拒绝 |
 | ui | Vitest + Testing Library | 组件只依赖 fake 的 `window.oi`；只断言「调用了哪个 seam、怎么画结果」，不断言业务规则（规则已由 core 测试覆盖） |
@@ -861,7 +1077,7 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 | 门禁 | 工具 | 内容 |
 | --- | --- | --- |
 | G1 格式 | Prettier、ruff format | 格式一致 |
-| G2 Lint | ESLint（typescript-eslint strict-type-checked）、ruff | 含 F-06、F-08、F-12、`max-lines-per-function`、`complexity`、`no-restricted-imports` |
+| G2 Lint | ESLint（typescript-eslint strict-type-checked）、ruff | 含 F-06、F-08、F-12、`max-lines-per-function`、`complexity`、`no-restricted-imports`；Markdown 相关（§4.5）：renderer 全局 `react/no-danger` 为 error；`katex` 只能在 `ui-kit/src/markdown/math.tsx` 与 `formula/adapters/katex-renderer.ts` 导入；Markdown 解析库只能在 `features/markdown/src/domain/parse/` 导入；`features/markdown/src/adapters/**` 禁止导入 `fs` 的写入类 API |
 | G3 类型检查 | `tsc -b`（strict）、mypy `--strict` 或 pyright strict | 0 错误 |
 | G4 行数 | `tools/check-file-size` | §6 的硬上限；allowlist 必须有 ADR 与到期里程碑 |
 | G5 依赖方向 | dependency-cruiser | `no-circular`、`layer-direction`、`no-cross-feature-internals`、`feature-dependency-matrix`（§4.3）、`renderer-isolation`、`electron-only-in-desktop`、`contracts-is-leaf`；Q3 相关规则单列为 G13、G15、G16 |
@@ -878,7 +1094,7 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 | G16 core 测试只调 seam、不渲染 UI | Vitest 工程 `core` + dependency-cruiser 规则 `core-test-through-seam` | `core` 工程：`environment: 'node'`，include `packages/features/*/test/core/**`；文件内出现 `@vitest-environment` 注释即失败。`core-test-through-seam`：from `^packages/features/([^/]+)/test/core/`，to `^packages/features/$1/src/` 且 pathNot `^packages/features/$1/src/((index\|pure)\.ts\|testing/)` → 失败；to `react`、`@testing-library/*`、`jsdom`、`happy-dom`、`@oi/ui-kit`、`src/ui/` → 失败。每个切片 `README.md` 登记的 core 规则必须至少有一个 core 测试（脚本核对测试名中的规则编号） |
 | G17 UI 与 core 分开改 | `tools/check-ui-core-split` | 同一 PR 同时改动 UI 路径（`src/ui/**`、`apps/desktop/src/renderer/**`）与 core 路径（domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`）即失败：seam 变更必须单独成 PR 先合入（RULES §8 规则 3、§3 契约先行）。改动 UI 路径的 PR 描述必须包含「UI–core 交接说明」块（RULES §8.4），缺失即失败 |
 
-G13–G17 与 5 层、15 个切片的关系：规则全部按通配路径写（`features/[^/]+/src/<层>/`），因此对每个切片的 domain、application、ui 同时生效，不需要逐切片登记；§2.5 的映射表说明每个切片哪些文件落在哪一层。workers 层没有 UI，Q3 在 Python 侧的落点是 G6 的 core forbidden 契约。M1 的退出条件包含四个故意违规的样例 PR：core import React 类型、UI import application 用例、core 测试渲染组件、一个 PR 同时改 UI 与 core——都必须被 CI 拒绝（PRD §8）。
+G13–G17 与 5 层、16 个切片的关系：规则全部按通配路径写（`features/[^/]+/src/<层>/`），因此对每个切片的 domain、application、ui 同时生效，不需要逐切片登记，新增的 `markdown` 切片自动受约束；`ui-kit/src/markdown/` 属于 UI，G13 已禁止 core 导入 `@oi/ui-kit`；§2.5 的映射表说明每个切片哪些文件落在哪一层。workers 层没有 UI，Q3 在 Python 侧的落点是 G6 的 core forbidden 契约。M1 的退出条件包含四个故意违规的样例 PR：core import React 类型、UI import application 用例、core 测试渲染组件、一个 PR 同时改 UI 与 core——都必须被 CI 拒绝（PRD §8）。
 
 ## 14. v1 教训：一个 16,641 行的文件是怎么长出来的，v2 怎么从制度上防止
 
@@ -978,6 +1194,7 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | Q10 | PP-DocLayoutV3 起步，plus-L 对照，明显更好时作为高质量档 | §7.1「版面档位」、`parsing/domain/layout-profile.ts` |
 | Q11 | 未配置翻译时借用多模态：保留、默认关、开启时提示消耗多模态额度 | §4.2 `settings/domain/translation-fallback.ts` |
 | Q12 | 不接 Unlimited-OCR，上游支持坐标输出后再评估 | 不进本文；记录在差异清单 §2.6 |
+| Markdown 阅读（2026-10-30 17:32） | 批准 Loom 方案并入 M0–M8：统一 `MarkdownView`；单个 `.md` 与笔记库只读阅读；KaTeX 与 formula 同一份安全选项；`.md` 独立入口、只链接库内 PDF；v2 只读、预留编辑接口；译文按区块存 Markdown（D1–D7） | §4.5、§8.1.1、§4.1 `latex-policy`、§4.3 新边、§9、G2；差异清单 §6.1 |
 
 - 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3 / M6 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
-- 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。
+- 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。
