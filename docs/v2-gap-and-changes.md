@@ -189,9 +189,9 @@ Windows 本地（开发机）：Paddle 3.3 官方提供 Windows 的 pip 安装�
 | --- | --- | --- | --- |
 | OpenAI / `openai-chat` | [Chat Completions](https://platform.openai.com/docs/api-reference/chat/create)（未记录） | `POST https://api.openai.com/v1/chat/completions`，`Authorization: Bearer`；图片 `image_url`（URL 或 data URI）；流式 SSE 以 `data: [DONE]` 结束，设 `stream_options.include_usage` 时结束前多一个用量块 | 预置模型与单价（实现时按当时文档填写） |
 | Anthropic / `anthropic-messages` | [Messages](https://docs.claude.com/en/api/messages)、[概览](https://docs.claude.com/en/api/overview)（未记录） | `POST https://api.anthropic.com/v1/messages`；`Authorization: Bearer`，`x-api-key` 是仍受支持的旧写法；必须带 `anthropic-version`（文档示例 `2026-10-21`）；未限定工作区的 Key 还要带 `anthropic-workspace-id`；图片块 `source.type: "base64"`；流式事件 `message_start`、`content_block_delta`、`message_delta`、`message_stop`；过大返回 413 `request_too_large`；响应头 `request-id` | 锁定哪个 `anthropic-version` |
-| Google Gemini / `gemini-generate-content` | [generateContent](https://ai.google.dev/api/generate-content)（未记录）、[API Key](https://ai.google.dev/gemini-api/docs/api-key)（2026-10-27）、[OpenAI 兼容](https://ai.google.dev/gemini-api/docs/openai)（未记录） | `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`；流式 `:streamGenerateContent?alt=sse`；请求头 `x-goog-api-key`；图片 `inline_data`；用量 `usageMetadata`；Key 页面写明 2026-05-28 起新建的是鉴权 Key、未加限制的标准 Key 会被拒绝，闲置的未限制 Key 自 2026-05-07 起被封；OpenAI 兼容端点的 Base URL 是 `https://generativelanguage.googleapis.com/v1beta/openai/` | 兼容端点与原生端点在用量与错误体上的差异；默认用哪种**待 Wisdom 定** |
+| Google Gemini / `gemini-generate-content` | [generateContent](https://ai.google.dev/api/generate-content)（未记录）、[API Key](https://ai.google.dev/gemini-api/docs/api-key)（2026-10-27）、[OpenAI 兼容](https://ai.google.dev/gemini-api/docs/openai)（未记录） | `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`；流式 `:streamGenerateContent?alt=sse`；请求头 `x-goog-api-key`；图片 `inline_data`；用量 `usageMetadata`；Key 页面写明 2026-05-28 起新建的是鉴权 Key、未加限制的标准 Key 会被拒绝，闲置的未限制 Key 自 2026-05-07 起被封；OpenAI 兼容端点的 Base URL 是 `https://generativelanguage.googleapis.com/v1beta/openai/` | 兼容端点与原生端点在用量与错误体上的差异；默认用原生格式，兼容端点为备选（Wisdom 2026-10-30 20:57） |
 | 百度千帆 v2（文心）/ `openai-chat` | [视觉理解](https://cloud.baidu.com/doc/qianfan-api/s/rm7u7qdiq)（2026-02-09）；文本生成页（看到的更新日期 2026-09-29，当前地址**未核实**，不链接） | `POST https://qianfan.baidubce.com/v2/chat/completions`，`Authorization: Bearer` 加千帆 API Key（形如 `bce-v3/…`）；`image_url` 收 URL 或 data URI，单图 ≤ 10 MB；错误体 `{code, message, type}`；响应头带 `X-Ratelimit-*` | `detail` 与 `stream_options.include_usage` 的逐模型支持清单 |
-| 百度智能云文字识别 / `baidu-ocr` | [高精度含位置版](https://cloud.baidu.com/doc/OCR/s/tk3h7y2aq)（未记录）、[接口说明](https://cloud.baidu.com/doc/OCR/s/7kibizyfm)（2024-01-26）、[鉴权](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)（2025-01-20） | `POST https://aip.baidubce.com/rest/2.0/ocr/v1/accurate`（或 `accurate_basic`），表单字段 `image`；`access_token` 放查询参数，由 `POST https://aip.baidubce.com/oauth/2.0/token`（`grant_type=client_credentials`）换取，有效期 30 天；鉴权文档列出 access_token、API Key、AK/SK 签名三种方式 | API Key 方式用于 OCR 时的请求头写法；用哪种方式**待 Wisdom 定**，定之前按 access_token |
+| 百度智能云文字识别 / `baidu-ocr` | [高精度含位置版](https://cloud.baidu.com/doc/OCR/s/tk3h7y2aq)（未记录）、[接口说明](https://cloud.baidu.com/doc/OCR/s/7kibizyfm)（2024-01-26）、[鉴权](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)（2025-01-20） | `POST https://aip.baidubce.com/rest/2.0/ocr/v1/accurate`（或 `accurate_basic`），表单字段 `image`；`access_token` 放查询参数，由 `POST https://aip.baidubce.com/oauth/2.0/token`（`grant_type=client_credentials`）换取，有效期 30 天；鉴权文档列出 access_token、API Key、AK/SK 签名三种方式 | API Key 方式用于 OCR 时的请求头写法；现在用 access_token，API Key 方式核实后加入（Wisdom 2026-10-30 20:57） |
 | 智谱 GLM / `openai-chat` | [对话补全](https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E5%AF%B9%E8%AF%9D%E8%A1%A5%E5%85%A8)（未记录） | `POST https://open.bigmodel.cn/api/paas/v4/chat/completions`，Bearer；流式以 `[DONE]` 结束 | 预置模型与单价 |
 | 智谱 GLM-OCR / `zhipu-layout-parsing` | [文档解析](https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90)（未记录） | `POST https://open.bigmodel.cn/api/paas/v4/layout_parsing`，`model: "glm-ocr"`；单图 ≤ 10 MB，PDF ≤ 50 MB、≤ 100 页 | OpenAPI 定义为 Bearer，指南示例的 `Authorization` 不带 `Bearer` 前缀，哪种写法被接受 |
 | 百度 AI Studio PaddleOCR / `paddleocr-aistudio-jobs`（worker 侧，候选） | 见 §2.4.1（2026-02-04） | 异步任务提交与查询；`Authorization: bearer`；错误 12001（每日页数上限）、12002（限流） | 见 §2.4.1 与 §7 |
@@ -409,7 +409,7 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | 本地选项 | 同一端口或同一种 worker 作业；两个来源跑同一份契约测试；部署文档 `docs/deploy/<能力>.md` 随实现里程碑交付；「本地」在设置主选项里，不放进「高级」 | ARCH §7.0；PRD AC-61；RULES §4、§5 第 14 项 |
 | 硬件推荐 | 硬件画像只给「本地」标可行性；只有没有托管 API 或用户拒绝外发时才用它决定推荐本地还是降级 | ARCH §2.6、§7.4 推荐规则；PRD AC-20 |
 | 降级 | 没有 Key、拒绝外发或 API 不可用时，不静默改用其他付费服务、也不静默改成本地，按能力降级并提示 | ARCH §7.0 表；PRD §3.3、AC-61 |
-| 各能力的 API 服务商 | Jev 与引擎 B：面壁开放平台；引擎 A 模型阶段：百度 AI Studio PaddleOCR 托管 API 为候选，**未核实**，M3 前核实，核实通过才进入选项；引擎 A 三条路径都保留，M3 前定最终选择（§2.4.1、§6.4）；多模态、翻译、问答：用户自带 Key，经服务商适配层接入（§6.7），预置与默认服务商待 Wisdom 定；TTS / ASR 在 M7 选型 | ARCH §7.0、§7.1、§7.9；PRD S2、§3.3 |
+| 各能力的 API 服务商 | Jev 与引擎 B：面壁开放平台；引擎 A 模型阶段：百度 AI Studio PaddleOCR 托管 API 为候选，**未核实**，M3 前核实，核实通过才进入选项；引擎 A 三条路径都保留，M3 前定最终选择（§2.4.1、§6.4）；多模态、翻译、问答：用户自带 Key，经服务商适配层接入，不预选，用户从全部服务商中选（§6.7）；TTS / ASR 在 M7 选型 | ARCH §7.0、§7.1、§7.9；PRD S2、§3.3 |
 | 开发机 | Windows + 32 GB + RTX 4070 12 GB：开发走 API；本地 Jev、本地引擎 B「不要求 / 未核实」；本地引擎 A「不要求 / 未实测」 | ARCH §7.0、§7.4「开发机」、§10.3、§15.4；本文 §7 |
 | M0 退出条件 | API 路径：经 Cursor Secrets 注入 `MODELBEST_API_KEY` 后对面壁 Jev API 跑参考样例（19:11 改为延后、「待执行」，见 §6.4）；可选：开发机本地实测 | PRD §8 M0；ARCH §7.4「开发机」 |
 | 密钥 | 开发与测试 Key 只以环境变量提供：云端 Agent 经 Cursor Secrets 注入，开发者本机由开发者自己设置（§6.7）；变量名登记在 ARCH §15.4；不用 `.env`；CI 不调用付费 API；真实调用的冒烟测试标 `@live` | ARCH §8.3、§12、§15.4；RULES §4、N-05 |
@@ -432,7 +432,7 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | 「外发前询问」开关 | 设置里可以关闭同意对话框，默认开（弹对话框）；关闭必须是用户的明确操作，新安装、升级、恢复默认都不会关闭它；关闭后请求照常发送 | ARCH §2.5（`setEgressPromptEnabled`）、§4.2、§7.0 第 6 条；PRD §3.3、AC-61 ⑦ e、f |
 | 数据去向 | 无论开关状态，设置都显示哪些服务商会收到数据、发给它的能力与状态（已同意 / 询问已关闭 / 已拒绝） | ARCH §2.5（`listEgressDestinations`）、§4.2、§7.0 第 6 条、§7.4；PRD §3.3、AC-61 ⑦ f |
 | 界面 | 对话框布局与开关在设置里的位置由 Loom 定（DESIGN.md 待 Loom 产出） | ARCH §7.0 第 6 条；PRD §3.3 |
-| 规格补充（按架构评审 P1-1 采纳，§6.7） | 重新打开开关后，没有在对话框里同意过的「服务商 + 能力」，下次使用前照常询问 | ARCH §7.0 第 6 条；PRD §3.3、AC-61 ⑦ g、§9 |
+| 规格补充（按架构评审 P1-1，Wisdom 2026-10-30 20:57 确认保留，§6.7） | 重新打开开关后，没有在对话框里同意过的「服务商 + 能力」，下次使用前照常询问 | ARCH §7.0 第 6 条；PRD §3.3、AC-61 ⑦ g、§9 |
 
 ### 6.6 后续决定：架构评审修复 A（Wisdom 2026-10-30 19:57）
 
@@ -464,7 +464,8 @@ Wisdom 19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md
 | P1-10 Electron 安全基线 | 应用页面由 `oi-app://` 提供；CSP 常量在 `apps/desktop/src/main/security/csp.ts`，e2e 读出实际生效值逐字比对；fuses 清单，M8 打包后核对；`oi-asset://` 只给 `standard` 与 `secure`，只收 GET / HEAD，按 realpath 判断是否在允许目录内，只返回 PNG / JPEG / GIF / WebP，带 `nosniff` | ARCH §9；PRD AC-67 |
 | 服务商适配层 | 新包 `packages/providers`：格式与服务商分开，格式适配器（TS 侧 `openai-chat`、`anthropic-messages`、`gemini-generate-content`、`baidu-ocr`、`zhipu-layout-parsing`；worker 侧 `modelbest-jev`、`modelbest-document-parse`、`paddleocr-aistudio-jobs`）+ 注册表 `registry/vendors/<vendor>.ts`；能力标记 chat / vision / ocr / scoring / streaming，只来自注册表或用户勾选，未知按否，闸门在传输层；鉴权经 main 的 `ProviderAuthorizer`；发送必须带 `Reservation` 并经 `EgressCheck`；按能力的共享契约测试套件，样例全部合成；原先每家一个切片适配器改为经 `@oi/providers`；M4 用一个新增假服务商的样例 PR 验证「核心零改动」。各家格式的核实见 §2.10 | ARCH §1、§2.5、§3、§4.1–§4.3、§5.1、§5.2 F-18、§7.3、§7.7、§7.9、§12、§13 G5；PRD §3.3、US-32、AC-64；RULES §4、§5 第 17、18 条 |
 | 开发用 Key | 只以环境变量提供：云端 Agent 经 Cursor Secrets，开发者本机（Windows）由开发者自己设为用户级或会话级环境变量，值不进仓库里的脚本与配置；新增的变量名（只登记名字）见 ARCH §15.4 | ARCH §15.4；RULES N-05 |
-| **待 Wisdom 定** | ① 每个能力预置与默认的服务商（定之前设置列出注册表全部服务商、不预选）；② Gemini 默认用原生格式还是 OpenAI 兼容端点；③ 百度 OCR 用 access_token 还是 API Key 鉴权；④ 开发者本机的 Key 用环境变量还是 Windows 凭据管理器；⑤ 「本机可信」主机选项（默认没有）是否保留；⑥ §6.5 末行的规格补充已按评审采纳，Wisdom 可以推翻；⑦ 应用页面改由 `oi-app://` 提供；⑧ CSP 的放宽项待 M2 实测后经 ADR 定；⑨ 本批没做的评审项：P1-5（阅读顺序两套实现）、P1-6（借用多模态翻译的位置）、P1-7（Markdown 两条解析路径）、P1-11（门禁与 PR 粒度）、P1-12（M6 拆分）、P2-3（历史草案的表格），以及其余 P2 项，留到之后的 PR | ARCH §7.9.8、§9、§15.4、§16；PRD §9 |
+| 已定（Wisdom 2026-10-30 20:57，按建议） | ① 翻译、多模态补救、问答、云 OCR：设置列出全部服务商，不预选，由用户选；没选之前按能力降级（Jev 与引擎 B 的 API 服务商仍是面壁，Q9）；② Gemini 默认用原生格式，OpenAI 兼容端点保留为备选；③ 百度 OCR 现在用 access_token，API Key 方式在请求头写法核实后加入；④ 开发者本机的 Key 现在用环境变量，Windows 凭据管理器之后支持；⑤ 保留「本机可信」主机选项，默认没有；⑥ 保留 §6.5 末行的规格补充（重新打开开关后照常询问）；⑦ P1-5（阅读顺序两套实现）、P1-6（借用多模态翻译的位置）、P1-7（Markdown 两条解析路径）、P1-11（门禁与 PR 粒度，含热点收窄）、P1-12（M6 拆分）、P2-3（历史草案的表格）与其余 P2 项留到之后的 PR C，本批不开始 | ARCH §7.0 第 6 条、§7.9.6、§7.9.8、§15.4、§16；PRD §3.3、AC-61 ⑦ g、AC-64 ⑨、§9 |
+| **待 Wisdom 定** | ① 应用页面改由 `oi-app://` 提供；② CSP 的放宽项待 M2 实测后经 ADR 定 | ARCH §9 |
 
 ## 7. 未核实的说法
 
@@ -499,8 +500,8 @@ Wisdom 19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md
 | MiniCPM-OCR 1.0 SDK（引擎 B 本地）在 Windows 上运行 | 上游两个验证环境是 Linux vLLM（RTX 5090 32 GB）与 macOS ARM64 llama.cpp（§2.2） | **未核实**；按 API 优先，开发机上的本地引擎 B **不要求**，引擎 B 默认走面壁文档解析 API |
 | PaddleOCR / PaddleX 版面与公式流水线在 Windows + RTX 4070 上运行 | Paddle 3.3 有 Windows GPU 包（CUDA 11.8 / 12.6 / 12.9，计算能力 > 7.5，§2.4.1）；整条流水线无 Windows 实测记录 | **未实测**；按 API 优先在开发机上不要求，引擎 A 的三条路径都保留，开发用哪条随 M3 前的最终选择定（§2.4.1、§6.4） |
 | 百度 AI Studio PaddleOCR 托管 API 能否作为引擎 A 模型阶段的来源：区域框与类别、公式 LaTeX、单张页面图输入、模型版本锁定、对应 Q10 的哪一档、价格与每日页数配额 | [异步 API 使用文档](https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5)（2026-02-04）示例只取 Markdown，未写区域框与版本 | **未核实**，M3 开工前核实；核实通过才出现在选项里，是否作为默认随 M3 前的最终选择定（ARCH §7.0、§6.4） |
-| 翻译、多模态、问答的预置与默认服务商；TTS / ASR 的服务商 | — | **待 Wisdom 定**；接入方式已定为服务商适配层（ARCH §7.9），本地替代就是 Base URL 在回环地址上的 `openai-chat` 服务商；定之前设置列出注册表全部服务商、不预选；TTS / ASR 在 M7 选型；变量名登记到 ARCH §15.4 |
-| 在本地 Windows 开发机（不在 Cursor 云端 Agent 里）开发时，Cursor Secrets 如何注入环境变量 | Cursor Secrets 用于云端 Agent 的环境 | **未核实**；规格的做法：开发者自己设为系统用户级或会话级环境变量，值不进仓库里的脚本与配置（ARCH §15.4、RULES N-05）；Key 只放 Cursor Secrets 或用户本机安全存储、不写 `.env`、不进仓库（Wisdom 18:37）；是否改用 Windows 凭据管理器**待 Wisdom 定** |
+| TTS / ASR 的服务商 | — | **待定**，M7 选型；接入方式是服务商适配层（ARCH §7.9），变量名登记到 ARCH §15.4 |
+| 在本地 Windows 开发机（不在 Cursor 云端 Agent 里）开发时，Cursor Secrets 如何注入环境变量 | Cursor Secrets 用于云端 Agent 的环境 | **未核实**；现在的做法：开发者自己设为系统用户级或会话级环境变量，值不进仓库里的脚本与配置（ARCH §15.4、RULES N-05）；Key 只放 Cursor Secrets 或用户本机安全存储、不写 `.env`、不进仓库（Wisdom 18:37）；Windows 凭据管理器的支持之后再加（Wisdom 2026-10-30 20:57） |
 | 本机 worker 基础安装（不含模型）的体积 | — | **未实测**，M1 统计 |
 | 本机模式自备渲染图的 Jev 分数与官方 Docker / 面壁 API 的一致性 | 上游说明 macOS 只能跑纯评分服务、分数不能与官方数值比较 | **未核实**；按 PRD QM-14 单独定标 |
 | 百度「通用文字识别（高精度含位置版）」对学术公式的识别能力、当前计价与免费额度 | 官方文档只描述接口与字段 | **未核实**，M6 接入前确认 |
@@ -519,9 +520,9 @@ Wisdom 19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md
 | KaTeX 对 Obsidian 笔记常见写法（`\begin{align}` 自动编号、部分 AMS 宏）的覆盖程度 | Loom 方案「代价」一栏 | **未量化**；不支持的公式显示原文加错误标记（PRD AC-31） |
 | Anthropic 应锁定哪个 `anthropic-version` | [Messages](https://docs.claude.com/en/api/messages) 示例为 `2026-10-21` | **未核实**是否为当前推荐值；实现时按当时文档定，写进注册表（ARCH §7.9.6） |
 | 智谱 `layout_parsing` 的 `Authorization` 是否带 `Bearer` 前缀 | OpenAPI 定义为 Bearer，指南示例不带 | **未核实**；M6 接入前用真实 Key 确认（§2.10） |
-| 百度 OCR 用 API Key 鉴权时的请求头写法 | [鉴权文档](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)列出三种方式 | **未核实**；定之前按 access_token，改用哪种**待 Wisdom 定** |
+| 百度 OCR 用 API Key 鉴权时的请求头写法 | [鉴权文档](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)列出三种方式 | **未核实**；现在用 access_token，核实后加入 API Key 方式（Wisdom 2026-10-30 20:57） |
 | 千帆 v2 逐模型支持 `detail` 与 `stream_options.include_usage` 的清单；千帆文本生成页的当前地址 | [视觉理解](https://cloud.baidu.com/doc/qianfan-api/s/rm7u7qdiq)只写了部分模型 | **未核实**，M5 实现时核对 |
-| Gemini OpenAI 兼容端点与原生端点在用量与错误体上的差异 | [OpenAI 兼容文档](https://ai.google.dev/gemini-api/docs/openai) | **未核实**；默认用哪种**待 Wisdom 定** |
+| Gemini OpenAI 兼容端点与原生端点在用量与错误体上的差异 | [OpenAI 兼容文档](https://ai.google.dev/gemini-api/docs/openai) | **未核实**；默认用原生格式，兼容端点为备选（Wisdom 2026-10-30 20:57） |
 | 各服务商的预置模型清单与单价 | 各家官方文档 | **未核实**；实现时按当时文档填写并记 `verifiedAt`，单价未核实的按次数类上限管（ARCH §7.8、§7.9.8） |
 | Electron fuse `EnableEmbeddedAsarIntegrityValidation` 在各平台上的支持情况 | Electron `docs/tutorial/fuses.md`（2026-10-30 查阅 main 分支） | **未核实**，M1 按锁定版本复核（ARCH §9） |
 | CSP 草案能否不放宽就跑通 KaTeX 与 PDF.js；`oi-asset://` 是否必须注册为 `standard` | — | **待 M2 实测**；任何放宽都要 ADR（ARCH §9） |
