@@ -1605,26 +1605,18 @@ G13–G16 与 5 层、18 个切片的关系：规则全部按通配路径写（`
 | Node.js | 20.19.2（沿用仓库 `.nvmrc`），M1 评估升到 22 LTS | 仅用于构建与测试；Electron 自带运行时 |
 | pnpm | 通过 `corepack enable` 启用，版本写进 `package.json` 的 `packageManager` | workspace |
 | Electron | M1 锁定一个受支持主版本 | 锁定后逐条核对安全清单与 `safeStorage` 行为 |
-| Python | 3.11（M1 实测 Paddle / MiniCPM 依赖后锁定，3.12 为候选） | 由 `uv` 管理；不要求最终用户自行安装 |
-| uv | 最新稳定版 | `uv.lock` 入库 |
+| Python | 3.11，补丁版本锁在 `workers/parser/.python-version` | 由 `uv` 安装；不要求最终用户自行安装。Paddle / MiniCPM 的兼容性仍留到对应里程碑实测，3.12 仍是候选，本次不改默认主版本 |
+| uv | 锁在 `workers/parser/.uv-version`，并写入该目录 `pyproject.toml` 的 `tool.uv.required-version` | `workers/parser/uv.lock` 入库 |
 
-### 15.2 对 `.cursor/environment.json` 的建议（本 PR 不修改该文件）
+### 15.2 云端 Agent 的 `.cursor/environment.json`
 
-当前文件只安装 Node 依赖、Chrome 与 CJK 字体。v2 进入 M1 后建议改为：
+`install` 执行 `.cursor/install.sh`（用法见 [docs/ci-and-environment.md](./docs/ci-and-environment.md)）。脚本按顺序做这些事：
 
-```json
-{
-  "install": "bash -lc 'source ~/.nvm/nvm.sh 2>/dev/null && nvm install && nvm use && corepack enable && if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; fi; command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH=\"$HOME/.local/bin:$PATH\"; if [ -f workers/parser/pyproject.toml ]; then (cd workers/parser && uv sync --frozen --extra dev); fi; (fc-list :lang=zh | grep -q .) || (sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends fonts-noto-cjk xvfb libnss3 libgbm1 libasound2t64) || true'",
-  "terminals": []
-}
-```
+- 用 `nvm` 安装 `.nvmrc` 里的 Node，再按锁文件安装 JS 依赖：有 `pnpm-lock.yaml` 时 `corepack pnpm install --frozen-lockfile`，否则 `npm ci`。
+- 安装 `.uv-version` 指定的 `uv`，并把 `uv` / `uvx` 链到 `/usr/local/bin`（非交互登录壳不读 `~/.bashrc` 里的 PATH）。
+- 在 `workers/parser/` 执行 `uv python install` 与 `uv sync --frozen --extra dev`。基础依赖含锁定的 `pypdfium2`，不含 PyMuPDF。
 
-要点：
-
-- 增加 `uv` 与 worker 的 `dev` 依赖（pytest、ruff、mypy、FastAPI），**不**安装 Paddle / Torch 等重依赖与任何模型权重；这些在需要真实推理的手动任务中按引擎 extras 单独安装。
-- 增加 Electron 在无头 Linux 运行所需的 `xvfb` 与系统库，供 Playwright Electron 冒烟测试。
-- v2 不再需要单独安装 Chrome（v1 扩展测试用），可在 M1 确认无依赖后移除。
-- 包名（如 `libasound2t64`）随镜像的 Ubuntu 版本调整，M1 实测后再定。
+不安装 Paddle、Torch、模型权重，也不读取密钥。Chrome 与 CJK 字体仍是尽力安装：失败不掩盖 Node 或 Python 工具链的失败。Electron 无头库（`xvfb` 等）留到有 Playwright 冒烟测试时再加，包名随镜像的 Ubuntu 版本实测。
 
 ### 15.3 常用命令（M1 落地后）
 

@@ -20,6 +20,10 @@ Open Immerse v2 - PDF formula extraction and vector redraw project
 
 当前为可审阅设计方案；应用实现、模型精度与双平台性能仍须按方案逐项验收。
 
+## CI 与云端环境
+
+检查命令、GitHub Actions 与云端 Agent 的 Node / Python 安装见 [docs/ci-and-environment.md](docs/ci-and-environment.md)。
+
 ## 许可证
 
 本项目以 [Apache License 2.0](LICENSE) 发布（版权人 wisdom-km）。新引入的依赖与模型权重必须与 Apache-2.0 兼容，禁止 AGPL / GPL 依赖（含 PyMuPDF），规则见 [RULES.md](RULES.md) §1.5。
