@@ -316,7 +316,7 @@ Loom 的 [DESIGN.md](./DESIGN.md) DS-01–DS-27 与 §6.1、§6.2 验收的对�
 | DS-10 | 无 AC | 快捷键符号随平台。 |
 | DS-11 | 无 AC | 每屏主按钮不超过 1 个。 |
 | DS-12 | AC-56 | 五种 `display` 只按 `getBlocks` 分支。`never_succeeded` 的文案按 `failureKind` 分三种，见 DESIGN §4.1 与 AC-56；另见 DS-27。 |
-| DS-13 | AC-56 | `previous_with_failure` 的上一版、2px `--oi-reader-warn`、文案「重译未成功，仍显示上一版 · 重试」、`role=status`、无 toast / 对话框。与 AC-56 一致；提示行按 `failureKind` 分三种（Wisdom 2026-10-30 22:02）。 |
+| DS-13 | AC-56 | `previous_with_failure` 的上一版、2px `--oi-reader-warn`、`role=status`、无 toast / 对话框。提示行按 `failureKind`：`check_failed`「重译未成功（校验没过），仍显示上一版 · 重试」、`network`「重译未成功（网络问题），仍显示上一版 · 重试」、`model_error`「重译未成功（模型出错），仍显示上一版 · 重试」；`null` 兜底「重译未成功，仍显示上一版 · 重试」（DESIGN §4.1，Wisdom 2026-10-30 22:02）。与 AC-56 一致。 |
 | DS-14 | AC-04、AC-31 | 裁图固定 18px 参考字号、不随正文字号变化是 DS-14（Wisdom 2026-10-24 12:06；ARCHITECTURE `crop-geometry.ts`），没有单独的 AC 数字。未核验公式不把 LaTeX 写进译文正文见 AC-04；非法 LaTeX 显示原文见 AC-31。 |
 | DS-15 | AC-61 ⑦e、⑦f | 开关默认开；关时外发确认 0 次；数据去向始终显示。从开到关的那一次确认是 UI，core 不弹（⑦e）。 |
 | DS-16 | AC-61 ⑦a、AC-60 ② | 对话框只在 `settings.onEgressConsentRequired` 之后出现；不上传原 PDF。 |
