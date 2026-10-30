@@ -1,7 +1,7 @@
 # v2 差异与修改清单
 
-状态：v0.1。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC）。
-用途：把三类输入——用户提供的双引擎方案（[附件原文](./architecture/inputs/pdf_translation_architecture.md)）、`docs/architecture/` 下的 01 / 02 / 03 草案、v1 实际实现（见 [v1 审查](./v1-review.md)）——与上游模型的官方资料逐条对照，列出**需要改的地方、冲突点、未核实的说法**，并给出统一编号的待拍板问题。
+状态：v0.2。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC），Q3 / Q4 / Q9 相关补充查询 2026-10-30。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定（§6）。
+用途：把三类输入——用户提供的双引擎方案（[附件原文](./architecture/inputs/pdf_translation_architecture.md)）、`docs/architecture/` 下的 01 / 02 / 03 草案、v1 实际实现（见 [v1 审查](./v1-review.md)）——与上游模型的官方资料逐条对照，列出**需要改的地方、冲突点、未核实的说法**，并给出统一编号的决策问题（Q1–Q12，现已全部决定）。
 结论已写入根目录规格：[PRD.md](../PRD.md)、[ARCHITECTURE.md](../ARCHITECTURE.md)、[RULES.md](../RULES.md)。三份规格与本文冲突时以规格为准；本文记录「为什么这样改」。视觉与交互规格 [DESIGN.md](../DESIGN.md)、[docs/design-principles.md](./design-principles.md) **待 Loom 产出**，本文不涉及。
 
 ---
@@ -9,14 +9,17 @@
 ## 0. 结论先行
 
 1. **五个模型名都真实存在**，没有编造的名称；但多数是近期发布，成熟度风险高：MiniCPM-OCR 仓库 2026-10-27 才创建（查询时公开约 2 天），Unlimited-OCR v2 同日发布，PP-DocLayoutV3 发布于 2026-01-20。实施时必须锁定提交与权重摘要。
-2. **引擎 B 不是「一个模型端到端」**：MiniCPM-OCR 1.0 官方 SDK 是「PP-DocLayoutV3 版面 → 裁剪 → MiniCPM-OCR 1.0 识别 → 按序组装」的流水线；阅读顺序来自 PP-DocLayoutV3，不来自 OCR 模型。A 若也用 PP-DocLayoutV3，**A/B 的版面判断不独立**（Q10）。
+2. **引擎 B 不是「一个模型端到端」**：MiniCPM-OCR 1.0 官方 SDK 是「PP-DocLayoutV3 版面 → 裁剪 → MiniCPM-OCR 1.0 识别 → 按序组装」的流水线；阅读顺序来自 PP-DocLayoutV3，不来自 OCR 模型。A 若也用 PP-DocLayoutV3，**A/B 的版面判断不独立**。Q10 已决定：A 以 V3 起步，plus-L 对照，明显更好时作为「高质量档」。
 3. **Jev 的 0~1 分不是全部**：只有 `verdict = scored` 才是有效分；`precheck_reject`、`render_error`、`missing_original_image` 返回占位 0.0，`encode_error`、`forward_error` 返回 -1.0，都必须当作「错误」而不是「低分」，否则会误触发付费补救。默认阈值 0.5 只影响统计，不改原始分。
-4. **Jev 不适合在 8 GB 目标设备本机运行**：官方最低要求是 NVIDIA ≥ 8–12 GB 显存或 Apple M 系列 ≥ 16 GB 统一内存；且只有 Docker 镜像（Linux + NVIDIA）的渲染环境与云 API 一致、分数可直接比较。v2 默认走远程 / Docker 服务（Q9）。
-5. **PyMuPDF 是 AGPL-3.0 / 商业双许可**，附件和草案 03 把它定为统一预处理库；MiniCPM SDK 的 PDF 输入与 Unlimited-OCR 示例也依赖它。建议 worker 预处理改用 pypdfium2（BSD-3-Clause / Apache-2.0），由我们渲染页面图再以图片交给 MiniCPM SDK（Q6）。
+4. **Jev 不适合在 8 GB 目标设备本机运行**：官方最低要求是 NVIDIA ≥ 8–12 GB 显存或 Apple M 系列 ≥ 16 GB 统一内存；且只有 Docker 镜像（Linux + NVIDIA）的渲染环境与云 API 一致、分数可直接比较。Q9 已决定：本机与远程都支持、设置中可选、按硬件推荐（8 GB 级推荐远程），两种部署是同一个 worker 接口；开发机（32 GB）必须能本机跑通。Q1 已决定：所有识别路径（含云 OCR、arXiv 对齐、多模态补救）都经 Jev 评分。
+5. **PyMuPDF 是 AGPL-3.0 / 商业双许可**，附件和草案 03 把它定为统一预处理库；MiniCPM SDK 的 PDF 输入与 Unlimited-OCR 示例也依赖它。Q6 已决定：worker 预处理用 pypdfium2（BSD-3-Clause / Apache-2.0），由我们渲染页面图再以图片交给 MiniCPM SDK；项目许可证定为 Apache-2.0，禁止 GPL / AGPL 依赖。
 6. **MinerU 许可证已不是 AGPL**，而是自定义的 MinerU Open Source License（Apache-2.0 加附加条款）；且 MinerU 3.0 起阅读顺序改由 PP-DocLayoutV2 给出，不再是「纯几何规则」。附件「借鉴 MinerU 几何规则」只能借思路，不能引入代码或依赖（RULES §1.5）。
-7. **Unlimited-OCR 存在（MIT），但未见 bbox 输出**，是面向多页长文档的端到端模型，无法满足「点击段落跳回原文」的定位要求，v2 不接入（Q12）。
-8. 草案 01 的多端 / 云 / 写作目录与里程碑、按层组织的目录、400 行「软门槛」与用户的新要求冲突，已在 ARCHITECTURE 中改为功能切片 + 硬上限，并把手机、同步、写作移出 v2（Q3、Q5）。
+7. **Unlimited-OCR 存在（MIT），但未见 bbox 输出**，是面向多页长文档的端到端模型，无法满足「点击段落跳回原文」的定位要求。Q12 已决定：不接入，上游支持坐标输出后再评估。
+8. 草案 01 的多端 / 云 / 写作目录与里程碑、按层组织的目录、400 行「软门槛」与用户的新要求冲突，已在 ARCHITECTURE 中改为功能切片 + 硬上限，并把手机、同步移出 v2（Q3）；写作辅助移出 v2 实现，但在架构中预留 `writing` 切片（Q5）。
 9. v1 的若干历史决定被新方案取代：「桌面智能版式只用 PP-DocLayoutV2、默认文字层原序」「多模态是公式第二层」「整页多模态替换」都不再沿用；「通顺试接」在 v1 中只有文档、没有代码，v2 需要新实现并定标。
+10. **arXiv 源码校准公式进入 v2**（Q4 已决定）：新增 `formula-source` 切片，v1 的编号识别、限速下载、解包、TeX 解析、对齐与 KaTeX 闸门规则可复用（[v1 审查](./v1-review.md) §4.17）；源码候选同样经 Jev 与优先级链。
+11. **不做 v1 数据迁移**（Q8 已决定）：v2 从零开始，v1 导入器与相关里程碑、验收全部删除，取舍见 PRD §3.2。
+12. **UI 与业务核心解耦**（Q3 已决定）：Wisdom 追加的约束经调研后写入 ARCHITECTURE §2.1–§2.6、RULES §8，并由 CI G13–G17 检查。
 
 ## 1. 输入与核实方法
 
@@ -51,7 +54,7 @@
 | Unlimited-OCR | **已核实** | [baidu/Unlimited-OCR](https://github.com/baidu/Unlimited-OCR)（2026-06-18 创建；v1 2026-06-22、v2 2026-10-27）；HF `baidu/Unlimited-OCR`、`-2`（约 3.34B） | MIT | 基于 DeepSeek-OCR 的多页长文档端到端模型（§2.6） | 未见 bbox 输出，不能作为阅读器引擎 |
 | MinerU | **已核实** | PyPI `mineru` 4.1.2 | **MinerU Open Source License**（自定义） | 文档解析工具链（§2.7） | 不再是 AGPL；不再是纯几何排序 |
 | PyMuPDF | **已核实** | PyPI `PyMuPDF` 2.0（2026-10-19） | **AGPL-3.0 或 Artifex 商业许可** | PDF 渲染与文字提取 | 附件与草案 03 §1、§3 把它定为统一预处理库 |
-| pypdfium2 | **已核实**（仅元数据） | PyPI `pypdfium2` 5.14.0 | BSD-3-Clause / Apache-2.0（另含 PDFium 等依赖许可证，M1 需逐项复核） | PDFium 的 Python 绑定：渲染、文字与字符框 | 本文建议的 PyMuPDF 替代（Q6） |
+| pypdfium2 | **已核实**（仅元数据） | PyPI `pypdfium2` 5.14.0 | BSD-3-Clause / Apache-2.0（另含 PDFium 等依赖许可证，M1 需逐项复核） | PDFium 的 Python 绑定：渲染、文字与字符框 | 已采用，替代 PyMuPDF（Q6 已决定） |
 
 ### 2.2 MiniCPM-OCR 1.0（引擎 B）
 
@@ -76,7 +79,7 @@
 | 批量上限 | 每请求最多 64 个评分项 | 同上 `:28`、`:57` | worker / 适配器按 64 分批 |
 | 图片编码 | 云 API 要求 `data:image/png;base64,` 前缀；Docker API 要求**不带**前缀，带了该项返回 `encode_error` | 同上 `:28`；`docs/minicpm_ocr_jev_docker_api_en.md:17` | 云与 Docker 共用一个适配器，但编码方式按配置切换，并有契约测试覆盖两种形态 |
 | 渲染一致性 | Docker 镜像内置固定版本 Chromium 与 CJK 字体，渲染与云 API 一致，分数可直接与官方数值比较；SDK 部署的渲染器随宿主环境变化，排序稳定，绝对值可能在小数点后第三位不同。macOS 上**不支持**「渲染 + 评分」服务（固定字体环境依赖 `apt-get`），只能跑纯评分服务、由调用方自备渲染图，且分数不能与官方数值比较。Docker API 返回 `template_md5`，与训练模板不一致时分数不可比 | `docs/minicpm_ocr_jev_tutorial_en.md:28-32`、`docs/SKILL_jev_en.md:18-25`、`:96`、`:367`、`docs/llamacpp_deploy_jev_en.md:210`、`docs/minicpm_ocr_jev_docker_api_en.md:61` | 阈值按「部署方式 + 渲染环境」分别定标并记入 `evaluatorVersion`；不同部署的分数不混用；适配器在健康检查时记录 `template_md5`，变化即视为新的 `evaluatorVersion` |
-| 硬件 | Docker：NVIDIA ≥ 12 GB、驱动 ≥ 535；llama.cpp / Ollama：NVIDIA ≥ 8 GB 或 M 系列 ≥ 16 GB 统一内存；SGLang：≥ 16 GB | `docs/minicpm_ocr_jev_tutorial_en.md:17`、`docs/SKILL_jev_en.md:31`、`docs/llamacpp_deploy_jev_en.md:34`、`docs/ollama_deploy_jev_en.md:34`、`docs/sglang_deploy_jev_en.md:30` | 8 GB Windows / M1 8 GB 目标设备不本机跑 Jev；默认走远程（云 API 或用户 Docker 服务），本机 SDK 部署为可选（Q9） |
+| 硬件 | Docker：NVIDIA ≥ 12 GB、驱动 ≥ 535；llama.cpp / Ollama：NVIDIA ≥ 8 GB 或 M 系列 ≥ 16 GB 统一内存；SGLang：≥ 16 GB | `docs/minicpm_ocr_jev_tutorial_en.md:17`、`docs/SKILL_jev_en.md:31`、`docs/llamacpp_deploy_jev_en.md:34`、`docs/ollama_deploy_jev_en.md:34`、`docs/sglang_deploy_jev_en.md:30` | Q9 已决定：本机 / 远程都支持，设置中可选；按硬件推荐（达标推荐本机，8 GB 级推荐远程），用户随时可改；两种部署同一 worker 接口（ARCH §7.4） |
 | 精度 | 宣称 JevOCRBench AUROC × 100 = 93.6 | 模型卡 | **未核实**（官方自测，§7） |
 
 草案 03 §9 的总体判断（只有 `scored` 是有效分、错误不是低分、0.5 不适用于本产品）是正确的，本文只补全遗漏的两个 verdict、批量上限、图片编码差异与渲染一致性约束。
@@ -93,7 +96,7 @@
 - Paddle 官方文档自相矛盾：`docs/version3.x/module_usage/layout_analysis.en.md` 第 25 行写「only supports PP-DocLayoutV2」，同一文件第 100–115 行的 CLI 示例与测速表却使用 V3；PaddleOCR-VL 的部署配置 `deploy/paddleocr_vl_docker/pipeline_config_vllm.yaml` 也写 `model_name: PP-DocLayoutV3`。实施时以锁定版本的实际行为为准，并在 M3 做一次实测。
 - PP-DocLayoutV3 面向弯曲、倾斜、翻拍等真实拍摄场景，单次前向同时输出多点框与阅读顺序。模型卡称对应论文 RT-DocLayout（arXiv:2606.23344）已被 ECCV 2026 接收——**未核实**。
 - PP-StructureV3 的阅读顺序用规则算法 `xycut_enhanced`（PaddleX `layout_parsing/pipeline_v2.py`），默认版面模型是 PP-DocLayout_plus-L；PaddleOCR-VL 则直接用 V2 / V3 模型预测的顺序。前者与 v2「引擎 A 自写阅读顺序」的思路一致，可作为对照实现。
-- **A/B 共享依赖**：附件让 A 选「PP-DocLayout-L 或 PP-DocLayoutV3」，B 内部固定用 V3。A 若选 V3，两条分支的版面判断同源，A/B 一致不能当作「两个专家互相印证」。草案 03 §2 已指出这一点；ARCHITECTURE §7.1 已写入，A 的选型列为 Q10。
+- **A/B 共享依赖**：附件让 A 选「PP-DocLayout-L 或 PP-DocLayoutV3」，B 内部固定用 V3。A 若选 V3，两条分支的版面判断同源，A/B 一致不能当作「两个专家互相印证」。草案 03 §2 已指出这一点；ARCHITECTURE §7.1 已写入。Q10 已决定：A 以 V3 起步（对比时标注「版面同源」），基准另跑 plus-L 对照，明显更好时作为「高质量档」供用户选择（判据见 PRD QM-13）。
 - A 即使用 V3，也只把模型给出的顺序作为「候选 / 对照证据」，正式顺序由项目自写算法给出并版本化（草案 03 §2 的要求保留）。
 
 ### 2.5 PP-FormulaNet 系列
@@ -117,7 +120,7 @@
 
 - 存在且开源（MIT）。基于 DeepSeek-OCR 的端到端多页长文档模型（核心是 SR-SWA 注意力，论文 arXiv:2606.23050）；部署走 Transformers `trust_remote_code`（会执行模型仓库里的 Python 代码）或定制 SGLang wheel，官方在 A800-80GB 上测试；示例代码用 PyMuPDF 1.27.2.2 读 PDF。README 链接的 `UnlimitedOCR1.0` 实际是 tag，不是分支。
 - 公开资料中**未见 bbox / 区域坐标输出**，不满足「译文段落点击跳回原文」「笔记锚点」「区域级补救」的定位要求。
-- v1 的历史规划曾想接「百度托管文档解析（Unlimited-OCR）」（见 [v1 审查](./v1-review.md) §4.5），已被双引擎方案取代。v2 不接入（Q12）；若将来需要「整篇长文档快速通读」再单独评估。
+- v1 的历史规划曾想接「百度托管文档解析（Unlimited-OCR）」（见 [v1 审查](./v1-review.md) §4.5），已被双引擎方案取代。Q12 已决定：不接入；上游支持坐标输出后再评估。
 
 ### 2.7 MinerU
 
@@ -130,11 +133,12 @@
 
 | 用途 | 附件 / 草案 | 风险 | v2 建议 |
 | --- | --- | --- | --- |
-| worker 预处理（文字层检测、页面渲染、字符框） | PyMuPDF | AGPL-3.0：随桌面分发或作为网络服务提供时有源码公开义务；或购买 Artifex 商业许可 | 默认 pypdfium2；PyMuPDF 仅在用户批准（Q6）后使用 |
+| worker 预处理（文字层检测、页面渲染、字符框） | PyMuPDF | AGPL-3.0：随桌面分发或作为网络服务提供时有源码公开义务；或购买 Artifex 商业许可 | 只用 pypdfium2；PyMuPDF 禁止引入（Q6 已决定） |
 | MiniCPM SDK 的 PDF 输入 | SDK `pdf` extra → PyMuPDF | 同上 | 不装 `pdf` extra，以图片输入 SDK |
 | Unlimited-OCR 示例 | PyMuPDF | 同上 | 不接入（Q12） |
 | 桌面阅读与文字层基础档 | — | — | `pdfjs-dist`（Apache-2.0） |
 
+- Q6 已决定：项目许可证为 Apache-2.0（根目录 `LICENSE`，版权人 wisdom-km），RULES §1.5 禁止 GPL / AGPL 依赖，PyMuPDF 不能以任何方式引入，包括经 MiniCPM SDK `pdf` extra 间接引入。
 - PyMuPDF 2.0 新增的 Office 相关能力需另购许可，与本项目无关，不展开。
 - 换库的代价：草案 02 §5 的坐标合同按 PyMuPDF 写；换成 pypdfium2 后，`CoordinateFrame.renderer` 记录实际库名与版本，旋转 / CropBox 的矩阵需在 M3 对 0 / 90 / 180 / 270 度与非零 CropBox 重新验证（草案 02 §5 的测试要求保留）。
 
@@ -151,9 +155,9 @@
 
 | 附件位置 | 原说法 | 核实 / 冲突 | 改为 | 写入 |
 | --- | --- | --- | --- | --- |
-| §1 输入层 | 用 PyMuPDF 打开 PDF、检测文字层、渲染页面 | AGPL 风险（§2.8） | worker 预处理默认 pypdfium2；文字层检测按页、可信度按区域判断（草案 03 §3） | ARCH §7.1、§10.3；Q6 |
+| §1 输入层 | 用 PyMuPDF 打开 PDF、检测文字层、渲染页面 | AGPL 风险（§2.8） | worker 预处理用 pypdfium2（Q6 已决定）；文字层检测按页、可信度按区域判断（草案 03 §3） | ARCH §7.1、§10.3；Q6 |
 | §1 输入层 | 渲染 300 DPI 左右 | 合理起点，非常量 | 作为配置，按模型输入限制、清晰度、内存定标 | PRD QM-06 / QM-07 |
-| §2 分支 A | 版面用 PP-DocLayout-L 或 PP-DocLayoutV3 | 二者能力不同（§2.4）；选 V3 则与 B 共享依赖 | 选型列为 Q10；本文假设先用 V3，对比时标注共享依赖，基准另跑 plus-L 对照 | ARCH §7.1；Q10 |
+| §2 分支 A | 版面用 PP-DocLayout-L 或 PP-DocLayoutV3 | 二者能力不同（§2.4）；选 V3 则与 B 共享依赖 | Q10 已决定：V3 起步，对比时标注共享依赖；基准另跑 plus-L 对照，明显更好时作为「高质量档」 | ARCH §7.1；Q10 |
 | §2 分支 A | 阅读顺序自己写，借鉴 MinerU 几何规则 | MinerU 已改用模型排序、许可证非白名单（§2.7） | 自写算法版本化；借鉴 v1 `pdf-flow-join.js` 与 PP-StructureV3 `xycut_enhanced` 思路；「通顺试接」作为新实现 | ARCH §10.3 `reading_order/`；v1 审查 §4.13 |
 | §2 分支 A | 表格「可选」转 Markdown | 合并单元格、跨页表格范围未定 | 首版保留表格结构候选 + 原图；复杂结构在 Markdown 导出时声明降级 | PRD S2；ARCH §7.2 |
 | §3 分支 B | MiniCPM-OCR 1.0 直接端到端解析，输出含阅读顺序 | 实际是 SDK 流水线，顺序来自 PP-DocLayoutV3（§2.2） | 称「端到端流水线」；接块级中间记录而非只接 Markdown | ARCH §7.1、§10.3 `e2e_b/` |
@@ -161,7 +165,7 @@
 | §4 统一输出层 | 两分支输出相同格式的结构化 Markdown | Markdown 丢失 bbox、来源、公式关联，无法支撑定位与重锚定 | 权威数据为 JSON 文档模型（候选页 → 采用版本），Markdown / LaTeX 为导出投影（草案 02 §3 的结论） | ARCH §8.1 |
 | §5 质量评估层 | Jev 对每个区域打分（0~1），低分标记 | 缺错误占位、阈值语义、批量上限、部署约束（§2.3） | 规范状态 `scored / error / unavailable / not-run`，只有 `scored` 带分；阈值按类别定标 | ARCH §7.3；PRD AC-05、QM-05 |
 | §6 多模态位置 | 放在翻译层之前**或并行** | 若与翻译并行，同一区域会先用未核验内容翻译，补救后译文作废、重复计费 | 区域补救必须在该区域**采用之前**完成；其他已采用区域的翻译可以并行进行 | ARCH §7.1 |
-| §6 多模态 | 只处理 Jev 低分区域 | 用户已确认：低分**或有明确不确定证据的公式**都可核验 | 两类入口；服务错误、未评分不算证据 | PRD S4、S5；ARCH §7.1 |
+| §6 多模态 | 只处理 Jev 低分区域 | 用户已确认：低分**或有明确不确定证据的公式**都可核验 | 两类入口；服务错误、未评分不算证据；Q1 已决定所有识别路径都经 Jev | PRD S4、S5；ARCH §7.1 |
 | 可选补充 | Unlimited-OCR（超长文档，低优先级） | 无 bbox（§2.6） | v2 不接入 | Q12 |
 | 对比表 | B「阅读顺序：模型直接输出」 | 顺序来自版面模型 | 改为「PP-DocLayoutV3 给出」 | 本文 |
 | 实现建议 2 | 通过配置切换当前分支 | 切换会覆盖已采用结果的风险 | 区分 `compare`（只新增候选）与 `adopt`（原子切换采用版本） | PRD AC-13；ARCH §4.2 `document` |
@@ -174,7 +178,7 @@
 | 位置 | 草案写法 | 冲突 | 改为（权威位置） |
 | --- | --- | --- | --- |
 | §1、§9、§11、§13 后半 | 手机派任务、账号同步、在线桌面接单、官方云路线 | 用户本轮要求「v2 只做桌面端」 | 移出 v2，只在契约里保留余地，不建目录、不写代码（PRD §3.2；Q3） |
-| §1、§10.1、§12 W1 | 写作辅助在 PDF 核心后独立实现 | 不在本轮列出的复用范围内 | 移出 v2，另立（PRD §3.2；Q5） |
+| §1、§10.1、§12 W1 | 写作辅助在 PDF 核心后独立实现 | 不在本轮列出的复用范围内 | 移出 v2 实现；架构预留 `writing` 切片（PRD §3.2；ARCH §4.4；Q5） |
 | §3.1 | 文件超约 400 有效行「触发评审提示」，数值是软门槛 | v1 教训表明软约束无效 | 400 建议 / 600 硬上限，入口 150、函数 80、复杂度 15，CI 失败（ARCH §6、§13 G4） |
 | §4 | 目录按层组织（`packages/domain/*`、`packages/application/*`、`adapters-desktop`、`adapters-cloud`、`apps/mobile`、`services/cloud-api`） | 按层组织会让一个功能散在五个目录，多个 Agent 改同一功能必然交叉；手机与云不在范围 | 按功能切片 `packages/features/<name>/{domain,application,adapters,ui}`，worker 在 `workers/parser/`（ARCH §3、§4） |
 | §5 | 旧代码保留 / 拆分表（约 15 行） | 粒度不足，缺行号；部分判断已变化（如整页多模态） | 以 [v1 审查](./v1-review.md) §2、§4、§5 为准 |
@@ -188,12 +192,12 @@
 | 位置 | 草案写法 | 处理 |
 | --- | --- | --- |
 | §3、§4 | JSON 文档模型为权威，Markdown 为投影；`ContentBlock`、`AcceptedPageRevision` 等类型 | **保留**，落入 `packages/contracts`（ARCH §4.1、§8.1） |
-| §5 | 坐标合同按 PyMuPDF / PDF.js 写 | 合同保留；渲染库待 Q6，`CoordinateFrame.renderer` 记录实际库与版本 |
+| §5 | 坐标合同按 PyMuPDF / PDF.js 写 | 合同保留；渲染库为 pypdfium2（Q6 已决定），`CoordinateFrame.renderer` 记录实际库与版本 |
 | §6 | `FormulaCandidate.engineId: 'paddle-modular' \| 'minicpm-pipeline' \| 'multimodal-repair'` | 改为配置值 `EngineId`，模型名只出现在 adapters 与 `EngineCapabilities.models[]`（ARCH §7.3、F-13） |
-| §6 末 | arXiv 源码校准是否保留待定 | Q4 |
+| §6 末 | arXiv 源码校准是否保留待定 | Q4 已决定：做，新增 `formula-source` 切片（ARCH §7.6） |
 | §6 | `EvaluationResult` 四态 | **保留**；补 `detailCode` 映射（本文 §2.3） |
 | §7 | `⟦fN⟧` 占位 + 片段表哈希 | **保留**（v1 审查 §4.6；ARCH `translation/domain/placeholder.ts`） |
-| §10 | blocks-1 导入迁移表 | 保留为 v1 导入器设计，是否做见 Q8 |
+| §10 | blocks-1 导入迁移表 | 不采用：Q8 已决定不做 v1 迁移 |
 | §11 | 同步 canonical 与缓存 | 同步移出 v2 |
 
 ### 4.3 草案 03（双引擎与质量评估）
@@ -202,13 +206,13 @@
 
 | 位置 | 草案写法 | 处理 |
 | --- | --- | --- |
-| §1、§3 | 输入统一使用 PyMuPDF | Q6；默认 pypdfium2 |
+| §1、§3 | 输入统一使用 PyMuPDF | Q6 已决定：pypdfium2 |
 | §2 | Paddle 公开 PP-DocLayout-L、plus-L、PP-FormulaNet-L、plus-L | 正确；补 Paddle 文档自相矛盾（§2.4） |
 | §5 | B 应接块级中间结果 | 正确；补 `block_id` 与 `order` 是同一序号、建议 `ppdoclayout3_torch`、以图片输入（§2.2） |
 | §6 | TS `ParseEngine` 接口、`EngineId` 联合类型 | 拆为 TS 侧 `ParseGateway`（application 端口）与 Python 侧 `DocumentEngine`（worker 内部）；`EngineId` 改为配置值（ARCH §7.2、§7.3） |
 | §9 | verdict：`render_error` 为 0、`encode_error` / `forward_error` 为 -1 | 补 `precheck_reject`、`missing_original_image`（0.0）与其他非 `scored` 值；补 64 项批量上限与渲染一致性（§2.3） |
 | §10 | 补救路由：先试 B 区域候选，仍低分再多模态 | 保留，B 区域候选以 `capabilities` 声明为前提（ARCH §7.1） |
-| §11 | 「Paddle、MiniCPM、Jev 重推理由用户配置的服务承担」；vLLM 验证 RTX 5090 32 GB；另有 llama.cpp CPU / Metal 路径 | 正确；补 Jev 硬件下限（§2.3），说明 M1 8 GB 不本机跑 Jev；Metal 路径只验证了 macOS ARM64 包，芯片未写 |
+| §11 | 「Paddle、MiniCPM、Jev 重推理由用户配置的服务承担」；vLLM 验证 RTX 5090 32 GB；另有 llama.cpp CPU / Metal 路径 | 正确；补 Jev 硬件下限（§2.3），说明 M1 8 GB 推荐远程跑 Jev（Q9）；Metal 路径只验证了 macOS ARM64 包，芯片未写 |
 | §11 | Paddle 与 MiniCPM / Jev 用隔离环境或独立服务 | **保留**（ARCH §10.3：按引擎分 extras / venv / 容器） |
 | §13 | 官方来源指向 `main` | 规格中注明锁定提交 `1269e4f`（MiniCPM-OCR） |
 
@@ -217,7 +221,7 @@
 | 已确认项 | 与本轮要求的关系 | 处理 |
 | --- | --- | --- |
 | 多端互通、手机派任务、账号同步、官方云入口 | 本轮用户指令「v2 只做桌面端」更新 | 移出 v2，只留接口余地（Q3） |
-| 写作辅助在 PDF 核心后实现 | 本轮复用范围未列写作 | 移出 v2（Q5） |
+| 写作辅助在 PDF 核心后实现 | 本轮复用范围未列写作 | 移出 v2 实现、架构预留（Q5） |
 | 最低硬件不要求本地同时跑两套解析与 Jev | 与 §2.3 的 Jev 硬件下限一致 | 保留（PRD §2） |
 | 其余（双引擎、统一产物、公式不确定处理、自动补救开关与预算、语音首批能力） | 一致 | 保留 |
 
@@ -230,37 +234,38 @@
 | OCR 层为桩、矢量重绘未实现 | `lib/formula-tiers/ocr.js:9-10`、`vector.js:12-18` | OCR 由引擎 A / B 产出 | 矢量重绘不进 v2 |
 | 整页多模态替换（#189，7 轮不收敛，默认关） | `lib/mm-page.js:21` | 只做区域补救 | 丢弃；页面版本切换由原子采用完成 |
 | 「通顺试接」 | 只在 `docs/architecture-redesign.md:185-198`，`:168` 自述未写代码 | 自写阅读顺序 | 新实现，打分模型、窗口、阈值由基准定标；不当作已有资产 |
-| 旧本机服务 `127.0.0.1:8765` 的 `/v1/layout` | `lib/pdf-layout-client.js:12` | `oi-parse/1` | 不兼容；旧数据只经迁移器读取（Q8） |
+| 旧本机服务 `127.0.0.1:8765` 的 `/v1/layout` | `lib/pdf-layout-client.js:12` | `oi-parse/1` | 不兼容；Q8 已决定不迁移，v2 不读旧服务与旧数据 |
 | 多模态账本按页计数，不计金额 | `lib/formula-mm-ledger.js` | 受限 / 不设金额上限预算 | 账本改为金额与次数双口径，带预留与结算 |
-| 未配置翻译时借用多模态服务翻译 | `lib/translate-borrow.js` | 未提及 | Q11 |
-| 文献库与笔记存 IndexedDB | `lib/library-store.js:41`、`lib/notes-store.js:36-55` | SQLite + 文件 | 规则复用，存储重写；迁移见 Q8 |
+| 未配置翻译时借用多模态服务翻译 | `lib/translate-borrow.js` | 未提及 | Q11 已决定：保留，默认关，开启时提示消耗多模态额度 |
+| arXiv 源码作为公式第零层 | `lib/formula-tiers/arxiv.js`、`background/arxiv-source.js` | 附件未提及 | Q4 已决定：做；规则复用，接入 Jev 与优先级链（ARCH §7.5、§7.6） |
+| 文献库与笔记存 IndexedDB | `lib/library-store.js:41`、`lib/notes-store.js:36-55` | SQLite + 文件 | 规则复用，存储重写；不迁移旧数据（Q8） |
 | 诊断日志 7 天 / 2 MB | `lib/diag-log.js:15-17` | — | 沿用为默认值（ARCH §11） |
 | 两步润色默认开 | `lib/storage.js:68` | — | 保留为设置项，默认值沿用 |
 | 测试语料：30 篇 / 639 页预标注、134 页人工复核、1,000 个公式单元 | `corpus/manifest.json`、`labels/*` | 基准集 | 作为公式基准起点；**不是**阅读顺序真值，顺序基准需另建（PRD §7） |
 
-## 6. 需要用户拍板的问题
+## 6. 决策记录（Q1–Q12）
 
-编号在 PRD、ARCHITECTURE、RULES、v1 审查中通用。「本文假设」是规格先行采用的做法，用户否决后按 RULES §7 同步修改。
+编号在 PRD、ARCHITECTURE、RULES、v1 审查中通用。全部 12 个问题已由 Wisdom 于 2026-10-30 决定（Q1、Q2、Q3、Q6、Q9 先行决定；Q4、Q5、Q7、Q8、Q10、Q11、Q12 于 16:53 决定）。
 
-| 编号 | 问题 | 本文假设 | 影响 |
-| --- | --- | --- | --- |
-| Q1 | MiniCPM-OCR 1.0（引擎 B）与 Jev（质量评估）已核实存在，但公开仅约 2 天。是否仍按附件把 B 作为「对比 + 兜底」、Jev 作为质量评估主方案？ | 是；锁定提交与权重摘要，M6 开工前复核一次；Jev 不可用时状态为 `unavailable`，只显示原图与候选，不触发补救 | M6 范围；PRD S2、S5 |
-| Q2 | 「文字层基础档」是否作为无服务时的默认降级？ | 是 | M2 范围；PRD S2、AC-11 |
-| Q3 | v2 只做桌面端，同时支持远程 / 自建 worker；手机、账号同步、官方云只在契约中留余地、不建目录。是否同意？（与需求对齐记录中的多端条目衔接） | 是 | 目录结构；PRD §3.2 |
-| Q4 | arXiv 源码校准公式是否保留为可选候选来源？ | 不进入 M0–M8；规则与测试资产保留在 v1 审查，后续单独评估 | `formula` 切片是否有 arXiv 适配器 |
-| Q5 | 写作辅助是否移出 v2？ | 是，PDF 核心闭环后另立 | 里程碑 |
-| Q6 | worker 的 PDF 渲染与文字提取用哪个库？PyMuPDF（AGPL / 商业许可）还是 pypdfium2（BSD-3-Clause / Apache-2.0）？ | pypdfium2；MiniCPM SDK 以图片输入；如用户接受 AGPL 义务或购买商业许可可改 | 许可证、坐标合同验证；RULES §1.5 |
-| Q7 | 本机 worker 传输：HTTP + SSE（与远程同协议）还是 stdio JSON-RPC？ | HTTP + SSE，`127.0.0.1` + 一次性令牌；只有一个客户端实现 | ARCH §10.1 |
-| Q8 | 是否做 v1 数据迁移器（读取 v1 导出包，导入文献、笔记、已存译文）？ | 做，只读 v1 导出的 JSON 包、先 dry-run 报告；不读浏览器 IndexedDB；排在 M5 之后 | `library` 切片 `adapters/v1-import` |
-| Q9 | Jev 部署在哪？ | 默认远程（官方云 API 或用户自建 Docker 服务）；本机 SDK 部署为可选，分数与阈值按部署方式分别定标 | ARCH §7.2、§10.3；PRD §2 |
-| Q10 | 引擎 A 的版面模型：PP-DocLayoutV3（与 B 同源）还是 PP-DocLayout_plus-L（与 B 独立、无阅读顺序）？ | 先 V3；A/B 对比结果标注「版面同源」；基准中另跑 plus-L 对照后再定 | ARCH §7.1；QM-01 |
-| Q11 | 是否保留 v1「未配置翻译时借用多模态服务翻译」？ | 保留为设置项，默认关 | `settings` 切片 |
-| Q12 | Unlimited-OCR 是否接入？ | 不接入 v2（无 bbox、依赖 PyMuPDF 示例） | 无 |
+| 编号 | 问题 | 决定 | 状态 | 落点 |
+| --- | --- | --- | --- | --- |
+| Q1 | MiniCPM-OCR 1.0（引擎 B）与 Jev（质量评估）是否照附件使用？ | 照用，锁定版本，M6 开工前复核。硬性不变式：**所有**识别结果路径（引擎 A、引擎 B、百度 OCR、智谱 OCR、arXiv 源码对齐、多模态补救）都必须经过 Jev 评分；低分区域进入多模态补救；评分不可用标「待评分」，不触发补救 | 已决定（Wisdom 2026-10-30） | ARCH §7.1、§7.3、§7.5、§7.7；PRD S5、AC-18；RULES N-17 |
+| Q2 | 「文字层基础档」是否作为无服务时的默认降级？ | 同意 | 已决定（Wisdom 2026-10-30） | PRD S2、AC-11；ARCH §7.1 |
+| Q3 | v2 只做桌面端，同时支持远程 / 自建 worker？ | 同意；手机、账号同步、官方云只在契约中留余地。另加约束「UI 与业务核心解耦（functional core, imperative shell）」：先调研再写，调研来源见 ARCH §2.2 | 已决定（Wisdom 2026-10-30） | PRD S11、S12、AC-21；ARCH §2.1–§2.6、§13 G13–G17；RULES §8 |
+| Q4 | arXiv 源码校准公式是否进入 v2？ | 做，进入 M0–M8：编号与版本识别、源码下载缓存限流超时、TeX 解析、与版面区域对齐、KaTeX 安全渲染、对齐失败回落识别链路；对齐结果同样进 Jev 与优先级链 | 已决定（Wisdom 2026-10-30） | ARCH §4.2 `formula-source`、§7.5、§7.6；PRD S4、US-18、AC-22–AC-26、M4、M6；v1 审查 §4.17 |
+| Q5 | 写作辅助是否移出 v2？ | 移出 v2 实现范围，但在架构中提前设计：切片位置、seam 草案、依赖的数据模型（笔记 / 引用 / 文献库）与扩展点；PRD 记为后续阶段并验收保留接口 | 已决定（Wisdom 2026-10-30） | ARCH §4.4；PRD §3.2、AC-27、M5 |
+| Q6 | worker 的 PDF 渲染与文字提取库？ | pypdfium2；MiniCPM SDK 以图片输入；根目录 `LICENSE` 改为 Apache-2.0；禁止 GPL / AGPL 依赖（含 PyMuPDF） | 已决定（Wisdom 2026-10-30） | `LICENSE`、`package.json`、`README.md`；RULES §1.5、N-13；ARCH §7.1、§10.3、G10 |
+| Q7 | 本机 worker 传输方式？ | 本机与远程同一协议 HTTP + SSE；不采用 stdio JSON-RPC | 已决定（Wisdom 2026-10-30） | ARCH §1、§10.1；PRD S11 |
+| Q8 | 是否做 v1 数据迁移器？ | 不做，v2 从零开始；删除迁移器相关里程碑与验收。取舍：省去导入器的格式解析、dry-run、冲突处理与测试，v2 数据模型不受 v1 约束；代价是 v1 的文献库、笔记、已存译文不进 v2 | 已决定（Wisdom 2026-10-30） | PRD §3.2；ARCH §4.2 `library`；v1 审查 §2、§4.14、§5 |
+| Q9 | Jev 部署在哪？ | 本机与远程都支持，设置中可选；按硬件推荐（满足要求推荐本机，8 GB 级推荐远程），用户随时可改；开发机（32 GB）必须能本机跑通；两种部署 worker 接口一致 | 已决定（Wisdom 2026-10-30） | ARCH §1、§7.4、§10.2、§10.3；PRD §2、US-19、AC-19、AC-20、M6 |
+| Q10 | 引擎 A 的版面模型？ | PP-DocLayoutV3 起步，PP-DocLayout_plus-L 对照；明显更好时作为「高质量档」供用户选择 | 已决定（Wisdom 2026-10-30） | ARCH §7.1；PRD S2、US-21、AC-28、QM-13 |
+| Q11 | 是否保留「未配置翻译时借用多模态服务翻译」？ | 保留，默认关闭，开启时提示会消耗多模态额度 | 已决定（Wisdom 2026-10-30） | ARCH §4.2 `settings`；PRD S3、US-22、AC-29 |
+| Q12 | Unlimited-OCR 是否接入？ | 不接入；上游支持坐标输出后再评估 | 已决定（Wisdom 2026-10-30） | 本文 §2.6；PRD §3.2 |
 
-另有两项不需要拍板、但需要用户知情：
+另有两项需要用户知情：
 
-- 许可证白名单（RULES §1.5）把 MinerU Open Source License、PyMuPDF（AGPL）以及任何非商用权重列为「需批准」。
-- 全部「待基准定标」数值（PRD §6.2）在基准跑出前不填数。
+- 许可证政策（RULES §1.5）：GPL / AGPL 一律禁止；MinerU Open Source License、LGPL 与任何非商用权重为「需批准」。
+- 全部「待基准定标」数值（PRD §6.2，含新增的 QM-12–QM-14）在基准跑出前不填数；QM-13（高质量档「明显更好」的判据）由用户拍板。
 
 ## 7. 未核实的说法
 
@@ -269,7 +274,7 @@
 | MiniCPM-OCR 1.0 在 OmniDocBench 等公开基准上的分数 | 官方 README / 模型卡 | **未核实**（官方自测，无第三方复现） |
 | Jev 在 JevOCRBench 上 AUROC × 100 = 93.6 | 模型卡 | **未核实**（官方自测） |
 | PP-FormulaNet_plus-L 的 BLEU 与 1476 ms 耗时 | Paddle 文档 | **未核实**（官方自测，硬件以表注为准） |
-| Jev 官方云 API 的开通条件、价格、配额与服务稳定性 | `docs/minicpm_ocr_jev_api_en.md` 只描述接口 | **未核实**；Q9 若选云 API 需先确认 |
+| Jev 官方云 API 的开通条件、价格、配额与服务稳定性 | `docs/minicpm_ocr_jev_api_en.md` 只描述接口 | **未核实**；用户选择云 API 前需先确认 |
 | MiniCPM-OCR 1.0 在 Apple Silicon 上可用的具体芯片与内存下限 | `docs/llamacpp_deploy.md:23` 只写 macOS ARM64 包 | **未核实** |
 | MiniCPM-OCR 1.0 在 8 GB 核显 Windows / M1 8 GB 上本机运行 | — | **未核实**，规格不承诺 |
 | PaddlePaddle 在 macOS ARM64 / Windows 核显上运行引擎 A 的实际速度与内存 | — | **未核实**，M3 实测 |
@@ -279,6 +284,18 @@
 | Unlimited-OCR 是否有区域坐标输出 | 公开 README 与示例 | 未见，**未核实**是否存在隐藏接口 |
 | pypdfium2 依赖链（PDFium 及其第三方库）的完整许可证清单 | PyPI 元数据只写「dependency licenses」 | **未核实**，M1 用许可证工具逐项确认 |
 | 附件中「MiniCPM 方案开发量小、复杂版面开箱较好」 | 附件对比表 | **未核实**，以 A/B 基准结果为准 |
+| Jev 在 Windows 上本机运行（官方部署文档只覆盖 Linux + NVIDIA 与 macOS） | MiniCPM-OCR `1269e4f` 的 Jev 部署文档 | **未核实**；界面标「官方文档未覆盖」（ARCH §7.4） |
+| Jev 纯 CPU 推理的可用性与速度 | 官方文档未给 CPU 路线 | **未核实**；开发机若无 NVIDIA 独显且不是 Apple Silicon，本机跑通的路线待确认 |
+| 开发机（32 GB）的具体型号与 GPU | 用户告知内存 32 GB | **未核实**；M0 确认 |
+| 本机 worker 基础安装（不含模型）的体积 | — | **未实测**，M1 统计 |
+| 本机模式自备渲染图的 Jev 分数与官方 Docker / 云 API 的一致性 | 上游说明 macOS 只能跑纯评分服务、分数不能与官方数值比较 | **未核实**；按 PRD QM-14 单独定标 |
+| 百度「通用文字识别（高精度含位置版）」对学术公式的识别能力、当前计价与免费额度 | 官方文档只描述接口与字段 | **未核实**，M6 接入前确认 |
+| 智谱 GLM-OCR 在 OmniDocBench V1.5 得分 94.62 | 智谱官方模型介绍 | **未核实**（官方自测） |
+| 智谱 GLM-OCR 的公式输出格式与质量、价格稳定性 | 官方文档 | **未核实**，M6 实测 |
+| 智谱 OCR 服务（`files/ocr`，`tool_type: hand_write`）对印刷体论文是否适用 | 官方文档定位为手写体识别 | **未核实**；v2 默认不接入 |
+| `export.arxiv.org` 是否提供 `/src/<编号>` 源码下载 | arXiv Bulk Data 页面建议程序访问使用 `export.arxiv.org`，未说明源码路径 | **未核实**，M4 前确认；v1 实际使用 `https://arxiv.org/src/` |
+| arXiv「每三秒一次、单连接」限制是否适用于源码下载 | arXiv API 使用条款只列旧版 API、OAI-PMH、RSS | 条款**未明确**；v2 按同一口径执行 |
+| PP-DocLayout_plus-L 相对 V3 是否「明显更好」 | — | 无数据；M3 基准对照后由用户拍板（PRD QM-13） |
 
 ## 8. 本文结论在规格中的落点
 
@@ -286,10 +303,12 @@
 | --- | --- |
 | 模型名称、能力、许可证、成熟度 | 本文 §2；RULES §1.5 |
 | B 是流水线、A/B 版面可能同源、B 用图片输入与 `ppdoclayout3_torch` | ARCH §7.1、§10.3 |
-| Jev verdict 映射、阈值、批量、部署位置 | ARCH §7.2、§7.3、§10.3；PRD S5、§2、QM-05 |
-| PyMuPDF → pypdfium2 | ARCH §7.1、§10.3；PRD Q6；RULES §1.5 |
+| Jev verdict 映射、阈值、批量、部署位置与推荐（Q9）、全路径评分（Q1） | ARCH §7.1、§7.2、§7.3、§7.4、§10.3；PRD S5、§2、AC-18–AC-20、QM-05、QM-14 |
+| PyMuPDF → pypdfium2；项目许可证 Apache-2.0 | ARCH §7.1、§10.3、G10；PRD §9 Q6；RULES §1.5；`LICENSE` |
 | 多模态补救在区域采用前完成，可先试 B 区域候选 | ARCH §7.1 |
 | 草案目录与门槛改为切片与硬上限 | ARCH §3、§6、§13 |
-| 手机、同步、写作移出 v2 | PRD §3.2 |
+| 手机、同步移出 v2；写作移出实现、架构预留；不做 v1 迁移；不接 Unlimited-OCR | PRD §3.2；ARCH §4.4 |
+| UI 与业务核心解耦 | ARCH §2.1–§2.6、§13 G13–G17；RULES §8；PRD S12、AC-21 |
+| arXiv 源码校准公式、云 OCR、公式候选优先级链 | ARCH §7.5–§7.7；PRD S4、AC-22–AC-26 |
 | 基准集真实规模与阅读顺序真值缺口 | PRD §7；v1 审查 §6 |
-| 问题清单 Q1–Q12 | PRD §9；ARCH §16 |
+| 决策记录 Q1–Q12 | 本文 §6；PRD §9；ARCH §16 |

@@ -56,7 +56,7 @@
 | `pdf/drawer-panel.js` / `.css` | 758 / 432 | 目录 / 说明 / 最近 | 核心 | 按职责重写 | reader/ui |
 | `pdf/vendor/*` | — | pdf.js 4.10.38、KaTeX 0.18.7、markdown-it 14.1.0（含补丁说明 `docs/vendor-pdfjs.md`） | 核心 | 丢弃 vendored 文件，改用 npm 锁定版本；补丁说明作参考 | reader（`pdfjs-dist`）、formula（`katex`） |
 | `background/service-worker.js` | 539 | MV3 后台：22 种 `OI_*` 消息路由（翻译、设置、学习、站点规则、arXiv、公式缓存、诊断） | 间接 | 丢弃；其中能力分别归入切片用例 | translation / settings / diagnostics |
-| `background/arxiv-source.js` | 510 | arXiv e-print 下载、冷却、缓存（`:8-10` 间隔 3 s、超时 20 s、冷却 24 h） | 核心 | 复用规则（限速与冷却数值）；下载实现重写 | formula/adapters（待 PRD Q4） |
+| `background/arxiv-source.js` | 510 | arXiv e-print 下载、冷却、缓存（`:8-10` 间隔 3 s、超时 20 s、冷却 24 h） | 核心 | **复用规则**（限速、冷却、原因码、缓存键）；下载与存储实现重写 | formula-source（Q4，见 §4.17） |
 | `background/formula-cache.js` | 364 | IndexedDB `oi-formula` 公式决策缓存 | 核心 | 按职责重写为 SQLite 表；键规则复用 | formula/adapters |
 | `content/*`（4 个） | 1,820 | 网页内容脚本、页内工具条、字幕 | 无 | **丢弃** | — |
 | `popup/*`（4 个） | 571 | 工具栏弹窗 | 无 | **丢弃** | — |
@@ -77,7 +77,7 @@
 | `formula-charset.js` | 394 | LaTeX 与 PDF 文本的字符集与 Jaccard | 核心 | **复用规则** | formula/domain/charset-check.ts |
 | `formula-arbiter.js` | 72 | 两家候选仲裁 | 核心 | **复用规则** | formula/domain |
 | `formula-render-equiv.js` | 72 | KaTeX MathML 等价（评测用） | 核心 | **复用规则**（作基准指标） | formula/domain、基准脚本 |
-| `formula-arxiv-gate.js` | 106 | 公式编号一致、对齐可复用判定 | 核心 | **复用规则** | formula/domain |
+| `formula-arxiv-gate.js` | 106 | 公式编号一致、对齐可复用判定 | 核心 | **复用规则** | formula/domain（编号）、formula-source/domain（对齐复用，Q4） |
 | `formula-katex.js` | 86 | KaTeX 闸门（`throwOnError`、`trust:false`、长度上限 8000） | 核心 | **复用规则** | formula/adapters/katex-renderer.ts |
 | `formula-pipeline.js` | 289 | 公式管线版本 `fp-1` 与陈旧判定 | 核心 | **复用规则**（作为缓存键组成） | translation/domain/cache-key.ts |
 | `formula-schedule.js` | 241 | 单个公式块走链 | 核心 | 按职责重写 | formula/application |
@@ -91,7 +91,7 @@
 | `formula-settings-ui.js` | 486 | 公式设置 DOM | 核心 | 按职责重写 | settings/ui |
 | `formula-flags.js` | 15 | 第零层开关常量 | 核心 | 丢弃 | — |
 | `formula-svg.js` | 697 | 从录制的页面路径生成独立公式 SVG（未接入链路） | 核心 | 参考（矢量重绘若再立项时用） | — |
-| `formula-arxiv-pane.js` / `-session.js` | 293 / 269 | 第零层右栏 DOM 与会话 | 核心 | 会话规则复用，DOM 丢弃 | formula（待 Q4） |
+| `formula-arxiv-pane.js` / `-session.js` | 293 / 269 | 第零层右栏 DOM 与会话 | 核心 | 会话规则复用（失败原因文案键、来源统计），DOM 与偏好存储丢弃 | formula-source（Q4，见 §4.17） |
 | `formula-tiers/arxiv.js` | 154 | 第零层：只读已有对齐，逐公式核对 | 核心 | **复用规则** | formula/adapters/arxiv-source-candidates.ts |
 | `formula-tiers/multimodal.js` | 404 | 多模态候选层 `mm-6` | 核心 | 复用规则（提示词、红框、失败分类）；调用重写 | repair |
 | `formula-tiers/crop.js` | 151 | 裁图层与质检 | 核心 | **复用规则** | formula/domain |
@@ -152,7 +152,7 @@
 | `net/fetch.js` | 816 | 统一出站 HTTP：按用途超时、重试、并发、脱敏、测试中拒绝未打桩请求 | 间接 | **复用规则** | platform-node/http |
 | `providers.js` | 965 | 13 家翻译引擎适配、两步润色、错误脱敏 | 间接 | 复用规则（两步润色、思考字段判定、错误脱敏）；适配器重写，一家一个文件 | translation/adapters/providers/* |
 | `translate-skill.js` | 119 | 厂商无关的翻译提示词契约 | 核心 | **复用规则** | translation/domain |
-| `translate-borrow.js` | 128 | 未配置翻译时借用多模态引擎 | 间接 | 复用规则（是否保留待 Q11，假设保留为设置项、默认关） | settings/domain |
+| `translate-borrow.js` | 128 | 未配置翻译时借用多模态引擎 | 间接 | 复用规则（Q11 已决定：保留，默认关，开启时提示会消耗多模态额度） | settings/domain/translation-fallback.ts |
 | `translate-abort.js` | 45 | 在途翻译取消表 | 间接 | 重写（`AbortSignal`） | translation/application |
 | `translate-limit.js` | 79 | 网页只译标题 + 首段 | 无 | **丢弃** | — |
 | `provider-attention.js` / `no-engine-prompt.js` / `usage-format.js` | 40 / 24 / 39 | 引擎提示、用量格式 | 间接 | 按职责重写 | settings/ui |
@@ -166,7 +166,7 @@
 | `pdf-library.js` | 2,143 | 已存译文的恢复与复用规则；旧 8765 读路径 | 核心 | 复用规则（§4.11）；8765 读路径丢弃 | translation/domain、library |
 | `library-session.js` / `-writes.js` / `-auto-pause.js` | 203 / 85 / 110 | 会话、跨标签删除保护、中断续译 | 核心 | 复用规则（「删除后不被旧写入复活」） | library/application |
 | `library-chip.js` / `-copy.js` / `-layout.js` / `persist-card.js` / `storage-copy.js` | 790 / 207 / 191 / 103 / 124 | 文献库界面与文案 | 核心 | 按职责重写 | library/ui |
-| `import-run.js` / `legacy-folder.js` | 1,079 / 287 | 文件夹 / JSON 导入，读旧本机服务目录 | 核心 | 复用「导入包格式」作为 v1 数据迁移器输入 | library/adapters/v1-import（Q8） |
+| `import-run.js` / `legacy-folder.js` | 1,079 / 287 | 文件夹 / JSON 导入，读旧本机服务目录 | 核心 | **丢弃**（Q8 已决定：不做 v1 迁移，v2 从零开始） | — |
 | `doc-translation-cache.js` | 120 | 清空单篇译文、版面、公式决策（保留笔记） | 核心 | 复用规则 | translation/application |
 | `platform/index.js` | 58 | 平台骨架 `{target, kv, library, net}` | 间接 | 复用接口思路 | platform-node + 各切片 ports |
 | `platform/idb-backend.js` / `idb-open.js` | 325 / 289 | IndexedDB 实现 | 间接 | 丢弃 | — |
@@ -202,10 +202,10 @@
 
 | 文件 | 行数 | 职责 | 与 PDF | 结论 | v2 去向 |
 | --- | --- | --- | --- | --- | --- |
-| `arxiv-id.js` | 114 | 从 URL 与第 1 页戳识别 arXiv ID | 核心 | 复用规则 | formula（待 Q4） |
-| `arxiv-src-unpack.js` | 302 | 纯解包（gzip / tar / 单 tex；挡路径穿越；文件数 2000、50 MB 上限） | 核心 | 复用规则 | formula（待 Q4） |
-| `latex-units.js` | 943 | LaTeX 源拆公式单元、跟随 `\input`、编号 | 核心 | 复用规则 | formula（待 Q4） |
-| `source-align.js` | 788 | LaTeX 单元与文字层块对齐 | 核心 | 复用规则；同时可作阅读顺序基准的真值生成器 | formula、基准 |
+| `arxiv-id.js` | 114 | 从 URL 与第 1 页戳识别 arXiv ID | 核心 | **复用规则** | formula-source/domain/arxiv-id.ts（Q4） |
+| `arxiv-src-unpack.js` | 302 | 纯解包（gzip / tar / 单 tex；挡路径穿越；文件数 2000、50 MB 上限） | 核心 | **复用规则** | formula-source/domain/archive-limits.ts、tar-reader.ts（Q4） |
+| `latex-units.js` | 943 | LaTeX 源拆公式单元、跟随 `\input`、编号 | 核心 | **复用规则** | formula-source/domain/tex-units.ts、macro-table.ts（Q4） |
+| `source-align.js` | 788 | LaTeX 单元与文字层块对齐 | 核心 | **复用规则**；同时可作阅读顺序基准的真值生成器 | formula-source/domain/source-align.ts（Q4）、基准 |
 
 ### 2.8 网页翻译、学习中心与标注工具
 
@@ -250,7 +250,7 @@
 | 3410–3918 | 问答装配、引用构造、选区 → 笔记锚点 | `installAskUi` `:3410`、`currentNoteParagraph` `:3626` | qa/ui、notes/ui；引用构造进 qa/domain | 规则复用 |
 | 3919–4011 | 引擎模式选择、版面加载 | `storedEngineOverride` `:3919`、`loadPdfLayout` `:3982` | parsing/application | 重写 |
 | 4012–4643 | 公式裁图、墨迹框、高清重渲染、多模态裁图 | `formulaPagePixels` `:4012`、`renderSharpFormulaCrop`、`renderVisionFormulaCrop` | 几何 → formula/domain；渲染 → reader/ui 与 worker preprocess | 规则复用 |
-| 4644–5254 | arXiv 源码模式（菜单、偏好、对齐、复制 LaTeX） | `arxivPaneHooks` `:4644`、`startArxivSource`、`copyArxivLatex` `:5206` | formula/adapters/arxiv（待 Q4） | 规则复用 |
+| 4644–5254 | arXiv 源码模式（菜单、偏好、对齐、复制 LaTeX） | `arxivPaneHooks` `:4644`、`startArxivSource`、`copyArxivLatex` `:5206` | formula-source（Q4）；界面由 reader 重写 | 规则复用 |
 | 5255–6174 | 公式高度锁、模型 PNG、占位卡、图卡、块文本拼接 | `captureFormulaBoxes` `:5255`、`placeholderBoxLengths` `:5600`、`appendCropOrNotice` `:5718`、`paintSplicedPieces` `:6003` | reader/ui/formula-view.tsx、figure card | 重写 |
 | 6175–6359 | 测试钩子与探针（挂到全局供 CDP 测试读取） | `viewerUnderTest` `:6175`、`publishViewerTestHooks` `:6284` | 无（v2 测试只测行为） | 丢弃 |
 | 6360–6780 | 引擎选择记录、文献库 pairs → 通读、双语结构、块点击 | `noteEngineChoice` `:6360`、`stampFreshFormulaPipeline` `:6403`、`splitBilingual` `:6681`、`onReadoutBlockClick` `:6716` | translation/domain/cache-key、document 投影、reader | 规则复用 |
@@ -299,7 +299,7 @@
 
 | v1 层 | v2 对应 | 说明 |
 | --- | --- | --- |
-| arXiv 源码 | 可选候选来源 `arxiv-source` | 是否保留待 PRD Q4；保留则仍逐公式与 PDF 核对 |
+| arXiv 源码 | 最高优先级的候选来源（`formula-source` 切片） | Q4 已决定：做；仍逐公式与 PDF 核对，并与其他候选一样经 Jev 评分（ARCHITECTURE §7.5、§7.6） |
 | 多模态 | **不再是常规第二层**；只对质量评估低分 / 有不确定证据的公式做核验或补救 | 用户新方案：多模态仅低分兜底 |
 | OCR API | 引擎 A 的公式识别（PP-FormulaNet 系列）与引擎 B 的识别结果，作为常规候选 | 由 worker 产生 |
 | 自建算法 | 文字层候选（`pdf-latex.js` + 纯文本关系白名单） | 无服务时的基础档也可用 |
@@ -357,7 +357,7 @@ v2 落点：几何与常量 → `formula/domain/crop-geometry.ts`；像素渲染
 
 ### 4.5 OCR API
 
-v1 没有实现（`lib/formula-tiers/ocr.js` 为桩）。v1 规划写的是 v2 接百度托管「文档解析（Unlimited-OCR）」并加可选本机服务（`docs/ui-phase2-plan.md:257-261`、`docs/desktop-plan.md:124`）。这一规划已被用户新的双引擎方案取代：公式识别由引擎 A（PP-FormulaNet 系列）与引擎 B 承担；Unlimited-OCR 未见 bbox 输出，v2 不接入（差异清单 §2.6、Q12）。**没有可复用代码。**
+v1 没有实现（`lib/formula-tiers/ocr.js` 为桩）。v1 规划写的是 v2 接百度托管「文档解析（Unlimited-OCR）」并加可选本机服务（`docs/ui-phase2-plan.md:257-261`、`docs/desktop-plan.md:124`）。这一规划已被用户新的双引擎方案取代：公式识别由引擎 A（PP-FormulaNet 系列）与引擎 B 承担；Unlimited-OCR 未见 bbox 输出，Q12 已决定：v2 不接入，上游支持坐标输出后再评估（差异清单 §2.6）。**没有可复用代码。**
 
 ### 4.6 自建算法
 
@@ -450,7 +450,7 @@ v2：锚点结构并入 `ContentAnchor`（草案 02 §9），新增 `pageRevisio
 
 - `blocks-1` 标签集：title / heading / text / caption / formula / figure / table / header / footer / aside / footnote（`lib/pdf-blocks.js:10-22`）；页眉页脚在 `preparePageBlocks` 中移出主文流（`:556-567`）。
 - `bid = b{版本}-p{页}-{t|m|g}{fnv36(seed)}`，seed 为规范化文本或量化 bbox，碰撞加 `-n`（`lib/pdf-block-id.js:7`、`:46-98`）；源文头 / 哈希算法 `:29-36`。
-- v2：块号算法成为协议一部分（草案 02 §4），并与 `pageRevisionId` 绑定；旧 `bid` 存为 `legacyIds` 供迁移。
+- v2：块号算法成为协议一部分（草案 02 §4），并与 `pageRevisionId` 绑定。Q8 已决定不做 v1 迁移，v2 不保存旧 `bid`。
 
 ### 4.15 问答
 
@@ -467,7 +467,27 @@ v2：锚点结构并入 `ContentAnchor`（草案 02 §9），新增 `pageRevisio
 
 ### 4.17 arXiv 源码
 
-识别 ID（`lib/arxiv-id.js`）→ 限速下载（`background/arxiv-source.js:8-10`）→ 解包（`lib/arxiv-src-unpack.js:262-265`，挡路径穿越）→ 拆公式单元（`lib/latex-units.js`）→ 与文字层对齐（`lib/source-align.js`，整体词覆盖 ≥ 0.85 才使用源码）→ 逐公式核对（`lib/formula-tiers/arxiv.js:66-72`：位置、字符、编号、渲染）。二次打开复用对齐不重下（`lib/formula-arxiv-gate.js:46-105`）。是否进入 v2 待 PRD Q4；`source-align.js` 无论如何可作为阅读顺序基准的真值生成工具。
+v1 链路：识别 ID（`lib/arxiv-id.js`）→ 限速下载（`background/arxiv-source.js:8-10`）→ 解包（`lib/arxiv-src-unpack.js:262-265`，挡路径穿越）→ 拆公式单元（`lib/latex-units.js`）→ 与文字层对齐（`lib/source-align.js`，整体词覆盖 ≥ 0.85 才使用源码）→ 逐公式核对（`lib/formula-tiers/arxiv.js:66-72`：位置、字符、编号、渲染）。二次打开复用对齐不重下（`lib/formula-arxiv-gate.js:46-105`）。
+
+**Q4 已决定：做。** v2 新增 `formula-source` 切片（[ARCHITECTURE §7.6](../ARCHITECTURE.md#76-公式来源模块-formula-sourceq4)）。可复用部分如下；「复用规则」指把规则与原测试用例一起移植为 TS 纯函数，行为不变，不是复制文件。
+
+| v1 位置 | 内容 | 处理 | v2 落点 |
+| --- | --- | --- | --- |
+| `lib/arxiv-id.js:5-8`、`:34-49`、`:52`、`:84-113` | 新旧编号正则、版本号、URL 与第 1 页戳识别、来源标记 | **复用规则**；补充 PDF 元数据与文件名来源 | `formula-source/domain/arxiv-id.ts` |
+| `background/arxiv-source.js:8-10`、`:17-24` | 3 s 间隔、20 s 超时、24 h 冷却；失败原因分类 | **复用规则** | `formula-source/domain/fetch-policy.ts` |
+| `background/arxiv-source.js:26-33`、`:312-339`、`:378-384` | 源码与对齐的缓存键、「只有 PDF」也缓存、清缓存保留冷却 | **复用规则** | `formula-source/application/ports/source-cache.ts` 的契约测试 |
+| `background/arxiv-source.js:178`、`:181-267` | 端点 `https://arxiv.org/src/`、`fetch` 与 IndexedDB 实现 | **重写**（Node 网络与 SQLite） | `formula-source/adapters/arxiv-http-client.ts`、`sqlite-source-cache.ts` |
+| `lib/arxiv-src-unpack.js:3-18`、`:20`、`:262-302` | 文本扩展名白名单、资源 MIME、30 MB 资源上限、格式嗅探、2000 文件 / 50 MB 上限、gunzip 注入的纯解包 | **复用规则**（本身就是纯函数） | `formula-source/domain/archive-limits.ts`、`tar-reader.ts` |
+| `lib/latex-units.js:6-18`、`:40-75`、`:145-163` | 节级别、数学环境集合、主文件查找、`\input` 跟随、去颜色、公式预处理、纯文本化 | **复用规则** | `formula-source/domain/tex-units.ts`、`macro-table.ts` |
+| `lib/source-align.js:7-17`、`:225` 起 | n-gram 锚点、DP 上限、0.85 使用门槛、分词 | **复用规则** | `formula-source/domain/source-align.ts` |
+| `lib/formula-tiers/arxiv.js:35-75` | 低于门槛判定、行匹配、逐公式失败原因（`not-located`、`charset-mismatch`、`number-mismatch`、`katex-error`） | **复用规则**；结果改为进入候选集并送 Jev，不再直接上屏 | `formula-source/domain/align-policy.ts` |
+| `lib/formula-arxiv-gate.js:11-45`、`:46-105` | 版本规范化、编号比较、对齐可复用判定、二次打开不重下 | **复用规则** | `formula-source/domain/align-policy.ts`、`application/use-cases/resolve-arxiv-source.ts` |
+| `lib/formula-katex.js:1-30`、`:40-77` | `throwOnError`、`trust: false`、`maxSize: 20`、`maxExpand: 1000`、8000 字符上限、不把 HTML 字符串写入节点 | **复用规则** | `formula/adapters/katex-renderer.ts` 与 `reader/ui/formula-view.tsx` 共用的选项常量 |
+| `lib/formula-arxiv-session.js:33-83` | 版本标签、失败原因文案键、偏好规范化、已核验判定、来源统计 | 规则复用；偏好存储与右栏 DOM（`lib/formula-arxiv-pane.js`）丢弃 | `formula-source/domain`；界面由 reader 重写 |
+| `pdf/viewer.js:4644-5254` | arXiv 源码模式的菜单、偏好、复制 LaTeX | 只迁移行为（§3） | reader / settings 的 UI |
+| `tests/arxiv-*.test.mjs`（8 个）、`tests/formula-arxiv-invariants.test.mjs`、`tests/helpers/arxiv-paper.mjs`、`arxiv-pack.mjs` | 识别、解包、LaTeX、字符集、下载、对齐、网络守卫、回归；测试用的源码包构造器 | **移植为 Vitest**，用例名注明 v1 出处；`tests/net/arxiv-live.test.mjs` 真网测试不进门禁 | `formula-source/test/core/` |
+
+`source-align.js` 同时可作为阅读顺序基准的真值生成工具（§6.2）。
 
 ### 4.18 缓存键与陈旧（事故教训）
 
@@ -501,7 +521,7 @@ v2：锚点结构并入 `ContentAnchor`（草案 02 §9），新增 `pageRevisio
 | 整页多模态替换 | `lib/mm-page*.js`、`viewer.js:14270` 起 | #189 真机不收敛；违背「多模态只补低分区域」 |
 | OCR 层实现 | `lib/formula-tiers/ocr.js` | 只是桩 |
 | 矢量重绘 | `lib/formula-tiers/vector.js`、`svg-recorder.js`、`formula-svg.js` | 未实现 / 未接线；v2 不立项 |
-| 旧本机服务协议 `127.0.0.1:8765`（`/v1/layout`、`/v1/library/document`） | `lib/pdf-layout-client.js:12`、`lib/pdf-library.js:27-29` | v2 用 oi-parse/1；旧数据只经迁移器读取 |
+| 旧本机服务协议 `127.0.0.1:8765`（`/v1/layout`、`/v1/library/document`） | `lib/pdf-layout-client.js:12`、`lib/pdf-library.js:27-29` | v2 用 oi-parse/1；Q8 已决定不做 v1 迁移，不读取旧数据 |
 | IndexedDB / `chrome.storage` 实现 | `lib/platform/idb-*.js`、`lib/storage.js` 实现部分 | 桌面用 SQLite + 文件 + safeStorage |
 | vendored pdf.js / KaTeX / markdown-it | `pdf/vendor/*` | 改为 npm 锁定版本 |
 | 阅读器全部 CSS 与视觉常量（除 18px 等内容规则） | `pdf/*.css`、`ui/tokens*.css` | 视觉由 Loom 的 DESIGN.md 重定 |
@@ -529,7 +549,7 @@ v2：锚点结构并入 `ContentAnchor`（草案 02 §9），新增 `pageRevisio
 | v2 切片 | v1 测试文件 |
 | --- | --- |
 | formula | `formula-chain`、`formula-mm-tier`、`formula-mm-r2`、`formula-stale-cache-fix`、`formula-ref-size`、`formula-context-crop`（非 Chrome 部分）、`formula-vision-crop`、`formula-pdftext`、`pdf-plaintext-formula`、`pdf-short-formula-fallback`、`formula-arxiv-invariants`、`formula-reopen-cache` |
-| arXiv（待 Q4） | `arxiv-src-unpack`、`arxiv-id`、`arxiv-latex`、`arxiv-charset`、`arxiv-source`、`arxiv-align`、`arxiv-net-guard`、`arxiv-regression` |
+| formula-source（Q4） | `arxiv-src-unpack`、`arxiv-id`、`arxiv-latex`、`arxiv-charset`、`arxiv-source`、`arxiv-align`、`arxiv-net-guard`、`arxiv-regression` |
 | translation | `providers-prompt`（两步润色与自定义提示词）、`translate-skill`（部分）、`clear-doc-translation` |
 | document / parsing | `pdf-block-id`、`pdf-flow-order`（XY-cut）、`pdf-late-page-join`、`pdf-glyph-sanitize`、`pdf-journal-chrome`、`pdf-formula-detect`、`attention-boundaries`、`pdf-blocks` 相关（夹具 `tests/fixtures/pdf-blocks/*.json`） |
 | notes | `notes-anchor`、`notes-io`、`notes-view-model` 相关 |
