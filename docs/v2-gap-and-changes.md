@@ -1,6 +1,6 @@
 # v2 差异与修改清单
 
-状态：v0.3。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC），Q3 / Q4 / Q9 相关补充查询 2026-10-30。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定（§6）；Markdown 阅读方案于 2026-10-30 17:32 批准（§6.1）；Loom 同日对译文区块四项风险给出结论（§6.2）；Wisdom 同日 18:37 决定 Jev 远程默认用面壁开放平台托管 API（§2.3.1），18:44 定下「API 优先」原则（§0 第 4 条、§2.4.1、§6.3），19:11 对四项风险作出决定（§6.4），19:30 把数据外发同意改为按服务商询问并加入「外发前询问」开关（§6.5）。
+状态：v0.4。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC），Q3 / Q4 / Q9 相关补充查询 2026-10-30。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定（§6）；Markdown 阅读方案于 2026-10-30 17:32 批准（§6.1）；Loom 同日对译文区块四项风险给出结论（§6.2）；Wisdom 同日 18:37 决定 Jev 远程默认用面壁开放平台托管 API（§2.3.1），18:44 定下「API 优先」原则（§0 第 4 条、§2.4.1、§6.3），19:11 对四项风险作出决定（§6.4），19:30 把数据外发同意改为按服务商询问并加入「外发前询问」开关（§6.5），19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修复其中 4 个 P0 并删除 G17（§6.6）。
 用途：把三类输入——用户提供的双引擎方案（[附件原文](./architecture/inputs/pdf_translation_architecture.md)）、`docs/architecture/` 下的 01 / 02 / 03 草案、v1 实际实现（见 [v1 审查](./v1-review.md)）——与上游模型的官方资料逐条对照，列出**需要改的地方、冲突点、未核实的说法**，并给出统一编号的决策问题（Q1–Q12，现已全部决定）。
 结论已写入根目录规格：[PRD.md](../PRD.md)、[ARCHITECTURE.md](../ARCHITECTURE.md)、[RULES.md](../RULES.md)。三份规格与本文冲突时以规格为准；本文记录「为什么这样改」。视觉与交互规格 [DESIGN.md](../DESIGN.md)、[docs/design-principles.md](./design-principles.md) **待 Loom 产出**，本文不涉及。
 
@@ -19,7 +19,7 @@
 9. v1 的若干历史决定被新方案取代：「桌面智能版式只用 PP-DocLayoutV2、默认文字层原序」「多模态是公式第二层」「整页多模态替换」都不再沿用；「通顺试接」在 v1 中只有文档、没有代码，v2 需要新实现并定标。
 10. **arXiv 源码校准公式进入 v2**（Q4 已决定）：新增 `formula-source` 切片，v1 的编号识别、限速下载、解包、TeX 解析、对齐与 KaTeX 闸门规则可复用（[v1 审查](./v1-review.md) §4.17）；源码候选同样经 Jev 与优先级链。
 11. **不做 v1 数据迁移**（Q8 已决定）：v2 从零开始，v1 导入器与相关里程碑、验收全部删除，取舍见 PRD §3.2。
-12. **UI 与业务核心解耦**（Q3 已决定）：Wisdom 追加的约束经调研后写入 ARCHITECTURE §2.1–§2.6、RULES §8，并由 CI G13–G17 检查。
+12. **UI 与业务核心解耦**（Q3 已决定）：Wisdom 追加的约束经调研后写入 ARCHITECTURE §2.1–§2.6、RULES §8，并由 CI G13–G16 检查；原 G17（UI 与 core 强制分 PR）已按架构评审删除（§6.6）。
 
 ## 1. 输入与核实方法
 
@@ -281,7 +281,7 @@ Windows 本地（开发机）：Paddle 3.3 官方提供 Windows 的 pip 安装�
 | --- | --- | --- | --- | --- |
 | Q1 | MiniCPM-OCR 1.0（引擎 B）与 Jev（质量评估）是否照附件使用？ | 照用，锁定版本，M6 开工前复核。硬性不变式：**所有**识别结果路径（引擎 A、引擎 B、百度 OCR、智谱 OCR、arXiv 源码对齐、多模态补救）都必须经过 Jev 评分；低分区域进入多模态补救；评分不可用标「待评分」，不触发补救 | 已决定（Wisdom 2026-10-30） | ARCH §7.1、§7.3、§7.5、§7.7；PRD S5、AC-18；RULES N-17 |
 | Q2 | 「文字层基础档」是否作为无服务时的默认降级？ | 同意 | 已决定（Wisdom 2026-10-30） | PRD S2、AC-11；ARCH §7.1 |
-| Q3 | v2 只做桌面端，同时支持远程 / 自建 worker？ | 同意；手机、账号同步、官方云只在契约中留余地。另加约束「UI 与业务核心解耦（functional core, imperative shell）」：先调研再写，调研来源见 ARCH §2.2 | 已决定（Wisdom 2026-10-30） | PRD S11、S12、AC-21；ARCH §2.1–§2.6、§13 G13–G17；RULES §8 |
+| Q3 | v2 只做桌面端，同时支持远程 / 自建 worker？ | 同意；手机、账号同步、官方云只在契约中留余地。另加约束「UI 与业务核心解耦（functional core, imperative shell）」：先调研再写，调研来源见 ARCH §2.2 | 已决定（Wisdom 2026-10-30） | PRD S11、S12、AC-21；ARCH §2.1–§2.6、§13 G13–G16（原 G17 已删除，§6.6）；RULES §8 |
 | Q4 | arXiv 源码校准公式是否进入 v2？ | 做，进入 M0–M8：编号与版本识别、源码下载缓存限流超时、TeX 解析、与版面区域对齐、KaTeX 安全渲染、对齐失败回落识别链路；对齐结果同样进 Jev 与优先级链 | 已决定（Wisdom 2026-10-30） | ARCH §4.2 `formula-source`、§7.5、§7.6；PRD S4、US-18、AC-22–AC-26、M4、M6；v1 审查 §4.17 |
 | Q5 | 写作辅助是否移出 v2？ | 移出 v2 实现范围，但在架构中提前设计：切片位置、seam 草案、依赖的数据模型（笔记 / 引用 / 文献库）与扩展点；PRD 记为后续阶段并验收保留接口 | 已决定（Wisdom 2026-10-30） | ARCH §4.4；PRD §3.2、AC-27、M5 |
 | Q6 | worker 的 PDF 渲染与文字提取库？ | pypdfium2；MiniCPM SDK 以图片输入；根目录 `LICENSE` 改为 Apache-2.0；禁止 GPL / AGPL 依赖（含 PyMuPDF） | 已决定（Wisdom 2026-10-30） | `LICENSE`、`package.json`、`README.md`；RULES §1.5、N-13；ARCH §7.1、§10.3、G10 |
@@ -373,7 +373,7 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 5. **原地修改的兜底。** 规格要求公式决定只随新采用版本改变，`reevaluate-pending` 补评改变显示决定时也建新版本。另外记录保存写入时的 `formulaDigest`，`getBlocks` 读取时与当前比对：不一致就不返回旧正文，并自动重译，同时记诊断事件。
 6. **验收**：PRD AC-57 逐条覆盖上表（①–⑧），M4 交付。
 
-**仍未定。** `source-crop` 的行内公式在 `oi-md/1` 正文里怎么表示：方言目前不含图片，而 AC-04 要求未核验公式以裁图显示。摘要按显示决定计算，不受这个表示影响，但译文栏怎么显示要 Loom 与 Wisdom 定。v1 在这种情况下怎么显示，本 PR 没有核对。
+**已定（架构评审 P0-4，Wisdom 2026-10-30 19:57 批准）。** `source-crop` 的公式不写进 `oi-md/1` 正文：`StoredTranslationBlock.markdown` 只含已核验 LaTeX，另用 `crops: FormulaCropRef[]` 记每个裁图在正文中的位置（`fragmentId`、`at`、`display`、`assetId`）；`getBlocks` 在 core 里解析正文后在这些位置插入 `MdFormulaCrop` 节点，reader 只渲染这个 `MdDocument`。复核要求 `crops` 与片段表中的 `source-crop` 片段一一对应，位置不合法记 `crop_position` 失败。方言不升级，摘要计算不变（ARCH §8.1.1；PRD AC-04、AC-48、AC-49）。裁图在译文栏里的视觉样式由 Loom 定；v1 在这种情况下怎么显示，本 PR 没有核对。
 
 ### 6.3 后续决定：API 优先（Wisdom 2026-10-30 18:44）
 
@@ -409,6 +409,21 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | 数据去向 | 无论开关状态，设置都显示哪些服务商会收到数据、发给它的能力与状态（已同意 / 询问已关闭 / 已拒绝） | ARCH §2.5（`listEgressDestinations`）、§4.2、§7.0 第 6 条、§7.4；PRD §3.3、AC-61 ⑦ f |
 | 界面 | 对话框布局与开关在设置里的位置由 Loom 定（DESIGN.md 待 Loom 产出） | ARCH §7.0 第 6 条；PRD §3.3 |
 | 规格补充（**待 Wisdom 确认**） | 重新打开开关后，没有在对话框里同意过的「服务商 + 能力」，下次使用前照常询问 | ARCH §7.0 第 6 条；PRD §3.3、§9 |
+
+### 6.6 后续决定：架构评审修复 A（Wisdom 2026-10-30 19:57）
+
+Wisdom 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修复。本节只列这一批（4 个 P0 与 G17）；P1 另开 PR，P2（阅读顺序、M6 拆分）留到之后。
+
+| 项 | 决定 | 落点 |
+| --- | --- | --- |
+| P0-1 流水线没有归属 | 新增无 UI 的 `ingest` 切片，独占「解析 → Jev 评分 → 采用 → 翻译」与补救后重评的跨切片编排；不建表，下一步由已落库的事实重新推出，进度经 `jobs` 的 `ingest` 任务上报；PDF 打开只有 `ingest.openDocument` 一个 IPC 入口，`library.importPdf` 不再暴露给 IPC；任何切片不 import `ingest` | ARCH §2.5、§3、§4.2、§4.3、§5.2 F-17、§5.3、§7.1、§9、§13 G5；PRD §4 原则 3、M1、M3；RULES §5 第 16 条 |
+| 删除 `repair → quality` | 补救后的重评由 `ingest` 调用 `quality`，`repair` 不再依赖 `quality` | ARCH §4.3 |
+| P0-2 utilityProcess 的说法 | `safeStorage`、对话框、`shell`、`oi-asset://` 协议处理、窗口、preload、IPC 校验、`worker-supervisor` 固定在 main；用例、SQLite、HTTP 适配器、`worker-client`、文件资产、md 读取 / 扫描 / 监视可在 M3 按实测迁到 utility；密钥明文只在 main，按次授权并核对该服务商登记的主机；启用 utility 后 assetId → 路径经 MessagePort 查询 | ARCH §1、§9 |
+| P0-3 预算只管补救 | 新增 `budget` 切片（账本从 `repair` 移出，上限从 `settings` 移出），经 `contracts/src/budget.ts` 的 `BudgetGate` 端口由装配根注入；每次外发付费调用先 `reserve`，被拒就不发请求；账户按「服务商 + 能力」，有金额上限与请求数 / 页数 / token 上限；受限预算下单价未知且没设上限时拒绝（`budget_cap_unset`）；worker 作业带额度信封；Jev 被拒记为 `unavailable/budget`；本机回环服务与 arXiv 下载不计 | ARCH §2.5、§4.1、§4.2、§7.3、§7.8、§10.2；PRD §3.3、AC-06、AC-59 ③、AC-63；RULES §5 第 15 条 |
+| P0-4 `oi-md/1` 表示不了裁图 | 见 §6.2.1 末段：裁图位置记在 `crops`，`getBlocks` 生成 `MdFormulaCrop` 节点，正文只含已核验 LaTeX；AC-04 加入译文栏断言 | ARCH §4.1、§4.5.4、§8.1.1；PRD AC-04、AC-48、AC-49 |
+| 删除 G17 | 同一切片的 UI 与 core 可以在一个 PR 里，seam 的类型变更先单独合入；Q3 执行规则 2、3、5 改由评审清单与 UI–core 交接说明检查；G13–G16 保留 | ARCH §5.2 F-16、§13；RULES §8；PRD AC-21、AC-45、§8.1 |
+| 切片数 | 由 16 个增至 18 个（`ingest`、`budget`） | ARCH §2.5、§3、§13 |
+| 已定（Wisdom 2026-10-30 20:57，按建议） | ① 新增 `budget` 切片；② 新安装与恢复默认时是受限预算模式，升级不改用户已选的模式与上限；③ 每个付费科目默认带保守的占位次数类上限（请求数 / 页数 / token），只在 `budget/domain/default-caps.ts`，界面标「占位」，数字随 M1 的 `budget` 实现 PR 提出、经 Wisdom 批准，M0 实测后定标；④ 评审建议的热点收窄（P1-11 后半）留到之后的 PR C，本批不做 | ARCH §4.2 `budget`、§7.8 第 4 条、§16；PRD §3.3、AC-63 ⑥、§9 |
 
 ## 7. 未核实的说法
 
@@ -473,7 +488,7 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | 多模态补救在区域采用前完成，可先试 B 区域候选 | ARCH §7.1 |
 | 草案目录与门槛改为切片与硬上限 | ARCH §3、§6、§13 |
 | 手机、同步移出 v2；写作移出实现、架构预留；不做 v1 迁移；不接 Unlimited-OCR | PRD §3.2；ARCH §4.4 |
-| UI 与业务核心解耦 | ARCH §2.1–§2.6、§13 G13–G17；RULES §8；PRD S12、AC-21 |
+| UI 与业务核心解耦 | ARCH §2.1–§2.6、§13 G13–G16；RULES §8；PRD S12、AC-21 |
 | arXiv 源码校准公式、云 OCR、公式候选优先级链 | ARCH §7.5–§7.7；PRD S4、AC-22–AC-26 |
 | 基准集真实规模与阅读顺序真值缺口 | PRD §7；v1 审查 §6 |
 | 决策记录 Q1–Q12 | 本文 §6；PRD §9；ARCH §16 |
@@ -483,3 +498,4 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | 四项风险的决定：数据外发同意对话框、引擎 A 三条路径、问答支持多模态与纯文本模型、M0 API 实测延后（Wisdom 2026-10-30 19:11） | 本文 §0 第 4 条、§2.4.1、§6.3、§6.4、§7；ARCH §2.5、§4.2、§7.0、§7.1、§7.3、§7.4、§10.3、§16；PRD S2、S8、§3.3、AC-61、AC-62、M0、M3、M5、§9 |
 | 外发同意按服务商、追加告知新增能力、「外发前询问」开关与「数据去向」列表（Wisdom 2026-10-30 19:30） | 本文 §6.4、§6.5；ARCH §2.5、§4.2、§7.0 第 6 条、§7.4、§16；PRD §3.3、AC-61 ⑦、§9 |
 | 译文区块四项结论（翻译块范围、重译 seam、重译失败显示、缓存键论证） | 本文 §6.2；ARCH §2.6、§8.1.1；PRD S3、US-28、AC-03、AC-56–AC-58、§9；RULES §5 第 13 项 |
+| 架构评审修复 A：`ingest` 编排切片、进程边界、预算闸门与 `budget` 切片、译文裁图、删除 G17（Wisdom 2026-10-30 19:57） | 本文 §0 第 12 条、§6.2.1、§6.6；ARCH §1、§2.5、§3、§4.1–§4.4、§5.2、§7.1、§7.3、§7.8、§8.1.1、§8.2、§9、§10.2、§13、§16；PRD §3.3、§4、AC-04、AC-06、AC-21、AC-45、AC-48、AC-49、AC-59、AC-63、§8、§9；RULES §5 第 15、16 条、§8 |
