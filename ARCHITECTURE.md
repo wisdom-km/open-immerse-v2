@@ -284,6 +284,7 @@ open-immerse-v2/
 ├─ fixtures/
 │  ├─ protocol/                       # TS 与 Python 共用的协议样例（合法 / 非法；含 provider-errors/、versions/）
 │  ├─ providers/                      # 各服务商的契约测试样例（合成数据，不含真实 Key 与论文页面，§7.9.7）
+│  ├─ parsing-rules/                  # 解析规则集的两侧对拍夹具：reading-order/、scan-detect/、paragraphs/（合成几何与文字，§7.10）
 │  └─ corpus/                         # 基准论文清单（只存清单与 sha256，不存 PDF）
 └─ tools/
    ├─ check-file-size/                # 行数门禁
@@ -326,7 +327,7 @@ packages/features/<name>/
 | --- | --- |
 | `contracts/src/ids.ts` | 品牌化 ID 类型（DocumentId、PageRevisionId、BlockId、JobId…）与构造校验 |
 | `contracts/src/geometry.ts` | `NormalizedBBox`、`CoordinateFrame`、六元矩阵类型 |
-| `contracts/src/document.ts` | `ContentBlock`、`AcceptedPageRevision`、`SourceAudit` |
+| `contracts/src/document.ts` | `ContentBlock`、`AcceptedPageRevision`、`SourceAudit`、`ReadingOrderResult`（阅读顺序的结果、来源与规则集版本，§7.10） |
 | `contracts/src/formula.ts` | `FormulaCandidate`、`FormulaDecision` |
 | `contracts/src/evaluation.ts` | `EvaluationResult`（scored / error / unavailable / not-run） |
 | `contracts/src/translation.ts` | `StoredTranslationBlock`（译文区块记录，取代草案 02 的 `TranslationRecord`，§8.1.1；含裁图位置 `crops`）、`TranslationBlockView`、`TranslationBlockChanged`、受保护片段表（每个公式片段带显示决定，`source-crop` 时带 `assetId`） |
@@ -377,7 +378,7 @@ packages/features/<name>/
 | `ingest` | 流水线编排：一次用户动作「打开 PDF」按 §7.1 依次调用其他切片的 seam；没有界面，没有自己的表 | `domain/ingest-policy.ts`（纯函数：输入是候选、评估记录、公式决定、采用版本、译文区块，以及本次预算与同意的结果；输出下一步：解析、取源码候选、评分、公式决定、补救、采用、翻译、停止，带停止原因；不调用网络）· `domain/ingest-steps.ts`（步骤与原因码的类型）· `application/use-cases/open-document.ts`（入库 → 提交解析 → 取源码候选 → 评分 → 公式决定 → 必要时补救并重新评分 → 采用 → 按块翻译；每一步只调对方的 `index.ts`）· `application/use-cases/resume-ingest.ts`（应用启动、评分服务恢复、预算或同意状态变化后，从已保存的事实重新算下一步续跑；`quality` 的 `reevaluate-pending` 由它触发）。进度与取消用 `jobs` 的任务（种类 `ingest`）；下一步总是由 `ingest-policy` 从已保存的事实重新算出，所以 `ingest` 不建表，重启后重算即可续跑 |
 | `library` | 文献导入、身份（SHA-256）、元数据、列表、阅读进度 | `domain/document-identity.ts`（哈希身份与去重规则）· `domain/library-record.ts`（元数据校验）· `application/use-cases/import-pdf.ts` · `application/use-cases/list-library.ts` · `application/use-cases/update-progress.ts` · `application/use-cases/get-bibliographic-records.ts`（按 ID 批量只读，写作预留，§4.4） · `application/ports/library-repository.ts` · `adapters/sqlite-library-repository.ts` · `ui/library-list.tsx`。不做 v1 数据迁移（Q8），没有 v1 导入器 |
 | `document` | 统一文档模型：解析运行、候选页、采用版本、来源审计、坐标帧 | `domain/accepted-revision.ts`（采用不变式）· `domain/source-audit.ts`（missing / duplicates）· `domain/coordinate-frame.ts`（矩阵与换算）· `domain/block-id.ts`（稳定块号）· `domain/adopt-policy.ts`（compare 与 adopt 区分）· `application/use-cases/adopt-page.ts`（乐观锁原子切换）· `application/ports/document-repository.ts` · `adapters/sqlite-document-repository.ts` |
-| `parsing` | 解析任务编排、引擎选择、文字层基础档、云 OCR 识别来源 | `domain/engine-capabilities.ts` · `domain/layout-profile.ts`（标准档 / 高质量档；高质量档只在基准证明后开放，Q10）· `domain/text-layer/`（阅读顺序、栏判定、跨页续接、页眉页脚剔除、字形清洗；每条规则一个文件，自 v1 移植）· `application/use-cases/submit-parse.ts` · `application/ports/parse-gateway.ts` · `application/ports/ocr-provider.ts`（云 OCR，§7.7）· `adapters/worker-parse-gateway.ts` · `adapters/text-layer-engine.ts`（pdfjs-dist 提取 → domain 规则）· `adapters/cloud-ocr-provider.ts`（`OcrProvider` 的唯一实现，经 `@oi/providers` 的 `OcrTransport`；百度、智谱等服务商只在注册表里，§7.9） |
+| `parsing` | 解析任务编排、引擎选择、文字层基础档、云 OCR 识别来源 | `domain/engine-capabilities.ts` · `domain/layout-profile.ts`（标准档 / 高质量档；高质量档只在基准证明后开放，Q10）· `domain/text-layer/`（文字层基础档的规则，每条规则一个文件，自 v1 移植：`columns`、`cross-column`、`xy-cut`、`page-furniture`、`caption-binding`、`continuation`、字形清洗，以及文字层启发式标签；顺序规则与 worker `engines/reading_order/` 属于同一规则集 `oi-rules/1`，以 `fixtures/parsing-rules/` 对拍，§7.10）· `application/use-cases/submit-parse.ts` · `application/ports/parse-gateway.ts` · `application/ports/ocr-provider.ts`（云 OCR，§7.7）· `adapters/worker-parse-gateway.ts` · `adapters/text-layer-engine.ts`（pdfjs-dist 提取 → domain 规则）· `adapters/cloud-ocr-provider.ts`（`OcrProvider` 的唯一实现，经 `@oi/providers` 的 `OcrTransport`；百度、智谱等服务商只在注册表里，§7.9） |
 | `jobs` | 持久任务记录、状态机、重启恢复、事件流 | `domain/job-state-machine.ts` · `domain/idempotency.ts` · `application/use-cases/resume-jobs.ts` · `application/ports/job-store.ts` · `adapters/sqlite-job-store.ts` |
 | `formula` | 公式候选、校验、显示决策、兜底顺序 | `domain/formula-policy.ts`（候选优先级链与换层判据，§7.5）· `domain/charset-check.ts` · `domain/equation-number.ts` · `domain/render-equivalence.ts` · `domain/crop-geometry.ts`（裁图外扩与 18px 参考字号） · `application/use-cases/decide-formula.ts` · `application/ports/latex-renderer.ts` · `adapters/katex-renderer.ts`（安全配置见 §7.6） |
 | `formula-source` | arXiv 源码校准公式：编号与版本识别、源码下载缓存、TeX 解析、与版面区域对齐、对齐失败回落（Q4，§7.6） | `domain/arxiv-id.ts` · `domain/fetch-policy.ts`（间隔、超时、冷却）· `domain/archive-limits.ts`（解包安全上限）· `domain/tar-reader.ts`（纯 tar 读取，gunzip 经端口注入）· `domain/tex-units.ts`（TeX → 公式单元）· `domain/macro-table.ts`（导言区宏 → KaTeX 宏，带展开上限）· `domain/source-align.ts`（词序列对齐与覆盖率）· `domain/align-policy.ts`（逐公式核对与回落判定）· `application/use-cases/resolve-arxiv-source.ts` · `application/use-cases/align-source.ts` · `application/ports/arxiv-source-client.ts` · `application/ports/source-cache.ts` · `application/ports/gunzip.ts` · `adapters/arxiv-http-client.ts` · `adapters/node-gunzip.ts` · `adapters/sqlite-source-cache.ts` |
@@ -753,9 +754,9 @@ flowchart TB
 | --- | --- | --- | --- | --- |
 | Jev 质量评分 | 面壁开放平台 `MiniCPM-OCR-Jev`（§7.4「面壁 API」） | worker `local_engine`：llama.cpp CUDA 构建首选，Ollama 备选，macOS 走 Metal | **不要求 / 未核实**：官方部署文档只覆盖 Linux + NVIDIA 与 macOS（§7.4「开发机」） | 记 `unavailable`，标「待评分」，不触发补救（PRD AC-05） |
 | 引擎 B（MiniCPM-OCR 1.0） | 面壁开放平台文档解析 `MiniCPM-OCR-1.0`（§7.1） | worker 内 SDK（`ppdoclayout3_torch`） | **不要求 / 未核实**：上游只写了 Linux vLLM（RTX 5090 32 GB）与 macOS ARM64 llama.cpp 两个验证环境 | 不运行引擎 B，只用引擎 A 或文字层基础档 |
-| 引擎 A 的模型阶段（版面、公式识别、OCR 兜底、表格） | 三条路径都保留、都可在设置中选（Wisdom 2026-10-30 19:11）：托管 API（核实通过后）、本地部署、租用的 Linux 远程 worker（「高级」里的远程 worker，跑同一份 worker 代码与 `paddle_local` 后端）；M3 开工前由 Wisdom 定最终选择（默认值与开发用的路径）。托管 API 的**候选**是百度 AI Studio 的 PaddleOCR 托管 API（异步任务，PP-StructureV3 / PaddleOCR-VL-1.5 / PP-OCRv5，Bearer access token）。异步文档的示例只取每页的 Markdown，没有写区域框字段；能否返回我们需要的区域框与公式 LaTeX、版本能否锁定、托管版面模型对应哪个档位（Q10）、价格与每日页数配额都**未核实**（差异清单 §2.4.1）；M3 开工前核实，不合用就不出现在选项里。阅读顺序与文字层对齐仍由我们自己的代码完成，不用托管流水线给出的顺序 | worker 内 PaddleOCR / PaddleX（`engine-a` extra） | **不要求 / 未实测**：Paddle 3.3 有官方 Windows GPU 包（CUDA 11.8 / 12.6 / 12.9，要求 GPU 计算能力高于 7.5），PaddleOCR 整条流水线在 Windows 上未实测。开发用哪条路径（托管 API / 开发机本地 / 租用的 Linux 远程 worker）随 M3 前的最终选择一起定 | 文字层基础档（Q2） |
+| 引擎 A 的模型阶段（版面、公式识别、OCR 兜底、表格） | 三条路径都保留、都可在设置中选（Wisdom 2026-10-30 19:11）：托管 API（核实通过后）、本地部署、租用的 Linux 远程 worker（「高级」里的远程 worker，跑同一份 worker 代码与 `paddle_local` 后端）；M3 开工前由 Wisdom 定最终选择（默认值与开发用的路径）。托管 API 的**候选**是百度 AI Studio 的 PaddleOCR 托管 API（异步任务，PP-StructureV3 / PaddleOCR-VL-1.5 / PP-OCRv5，Bearer access token）。异步文档的示例只取每页的 Markdown，没有写区域框字段；能否返回我们需要的区域框与公式 LaTeX、版本能否锁定、托管版面模型对应哪个档位（Q10）、价格与每日页数配额都**未核实**（差异清单 §2.4.1）；M3 开工前核实，不合用就不出现在选项里。托管结果若带阅读顺序，按 §7.10 当作模型顺序校验；不带时走 XY-cut 兜底；文字层对齐由我们自己的代码完成 | worker 内 PaddleOCR / PaddleX（`engine-a` extra） | **不要求 / 未实测**：Paddle 3.3 有官方 Windows GPU 包（CUDA 11.8 / 12.6 / 12.9，要求 GPU 计算能力高于 7.5），PaddleOCR 整条流水线在 Windows 上未实测。开发用哪条路径（托管 API / 开发机本地 / 租用的 Linux 远程 worker）随 M3 前的最终选择一起定 | 文字层基础档（Q2） |
 | 多模态补救 | 用户自带 Key 的多模态服务（经服务商适配层，§7.9：OpenAI 兼容、Anthropic、Gemini、千帆、智谱等；不预选，用户在设置里从全部服务商中选） | 本机 OpenAI 兼容服务（例如 Ollama、llama.cpp server 加用户自选的视觉模型） | 不要求 | 不补救，未核验公式保留原图（PRD AC-04、AC-05） |
-| 云 OCR（额外识别来源，§7.7） | 百度 OCR、智谱 GLM-OCR（用户自带 Key，经服务商适配层，§7.9） | 本身就是 API；对应的本地能力是引擎 A 的 OCR 兜底 | — | 不请求（PRD AC-18） |
+| 云 OCR（额外识别来源，§7.7；只识别区域裁片的文字，不提供阅读顺序与版面，§7.10） | 百度 OCR、智谱 GLM-OCR（用户自带 Key，经服务商适配层，§7.9） | 本身就是 API；对应的本地能力是引擎 A 的 OCR 兜底 | — | 不请求（PRD AC-18） |
 | 翻译 | 用户自带 Key 的对话模型（经服务商适配层，§7.9；不预选，用户在设置里从全部服务商中选） | 本机 OpenAI 兼容服务 | 不要求 | 不翻译，显示原文并提示去配置；可按 Q11 借用多模态（默认关） |
 | 文本问答（`qa` 的 `ChatProvider`；Wisdom 2026-10-30 19:11 确认纳入） | 用户自带 Key 的对话服务（经服务商适配层，§7.9；不预选，用户在设置里从全部服务商中选）；多模态模型与纯文本 LLM 都可以选，走同一个端口（§7.3） | 本机 OpenAI 兼容服务（同样可以是多模态或纯文本模型） | 不要求 | 功能不可用，提示去配置 |
 | TTS / ASR | 用户自带 Key 的服务（M7 选型） | 本机服务，同一端口（模型 M7 选型） | 不要求 | 功能不可用，提示去配置 |
@@ -766,7 +767,7 @@ flowchart TB
 flowchart TD
   IN["原 PDF + SHA-256"] --> PRE["预处理（pypdfium2）<br/>文字层检测 · 页面渲染 · 坐标帧<br/>（所有识别来源共用同一张页面图）"]
   IN --> AX["公式来源：arXiv 源码（§7.6）<br/>编号 + 版本 → 下载缓存 → TeX 解析 → 区域对齐<br/>对齐失败的公式不产生候选"]
-  PRE --> A["引擎 A：模块化<br/>版面检测（标准档 V3 / 高质量档 plus-L）<br/>文字层对齐 / OCR 兜底 · 公式识别 · 表格 · 自写阅读顺序<br/>（模型阶段三条路径：托管 API〔核实后〕/ 本地 / 远程 worker，§7.0）"]
+  PRE --> A["引擎 A：模块化<br/>版面检测（标准档 V3 / 高质量档 plus-L）<br/>文字层对齐 / OCR 兜底 · 公式识别 · 表格<br/>阅读顺序：版面模型给出，规则校验与兜底（§7.10）<br/>（模型阶段三条路径：托管 API〔核实后〕/ 本地 / 远程 worker，§7.0）"]
   PRE --> B["引擎 B：端到端流水线<br/>版面 → 裁剪 → 识别 → 组装<br/>（对比与兜底；默认面壁 API，可选本机 SDK）"]
   PRE --> CO["云 OCR（可选，BYOK，§7.7）<br/>按版面区域裁片识别"]
   PRE --> T["文字层基础档<br/>（无服务时降级，TS 实现）"]
@@ -795,7 +796,7 @@ flowchart TD
 - **编排归属**：上图从入库到翻译的整条流水线由 `ingest` 切片编排（§4.2、§4.3）：`ingest/domain/ingest-policy.ts` 按已保存的事实算出下一步，`open-document` / `resume-ingest` 依次调用各切片的 seam。各切片只做自己那一步，不调用下一步。
 - **预算闸门**：图中每个发往外部服务商的模型调用（引擎 A 的托管 API、引擎 B 文档解析、云 OCR、Jev 评分、多模态补救、翻译）发出前都经 `BudgetGate` 预留，被拒时按 §7.8 的规则处理：Jev 记 `unavailable`（原因码 `budget`）并标「待评分」，不触发补救，不改用别的服务商。
 
-- **当前选型**（只写在 adapters 与配置里，F-13）：引擎 A = 版面模型 + PP-FormulaNet 系列 + PaddleOCR 兜底 + 自写阅读顺序；引擎 B = MiniCPM-OCR 1.0（默认来源是面壁文档解析 API，见下条；「本地」用官方 SDK `minicpm-ocr`，版面后端用 `ppdoclayout3_torch`，不依赖 PaddlePaddle）；各能力的默认来源见 §7.0；质量评估 = MiniCPM-OCR Jev（部署见 §7.4）。按 Q1，MiniCPM-OCR 1.0 与 Jev 照用：锁定上游提交、SDK 版本与权重 sha256，记入 `EngineCapabilities.models[]` 与每次 `ParseRun`，M6 开工前复核一次。
+- **当前选型**（只写在 adapters 与配置里，F-13）：引擎 A = 版面模型 + PP-FormulaNet 系列 + PaddleOCR 兜底 + 阅读顺序（版面模型给出，`engines/reading_order/` 校验与兜底，§7.10）；引擎 B = MiniCPM-OCR 1.0（默认来源是面壁文档解析 API，见下条；「本地」用官方 SDK `minicpm-ocr`，版面后端用 `ppdoclayout3_torch`，不依赖 PaddlePaddle）；各能力的默认来源见 §7.0；质量评估 = MiniCPM-OCR Jev（部署见 §7.4）。按 Q1，MiniCPM-OCR 1.0 与 Jev 照用：锁定上游提交、SDK 版本与权重 sha256，记入 `EngineCapabilities.models[]` 与每次 `ParseRun`，M6 开工前复核一次。
 - **引擎 B 的云端来源（Wisdom 2026-10-30 18:37、18:44）**：引擎 B 默认用面壁开放平台的 MiniCPM-OCR-1.0 文档解析 API，本机 SDK 是同一接口后的「本地」选项。文档解析 API（`POST https://api.modelbest.ai/v1/document-parse`，Bearer `MODELBEST_API_KEY`，与 Jev 共用同一个面壁 Key；[文档](https://platform.modelbest.ai/console/docs/api/document-parse)，2026-10-30 查阅，页面标注更新于 2026-10-27）。第一次使用前须确认数据外发；可在设置中改选「本地」（PRD §3.3；验收 AC-60）。引擎 B 什么时候运行不变：仍是对比与兜底。
   - 输入是预处理渲染好的页面图（同步接口，`image` 用 data URI），**不上传原 PDF**，所有来源仍共用同一张页面图与 `CoordinateFrame`（Q6）。
   - 请求带 `upright: false`（平台默认 `true`，会自适应旋转并把坐标改到旋转后的页面上），让坐标直接落在我们的页面图上；页面方向由预处理负责。
@@ -805,7 +806,7 @@ flowchart TD
   - 平台显示限时免费；长期价格**未核实**。计价不写死：按平台返回的用量记账，单价来自用户配置，否则记「未知」（PRD QM-10）。
   - 托管 API 背后的版本与流水线是否与锁定的 SDK（`1269e4f`，版面用 PP-DocLayoutV3）一致**未核实**，对比视图按「版面可能同源」标注。文档页自己声明「描述的是已实现的契约，不证明生产部署或线上连通」，真实可用性在 M6 冒烟时确认（PRD M6）。
 - **引擎 A 的版面档位（Q10）**：标准档 = PP-DocLayoutV3，M3 起步即用；基准集另跑 PP-DocLayout_plus-L 对照。plus-L 若在阅读顺序与版面指标上「明显更好」（判据待基准定标，PRD QM-13），作为「高质量档」在设置中供用户选择；否则不开放。档位是配置值，记入 `ParseRun`，切换只影响新的解析，不改已采用版本。
-- **版面同源**：B 的 SDK 固定使用 PP-DocLayoutV3，阅读顺序也来自它，而不是来自 OCR 模型。A 用标准档（V3）时，A/B 的版面判断同源：对比视图必须标注「版面同源」，A/B 一致不能作为互相印证的证据。A 用高质量档（plus-L）时不同源，但 plus-L 不输出阅读顺序，顺序完全由自写算法给出。
+- **版面同源**：B 的 SDK 固定使用 PP-DocLayoutV3，阅读顺序也来自它，而不是来自 OCR 模型。A 用标准档（V3）时，A/B 的版面判断同源，采用模型顺序时顺序也同源：对比视图必须标注「版面同源」，A/B 一致不能作为互相印证的证据。A 用高质量档（plus-L）时版面不同源；plus-L 不输出阅读顺序，这一档的顺序由 §7.10 的 XY-cut 兜底给出（来源记 `xy_cut`）。
 - **页面图（Q6）**：预处理统一用 pypdfium2 渲染页面图并生成 `CoordinateFrame`；所有识别来源使用同一张图。B 以图片输入 SDK，不安装其 `pdf` extra（该 extra 依赖 PyMuPDF）。PyMuPDF 禁止引入（AGPL，与本项目 Apache-2.0 许可证政策冲突，RULES §1.5）。
 - **全路径评分（Q1）**：所有产出识别结果的路径——引擎 A、引擎 B、云 OCR（百度、智谱等）、arXiv 源码对齐、多模态补救——产出的候选都必须经过 Jev 评分，结果写入候选的 `EvaluationResult`。`quality/domain/scoring-coverage.ts` 是唯一判定处：没有评估记录的识别候选不能进入采用版本；评分服务错误或不可用时，记录为 `error` / `unavailable` 并标「待评分」，可以采用用于阅读，但不算已核验、不触发补救，评分恢复后由 `reevaluate-pending` 自动补评。文字层基础档的文字直接取自 PDF 文字层，不是识别结果，不在此列；但其公式区域不产生 LaTeX 候选，只显示原页裁图。
 - **低分再补**：只有经 §7.5 优先级链选出、且有效低分（`scored` 且低于该类别、该 `evaluatorVersion` 的阈值）或有明确不确定证据的区域才进入多模态补救；补救结果是新的识别候选，同样重新校验、重新评分。
@@ -818,7 +819,8 @@ flowchart TD
 # workers/parser/oi_worker/engines/base.py —— 拟议
 from typing import Protocol, Iterable
 from oi_worker.protocol import (PageInput, PageCandidate, EngineCapabilities,
-                                LayoutRegion, FormulaCandidate, TextSpan, CancelToken,
+                                LayoutRegion, LayoutResult, ReadingOrderResult,
+                                FormulaCandidate, TextSpan, CancelToken,
                                 EvalItem, EvalOutcome)
 
 class DocumentEngine(Protocol):
@@ -827,17 +829,17 @@ class DocumentEngine(Protocol):
     def parse_page(self, page: PageInput, cancel: CancelToken) -> PageCandidate: ...
 
 # 引擎 A 由以下可替换部件组合，每个部件一个文件、一个实现类：
-class LayoutDetector(Protocol):
-    def detect(self, page: PageInput) -> list[LayoutRegion]: ...
+class LayoutDetector(Protocol):         # LayoutResult = 区域 + model_order（模型没给出顺序时为 None，§7.10）
+    def detect(self, page: PageInput) -> LayoutResult: ...
 class TextExtractor(Protocol):          # 文字层对齐优先，OCR 兜底
     def extract(self, page: PageInput, regions: list[LayoutRegion]) -> list[TextSpan]: ...
 class FormulaRecognizer(Protocol):
     def recognize(self, page: PageInput, regions: list[LayoutRegion]) -> list[FormulaCandidate]: ...
 class TableRecognizer(Protocol):
     def recognize(self, page: PageInput, regions: list[LayoutRegion]) -> list[LayoutRegion]: ...
-class ReadingOrderer(Protocol):         # 自写算法；版本号进入产物
-    version: str
-    def order(self, regions: list[LayoutRegion]) -> list[str]: ...
+class ReadingOrderer(Protocol):         # 校验模型顺序并兜底（§7.10）；规则集版本进入产物
+    ruleset_version: str                # 如 "oi-rules/1"
+    def order(self, regions: list[LayoutRegion], model_order: list[str] | None) -> ReadingOrderResult: ...
 
 # 质量评估后端（§7.4、Q9）：本机推理与远程 HTTP 两种实现，对 api/ 暴露同一个接口
 class QualityEvaluatorBackend(Protocol):
@@ -1033,6 +1035,7 @@ flowchart LR
 | 智谱 OCR 服务 | [文档](https://docs.bigmodel.cn/cn/guide/tools/zhipu-ocr) | `POST https://open.bigmodel.cn/api/paas/v4/files/ocr`，`tool_type` 目前只有 `hand_write`（手写体）；返回行级 `location` 与 `words` | 是否适用于印刷体论文；v2 只登记、默认不接入 |
 
 - 计价不写死：适配器上报计费单位（次 / 页 / token），单价来自用户配置，否则记「未知」（PRD QM-10）；每次调用都先经 `BudgetGate` 预留（§7.8）。
+- **不是阅读顺序或版面的来源**（Wisdom 2026-10-30 21:12）：百度云通用 OCR 处理多栏页面不可靠（Wisdom 的判断，本 PR 没有实测），不作为任何档位的主路线。云 OCR 只收版面区域裁片，不发整页图；返回的行序只决定该区域内文字的拼接，不参与块的顺序与版面（§7.10；PRD AC-71）。
 - 两家都只是 `packages/providers` 注册表里的记录（格式 `baidu-ocr`、`zhipu-layout-parsing`）；`parsing` 只有一个 `cloud-ocr-provider` 适配器（§7.9）。
 - M6 接入前按当时的官方文档逐字段复核；与本表不符时先更新本表与差异清单 §7，再写适配器（RULES §7）。
 
@@ -1229,6 +1232,60 @@ TTS / ASR 的格式在 M7 选型时加入本表。
 - Gemini：注册表默认用原生格式 `gemini-generate-content`；OpenAI 兼容端点（`openai-chat`）作为同一服务商的备选端点保留，用户可以改选。两种格式都实现，差别只在注册表。
 - 百度 OCR：现在用 access_token（7.9.5 第 1 条）；API Key 方式在它用于 OCR 时的请求头写法核实后，作为新的 `auth/<scheme>.ts` 加入，不改格式适配器。
 - 预置模型清单与价格在实现时按当时的官方文档填写，并在注册表记录里写 `verifiedAt`；单价未核实的按 §7.8 的次数类上限管。
+
+### 7.10 阅读顺序（Wisdom 2026-10-30 21:12）
+
+决定：主顺序取 Paddle PP-DocLayout 版面模型给出的阅读顺序；worker 的 `engines/reading_order/` 负责校验与兜底，规则版本化（解析规则集 `oi-rules/1`）。百度云通用 OCR 处理多栏页面不可靠，不作为阅读顺序或版面的主路线（Wisdom 的判断，本 PR 没有实测，§7.7）。验收 PRD AC-68–AC-71。
+
+**上游现状**（2026-10-30 查阅，出处见差异清单 §2.4；没有运行模型）：
+
+| 模型 / 服务 | 文档怎么说 | 状态 |
+| --- | --- | --- |
+| PP-DocLayoutV2（开源） | PaddleOCR `docs/version3.x/module_usage/layout_analysis.en.md`（`main@dab3fe3`）：该模块目前只支持 V2，结构是 PP-DocLayout_plus-L 加一个 6 层的 pointer network；输出的 `boxes` 已按阅读顺序排列，没有单独的顺序字段 | 文档已确认会返回顺序；**待 M0 实测** |
+| PP-DocLayoutV3（开源，标准档） | 模型卡称单次前向同时给出阅读顺序；MiniCPM-OCR SDK 也取它的顺序（差异清单 §2.2）；但 PaddleOCR 开源模块的文档没有写 V3 的输出带顺序 | 推测会返回；**待 M0 实测** |
+| 百度 AI Studio PaddleOCR 托管 API | 示例只取每页 Markdown，没有写区域框与顺序（差异清单 §2.4.1） | 未验证；**待 M0 实测**（与 M3 开工前的托管 API 核实同批） |
+| PP-DocLayout_plus-L（高质量档） | 不输出阅读顺序 | 文档已确认；这一档的顺序由下文的 XY-cut 兜底给出 |
+
+**流程**（worker 内，按页）：
+
+1. **取模型顺序。** `LayoutDetector.detect` 返回 `LayoutResult`：区域，加上模型给出的顺序 `model_order`（区域 id 序列）。V2 / V3 的 `boxes` 排列就是顺序，适配器原样转换，不从框的位置反推；后端没有给出顺序时 `model_order = None`。托管 API（核实通过后）若返回顺序，同样当作模型顺序。
+2. **校验**（`validate.py`）。模型顺序必须恰好是本页区域 id 的一个排列（不缺、不重、没有未知 id）；多栏页上（栏由 `columns.py` 判定），在栏之间来回跳的次数不超过阈值（待基准定标）。不过就弃用模型顺序，记原因码 `model_order_invalid` / `model_order_interleaved`，改走第 4 步。
+3. **兜底规则**（顺序来自模型或 XY-cut 都执行；改动了模型顺序时来源记 `model_corrected`）：
+   - `page_furniture.py`：页眉、页脚、页码不进正文流，也不是翻译块（§8.1.1 的表里没有它们），仍记在来源审计里，不算 `missing`；脚注排在本页正文流之后；侧栏（旁注、文本框）各自成流，排在正文流之后、脚注之前。
+   - `caption_binding.py`：图、表与题注绑定，绑定后在顺序中相邻（题注在下方的排在图表之后，在上方的排在之前）；按同栏、上下相邻、水平重叠判断，阈值待基准定标；找不到对象的题注保留几何位置，记 `caption_unbound`。
+   - `continuation.py`：跨栏、跨页的段落续接只输出链接（前一块 → 后一块，类型 `cross_column` / `cross_page`；跨页链接记在后一页，引用前一页的块号），不合并块：块号、坐标、笔记锚点、译文区块仍按原块。译文是否利用这些链接（例如两块合并翻译再拆回）未定，v2 只记录。
+4. **XY-cut 兜底**（`xy_cut.py`）。没有模型顺序或校验不过时，用递归 XY-cut：先按 `cross_column.py` 识别的通栏元素（通栏标题、通栏图表）把页面切成上下几带，带内按栏从左到右、栏内从上到下；再执行第 3 步。来源记 `xy_cut`。思路参考 v1 `lib/pdf-flow-join.js` 与 PaddleX `xycut_enhanced`，只借思路，规则按 `oi-rules/1` 自写。
+
+**结果**（`contracts/src/document.ts`；随候选页 `PageCandidate` 返回，采用时进入采用版本，区域 id 换成稳定块号）：
+
+```ts
+type ReadingOrderResult = Readonly<{
+  order: readonly string[];          // 正文流 → 侧栏流 → 脚注；页眉、页脚、页码不在内
+  furniture: readonly string[];      // 页眉、页脚、页码
+  source: 'model' | 'model_corrected' | 'xy_cut';
+  modelOrderAvailable: boolean;      // 版面后端是否给出了顺序（不论是否采用）
+  rulesetVersion: string;            // 如 'oi-rules/1'；ParseRun 同样记录
+  reasons: readonly string[];        // model_order_invalid、model_order_interleaved、caption_unbound …
+  continuations: ReadonlyArray<Readonly<{ from: string; to: string; kind: 'cross_column' | 'cross_page' }>>;
+}>;
+```
+
+**一套规则集，两侧实现**（架构评审 P1-5）。评审推荐只在 TS 排序；Wisdom 2026-10-30 21:12 定为由 worker 的 `engines/reading_order/` 校验与兜底，所以按评审的第二种做法：一套规则、两侧实现、用与语言无关的夹具对拍。
+
+- 文字层基础档（TS `parsing/domain/text-layer/`，没有 Python 也要工作，Q2）没有版面模型，顺序来源总是 `xy_cut`。它与 worker 实现同一规则集的共有部分：栏判定、通栏元素、XY-cut、页眉页脚与侧栏脚注的放置、题注绑定、续接链接，以及 §7.11 的扫描页判定与段落切分。
+- 对拍夹具在 `fixtures/parsing-rules/`（`reading-order/`、`scan-detect/`、`paragraphs/`）：输入是合成的区域几何、类别、文字与页面特征，输出是期望结果；TS 与 Python 两侧逐字段一致，CI 两侧都跑（§12）。夹具只用合成数据，不放真实论文的页面图片或文字。
+- 不在对拍范围的：模型顺序的校验（`validate.py`，只在 worker；基础档没有模型顺序）；类别从哪来——worker 用版面模型的类别，基础档用文字层启发式（例如在多页的同一位置重复出现的行判为页眉页脚，「Figure n」「Table n」开头的行判为题注），启发式只在 TS 侧测试。
+- 改规则 = 两侧与夹具在同一个 PR 里改，输出变化时规则集版本升一级（`oi-rules/2`）；`ParseRun` 记录所用版本，已采用版本不因升级而改写（RULES §2、§5 第 19 条）。
+
+**与其他来源的关系**：
+
+- 引擎 B：保留它自己的顺序（来自它的版面，§7.1），只做排列校验，不套兜底规则，对比时看到的是 B 的原样输出；结果单独保存（PRD AC-13）。
+- 云 OCR：只识别区域裁片里的文字，不发整页图，返回的行序不参与块的顺序与版面（§7.7）。
+- QM-01 按顺序来源（`model` / `model_corrected` / `xy_cut`）与档位（文字层基础档、标准档、高质量档）分别报告。
+
+**M0 实测（待执行，M3 开工前完成）**：见 PRD §8 M0。在实测之前，`engines/modular_a/layout.py` 的顺序字段按上表的文档写法实现，不假定 V3 一定给出顺序。
+
+**未决**（差异清单 §7）：V3 的开源输出若不带顺序，标准档的模型顺序从哪里来（改用 V2——V2 就是 plus-L 加 pointer network——还是走 XY-cut）；高质量档（plus-L）是否改用 V2 以获得模型顺序。两项待 M0 实测后由 Wisdom 定。校验与绑定的阈值待基准定标。
 
 ## 8. 数据模型与存储
 
@@ -1473,7 +1530,7 @@ workers/parser/
 │  │  ├─ base.py             # §7.2 的 Protocol
 │  │  ├─ modular_a/          # layout.py / text_align.py / ocr_fallback.py / formula.py / table.py / assemble.py
 │  │  │  └─ backends/        # 模型阶段的来源：paddle_local.py（本地）/ aistudio_api.py（百度 AI Studio 托管 API，候选，M3 前核实；§7.0）
-│  │  ├─ reading_order/      # columns.py / xy_cut.py / cross_column.py / continuation.py
+│  │  ├─ reading_order/      # validate.py / page_furniture.py / caption_binding.py / continuation.py / cross_column.py / columns.py / xy_cut.py（纯规则，§7.10）
 │  │  └─ e2e_b/              # mapping.py（块级记录 → 候选页；block_id、order 只作运行内标识；两个后端共用）
 │  │     └─ backends/        # sdk_local.py（以页面图调用 SDK）/ modelbest_api.py（面壁 document-parse，只发页面图，处理 rotation；§7.1）
 │  ├─ quality/               # Jev 评分（§7.4）：本机与远程 worker 同一代码
@@ -1520,6 +1577,7 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 | core 属性与病态输入 | fast-check（MIT）；子线程 + 超时 | `markdown` 的往返不变 `serialize(parse(t)) === t`（AC-52）与 `translation` 的「还原后公式与片段表一致」（AC-49）用随机生成文本跑；Markdown 解析对病态输入（深层嵌套、超长行、大量 `$`）在子线程运行并设超时，超时即失败（沿用 v1 `tests/helpers/render-guard.mjs` 的做法） |
 | adapters | 契约测试套件 | 每个端口在 `testing/` 提供一份共享契约测试，内存实现与 SQLite 实现都跑同一份 |
 | 协议 | TS + Python 双侧 | `fixtures/protocol/` 合法样例通过、非法样例拒绝；含 `provider-errors/`（`ProviderFailure` 映射）与 `versions/`（协议版本协商，§10.4） |
+| 解析规则对拍 | `fixtures/parsing-rules/`，TS + Python 双侧 | 阅读顺序、扫描页判定、段落切分的每个夹具两侧输出逐字段一致（§7.10）；夹具只用合成几何、合成文字与页面特征 |
 | 服务商适配层 | `packages/providers/src/testing/` 的共享套件 | 每个格式适配器跑它支持的能力对应的套件（chat、vision、streaming、ocr、errors、auth、budget-egress）；每条注册表记录至少跑 auth 与 errors；样例在 `fixtures/providers/<vendor>/`，全部是合成数据（§7.9.7） |
 | ui | Vitest + Testing Library | 组件只依赖 fake 的 `window.oi`；只断言「调用了哪个 seam、怎么画结果」，不断言业务规则（规则已由 core 测试覆盖） |
 | e2e | Playwright Electron | 只做少量冒烟：开窗、导入、阅读、重开 |

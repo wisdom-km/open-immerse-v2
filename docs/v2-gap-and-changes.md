@@ -48,7 +48,7 @@
 | MiniCPM-OCR 1.0 | **已核实** | [OpenBMB/MiniCPM-OCR](https://github.com/OpenBMB/MiniCPM-OCR)（2026-10-27 创建）；HF `openbmb/MiniCPM-OCR-1.0`（2026-10-21 创建，1,300,434,160 参数） | Apache-2.0 | 区域识别 VLM；官方用法是 SDK 流水线（§2.2） | 附件称「端到端、含版面 + 阅读顺序」不准确：版面与顺序来自 SDK 调用的 PP-DocLayoutV3 |
 | `minicpm-ocr` SDK | **已核实** | PyPI `minicpm-ocr` 1.0.3，导入名 `minicpmvocr` | Apache-2.0 | 版面 → 裁剪 → 识别 → 组装；可输出块级中间记录 | `pdf` extra 依赖 `PyMuPDF>=1.23`（许可证风险，§2.8） |
 | MiniCPM-OCR Jev | **已核实** | HF `openbmb/MiniCPM-OCR-Jev`（约 2.21B）；同仓库 `docs/minicpm_ocr_jev_*.md` | Apache-2.0 | 「原图 + 候选文本 + 渲染图」二分类打分器，输出 `prob_yes` | 附件「打分 0~1」缺少错误占位与阈值语义；草案 03 §9 漏了 `precheck_reject`、`missing_original_image`（§2.3） |
-| PP-DocLayoutV3 | **已核实** | HF `PaddlePaddle/PP-DocLayoutV3` 与 `_safetensors`（2026-01-20 创建），随 PaddleOCR 3.4.0 / PaddleOCR-VL-1.5 发布 | Apache-2.0 | 25 类、多点框、自带阅读顺序（§2.4） | 附件把它同时放在 A 和 B，未指出共享依赖；Paddle 文档自相矛盾（§2.4） |
+| PP-DocLayoutV3 | **已核实** | HF `PaddlePaddle/PP-DocLayoutV3` 与 `_safetensors`（2026-01-20 创建），随 PaddleOCR 3.4.0 / PaddleOCR-VL-1.5 发布 | Apache-2.0 | 25 类、多点框；模型卡称同时给出阅读顺序，开源模块文档没写（§2.4，待 M0 实测） | 附件把它同时放在 A 和 B，未指出共享依赖；Paddle 文档自相矛盾（§2.4） |
 | PP-FormulaNet_plus-L | **已核实** | PaddleOCR `docs/version3.x/module_usage/formula_recognition.en.md` | Apache-2.0 | 公式图 → LaTeX | 无冲突；体积与耗时偏大（§2.5） |
 | PP-DocLayout-L / _plus-L | **已核实** | PaddleOCR `layout_detection.en.md` | Apache-2.0 | 版面检测；**不输出阅读顺序** | 附件「PP-DocLayout-L 或 V3」二选一的后果未说明（Q10） |
 | PaddleOCR | **已核实** | [PaddlePaddle/PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) v3.7.0（2026-06-11） | Apache-2.0 | 引擎 A 的 OCR 兜底、表格模块来源 | — |
@@ -104,16 +104,17 @@
 
 | 模型 | 类别数 | 框 | 阅读顺序 | 备注 |
 | --- | --- | --- | --- | --- |
-| PP-DocLayoutV3 | 25 | 多点框 | **有**（模型自带） | 引擎 B 的 SDK 固定使用 |
-| PP-DocLayoutV2 | 25 | 矩形 | 有（pointer network） | MinerU 3.0+ 与 v1 的「智能版式」规划用它 |
+| PP-DocLayoutV3 | 25 | 多点框 | 模型卡称有；PaddleOCR 开源模块文档没有写——**推测**，待 M0 实测 | 引擎 B 的 SDK 固定使用，并取它的顺序（§2.2） |
+| PP-DocLayoutV2 | 25 | 矩形 | **有**：开源模块文档写明输出的 `boxes` 按阅读顺序排列（见下） | 结构是 plus-L 加 6 层 Transformer 的 pointer network；MinerU 3.0+ 与 v1 的「智能版式」规划用它 |
 | PP-DocLayout_plus-L | 20 | 矩形 | 无 | 与 B 独立 |
 | PP-DocLayout-L / M / S | 23 | 矩形 | 无 | 早期系列 |
 
-- Paddle 官方文档自相矛盾：`docs/version3.x/module_usage/layout_analysis.en.md` 第 25 行写「only supports PP-DocLayoutV2」，同一文件第 100–115 行的 CLI 示例与测速表却使用 V3；PaddleOCR-VL 的部署配置 `deploy/paddleocr_vl_docker/pipeline_config_vllm.yaml` 也写 `model_name: PP-DocLayoutV3`。实施时以锁定版本的实际行为为准，并在 M3 做一次实测。
+- Paddle 官方文档自相矛盾：`docs/version3.x/module_usage/layout_analysis.en.md` 第 25 行写「only supports PP-DocLayoutV2」，同一文件第 100–115 行的 CLI 示例与测速表却使用 V3；PaddleOCR-VL 的部署配置 `deploy/paddleocr_vl_docker/pipeline_config_vllm.yaml` 也写 `model_name: PP-DocLayoutV3`。实施时以锁定版本的实际行为为准，在 M0 实测（PRD §8 M0）。
+- **阅读顺序的输出（2026-10-30 复查 PaddleOCR `main@dab3fe3`，只读文档，没有运行模型）**：同一文件第 25 行写 V2 = PP-DocLayout_plus-L 加 6 层 Transformer 的 pointer network，检测框与类别送入 pointer network 排出阅读顺序；第 184 行写结果的 `boxes`「sorted in reading order」，没有单独的顺序字段。V3 的开源输出是否同样按顺序排列，文档没有写；AI Studio 托管 API 是否返回区域与顺序，文档也没有写（§2.4.1）。三项都待 M0 实测。
 - PP-DocLayoutV3 面向弯曲、倾斜、翻拍等真实拍摄场景，单次前向同时输出多点框与阅读顺序。模型卡称对应论文 RT-DocLayout（arXiv:2606.23344）已被 ECCV 2026 接收——**未核实**。
-- PP-StructureV3 的阅读顺序用规则算法 `xycut_enhanced`（PaddleX `layout_parsing/pipeline_v2.py`），默认版面模型是 PP-DocLayout_plus-L；PaddleOCR-VL 则直接用 V2 / V3 模型预测的顺序。前者与 v2「引擎 A 自写阅读顺序」的思路一致，可作为对照实现。
+- PP-StructureV3 的阅读顺序用规则算法 `xycut_enhanced`（PaddleX `layout_parsing/pipeline_v2.py`），默认版面模型是 PP-DocLayout_plus-L；PaddleOCR-VL 则直接用 V2 / V3 模型预测的顺序。前者是 v2 XY-cut 兜底的参考思路（ARCH §7.10）。
 - **A/B 共享依赖**：附件让 A 选「PP-DocLayout-L 或 PP-DocLayoutV3」，B 内部固定用 V3。A 若选 V3，两条分支的版面判断同源，A/B 一致不能当作「两个专家互相印证」。草案 03 §2 已指出这一点；ARCHITECTURE §7.1 已写入。Q10 已决定：A 以 V3 起步（对比时标注「版面同源」），基准另跑 plus-L 对照，明显更好时作为「高质量档」供用户选择（判据见 PRD QM-13）。
-- A 即使用 V3，也只把模型给出的顺序作为「候选 / 对照证据」，正式顺序由项目自写算法给出并版本化（草案 03 §2 的要求保留）。
+- **阅读顺序的决定**（Wisdom 2026-10-30 21:12）：主顺序取版面模型给出的顺序；`engines/reading_order/` 校验（是否为区域的排列、多栏页是否在栏间来回跳）并兜底（页眉页脚与页码剔除、脚注与侧栏放置、图表题注绑定、跨栏跨页续接链接、XY-cut），规则集版本化为 `oi-rules/1`；文字层基础档在 TS 实现同一规则集的共有部分，用合成夹具对拍（ARCH §7.10；PRD AC-68–AC-70）。百度云通用 OCR 处理多栏页面不可靠，不作为主路线（ARCH §7.7；PRD AC-71）。这取代草案 03 §2 的「模型顺序只作对照、正式顺序自写」。
 
 #### 2.4.1 引擎 A 模型阶段的托管候选与 Windows 本地（API 优先，Wisdom 2026-10-30 18:44）
 
@@ -157,7 +158,7 @@ Windows 本地（开发机）：Paddle 3.3 官方提供 Windows 的 pip 安装�
 - 许可证：PyPI 元数据为 `LicenseRef-MinerU-Open-Source-License`，即 Apache-2.0 加附加条款：月活超 1 亿或月收入超 2000 万美元需商业许可、提供在线服务须署名、违约自动终止。**不在** RULES §1.5 白名单内。
 - 许可证在 2026 年内反复变更（`LICENSE.md` 提交记录，已用 `gh api` 复核）：03-20 AGPL-3.0 → Apache-2.0，03-28 改回 AGPLv3，04-14 → Apache-2.0，04-17 → MinerU OSL。各版本以发布时的 LICENSE 为准：2026-04-14 之前的大部分版本（包括 03-29 发布的 3.0.0）是 AGPL-3.0。
 - 阅读顺序：0.9.0（2024-10-31）起用 LayoutReader（权重为 CC-BY-NC-SA 4.0，非商用）；3.0.0（2026-03-29）移除 LayoutReader 以及 AGPL 的 doclayoutyolo、mfd_yolov8，现在由 PP-DocLayoutV2 的模型输出给出顺序（`mineru/model/layout/pp_doclayoutv2.py`）。当前 PDF 库是 pypdfium2。附件「借鉴 MinerU 的几何规则思路」对应的是旧版本思路。
-- v2 处理：只借鉴思路，不引入 MinerU 任何版本的代码、权重或依赖（旧版有 AGPL 与非商用权重风险，新版有自定义条款）；需要模型排序时直接用 Apache-2.0 的 PP-DocLayoutV2 / V3，需要规则排序时参考 PaddleX `xycut_enhanced`；v1 已有的 `lib/pdf-flow-join.js` 跨栏 / 跨页续接规则（MinerU 式，[v1 审查](./v1-review.md) §4.13）是可直接移植的自有资产。
+- v2 处理：只借鉴思路，不引入 MinerU 任何版本的代码、权重或依赖（旧版有 AGPL 与非商用权重风险，新版有自定义条款）；模型排序用 Apache-2.0 的 PP-DocLayoutV2 / V3，规则兜底参考 PaddleX `xycut_enhanced`（ARCH §7.10）；v1 已有的 `lib/pdf-flow-join.js` 跨栏 / 跨页续接规则（MinerU 式，[v1 审查](./v1-review.md) §4.13）是可直接移植的自有资产。
 
 ### 2.8 PDF 库许可证
 
@@ -211,7 +212,7 @@ Windows 本地（开发机）：Paddle 3.3 官方提供 Windows 的 pip 安装�
 | §1 输入层 | 用 PyMuPDF 打开 PDF、检测文字层、渲染页面 | AGPL 风险（§2.8） | worker 预处理用 pypdfium2（Q6 已决定）；文字层检测按页、可信度按区域判断（草案 03 §3） | ARCH §7.1、§10.3；Q6 |
 | §1 输入层 | 渲染 300 DPI 左右 | 合理起点，非常量 | 作为配置，按模型输入限制、清晰度、内存定标 | PRD QM-06 / QM-07 |
 | §2 分支 A | 版面用 PP-DocLayout-L 或 PP-DocLayoutV3 | 二者能力不同（§2.4）；选 V3 则与 B 共享依赖 | Q10 已决定：V3 起步，对比时标注共享依赖；基准另跑 plus-L 对照，明显更好时作为「高质量档」 | ARCH §7.1；Q10 |
-| §2 分支 A | 阅读顺序自己写，借鉴 MinerU 几何规则 | MinerU 已改用模型排序、许可证非白名单（§2.7） | 自写算法版本化；借鉴 v1 `pdf-flow-join.js` 与 PP-StructureV3 `xycut_enhanced` 思路；「通顺试接」作为新实现 | ARCH §10.3 `reading_order/`；v1 审查 §4.13 |
+| §2 分支 A | 阅读顺序自己写，借鉴 MinerU 几何规则 | MinerU 已改用模型排序、许可证非白名单（§2.7） | 主顺序取版面模型的顺序，`reading_order/` 校验与兜底，规则集版本化；兜底借鉴 v1 `pdf-flow-join.js` 与 PP-StructureV3 `xycut_enhanced` 思路；「通顺试接」作为新实现 | ARCH §7.10、§10.3 `reading_order/`；v1 审查 §4.13 |
 | §2 分支 A | 表格「可选」转 Markdown | 合并单元格、跨页表格范围未定 | 首版保留表格结构候选 + 原图；复杂结构在 Markdown 导出时声明降级 | PRD S2；ARCH §7.2 |
 | §3 分支 B | MiniCPM-OCR 1.0 直接端到端解析，输出含阅读顺序 | 实际是 SDK 流水线，顺序来自 PP-DocLayoutV3（§2.2） | 称「端到端流水线」；接块级中间记录而非只接 Markdown | ARCH §7.1、§10.3 `e2e_b/` |
 | §3 分支 B | 内部使用 PP-DocLayoutV3 | **正确** | 保留；补充「与 A 可能同源」 | ARCH §7.1 |
@@ -287,7 +288,7 @@ Windows 本地（开发机）：Paddle 3.3 官方提供 Windows 的 pip 安装�
 | 公式七级兜底，多模态为常规第二层 | `lib/formula-contract.js:10-20`、`REQUIREMENTS.md` §2.6 | 多模态只处理低分 / 不确定区域 | 兜底顺序重排（v1 审查 §4.1），判据数值保留 |
 | OCR 层为桩、矢量重绘未实现 | `lib/formula-tiers/ocr.js:9-10`、`vector.js:12-18` | OCR 由引擎 A / B 产出 | 矢量重绘不进 v2 |
 | 整页多模态替换（#189，7 轮不收敛，默认关） | `lib/mm-page.js:21` | 只做区域补救 | 丢弃；页面版本切换由原子采用完成 |
-| 「通顺试接」 | 只在 `docs/architecture-redesign.md:185-198`，`:168` 自述未写代码 | 自写阅读顺序 | 新实现，打分模型、窗口、阈值由基准定标；不当作已有资产 |
+| 「通顺试接」 | 只在 `docs/architecture-redesign.md:185-198`，`:168` 自述未写代码 | 阅读顺序兜底的续接规则（ARCH §7.10） | 新实现，打分模型、窗口、阈值由基准定标；不当作已有资产 |
 | 旧本机服务 `127.0.0.1:8765` 的 `/v1/layout` | `lib/pdf-layout-client.js:12` | `oi-parse/1` | 不兼容；Q8 已决定不迁移，v2 不读旧服务与旧数据 |
 | 多模态账本按页计数，不计金额 | `lib/formula-mm-ledger.js` | 受限 / 不设金额上限预算 | 账本改为金额与次数双口径，带预留与结算 |
 | 未配置翻译时借用多模态服务翻译 | `lib/translate-borrow.js` | 未提及 | Q11 已决定：保留，默认关，开启时提示消耗多模态额度 |
@@ -484,7 +485,11 @@ Wisdom 19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md
 | MiniCPM-OCR 1.0 在 Apple Silicon 上可用的具体芯片与内存下限 | `docs/llamacpp_deploy.md:23` 只写 macOS ARM64 包 | **未核实** |
 | MiniCPM-OCR 1.0 在 8 GB 核显 Windows / M1 8 GB 上本机运行 | — | **未核实**，规格不承诺 |
 | PaddlePaddle 在 macOS ARM64 / Windows 核显上运行引擎 A 的实际速度与内存 | — | **未核实**，M3 实测 |
-| PP-DocLayoutV3 在 `layout_analysis` 模块中的支持状态 | 文档第 25 行与第 100–115 行矛盾 | **未核实**，M3 实测 |
+| PP-DocLayoutV3 在 `layout_analysis` 模块中的支持状态 | 文档第 25 行与第 100–115 行矛盾 | **未核实**，M0 实测 |
+| PP-DocLayoutV2 开源输出的 `boxes` 按阅读顺序排列 | `layout_analysis.en.md` 第 25、184 行（`main@dab3fe3`） | 文档已写；行为**待 M0 实测**（ARCH §7.10） |
+| PP-DocLayoutV3 开源输出带阅读顺序 | 模型卡；MiniCPM-OCR SDK 取它的顺序（§2.2）；开源模块文档没写 | **推测**，待 M0 实测；不带时标准档的顺序来源由 Wisdom 定（ARCH §7.10「未决」） |
+| 百度 AI Studio PaddleOCR 托管 API 返回区域框与阅读顺序 | 异步 API 文档示例只取 Markdown | **未验证**，待 M0 实测（与 M3 开工前的托管 API 核实同批） |
+| 百度云通用 OCR 处理多栏页面不可靠 | Wisdom 2026-10-30 21:12 的判断 | 本 PR **没有实测**；作为决定执行：云 OCR 只收区域裁片，不作为阅读顺序或版面的来源（ARCH §7.7、§7.10） |
 | PP-DocLayoutV3 对应论文已被 ECCV 2026 接收 | HF 模型卡 | **未核实** |
 | PaddleOCR 的 `transformers` 推理引擎可运行 PP-FormulaNet / PP-DocLayout，从而免装 PaddlePaddle | `formula_recognition.en.md:221` 只列出引擎选项 | **未核实**，M3 实测 |
 | Unlimited-OCR 是否有区域坐标输出 | 公开 README 与示例 | 未见，**未核实**是否存在隐藏接口 |
@@ -541,6 +546,7 @@ Wisdom 19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md
 | UI 与业务核心解耦 | ARCH §2.1–§2.6、§13 G13–G16；RULES §8；PRD S12、AC-21 |
 | arXiv 源码校准公式、云 OCR、公式候选优先级链 | ARCH §7.5–§7.7；PRD S4、AC-22–AC-26 |
 | 基准集真实规模与阅读顺序真值缺口 | PRD §7；v1 审查 §6 |
+| 阅读顺序：模型顺序为主、`reading_order/` 校验与兜底、规则集两侧对拍、云 OCR 不作顺序来源（Wisdom 2026-10-30 21:12） | 本文 §2.4、§6.8、§7；ARCH §3、§4.1、§4.2、§7.0、§7.1、§7.2、§7.7、§7.10、§10.3、§12；PRD S2、AC-68–AC-71、QM-01、M0、M2、M3 |
 | 决策记录 Q1–Q12 | 本文 §6；PRD §9；ARCH §16 |
 | Markdown 阅读方案（D1–D7）、译文按区块存 Markdown | 本文 §6.1；ARCH §4.5、§8.1.1；PRD S13、§3.2、US-23–US-28、AC-30–AC-56、QM-15–QM-17、§8.1；RULES N-18；方案原文 `docs/design/md-reader.md` |
 | Jev 的 API 服务商是面壁开放平台、设置「本地 / API」、`MODELBEST_API_KEY` 的保管、引擎 B 的面壁 API 来源（Wisdom 2026-10-30 18:37） | 本文 §2.3.1、§7；ARCH §1、§2.6、§4.2、§7.1、§7.3、§7.4「面壁 API」、§8.3、§10.1–§10.3、§16；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、QM-14、M6、§9 |
