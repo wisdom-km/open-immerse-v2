@@ -20,7 +20,7 @@
 >   4. **缓存键**：改用公式决定摘要，不加采用版本号，论证见 [v2-gap-and-changes](../v2-gap-and-changes.md) §6.2.1。
 >   5. 规格为落实以上几项做的补充（`failureKind`、`display`、错误码、键盘聚焦显示原因等）列在 [v2-gap-and-changes](../v2-gap-and-changes.md) §6.2，其中需要 Loom 确认的已标明。
 > - 「API 优先」原则（Wisdom 2026-10-30 18:44）对本文的影响：只涉及翻译与问答的模型来源。两者默认用托管 API，「本地」选项是本机 OpenAI 兼容服务，走同一接口；正文 §3.3.2 译文记录里的 `model.providerId` 两种来源都适用，正文不需要改。默认来源、设置项与降级规则以 [ARCHITECTURE](../../ARCHITECTURE.md) §7.0、[PRD](../../PRD.md) §3.3 为准；设置页的界面由 Loom 定。
-> - 架构评审 P0-4（Wisdom 2026-10-30 19:57 批准）对本文的影响：译文中未核验公式的裁图不写进 `oi-md/1` 正文。译文记录的 `markdown` 只含已核验 LaTeX，裁图位置另存在 `crops`，`translation.getBlocks` 返回的 `MdDocument` 里带裁图节点 `MdFormulaCrop`（[ARCHITECTURE](../../ARCHITECTURE.md) §8.1.1、[PRD](../../PRD.md) AC-04）。正文 §3.3.2 的记录形状因此多一个字段，正文不需要改；裁图在译文栏里的视觉样式由 Loom 定。同一批修复删除了 CI 规则 G17，正文 §5 MD-16 写的「G13–G17」以 G13–G16 为准（PRD AC-45）。
+> - 架构评审 P0-4（Wisdom 2026-10-30 19:57 批准）对本文的影响：译文中未核验公式的裁图不写进 `oi-md/1` 正文。译文记录的 `markdown` 写入三种 LaTeX，并带各自状态：已核验（`verified-latex`，标记 `verified`）、源码核对（`source-checked-latex`，标记 `source_checked`）、格式已核对（`format-checked-latex`，标记 `format_checked`）。`markdown` 字符串本身不区分这三种，区分由 `translation.getBlocks` 的标记给出。裁图（`source-crop`）与占位框（`page-placeholder`）不写进 `markdown`，位置另存在 `crops`；`getBlocks` 返回的 `MdDocument` 里带裁图节点 `MdFormulaCrop` 或占位节点。以 [ARCHITECTURE](../../ARCHITECTURE.md) §8.1.1 与 [PRD](../../PRD.md) AC-04 为准（2026-10-31 修订：不再是「只含已核验 LaTeX」）。正文 §3.3.2 的记录形状因此多一个字段，正文不需要改；裁图、占位框与这三种徽标的视觉样式由 Loom 定。同一批修复删除了 CI 规则 G17，正文 §5 MD-16 写的「G13–G17」以 G13–G16 为准（PRD AC-45）。
 
 ---
 
