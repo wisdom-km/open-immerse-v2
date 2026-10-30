@@ -1,6 +1,6 @@
 # v2 差异与修改清单
 
-状态：v0.4。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC），Q3 / Q4 / Q9 相关补充查询 2026-10-30。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定（§6）；Markdown 阅读方案于 2026-10-30 17:32 批准（§6.1）；Loom 同日对译文区块四项风险给出结论（§6.2）；Wisdom 同日 18:37 决定 Jev 远程默认用面壁开放平台托管 API（§2.3.1），18:44 定下「API 优先」原则（§0 第 4 条、§2.4.1、§6.3），19:11 对四项风险作出决定（§6.4），19:30 把数据外发同意改为按服务商询问并加入「外发前询问」开关（§6.5），19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修复其中 4 个 P0 并删除 G17（§6.6）。
+状态：v0.5。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC），Q3 / Q4 / Q9 相关补充查询与各服务商 API 格式查询 2026-10-30（§2.10）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定（§6）；Markdown 阅读方案于 2026-10-30 17:32 批准（§6.1）；Loom 同日对译文区块四项风险给出结论（§6.2）；Wisdom 同日 18:37 决定 Jev 远程默认用面壁开放平台托管 API（§2.3.1），18:44 定下「API 优先」原则（§0 第 4 条、§2.4.1、§6.3），19:11 对四项风险作出决定（§6.4），19:30 把数据外发同意改为按服务商询问并加入「外发前询问」开关（§6.5），19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修复：v0.4 修复 4 个 P0 并删除 G17（§6.6）；v0.5 修复 P1 项，并按 Wisdom 19:45、19:46 的要求新增服务商适配层（§0 第 13 条、§2.10、§6.7）。
 用途：把三类输入——用户提供的双引擎方案（[附件原文](./architecture/inputs/pdf_translation_architecture.md)）、`docs/architecture/` 下的 01 / 02 / 03 草案、v1 实际实现（见 [v1 审查](./v1-review.md)）——与上游模型的官方资料逐条对照，列出**需要改的地方、冲突点、未核实的说法**，并给出统一编号的决策问题（Q1–Q12，现已全部决定）。
 结论已写入根目录规格：[PRD.md](../PRD.md)、[ARCHITECTURE.md](../ARCHITECTURE.md)、[RULES.md](../RULES.md)。三份规格与本文冲突时以规格为准；本文记录「为什么这样改」。视觉与交互规格 [DESIGN.md](../DESIGN.md)、[docs/design-principles.md](./design-principles.md) **待 Loom 产出**，本文不涉及。
 
@@ -11,7 +11,7 @@
 1. **五个模型名都真实存在**，没有编造的名称；但多数是近期发布，成熟度风险高：MiniCPM-OCR 仓库 2026-10-27 才创建（查询时公开约 2 天），Unlimited-OCR v2 同日发布，PP-DocLayoutV3 发布于 2026-01-20。实施时必须锁定提交与权重摘要。
 2. **引擎 B 不是「一个模型端到端」**：MiniCPM-OCR 1.0 官方 SDK 是「PP-DocLayoutV3 版面 → 裁剪 → MiniCPM-OCR 1.0 识别 → 按序组装」的流水线；阅读顺序来自 PP-DocLayoutV3，不来自 OCR 模型。A 若也用 PP-DocLayoutV3，**A/B 的版面判断不独立**。Q10 已决定：A 以 V3 起步，plus-L 对照，明显更好时作为「高质量档」。
 3. **Jev 的 0~1 分不是全部**：只有 `verdict = scored` 才是有效分；`precheck_reject`、`render_error`、`missing_original_image` 返回占位 0.0，`encode_error`、`forward_error` 返回 -1.0，都必须当作「错误」而不是「低分」，否则会误触发付费补救。默认阈值 0.5 只影响统计，不改原始分。
-4. **Jev 不适合在 8 GB 目标设备本机运行**：官方最低要求是 NVIDIA ≥ 8–12 GB 显存或 Apple M 系列 ≥ 16 GB 统一内存；且只有 Docker 镜像（Linux + NVIDIA）的渲染环境与云 API 一致、分数可直接比较。Q9 已决定：本机与远程都支持、设置中可选，两种部署是同一个 worker 接口；18:37 补充：远程默认用面壁开放平台托管 API，本地首选 llama.cpp CUDA 构建，自建 worker / Docker 归入「高级」（§2.3.1）。18:44 的「API 优先」原则把它推广到所有模型能力：有托管 API 时默认 API，本地是同一接口后的一等选项（设置「本地 / API」），硬件只给「本地」标可行性（ARCH §7.0）。开发机是 Windows + 32 GB 内存 + RTX 4070 12 GB（Wisdom 2026-10-30 17:56 告知配置，18:44 告知系统）：开发走 API 路径；M0 的 API 路径实测于 19:11 决定延后，记「待执行」，不阻塞规格文档（§6.4）；Jev 与 MiniCPM-OCR 的官方部署文档都没有覆盖 Windows，开发机上的本地 Jev 与本地引擎 B 标「不要求 / 未核实」，本地实测可选。Q1 已决定：所有识别路径（含云 OCR、arXiv 对齐、多模态补救）都经 Jev 评分。
+4. **Jev 不适合在 8 GB 目标设备本机运行**：官方最低要求是 NVIDIA ≥ 8–12 GB 显存或 Apple M 系列 ≥ 16 GB 统一内存；且只有 Docker 镜像（Linux + NVIDIA）的渲染环境与云 API 一致、分数可直接比较。Q9 已决定：设置主选项「本地 / API」，默认「API」，Jev 的 API 服务商是面壁开放平台；「本地」与 API 走同一个 worker 接口，本地首选 llama.cpp CUDA 构建；自建远程 worker 与 Jev Docker 在「高级」（§2.3.1）。「API 优先」原则（18:44）把它推广到所有模型能力：有托管 API 时默认 API，本地是同一接口后的一等选项（设置「本地 / API」），硬件只给「本地」标可行性（ARCH §7.0）。开发机是 Windows + 32 GB 内存 + RTX 4070 12 GB（Wisdom 2026-10-30 17:56 告知配置，18:44 告知系统）：开发走 API 路径；M0 的 API 路径实测于 19:11 决定延后，记「待执行」，不阻塞规格文档（§6.4）；Jev 与 MiniCPM-OCR 的官方部署文档都没有覆盖 Windows，开发机上的本地 Jev 与本地引擎 B 标「不要求 / 未核实」，本地实测可选。Q1 已决定：所有识别路径（含云 OCR、arXiv 对齐、多模态补救）都经 Jev 评分。
 5. **PyMuPDF 是 AGPL-3.0 / 商业双许可**，附件和草案 03 把它定为统一预处理库；MiniCPM SDK 的 PDF 输入与 Unlimited-OCR 示例也依赖它。Q6 已决定：worker 预处理用 pypdfium2（BSD-3-Clause / Apache-2.0），由我们渲染页面图再以图片交给 MiniCPM SDK；项目许可证定为 Apache-2.0，禁止 GPL / AGPL 依赖。
 6. **MinerU 许可证已不是 AGPL**，而是自定义的 MinerU Open Source License（Apache-2.0 加附加条款）；且 MinerU 3.0 起阅读顺序改由 PP-DocLayoutV2 给出，不再是「纯几何规则」。附件「借鉴 MinerU 几何规则」只能借思路，不能引入代码或依赖（RULES §1.5）。
 7. **Unlimited-OCR 存在（MIT），但未见 bbox 输出**，是面向多页长文档的端到端模型，无法满足「点击段落跳回原文」的定位要求。Q12 已决定：不接入，上游支持坐标输出后再评估。
@@ -20,6 +20,7 @@
 10. **arXiv 源码校准公式进入 v2**（Q4 已决定）：新增 `formula-source` 切片，v1 的编号识别、限速下载、解包、TeX 解析、对齐与 KaTeX 闸门规则可复用（[v1 审查](./v1-review.md) §4.17）；源码候选同样经 Jev 与优先级链。
 11. **不做 v1 数据迁移**（Q8 已决定）：v2 从零开始，v1 导入器与相关里程碑、验收全部删除，取舍见 PRD §3.2。
 12. **UI 与业务核心解耦**（Q3 已决定）：Wisdom 追加的约束经调研后写入 ARCHITECTURE §2.1–§2.6、RULES §8，并由 CI G13–G16 检查；原 G17（UI 与 core 强制分 PR）已按架构评审删除（§6.6）。
+13. **服务商适配层**（Wisdom 2026-10-30 19:45、19:46）：新包 `packages/providers` 按 API 格式写适配器、按服务商写注册表；新增一家服务商 = 一条注册表记录，格式没有时再加一个格式适配器，核心零改动；每个模型带能力标记（chat、vision、ocr、scoring、streaming），每个适配器跑契约测试（ARCH §7.9；PRD US-32、AC-64）。各家接口格式于 2026-10-30 按官方文档核实，没有做真实调用，未核实项见 §2.10。同一批修复架构评审的 P1 项（§6.7）。
 
 ## 1. 输入与核实方法
 
@@ -180,6 +181,29 @@ Windows 本地（开发机）：Paddle 3.3 官方提供 Windows 的 pip 安装�
 | Unlimited-OCR-2 | 2026-10-27 | 不接入 | — |
 | PP-DocLayoutV3 | 2026-01-20 | Paddle 文档矛盾 | 锁定 PaddleOCR / PaddleX 版本，M3 实测 |
 
+### 2.10 服务商 API 格式（Wisdom 2026-10-30 19:45、19:46）
+
+查阅时间 2026-10-30（Asia/Shanghai）。只读官方文档，**没有做真实调用**（真实调用的实测已延后，§6.4）；「已确认」的含义同 §1，指官方文档这样写。规格里的格式与服务商表在 ARCH §7.9.6，本节记来源与页面日期。「页面日期」是页面自己标注的更新时间；本次没有记下日期的写「未记录」。百度 OCR 的部分页面本次抓取超时，相关内容以鉴权页与 §7.7 已有记录为准。
+
+| 服务商 / 格式 | 官方文档（页面日期） | 已确认 | 未核实 |
+| --- | --- | --- | --- |
+| OpenAI / `openai-chat` | [Chat Completions](https://platform.openai.com/docs/api-reference/chat/create)（未记录） | `POST https://api.openai.com/v1/chat/completions`，`Authorization: Bearer`；图片 `image_url`（URL 或 data URI）；流式 SSE 以 `data: [DONE]` 结束，设 `stream_options.include_usage` 时结束前多一个用量块 | 预置模型与单价（实现时按当时文档填写） |
+| Anthropic / `anthropic-messages` | [Messages](https://docs.claude.com/en/api/messages)、[概览](https://docs.claude.com/en/api/overview)（未记录） | `POST https://api.anthropic.com/v1/messages`；`Authorization: Bearer`，`x-api-key` 是仍受支持的旧写法；必须带 `anthropic-version`（文档示例 `2026-10-21`）；未限定工作区的 Key 还要带 `anthropic-workspace-id`；图片块 `source.type: "base64"`；流式事件 `message_start`、`content_block_delta`、`message_delta`、`message_stop`；过大返回 413 `request_too_large`；响应头 `request-id` | 锁定哪个 `anthropic-version` |
+| Google Gemini / `gemini-generate-content` | [generateContent](https://ai.google.dev/api/generate-content)（未记录）、[API Key](https://ai.google.dev/gemini-api/docs/api-key)（2026-10-27）、[OpenAI 兼容](https://ai.google.dev/gemini-api/docs/openai)（未记录） | `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`；流式 `:streamGenerateContent?alt=sse`；请求头 `x-goog-api-key`；图片 `inline_data`；用量 `usageMetadata`；Key 页面写明 2026-05-28 起新建的是鉴权 Key、未加限制的标准 Key 会被拒绝，闲置的未限制 Key 自 2026-05-07 起被封；OpenAI 兼容端点的 Base URL 是 `https://generativelanguage.googleapis.com/v1beta/openai/` | 兼容端点与原生端点在用量与错误体上的差异；默认用哪种**待 Wisdom 定** |
+| 百度千帆 v2（文心）/ `openai-chat` | [视觉理解](https://cloud.baidu.com/doc/qianfan-api/s/rm7u7qdiq)（2026-02-09）；文本生成页（看到的更新日期 2026-09-29，当前地址**未核实**，不链接） | `POST https://qianfan.baidubce.com/v2/chat/completions`，`Authorization: Bearer` 加千帆 API Key（形如 `bce-v3/…`）；`image_url` 收 URL 或 data URI，单图 ≤ 10 MB；错误体 `{code, message, type}`；响应头带 `X-Ratelimit-*` | `detail` 与 `stream_options.include_usage` 的逐模型支持清单 |
+| 百度智能云文字识别 / `baidu-ocr` | [高精度含位置版](https://cloud.baidu.com/doc/OCR/s/tk3h7y2aq)（未记录）、[接口说明](https://cloud.baidu.com/doc/OCR/s/7kibizyfm)（2024-01-26）、[鉴权](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)（2025-01-20） | `POST https://aip.baidubce.com/rest/2.0/ocr/v1/accurate`（或 `accurate_basic`），表单字段 `image`；`access_token` 放查询参数，由 `POST https://aip.baidubce.com/oauth/2.0/token`（`grant_type=client_credentials`）换取，有效期 30 天；鉴权文档列出 access_token、API Key、AK/SK 签名三种方式 | API Key 方式用于 OCR 时的请求头写法；用哪种方式**待 Wisdom 定**，定之前按 access_token |
+| 智谱 GLM / `openai-chat` | [对话补全](https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E5%AF%B9%E8%AF%9D%E8%A1%A5%E5%85%A8)（未记录） | `POST https://open.bigmodel.cn/api/paas/v4/chat/completions`，Bearer；流式以 `[DONE]` 结束 | 预置模型与单价 |
+| 智谱 GLM-OCR / `zhipu-layout-parsing` | [文档解析](https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90)（未记录） | `POST https://open.bigmodel.cn/api/paas/v4/layout_parsing`，`model: "glm-ocr"`；单图 ≤ 10 MB，PDF ≤ 50 MB、≤ 100 页 | OpenAPI 定义为 Bearer，指南示例的 `Authorization` 不带 `Bearer` 前缀，哪种写法被接受 |
+| 百度 AI Studio PaddleOCR / `paddleocr-aistudio-jobs`（worker 侧，候选） | 见 §2.4.1（2026-02-04） | 异步任务提交与查询；`Authorization: bearer`；错误 12001（每日页数上限）、12002（限流） | 见 §2.4.1 与 §7 |
+| 面壁开放平台 / `modelbest-jev`、`modelbest-document-parse`（worker 侧） | 见 §2.3.1（ocr-jev 页 2026-10-29，document-parse 页 2026-10-27） | 见 §2.3.1 | 见 §2.3.1 与 §7 |
+| 本机 Ollama / llama.cpp server / `openai-chat` | — | 「本地」就是 Base URL 在回环地址上的 `openai-chat` 服务商（ARCH §7.9.5 第 7 条） | 各本地服务对 `image_url` 与 `include_usage` 的支持，接入时核对 |
+
+由此得出的规格（ARCH §7.9）：
+
+- OpenAI、智谱 GLM、千帆 v2、Gemini 兼容端点与本机服务共用 `openai-chat` 一个适配器，各自只是一条注册表记录；需要单独适配器的只有 Anthropic、Gemini 原生、百度 OCR、智谱文档解析，以及 worker 侧的三种格式。
+- Key 只放请求头：Gemini 用 `x-goog-api-key`，不用 `?key=`。百度 OCR 的 `access_token` 是唯一放在 URL 里的凭据，由 main 换取并缓存，日志里打码。
+- 各家的错误体与 HTTP 状态只在各格式的 `errors.ts` 里映射到 `ProviderFailure`（架构评审 P1-8）。
+
 ## 3. 附件（用户双引擎方案）需修改处
 
 | 附件位置 | 原说法 | 核实 / 冲突 | 改为 | 写入 |
@@ -287,7 +311,7 @@ Windows 本地（开发机）：Paddle 3.3 官方提供 Windows 的 pip 安装�
 | Q6 | worker 的 PDF 渲染与文字提取库？ | pypdfium2；MiniCPM SDK 以图片输入；根目录 `LICENSE` 改为 Apache-2.0；禁止 GPL / AGPL 依赖（含 PyMuPDF） | 已决定（Wisdom 2026-10-30） | `LICENSE`、`package.json`、`README.md`；RULES §1.5、N-13；ARCH §7.1、§10.3、G10 |
 | Q7 | 本机 worker 传输方式？ | 本机与远程同一协议 HTTP + SSE；不采用 stdio JSON-RPC | 已决定（Wisdom 2026-10-30） | ARCH §1、§10.1；PRD S11 |
 | Q8 | 是否做 v1 数据迁移器？ | 不做，v2 从零开始；删除迁移器相关里程碑与验收。取舍：省去导入器的格式解析、dry-run、冲突处理与测试，v2 数据模型不受 v1 约束；代价是 v1 的文献库、笔记、已存译文不进 v2 | 已决定（Wisdom 2026-10-30） | PRD §3.2；ARCH §4.2 `library`；v1 审查 §2、§4.14、§5 |
-| Q9 | Jev 部署在哪？ | 本机与远程都支持，设置中可选；按硬件推荐（满足要求推荐本机，8 GB 级推荐远程），用户随时可改；两种部署 worker 接口一致。开发机（32 GB 内存 + RTX 4070 12 GB）按 CUDA 路线本机跑 Jev，「必须能本机跑通」改为 M0 实测确认。18:37 补充：设置主选项「本地 / 面壁 API」，同一 `evaluate` 作业接口；远程默认面壁开放平台托管 API（`MiniCPM-OCR-Jev`），本地首选 llama.cpp CUDA 构建；自建 worker / Docker 归入「高级」；Key 名 `MODELBEST_API_KEY`，只放 Cursor Secrets 或用户本机安全存储；面壁 MiniCPM-OCR-1.0 文档解析作为引擎 B 的可选云端来源（§2.3.1）。18:44 按「API 优先」（§6.3）调整：主选项改称「本地 / API」，默认与推荐都是「API」，硬件只给「本地」标可行性；引擎 B 默认改为面壁 API；开发机是 Windows，本地 Jev「不要求 / 未核实」，M0 只要求 API 路径 | 已决定（Wisdom 2026-10-30；开发机配置 17:56、面壁 API 18:37、API 优先 18:44 补充） | ARCH §1、§2.6、§4.2、§7.0、§7.1、§7.4、§8.3、§10.1–§10.3；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、M0、M6 |
+| Q9 | Jev 部署在哪？ | 设置主选项「本地 / API」，默认「API」；两者走同一个 `evaluate` 作业接口。API 服务商是面壁开放平台托管 API（`MiniCPM-OCR-Jev`）；「本地」首选 llama.cpp CUDA 构建；硬件画像只给「本地」标可行性，用户随时可改；自建远程 worker 与 Jev Docker 在「高级」。Key 名 `MODELBEST_API_KEY`，只放 Cursor Secrets 或用户本机安全存储，绝不进仓库。引擎 B 同样默认用面壁 MiniCPM-OCR-1.0 文档解析 API（§2.3.1、§6.3）。开发机是 Windows（32 GB 内存 + RTX 4070 12 GB）：开发走 API 路径，本地 Jev「不要求 / 未核实」，M0 只要求 API 路径（实测已延后，§6.4） | 已决定（Wisdom 2026-10-30；开发机配置 17:56、面壁 API 18:37、API 优先 18:44 补充） | ARCH §1、§2.6、§4.2、§7.0、§7.1、§7.4、§8.3、§10.1–§10.3；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、M0、M6 |
 | Q10 | 引擎 A 的版面模型？ | PP-DocLayoutV3 起步，PP-DocLayout_plus-L 对照；明显更好时作为「高质量档」供用户选择 | 已决定（Wisdom 2026-10-30） | ARCH §7.1；PRD S2、US-21、AC-28、QM-13 |
 | Q11 | 是否保留「未配置翻译时借用多模态服务翻译」？ | 保留，默认关闭，开启时提示会消耗多模态额度 | 已决定（Wisdom 2026-10-30） | ARCH §4.2 `settings`；PRD S3、US-22、AC-29 |
 | Q12 | Unlimited-OCR 是否接入？ | 不接入；上游支持坐标输出后再评估 | 已决定（Wisdom 2026-10-30） | 本文 §2.6；PRD §3.2 |
@@ -385,16 +409,16 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | 本地选项 | 同一端口或同一种 worker 作业；两个来源跑同一份契约测试；部署文档 `docs/deploy/<能力>.md` 随实现里程碑交付；「本地」在设置主选项里，不放进「高级」 | ARCH §7.0；PRD AC-61；RULES §4、§5 第 14 项 |
 | 硬件推荐 | 硬件画像只给「本地」标可行性；只有没有托管 API 或用户拒绝外发时才用它决定推荐本地还是降级 | ARCH §2.6、§7.4 推荐规则；PRD AC-20 |
 | 降级 | 没有 Key、拒绝外发或 API 不可用时，不静默改用其他付费服务、也不静默改成本地，按能力降级并提示 | ARCH §7.0 表；PRD §3.3、AC-61 |
-| 各能力的 API 服务商 | Jev 与引擎 B：面壁开放平台（引擎 B 由「默认关」改为默认）；引擎 A 模型阶段：百度 AI Studio PaddleOCR 托管 API 为候选，**未核实**，M3 前核实，核实通过才进入选项；引擎 A 三条路径都保留，M3 前定最终选择（§2.4.1、§6.4）；多模态、翻译、问答、TTS / ASR：用户自带 Key，预置名单待定 | ARCH §7.0、§7.1；PRD S2、§3.3 |
+| 各能力的 API 服务商 | Jev 与引擎 B：面壁开放平台；引擎 A 模型阶段：百度 AI Studio PaddleOCR 托管 API 为候选，**未核实**，M3 前核实，核实通过才进入选项；引擎 A 三条路径都保留，M3 前定最终选择（§2.4.1、§6.4）；多模态、翻译、问答：用户自带 Key，经服务商适配层接入（§6.7），预置与默认服务商待 Wisdom 定；TTS / ASR 在 M7 选型 | ARCH §7.0、§7.1、§7.9；PRD S2、§3.3 |
 | 开发机 | Windows + 32 GB + RTX 4070 12 GB：开发走 API；本地 Jev、本地引擎 B「不要求 / 未核实」；本地引擎 A「不要求 / 未实测」 | ARCH §7.0、§7.4「开发机」、§10.3、§15.4；本文 §7 |
 | M0 退出条件 | API 路径：经 Cursor Secrets 注入 `MODELBEST_API_KEY` 后对面壁 Jev API 跑参考样例（19:11 改为延后、「待执行」，见 §6.4）；可选：开发机本地实测 | PRD §8 M0；ARCH §7.4「开发机」 |
-| 密钥 | 开发与测试 Key 只经 Cursor Secrets 注入，变量名登记在 ARCH §15.4；不用 `.env`；CI 不调用付费 API；真实调用的冒烟测试标 `@live` | ARCH §8.3、§12、§15.4；RULES §4、N-05 |
+| 密钥 | 开发与测试 Key 只以环境变量提供：云端 Agent 经 Cursor Secrets 注入，开发者本机由开发者自己设置（§6.7）；变量名登记在 ARCH §15.4；不用 `.env`；CI 不调用付费 API；真实调用的冒烟测试标 `@live` | ARCH §8.3、§12、§15.4；RULES §4、N-05 |
 
 ### 6.4 后续决定：四项风险（Wisdom 2026-10-30 19:11）
 
 | 项 | 决定 | 落点 |
 | --- | --- | --- |
-| 数据外发 | 批准：任何会外发数据的 API 能力，第一次使用前弹出同意对话框；拒绝 = 该能力对该服务商请求为 0，并按能力降级；对话框布局由 Loom 定。原定「按能力 + 服务商各问一次」已由 19:30 改为按服务商，见 §6.5 | ARCH §2.5、§4.2 `settings/domain/egress-consent.ts`、§7.0 第 6 条、§7.4「面壁 API」；PRD §3.3、AC-61 ⑦ |
+| 数据外发 | 批准：任何会外发数据的 API 能力，第一次使用前弹出同意对话框；拒绝 = 该服务商对所列能力的请求为 0、不改发给别的服务商，并按能力降级；对话框布局由 Loom 定；询问粒度见 §6.5 | ARCH §2.5、§4.2 `settings/domain/egress-consent.ts`、§7.0 第 6 条、§7.4「面壁 API」；PRD §3.3、AC-61 ⑦ |
 | 引擎 A 的模型阶段 | 三条路径都保留可选：托管 API（核实通过后；候选是百度 AI Studio，§2.4.1）、本地部署、租用的 Linux 远程 worker（「高级」里的远程 worker，跑同一份 worker）；M3 开工前定最终选择（默认值与开发用的路径） | ARCH §7.0 表、§7.1、§10.3；PRD S2、§3.3、AC-61 ①、M3 |
 | 文本问答 | 批准纳入 API 优先；问答同时支持多模态模型与纯文本 LLM，走同一个 `ChatProvider` 接口，差别只在「是否接受图片」，未知时按纯文本处理 | ARCH §4.2 `qa`、§7.0 表、§7.3；PRD S8、§3.3、AC-62、M5 |
 | M0 的 API 实测 | 延后，现在不跑；记「待执行」，不阻塞规格文档；执行前需在 Cursor Secrets 中添加 `MODELBEST_API_KEY` | ARCH §7.0 第 7 条、§7.4「开发机」；PRD §8 M0；本文 §7 |
@@ -408,11 +432,11 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | 「外发前询问」开关 | 设置里可以关闭同意对话框，默认开（弹对话框）；关闭必须是用户的明确操作，新安装、升级、恢复默认都不会关闭它；关闭后请求照常发送 | ARCH §2.5（`setEgressPromptEnabled`）、§4.2、§7.0 第 6 条；PRD §3.3、AC-61 ⑦ e、f |
 | 数据去向 | 无论开关状态，设置都显示哪些服务商会收到数据、发给它的能力与状态（已同意 / 询问已关闭 / 已拒绝） | ARCH §2.5（`listEgressDestinations`）、§4.2、§7.0 第 6 条、§7.4；PRD §3.3、AC-61 ⑦ f |
 | 界面 | 对话框布局与开关在设置里的位置由 Loom 定（DESIGN.md 待 Loom 产出） | ARCH §7.0 第 6 条；PRD §3.3 |
-| 规格补充（**待 Wisdom 确认**） | 重新打开开关后，没有在对话框里同意过的「服务商 + 能力」，下次使用前照常询问 | ARCH §7.0 第 6 条；PRD §3.3、§9 |
+| 规格补充（按架构评审 P1-1 采纳，§6.7） | 重新打开开关后，没有在对话框里同意过的「服务商 + 能力」，下次使用前照常询问 | ARCH §7.0 第 6 条；PRD §3.3、AC-61 ⑦ g、§9 |
 
 ### 6.6 后续决定：架构评审修复 A（Wisdom 2026-10-30 19:57）
 
-Wisdom 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修复。本节只列这一批（4 个 P0 与 G17）；P1 另开 PR，P2（阅读顺序、M6 拆分）留到之后。
+Wisdom 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修复。本节只列这一批（4 个 P0 与 G17）；P1 见 §6.7，阅读顺序（P1-5）、M6 拆分（P1-12）与 P2 留到之后。
 
 | 项 | 决定 | 落点 |
 | --- | --- | --- |
@@ -425,6 +449,23 @@ Wisdom 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修�
 | 切片数 | 由 16 个增至 18 个（`ingest`、`budget`） | ARCH §2.5、§3、§13 |
 | **待 Wisdom 定** | ① 是否新增 `budget` 切片（备选：账本留在 `repair`，但其他切片要依赖 `repair`）；② 受限预算是否默认开启；③ 默认的请求数 / 页数 / token 上限；④ 评审建议的热点收窄（P1-11 后半）本批没做 | ARCH §7.8、§16；PRD §3.3、§9 |
 
+### 6.7 后续决定：架构评审修复 B 与服务商适配层（Wisdom 2026-10-30 19:45、19:46、19:57）
+
+Wisdom 19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修复；19:45、19:46 要求服务商适配层：支持所有主流 API 格式，新增一家服务商 = 一个适配器 + 一条注册表记录、核心零改动，带能力标记，每个适配器有契约测试，并按各家官方文档核实接口格式。本节列这一批。
+
+| 项 | 决定 | 落点 |
+| --- | --- | --- |
+| P1-1 同意规则的措辞 | AC-61 ⑦c 与 §3.3 对齐：拒绝或未作答只影响该服务商、只影响对话框里列出的能力——这些能力对它的请求为 0、不改发给别的服务商；其他服务商上已同意的能力照常。「重新打开开关后照常询问」（§6.5 末行）按评审采纳，成为 AC-61 ⑦ g | ARCH §7.0 第 6 条；PRD §3.3、AC-60 ①、AC-61 ⑦ c、⑦ g |
+| P1-2 外发检查没有端口 | 新端口 `EgressCheck.check({ vendorId, capability, host })` → `allow` / `ask` / `refused`，`settings` 实现；三处调用：`ingest` 提交作业前、`providers` 传输层连接前、`worker-client` 连接远程 worker 前。回环地址与用户标为「本机可信」的主机（默认没有）不算外发，其余都算，包括远程 worker；服务商按（`vendorId`, 主机）识别，主机不在 `allowedHosts` 里就当新服务商重新询问；`ask` 时这次不发请求、记 `consent_required`、释放预留 | ARCH §1、§2.5、§4.2 `settings`、§7.0 第 6 条；PRD §3.3、AC-65 |
+| P1-3 远程 worker 收到用户的 Key | worker 分 `local`（只绑 127.0.0.1）与 `server` 两种模式。`OI-Provider-Authorization` 只在 `local` 模式、经回环地址接收，由 main 按次授权；`server` 模式收到这个头返回 400 `provider_credential_not_accepted`，不建作业，只用服务器上自己配置的后端，并在 `/v1/capabilities` 里报出这些后端的 `vendorId` 与主机，供外发检查与同意使用；`worker-client` 只对受监管的回环 worker 带这个头，否则 `credential_to_remote_refused` | ARCH §1、§10.1、§10.2；PRD §3.3、AC-59 ⑤、AC-65 |
+| P1-4 已被取代的句子 | 删除，不追加「后来改为」：Q9 的「按硬件推荐 / 推荐本机」「本地 / 面壁 API」，引擎 B「默认关 / 可选云端来源」，「18:44 起替换…」，§6.5「待 Wisdom 确认」，§7 中「引擎 B 云端来源默认关」等（本文 §0 第 4 条、§6.3–§6.5、§6.6 引言、§7、§8；ARCH §7.1、§7.4、§16；PRD §9） | 同左 |
+| P1-8 HTTP 错误映射写在三处 | 统一为 `ProviderFailure`（`auth` / `quota` / `rate_limited` / `invalid_request` / `too_large` / `service_failed` / `timeout`，带 `retryable`、`retryAfterMs`、`httpStatus`、`vendorCode`、`requestId`），映射只在各格式的 `errors.ts`；TS 与 worker 共用 `fixtures/protocol/provider-errors/` | ARCH §7.1、§7.3、§7.4、§7.9.5、§10.2 |
+| P1-9 存储与协议不能独立升级 | 存储：`app_meta.app_schema`，迁移前备份到 `staging/`、在事务里迁移，数据比应用新时只读打开，JSON 带 `schemaVersion`。协议：请求头 `OI-Protocol: major.minor`（首版 1.0），`/v1/health` 返回 `protocol`、`workerVersion`、`mode`；主版本不一致时作业为 0，worker 回 426 与 `{ supported }`。两者写进同一份 ADR，M2 建表前合入 | ARCH §8.4、§10.4；PRD AC-66 |
+| P1-10 Electron 安全基线 | 应用页面由 `oi-app://` 提供；CSP 常量在 `apps/desktop/src/main/security/csp.ts`，e2e 读出实际生效值逐字比对；fuses 清单，M8 打包后核对；`oi-asset://` 只给 `standard` 与 `secure`，只收 GET / HEAD，按 realpath 判断是否在允许目录内，只返回 PNG / JPEG / GIF / WebP，带 `nosniff` | ARCH §9；PRD AC-67 |
+| 服务商适配层 | 新包 `packages/providers`：格式与服务商分开，格式适配器（TS 侧 `openai-chat`、`anthropic-messages`、`gemini-generate-content`、`baidu-ocr`、`zhipu-layout-parsing`；worker 侧 `modelbest-jev`、`modelbest-document-parse`、`paddleocr-aistudio-jobs`）+ 注册表 `registry/vendors/<vendor>.ts`；能力标记 chat / vision / ocr / scoring / streaming，只来自注册表或用户勾选，未知按否，闸门在传输层；鉴权经 main 的 `ProviderAuthorizer`；发送必须带 `Reservation` 并经 `EgressCheck`；按能力的共享契约测试套件，样例全部合成；原先每家一个切片适配器改为经 `@oi/providers`；M4 用一个新增假服务商的样例 PR 验证「核心零改动」。各家格式的核实见 §2.10 | ARCH §1、§2.5、§3、§4.1–§4.3、§5.1、§5.2 F-18、§7.3、§7.7、§7.9、§12、§13 G5；PRD §3.3、US-32、AC-64；RULES §4、§5 第 17、18 条 |
+| 开发用 Key | 只以环境变量提供：云端 Agent 经 Cursor Secrets，开发者本机（Windows）由开发者自己设为用户级或会话级环境变量，值不进仓库里的脚本与配置；新增的变量名（只登记名字）见 ARCH §15.4 | ARCH §15.4；RULES N-05 |
+| **待 Wisdom 定** | ① 每个能力预置与默认的服务商（定之前设置列出注册表全部服务商、不预选）；② Gemini 默认用原生格式还是 OpenAI 兼容端点；③ 百度 OCR 用 access_token 还是 API Key 鉴权；④ 开发者本机的 Key 用环境变量还是 Windows 凭据管理器；⑤ 「本机可信」主机选项（默认没有）是否保留；⑥ §6.5 末行的规格补充已按评审采纳，Wisdom 可以推翻；⑦ 应用页面改由 `oi-app://` 提供；⑧ CSP 的放宽项待 M2 实测后经 ADR 定；⑨ 本批没做的评审项：P1-5（阅读顺序两套实现）、P1-6（借用多模态翻译的位置）、P1-7（Markdown 两条解析路径）、P1-11（门禁与 PR 粒度）、P1-12（M6 拆分）、P2-3（历史草案的表格），以及其余 P2 项，留到之后的 PR | ARCH §7.9.8、§9、§15.4、§16；PRD §9 |
+
 ## 7. 未核实的说法
 
 | 说法 | 来源 | 状态 |
@@ -433,7 +474,7 @@ Wisdom 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修�
 | Jev 在 JevOCRBench 上 AUROC × 100 = 93.6 | 模型卡 | **未核实**（官方自测） |
 | PP-FormulaNet_plus-L 的 BLEU 与 1476 ms 耗时 | Paddle 文档 | **未核实**（官方自测，硬件以表注为准） |
 | 面壁开放平台 Jev（`MiniCPM-OCR-Jev`）的价格 | 平台 ocr-jev 文档与控制台没有标价（Wisdom 2026-10-30 18:37 告知） | **未核实**；规格不写死单价，按 `usage` 记账，单价未填时显示「未知」（ARCH §7.4「面壁 API」） |
-| 面壁 MiniCPM-OCR-1.0 文档解析的长期价格与限时免费的截止时间 | 平台控制台显示限时免费（Wisdom 告知）；文档只说按页计用量、「free trials」按异步任务计数 | **未核实**；引擎 B 云端来源默认关，计价同上 |
+| 面壁 MiniCPM-OCR-1.0 文档解析的长期价格与限时免费的截止时间 | 平台控制台显示限时免费（Wisdom 告知）；文档只说按页计用量、「free trials」按异步任务计数 | **未核实**；引擎 B 默认用面壁文档解析 API（§6.3），计价同上 |
 | 面壁国内站的 API base URL | 国内站 platform.modelbest.cn 控制台模型列表可见 `MiniCPM-OCR-Jev`（Wisdom 告知）；上游仓库 `docs/minicpm_ocr_jev_api_en.md:11` 写 `https://api.modelbest.cn/v1`；平台文档只写国际站 `https://api.modelbest.ai/v1` | **未核实**；设置里两站都预置，国内站标「未核实」，默认国际站（PRD §3.3），M6 开工前用真实 Key 核对 |
 | 面壁国内站与国际站的 Key、账号、模型清单能否互用 | — | **未核实**；两站按不同站点记 `evaluatorVersion`、分别定标 |
 | 面壁 API 的开通条件、配额、限流数值与服务稳定性 | 两份平台文档只给错误码与「最多 2 个活动任务」，没有给配额与限流数值；文档页声明只描述已实现的契约，不证明生产部署或线上连通 | **未核实**；本 PR 没有调用真实服务，M6 用 `MODELBEST_API_KEY` 冒烟（PRD M6） |
@@ -458,8 +499,8 @@ Wisdom 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修�
 | MiniCPM-OCR 1.0 SDK（引擎 B 本地）在 Windows 上运行 | 上游两个验证环境是 Linux vLLM（RTX 5090 32 GB）与 macOS ARM64 llama.cpp（§2.2） | **未核实**；按 API 优先，开发机上的本地引擎 B **不要求**，引擎 B 默认走面壁文档解析 API |
 | PaddleOCR / PaddleX 版面与公式流水线在 Windows + RTX 4070 上运行 | Paddle 3.3 有 Windows GPU 包（CUDA 11.8 / 12.6 / 12.9，计算能力 > 7.5，§2.4.1）；整条流水线无 Windows 实测记录 | **未实测**；按 API 优先在开发机上不要求，引擎 A 的三条路径都保留，开发用哪条随 M3 前的最终选择定（§2.4.1、§6.4） |
 | 百度 AI Studio PaddleOCR 托管 API 能否作为引擎 A 模型阶段的来源：区域框与类别、公式 LaTeX、单张页面图输入、模型版本锁定、对应 Q10 的哪一档、价格与每日页数配额 | [异步 API 使用文档](https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5)（2026-02-04）示例只取 Markdown，未写区域框与版本 | **未核实**，M3 开工前核实；核实通过才出现在选项里，是否作为默认随 M3 前的最终选择定（ARCH §7.0、§6.4） |
-| 翻译、多模态、问答、TTS / ASR 的预置 API 服务商名单与各自的本地 OpenAI 兼容替代 | — | **待定**；各能力实现前定，变量名登记到 ARCH §15.4 |
-| 在本地 Windows 开发机（不在 Cursor 云端 Agent 里）开发时，Cursor Secrets 如何注入环境变量 | Cursor Secrets 用于云端 Agent 的环境 | **未核实**；确认前按 Wisdom 18:37 的原话，Key 只放 Cursor Secrets 或用户本机安全存储（如系统凭据管理器），不写 `.env`、不进仓库，具体做法待 Wisdom 定 |
+| 翻译、多模态、问答的预置与默认服务商；TTS / ASR 的服务商 | — | **待 Wisdom 定**；接入方式已定为服务商适配层（ARCH §7.9），本地替代就是 Base URL 在回环地址上的 `openai-chat` 服务商；定之前设置列出注册表全部服务商、不预选；TTS / ASR 在 M7 选型；变量名登记到 ARCH §15.4 |
+| 在本地 Windows 开发机（不在 Cursor 云端 Agent 里）开发时，Cursor Secrets 如何注入环境变量 | Cursor Secrets 用于云端 Agent 的环境 | **未核实**；规格的做法：开发者自己设为系统用户级或会话级环境变量，值不进仓库里的脚本与配置（ARCH §15.4、RULES N-05）；Key 只放 Cursor Secrets 或用户本机安全存储、不写 `.env`、不进仓库（Wisdom 18:37）；是否改用 Windows 凭据管理器**待 Wisdom 定** |
 | 本机 worker 基础安装（不含模型）的体积 | — | **未实测**，M1 统计 |
 | 本机模式自备渲染图的 Jev 分数与官方 Docker / 面壁 API 的一致性 | 上游说明 macOS 只能跑纯评分服务、分数不能与官方数值比较 | **未核实**；按 PRD QM-14 单独定标 |
 | 百度「通用文字识别（高精度含位置版）」对学术公式的识别能力、当前计价与免费额度 | 官方文档只描述接口与字段 | **未核实**，M6 接入前确认 |
@@ -476,6 +517,14 @@ Wisdom 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修�
 | Node `fs.watch` 递归模式在 Windows / macOS 上对「原子替换保存」与重命名的事件表现；chokidar 当前版本的许可证与依赖 | — | **未核实**，M2 实测后选型 |
 | Electron `webUtils.getPathForFile`（拖入文件取路径）在锁定版本中可用 | Electron 文档 | **未核实**，M2 随 Electron 版本锁定确认 |
 | KaTeX 对 Obsidian 笔记常见写法（`\begin{align}` 自动编号、部分 AMS 宏）的覆盖程度 | Loom 方案「代价」一栏 | **未量化**；不支持的公式显示原文加错误标记（PRD AC-31） |
+| Anthropic 应锁定哪个 `anthropic-version` | [Messages](https://docs.claude.com/en/api/messages) 示例为 `2026-10-21` | **未核实**是否为当前推荐值；实现时按当时文档定，写进注册表（ARCH §7.9.6） |
+| 智谱 `layout_parsing` 的 `Authorization` 是否带 `Bearer` 前缀 | OpenAPI 定义为 Bearer，指南示例不带 | **未核实**；M6 接入前用真实 Key 确认（§2.10） |
+| 百度 OCR 用 API Key 鉴权时的请求头写法 | [鉴权文档](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)列出三种方式 | **未核实**；定之前按 access_token，改用哪种**待 Wisdom 定** |
+| 千帆 v2 逐模型支持 `detail` 与 `stream_options.include_usage` 的清单；千帆文本生成页的当前地址 | [视觉理解](https://cloud.baidu.com/doc/qianfan-api/s/rm7u7qdiq)只写了部分模型 | **未核实**，M5 实现时核对 |
+| Gemini OpenAI 兼容端点与原生端点在用量与错误体上的差异 | [OpenAI 兼容文档](https://ai.google.dev/gemini-api/docs/openai) | **未核实**；默认用哪种**待 Wisdom 定** |
+| 各服务商的预置模型清单与单价 | 各家官方文档 | **未核实**；实现时按当时文档填写并记 `verifiedAt`，单价未核实的按次数类上限管（ARCH §7.8、§7.9.8） |
+| Electron fuse `EnableEmbeddedAsarIntegrityValidation` 在各平台上的支持情况 | Electron `docs/tutorial/fuses.md`（2026-10-30 查阅 main 分支） | **未核实**，M1 按锁定版本复核（ARCH §9） |
+| CSP 草案能否不放宽就跑通 KaTeX 与 PDF.js；`oi-asset://` 是否必须注册为 `standard` | — | **待 M2 实测**；任何放宽都要 ADR（ARCH §9） |
 
 ## 8. 本文结论在规格中的落点
 
@@ -493,9 +542,10 @@ Wisdom 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修�
 | 基准集真实规模与阅读顺序真值缺口 | PRD §7；v1 审查 §6 |
 | 决策记录 Q1–Q12 | 本文 §6；PRD §9；ARCH §16 |
 | Markdown 阅读方案（D1–D7）、译文按区块存 Markdown | 本文 §6.1；ARCH §4.5、§8.1.1；PRD S13、§3.2、US-23–US-28、AC-30–AC-56、QM-15–QM-17、§8.1；RULES N-18；方案原文 `docs/design/md-reader.md` |
-| Jev 远程默认面壁开放平台托管 API、设置「本地 / 面壁 API」、`MODELBEST_API_KEY` 的保管、引擎 B 的面壁云端来源（Wisdom 2026-10-30 18:37） | 本文 §2.3.1、§7；ARCH §1、§2.6、§4.2、§7.1、§7.3、§7.4「面壁 API」、§8.3、§10.1–§10.3、§16；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、QM-14、M6、§9 |
-| API 优先：每个模型能力默认托管 API、「本地」是同一接口后的一等选项、硬件只标可行性、开发机 Windows 上不要求本地、M0 只要求 API 路径、开发密钥只经 Cursor Secrets（Wisdom 2026-10-30 18:44） | 本文 §0 第 4 条、§2.3、§2.4.1、§6.3、§7；ARCH §1、§2.5、§2.6、§4.2、§7.0、§7.1、§7.4、§7.7、§8.3、§10.3、§12、§15.4、§16；PRD §2、S2、S3、S5、S8、S9、§3.3、US-19、US-30、US-31、AC-20、AC-60、AC-61、M0、M3–M7、§9；RULES §4、§5 第 14 项、N-05 |
+| Jev 的 API 服务商是面壁开放平台、设置「本地 / API」、`MODELBEST_API_KEY` 的保管、引擎 B 的面壁 API 来源（Wisdom 2026-10-30 18:37） | 本文 §2.3.1、§7；ARCH §1、§2.6、§4.2、§7.1、§7.3、§7.4「面壁 API」、§8.3、§10.1–§10.3、§16；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、QM-14、M6、§9 |
+| API 优先：每个模型能力默认托管 API、「本地」是同一接口后的一等选项、硬件只标可行性、开发机 Windows 上不要求本地、M0 只要求 API 路径、开发密钥只以环境变量提供（Wisdom 2026-10-30 18:44） | 本文 §0 第 4 条、§2.3、§2.4.1、§6.3、§7；ARCH §1、§2.5、§2.6、§4.2、§7.0、§7.1、§7.4、§7.7、§8.3、§10.3、§12、§15.4、§16；PRD §2、S2、S3、S5、S8、S9、§3.3、US-19、US-30、US-31、AC-20、AC-60、AC-61、M0、M3–M7、§9；RULES §4、§5 第 14 项、N-05 |
 | 四项风险的决定：数据外发同意对话框、引擎 A 三条路径、问答支持多模态与纯文本模型、M0 API 实测延后（Wisdom 2026-10-30 19:11） | 本文 §0 第 4 条、§2.4.1、§6.3、§6.4、§7；ARCH §2.5、§4.2、§7.0、§7.1、§7.3、§7.4、§10.3、§16；PRD S2、S8、§3.3、AC-61、AC-62、M0、M3、M5、§9 |
 | 外发同意按服务商、追加告知新增能力、「外发前询问」开关与「数据去向」列表（Wisdom 2026-10-30 19:30） | 本文 §6.4、§6.5；ARCH §2.5、§4.2、§7.0 第 6 条、§7.4、§16；PRD §3.3、AC-61 ⑦、§9 |
 | 译文区块四项结论（翻译块范围、重译 seam、重译失败显示、缓存键论证） | 本文 §6.2；ARCH §2.6、§8.1.1；PRD S3、US-28、AC-03、AC-56–AC-58、§9；RULES §5 第 13 项 |
 | 架构评审修复 A：`ingest` 编排切片、进程边界、预算闸门与 `budget` 切片、译文裁图、删除 G17（Wisdom 2026-10-30 19:57） | 本文 §0 第 12 条、§6.2.1、§6.6；ARCH §1、§2.5、§3、§4.1–§4.4、§5.2、§7.1、§7.3、§7.8、§8.1.1、§8.2、§9、§10.2、§13、§16；PRD §3.3、§4、AC-04、AC-06、AC-21、AC-45、AC-48、AC-49、AC-59、AC-63、§8、§9；RULES §5 第 15、16 条、§8 |
+| 架构评审修复 B：同意规则措辞、外发检查端口、远程 worker 不收 Key、删除被取代的旧表述、`ProviderFailure`、存储与协议升级、Electron 加固；服务商适配层与各家 API 格式核实（Wisdom 2026-10-30 19:45、19:46、19:57） | 本文 §0 第 13 条、§2.10、§6.7、§7；ARCH §1、§2.5、§3、§4.1–§4.3、§5.1、§5.2 F-18、§7.0、§7.3、§7.4、§7.7、§7.9、§8.3、§8.4、§9、§10.1–§10.4、§12、§13、§15.4、§16；PRD §2、§3.3、US-32、AC-59–AC-62、AC-64–AC-67、§8、§9、§10；RULES §4、§5 第 17、18 条、N-05 |
