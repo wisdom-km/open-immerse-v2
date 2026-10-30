@@ -1,6 +1,6 @@
 # v2 差异与修改清单
 
-状态：v0.2。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC），Q3 / Q4 / Q9 相关补充查询 2026-10-30。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定（§6）。
+状态：v0.3。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC），Q3 / Q4 / Q9 相关补充查询 2026-10-30。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定（§6）；Markdown 阅读方案于 2026-10-30 17:32 批准（§6.1）。
 用途：把三类输入——用户提供的双引擎方案（[附件原文](./architecture/inputs/pdf_translation_architecture.md)）、`docs/architecture/` 下的 01 / 02 / 03 草案、v1 实际实现（见 [v1 审查](./v1-review.md)）——与上游模型的官方资料逐条对照，列出**需要改的地方、冲突点、未核实的说法**，并给出统一编号的决策问题（Q1–Q12，现已全部决定）。
 结论已写入根目录规格：[PRD.md](../PRD.md)、[ARCHITECTURE.md](../ARCHITECTURE.md)、[RULES.md](../RULES.md)。三份规格与本文冲突时以规格为准；本文记录「为什么这样改」。视觉与交互规格 [DESIGN.md](../DESIGN.md)、[docs/design-principles.md](./design-principles.md) **待 Loom 产出**，本文不涉及。
 
@@ -265,7 +265,30 @@
 另有两项需要用户知情：
 
 - 许可证政策（RULES §1.5）：GPL / AGPL 一律禁止；MinerU Open Source License、LGPL 与任何非商用权重为「需批准」。
-- 全部「待基准定标」数值（PRD §6.2，含新增的 QM-12–QM-14）在基准跑出前不填数；QM-13（高质量档「明显更好」的判据）由用户拍板。
+- 全部「待基准定标」数值（PRD §6.2，含新增的 QM-12–QM-17）在基准跑出前不填数；QM-13（高质量档「明显更好」的判据）由用户拍板。
+
+### 6.1 后续决定：Markdown 阅读（Wisdom 2026-10-30 17:32）
+
+Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reader.md)，含线框图），方案内三个问题由 Wisdom 于 17:27 决定，17:32 修订 D6 并批准整体方案并入 v2 M0–M8。方案 §6 的「Q1–Q3」是方案内部编号，与上表的 Q1–Q12 不是一套，规格中统一引用方案的 D1–D7。
+
+| 方案编号 | 决定 | 状态 | 落点 |
+| --- | --- | --- | --- |
+| D1 | 应用内统一 `MarkdownView`，渲染笔记、译文、AI 回答与 `.md` | 已决定（Wisdom 2026-10-30） | ARCH §4.5.4、§4.1 `ui-kit/src/markdown`；PRD S13、AC-30 |
+| D2 | 公式用 KaTeX，与 formula 同一份安全选项；失败显示原文加错误标记 | 已决定（Wisdom 2026-10-30） | ARCH §4.1 `latex-policy`、§4.5.5、§7.6；PRD AC-25、AC-31、AC-32 |
+| D3 | `.md` 阅读器只读，外部修改自动重载并保留位置 | 已决定（Wisdom 2026-10-30） | ARCH §4.5.2 `watch-debounce`；PRD AC-36、QM-15 |
+| D4 | 文件夹即笔记库：文件树、wikilink、`![[img]]`、`[[x#标题]]`、失效链接、后退 / 前进、大纲；链接在 core 解析 | 已决定（Wisdom 2026-10-30） | ARCH §4.5.2–§4.5.3；PRD US-25、AC-37–AC-41、AC-44 |
+| D5 | `.md` 独立入口，不进文献库，只链接库内 PDF | 已决定（Wisdom 2026-10-30） | ARCH §4.3 `markdown → library`；PRD AC-34、AC-43 |
+| D6 | 译文按原文区块结构化存储，正文字段是 Markdown；整篇导出延后 | 已决定（Wisdom 2026-10-30 17:27，17:32 修订） | ARCH §8.1.1、§4.2 `translation`；PRD S3、AC-03、AC-48–AC-51；v1 审查 §4.9、§4.18 |
+| D7 | v2 只读，预留编辑接口（源码区间、写入契约类型、不注册、不注入） | 已决定（Wisdom 2026-10-30） | ARCH §4.5.7；PRD AC-52–AC-55；RULES N-18 |
+
+规格对方案做的校正（不改界面设计，详见方案文首「入库说明」）：
+
+1. KaTeX 选项只保留一份，`throwOnError:true`（方案写 `false`），失败由组件捕获后显示原文，效果相同。
+2. 共享渲染组件放 `ui-kit/src/markdown/`，因为切片 UI 不能互相 import；阅读器专属组件仍在 `features/markdown/src/ui`。
+3. 其他切片的 UI 不调用 Markdown 解析：`translation`、`notes`、`qa` 在 core 里经 `markdown` 的 seam 解析，随结果返回 `MdDocument`；reader 不依赖 `markdown`。
+4. 里程碑：笔记接入由 M2 改为 M5，问答定 M5，D7 定 M2（PRD §8.1）。
+5. 契约补充：公式节点的 `blocked` 字段、`unsupported_scheme` 失效原因、`openVault` 返回 `jobId`、`openExternal` 与 `revealInFolder` 两条命令（ARCH §4.5.3）；译文记录补 `revisionId`、`targetLang`（ARCH §8.1.1）。
+6. 方案的人日估算不进规格；方案的阈值均标「待定标」（ARCH §4.5.6、PRD QM-15–QM-17）。
 
 ## 7. 未核实的说法
 
@@ -296,6 +319,13 @@
 | `export.arxiv.org` 是否提供 `/src/<编号>` 源码下载 | arXiv Bulk Data 页面建议程序访问使用 `export.arxiv.org`，未说明源码路径 | **未核实**，M4 前确认；v1 实际使用 `https://arxiv.org/src/` |
 | arXiv「每三秒一次、单连接」限制是否适用于源码下载 | arXiv API 使用条款只列旧版 API、OAI-PMH、RSS | 条款**未明确**；v2 按同一口径执行 |
 | PP-DocLayout_plus-L 相对 V3 是否「明显更好」 | — | 无数据；M3 基准对照后由用户拍板（PRD QM-13） |
+| Markdown 方案调研表中 Logseq、VS Code 两栏 | Loom 方案「调研结论」（方案自述部分来自已有产品知识） | **未核实** |
+| Markdown 方案调研表中其余竞品条目（Obsidian 用 MathJax、Typora 监视文件夹、Zettlr 3.0 起默认载入外部修改等） | Loom 方案附官方链接 | 本 PR **未逐条复核**；不作为规格依据，只作为设计参考 |
+| 文件事件去抖 300 ms、外部修改 1 秒内更新、1 万个文件确认、单文件 5 MB 截断 | Loom 方案建议值 | **未实测**，待定标（ARCH §4.5.6；PRD QM-15–QM-17） |
+| markdown-it 或 micromark / mdast 能给出足以支持 `serialize(parse(t)) === t` 的源码位置 | 两库文档（本 PR 未查阅；需要确认行内节点是否有字符级偏移） | **未核实**，M2 选型时用往返属性测试验证 |
+| Node `fs.watch` 递归模式在 Windows / macOS 上对「原子替换保存」与重命名的事件表现；chokidar 当前版本的许可证与依赖 | — | **未核实**，M2 实测后选型 |
+| Electron `webUtils.getPathForFile`（拖入文件取路径）在锁定版本中可用 | Electron 文档 | **未核实**，M2 随 Electron 版本锁定确认 |
+| KaTeX 对 Obsidian 笔记常见写法（`\begin{align}` 自动编号、部分 AMS 宏）的覆盖程度 | Loom 方案「代价」一栏 | **未量化**；不支持的公式显示原文加错误标记（PRD AC-31） |
 
 ## 8. 本文结论在规格中的落点
 
@@ -312,3 +342,4 @@
 | arXiv 源码校准公式、云 OCR、公式候选优先级链 | ARCH §7.5–§7.7；PRD S4、AC-22–AC-26 |
 | 基准集真实规模与阅读顺序真值缺口 | PRD §7；v1 审查 §6 |
 | 决策记录 Q1–Q12 | 本文 §6；PRD §9；ARCH §16 |
+| Markdown 阅读方案（D1–D7）、译文按区块存 Markdown | 本文 §6.1；ARCH §4.5、§8.1.1；PRD S13、§3.2、US-23–US-28、AC-30–AC-55、QM-15–QM-17、§8.1；RULES N-18；方案原文 `docs/design/md-reader.md` |

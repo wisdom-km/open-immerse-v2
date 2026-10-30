@@ -192,7 +192,7 @@
 | `note-page-blocks.js` | 13 | 给笔记的页块去掉公式 `sourceText` | 核心 | 复用规则 | notes/domain |
 | `ask-session.js` | 561 | 问答会话不变式、引用、近邻 2 块上下文 | 核心 | **复用规则** | qa/domain |
 | `ask-model.js` / `ask-route.js` / `ask-transport.js` / `ask-confirm.js` / `ask-render.js` | 131 / 173 / 191 / 55 / 17 | 问答模型选择、传输、确认 | 核心 | 复用规则（路由与上下文），实现重写 | qa |
-| `markdown-render.js` | 687 | 问答与笔记共用 Markdown + KaTeX 渲染与消毒 | 间接 | 复用规则（白名单消毒） | ui-kit 或 qa/ui |
+| `markdown-render.js` | 687 | 问答与笔记共用 Markdown + KaTeX 渲染与消毒 | 间接 | 复用规则（公式识别、链接协议白名单、不可信命令、病态输入防护）；输出 HTML 字符串再消毒的做法丢弃，v2 由 core 输出 AST | `markdown/domain/parse/math-syntax.ts`、`contracts/src/latex-policy.ts`（§4.21） |
 | `export.js` | 436 | 学习条目多格式导出、`articleBlocksToMarkdown` | 间接 | 复用 Markdown 投影；其他格式丢弃 | document/domain |
 | `drawer-toc.js` / `drawer-info.js` / `figure-label.js` | 337 / 129 / 20 | 目录、说明、图表编号 | 核心 | 复用规则 | reader/domain |
 | `diag-log.js` | 784 | 本机诊断日志（7 天 / 2 MB） | 间接 | **复用规则** | diagnostics/domain/retention.ts |
@@ -389,7 +389,7 @@ v1 没有实现（`lib/formula-tiers/ocr.js` 为桩）。v1 规划写的是 v2 �
 | 译文复用：非空、目标语种字符检测；回声译文可被真实译文替换；两份不同真实译文冲突则重译 | `lib/pdf-library.js:349-382` |
 | 公式槽对齐失败则丢弃再译 | `lib/pdf-library.js:717` 起 |
 
-v2 落点：`translation/domain/placeholder.ts`、`integrity-check.ts`；v2 加强为字节 / 哈希级比对（草案 02 §7）。
+v2 落点：`translation/domain/placeholder.ts`、`integrity-check.ts`；v2 加强为字节 / 哈希级比对（草案 02 §7）。校验通过后，占位符还原为 `$…$` / `$$…$$`，译文以 Markdown 存进译文区块记录（Markdown 方案 D6，ARCHITECTURE §8.1.1）；v1 的「视觉块不携带 `md` 等字段」规则保留：图、表、公式仍是单独区块，不进译文文字。
 
 ### 4.10 笔记锚点与 IndexedDB
 
@@ -482,7 +482,7 @@ v1 链路：识别 ID（`lib/arxiv-id.js`）→ 限速下载（`background/arxiv
 | `lib/source-align.js:7-17`、`:225` 起 | n-gram 锚点、DP 上限、0.85 使用门槛、分词 | **复用规则** | `formula-source/domain/source-align.ts` |
 | `lib/formula-tiers/arxiv.js:35-75` | 低于门槛判定、行匹配、逐公式失败原因（`not-located`、`charset-mismatch`、`number-mismatch`、`katex-error`） | **复用规则**；结果改为进入候选集并送 Jev，不再直接上屏 | `formula-source/domain/align-policy.ts` |
 | `lib/formula-arxiv-gate.js:11-45`、`:46-105` | 版本规范化、编号比较、对齐可复用判定、二次打开不重下 | **复用规则** | `formula-source/domain/align-policy.ts`、`application/use-cases/resolve-arxiv-source.ts` |
-| `lib/formula-katex.js:1-30`、`:40-77` | `throwOnError`、`trust: false`、`maxSize: 20`、`maxExpand: 1000`、8000 字符上限、不把 HTML 字符串写入节点 | **复用规则** | `formula/adapters/katex-renderer.ts` 与 `reader/ui/formula-view.tsx` 共用的选项常量 |
+| `lib/formula-katex.js:1-30`、`:40-77` | `throwOnError`、`trust: false`、`maxSize: 20`、`maxExpand: 1000`、8000 字符上限、不把 HTML 字符串写入节点 | **复用规则** | `contracts/src/latex-policy.ts`（唯一一份选项常量，`formula` 核对、ui-kit 公式组件与 Markdown 渲染共用，§4.21） |
 | `lib/formula-arxiv-session.js:33-83` | 版本标签、失败原因文案键、偏好规范化、已核验判定、来源统计 | 规则复用；偏好存储与右栏 DOM（`lib/formula-arxiv-pane.js`）丢弃 | `formula-source/domain`；界面由 reader 重写 |
 | `pdf/viewer.js:4644-5254` | arXiv 源码模式的菜单、偏好、复制 LaTeX | 只迁移行为（§3） | reader / settings 的 UI |
 | `tests/arxiv-*.test.mjs`（8 个）、`tests/formula-arxiv-invariants.test.mjs`、`tests/helpers/arxiv-paper.mjs`、`arxiv-pack.mjs` | 识别、解包、LaTeX、字符集、下载、对齐、网络守卫、回归；测试用的源码包构造器 | **移植为 Vitest**，用例名注明 v1 出处；`tests/net/arxiv-live.test.mjs` 真网测试不进门禁 | `formula-source/test/core/` |
@@ -494,7 +494,7 @@ v1 链路：识别 ID（`lib/arxiv-id.js`）→ 限速下载（`background/arxiv
 - 事故：Attention 第 4–5 页显示旧公式译文，因为版面键只有 `hash:page:mode:blocks-1:source-v3`，缺公式管线版本；只抬 `CHAIN_VERSION` 清不掉旧版面（`docs/formula-stale-cache-rca.md` §1）。
 - 修复：引入 `FORMULA_PIPELINE_VERSION = "fp-1"` 与陈旧判定（`lib/formula-pipeline.js:9`、`:205-227`），测试 `tests/formula-stale-cache-fix.test.mjs`。
 - 决策缓存键：`unitKey:tier:version:model:cropHash`（`lib/formula-contract.js:110-111`）。
-- v2 规则：版面键、译文键、公式决策键都必须包含「公式切块 / 占位协议版本」与采用版本号（`translation/domain/cache-key.ts`）。
+- v2 规则：版面键、译文键、公式决策键都必须包含「公式切块 / 占位协议版本」。版面键与公式决策键另含采用版本号；译文键（`translation/domain/cache-key.ts`）改为按内容寻址，包含原文占位文本哈希、受保护片段表哈希、`oi-md/1` 方言版本、模型与提示词版本，但不含文献、采用版本与区块号，这样重解析后内容不变的块不重发请求；译文记录本身仍绑定采用版本（ARCHITECTURE §8.1.1）。公式一变，片段表哈希就变，旧译文不会被误用，本节的事故因此仍被挡住。
 
 ### 4.19 整页多模态替换的复盘（反面经验）
 
@@ -508,6 +508,24 @@ v1 链路：识别 ID（`lib/arxiv-id.js`）→ 限速下载（`background/arxiv
 - 按用途超时：翻译 60 s、多模态 90 s（`lib/net/fetch.js:56-58`）；arXiv 20 s。
 - 厂商请求「超时不重发」以免重复计费；多模态最多重试 1 次。
 - v2 落点：`platform-node/http/http-client.ts`，并与 PRD AC-07 对齐。
+
+### 4.21 Markdown 渲染（笔记与问答共用）
+
+v1 已经有一份笔记与问答共用的 Markdown + KaTeX 渲染器（`lib/markdown-render.js`，687 行；`lib/ask-render.js` 只是转导出，`lib/notes-view-model.js:457-459` 用它渲染笔记）。v2 的 Markdown 阅读方案（ARCHITECTURE §4.5）把它扩展为「笔记、译文、问答、`.md` 文件」四处共用。v1 的做法是 markdown-it 输出 HTML 字符串、再用白名单消毒；v2 改为 core 输出块级 AST、UI 只画数据，因此**输出与消毒部分不迁移**，下面的规则迁移。
+
+| 规则 | 出处 | v2 落点 |
+| --- | --- | --- |
+| 原始 HTML 不渲染（`html: false`） | `lib/markdown-render.js:67-80` | `markdown/domain/html-policy.ts`：变成 `html_blocked` 节点，按文字显示 |
+| 链接只放行 `http` / `https` / `mailto`，含控制字符的拒绝 | `lib/markdown-render.js:138-146` | `markdown/domain/link-resolve.ts`；外部链接另加确认（PRD AC-42） |
+| 图片不加载，只显示为「图片：alt」文字链接 | `lib/markdown-render.js:103-110` | 改变：笔记库内的图片经 `assetId` 显示，远程图片仍不加载（`remote_blocked`） |
+| 公式识别：先遮蔽再解析，使行间公式留在列表项里；代码块、行内代码、链接目标中的 `$` 不算公式；没有配对的 `$` / `$$` 是文字；行内公式不跨行 | `lib/markdown-render.js:148-396`（`maskMath` 在 `:340-395`） | `markdown/domain/parse/math-syntax.ts` |
+| 不可信命令 `\href`、`\url`、`\htmlClass`、`\htmlId`、`\htmlStyle`、`\htmlData` 不渲染，显示原文 | `lib/markdown-render.js:26`、`:47-49` | `contracts/src/latex-policy.ts` 的清单（并入公式闸门的 `\includegraphics`） |
+| KaTeX 输出只接受 KaTeX 自己的结构，出现错误色、脚本、链接、事件属性即按失败处理 | `lib/markdown-render.js:56-65` | ui-kit `math.tsx` 的错误色检查；其他项因 v2 不注入 HTML 字符串而不再需要 |
+| 每个回答的公式预算：30 个、总长 4000 字符，超出显示原文 | `lib/markdown-render.js:13-14`、`:397-419` | 待定：`.md` 文件不宜沿用，问答是否沿用在 M5 前定（ARCHITECTURE §4.5.6） |
+| 问答的 KaTeX 选项是 `throwOnError:false`，与公式闸门的 `throwOnError:true`（`lib/formula-katex.js:24-32`）不一致 | `lib/markdown-render.js:16-24` | v2 合为一份：`contracts/src/latex-policy.ts`，`throwOnError:true`，由组件捕获异常后显示原文 |
+| 病态输入防护：渲染在 worker 线程里跑并设总超时，因为同线程的测试超时打断不了同步死循环 | `tests/helpers/render-guard.mjs:1-27` | `markdown` 的 core 测试沿用同一做法（ARCHITECTURE §12） |
+
+测试：`tests/markdown-render.test.mjs`（23 个用例）与 `tests/ask-f6b.test.mjs`（21 个用例）中断言「输入 Markdown → 是否识别为公式 / 是否屏蔽 / 链接是否放行」的部分可改写为对 `MdDocument` 的断言后移植；断言 HTML 字符串的部分不移植。
 
 ## 5. 不用清单（含理由）
 
@@ -555,6 +573,7 @@ v1 链路：识别 ID（`lib/arxiv-id.js`）→ 限速下载（`background/arxiv
 | notes | `notes-anchor`、`notes-io`、`notes-view-model` 相关 |
 | library | `library-store`、`backend-contract`（端口契约测试的范本） |
 | qa | `ask-session`、`ask-f6b`（非 UI 部分） |
+| markdown | `markdown-render`（公式识别、HTML 屏蔽、链接白名单部分，改写为对 `MdDocument` 的断言，§4.21）；病态输入守卫 `tests/helpers/render-guard.mjs` |
 | diagnostics | `diag-redact`、`diag-log`、`diag-export` |
 | platform | `net` 相关（未打桩请求失败、脱敏） |
 
