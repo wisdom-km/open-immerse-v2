@@ -107,7 +107,7 @@
 10. PR 描述完整（§2）。
 11. UI 与核心解耦（§8）：业务规则（校验、计价、状态转移、权限、失败条件）只在 core；UI 改动 PR 中 core 文件零改动；seam 只传普通数据；新增或修改的规则有经 seam 的 core 测试且不渲染 UI。
 12. 新依赖与模型权重的许可证与 Apache-2.0 兼容，没有 GPL / AGPL（§1.5）。
-13. Markdown 显示（ARCHITECTURE §4.5.4）：UI 拿到的是 core 解析好的 `MdDocument`，不解析 Markdown 字符串、不拼路径、不判断链接是否存在、不决定是否重载、不读 front-matter；显示 Markdown 一律用 ui-kit 的 `MarkdownView`，不另写渲染器。
+13. Markdown 显示（ARCHITECTURE §4.5.4）：UI 拿到的是 core 解析好的 `MdDocument`，不解析 Markdown 字符串、不拼路径、不判断链接是否存在、不决定是否重载、不读 front-matter；显示 Markdown 一律用 ui-kit 的 `MarkdownView`，不另写渲染器。译文块的样式只按 `translation.getBlocks` 返回的 `display` 选择，状态变化只从 `translation.onBlockChanged` 得知；不根据 `retranslateBlock` 的返回、计时器或任务事件推断块状态（ARCHITECTURE §8.1.1）。
 
 ## 6. Agent 绝不能做的事
 
