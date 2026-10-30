@@ -1408,15 +1408,15 @@ type FormulaCropRef = Readonly<{
 
 - 重译时先写一条新版本 `retranslating`，旧的 `success` 版本照常显示；新版本结束后转为 `success` 或 `failed`。状态转移只在 core。同一块已有 `retranslating` 版本时，`retranslateBlock` 返回 `already_retranslating`，不排第二个任务。
 - `retranslateBlock` 的 `Result` 只表示受理与否。每次状态转移后 core 发 `translation.onBlockChanged`（`{ documentId, revisionId, sourceBlockId, status, version, failureKind }`，普通数据）；UI 收到后用 `getBlocks({ sourceBlockIds: [id] })` 取该块。UI 不根据调用返回、计时或任务事件推断块状态（RULES §5 第 13 项）。
-- 显示规则（`adopted-version.ts`）：有 `success` 版本就显示最新的 `success`；没有时显示最新版本（`failed` 显示原文 + 「翻译未通过校验」+「重译」，`retranslating` 显示骨架）。
-- 重译失败（最新版本 `failed`，但还有更早的 `success`）时的界面，按 Loom 2026-10-30 结论（PRD AC-56，对应 MD-27）：
-  - 正文照常显示上一版 `success`；块左侧 2px 标记线，颜色用 `--oi-reader-warn`；块末一行次要文字「重译未成功，仍显示上一版 · 重试」。
-  - 「重试」是次级文字按钮，调 `retranslateBlock`；悬停显示原因，取自 `failureKind`：校验没过 / 网络问题 / 模型出错。悬停或键盘聚焦状态行时显示原因（DESIGN.md §4.1）。验收用的短句以 PRD AC-56 为准（校验没过 / 网络问题 / 模型出错）。
+- 显示规则（`adopted-version.ts`）：有 `success` 版本就显示最新的 `success`；没有时显示最新版本。`failed` 显示原文，状态行按 `failureKind`：`check_failed`「未翻译（校验没过）· 重译」、`network`「未翻译（网络问题）· 重译」、`model_error`「未翻译（模型出错）· 重译」；`failureKind` 为 `null` 时用「未翻译 · 重译」。`retranslating` 显示骨架。
+- 重译失败（最新版本 `failed`，但还有更早的 `success`）时的界面，按 Wisdom 2026-10-30 22:02（PRD AC-56，DESIGN §4.1，对应 MD-27）：
+  - 正文照常显示上一版 `success`；块左侧 2px 标记线，颜色用 `--oi-reader-warn`。块末提示行按 `failureKind`：`check_failed`「重译未成功（校验没过），仍显示上一版 · 重试」、`network`「重译未成功（网络问题），仍显示上一版 · 重试」、`model_error`「重译未成功（模型出错），仍显示上一版 · 重试」。`failureKind` 为 `null`（core 不应在失败时给出）时用「重译未成功，仍显示上一版 · 重试」。
+  - 「重试」是次级文字按钮，调 `retranslateBlock`。悬停或键盘聚焦状态行时显示该原因的详情（DESIGN §4.1）：`check_failed`「新译文里的公式、数字或引用编号和原文对不上，已丢弃。可以再试一次。」、`network`「没连上翻译服务或超时。请检查网络后重试。」、`model_error`「翻译服务返回了错误或看不懂的结果。可以重试，或到设置 › 模型来源 换一个翻译服务 / 改选本地。」、`null` 无详情。
   - 不弹 toast、弹窗或全局横幅。
   - 重试期间提示行显示「正在重译…」，「重试」禁用；成功后标记线与提示行消失，显示新版本；再次失败回到上面的样子。
-  - 从未成功的块：显示原文 + 「翻译未通过校验」+「重译」。
+  - 从未成功的块：显示原文 + 2px 标记线 + 按 `failureKind` 的提示行「未翻译（校验没过）· 重译」「未翻译（网络问题）· 重译」「未翻译（模型出错）· 重译」；`null` 用「未翻译 · 重译」。悬停或聚焦显示上一条的详情。
   - 无障碍：提示行 `role="status"`；「重试」可用键盘聚焦，焦点环用 `--oi-reader-focus`；状态不只靠颜色区分（标记线之外还有提示文字）。两个 Token 由 Loom 定义（DESIGN.md §3.3、§3.4：`--oi-reader-warn`、`--oi-reader-focus`；色值待审批）。
-  - 以上是 reader UI 的样式；「显示哪个版本、要不要失败提示」由 core 判定：`getBlocks` 每块返回 `display`（`current` 正常、`retranslating` 显示上一版并提示「正在重译…」、`previous_with_failure` 重译失败仍显示上一版、`never_succeeded` 从未成功、`pending` 没有可显示的版本且正在翻译，显示骨架），UI 只按它选样式。
+  - 以上是 reader UI 的样式；「显示哪个版本、要不要失败提示」由 core 判定：`getBlocks` 每块返回 `display`（`current` 正常、`retranslating` 显示上一版并提示「正在重译…」、`previous_with_failure` 重译失败仍显示上一版、`never_succeeded` 从未成功、`pending` 没有可显示的版本且正在翻译，显示骨架），UI 只按 `display` 选样式、只按 `failureKind` 选文案。
 
 **缓存键**（`cache-key.ts`）= 下列字段规范化后的 SHA-256：
 
