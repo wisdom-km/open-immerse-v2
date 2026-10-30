@@ -1,6 +1,6 @@
 # open-immerse v2 架构规格（ARCHITECTURE）
 
-状态：v0.1，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。
+状态：v0.2，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。
 同级规格：[PRD.md](./PRD.md)（做什么）、[RULES.md](./RULES.md)（怎么协作）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，**两份均待 Loom 产出**；本文只规定 UI 代码放在哪、依赖谁，不规定长什么样。
 本文与 `docs/architecture/0x_*_草案.md` 冲突时以本文为准，差异逐条列在 [docs/v2-gap-and-changes.md](./docs/v2-gap-and-changes.md)。本文中的目录、接口、协议均为**拟议设计**，M1 起按本文落地；落地前不代表已存在。
 
@@ -26,25 +26,29 @@ flowchart LR
     M["Main 进程<br/>装配根 / IPC 路由 / 窗口 / 安全"]
     U["Utility 进程（可选）<br/>application + adapters<br/>SQLite / 翻译 / 任务"]
   end
-  W1["Python worker（本机，可选）<br/>预处理 / 引擎 A / 引擎 B<br/>（本机质量评估：可选，默认关）"]
-  W2["Python worker（远程，自建）<br/>同一代码、同一协议"]
-  QE["质量评估服务（Jev）<br/>官方云 API 或用户自建 Docker"]
-  API["第三方 API<br/>翻译 / 多模态 / TTS / ASR"]
+  W1["Python worker（本机）<br/>预处理 / 引擎 A / 引擎 B<br/>Jev 评分（本机推理，可选）"]
+  W2["Python worker（远程，自建）<br/>同一代码、同一协议<br/>Jev 评分（服务器上推理）"]
+  QE["Jev 远程服务<br/>官方云 API 或用户自建 Docker"]
+  API["第三方 API<br/>翻译 / 多模态 / 云 OCR / TTS / ASR"]
+  ARX["arXiv<br/>（源码包）"]
 
   R -- "contextBridge" --> P
   P -- "IPC invoke / event" --> M
   M -- "MessagePort" --> U
   U -- "HTTP + SSE（oi-parse/1）<br/>127.0.0.1 + 一次性令牌" --> W1
   U -- "HTTPS + SSE（oi-parse/1）<br/>服务令牌" --> W2
-  U -- "HTTPS（quality 适配器）" --> QE
+  W1 -- "HTTPS（jev_http 后端）" --> QE
+  W2 -- "HTTPS（jev_http 后端）" --> QE
   U -- "HTTPS（provider 适配器）" --> API
+  U -- "HTTPS，≥3 s 一次、单连接<br/>（formula-source 适配器）" --> ARX
 ```
 
 - **Renderer** 只做展示与交互：React 组件、PDF.js 渲染、裁图显示。不碰文件系统、SQLite、密钥、Python 进程、网络 API。
 - **Preload** 只暴露由契约生成的类型化命令与事件订阅，不暴露 `ipcRenderer`、任意通道、`fs`、`shell`。
 - **Main** 是装配根（composition root）：创建适配器、注入用例、注册 IPC 处理器、管理窗口与 worker 生命周期。不写业务规则。
 - **Utility 进程**：application 层与 adapters 默认在 main 进程装配；M3 起若长任务影响 main 响应（以实测为准），整体迁到 Electron `utilityProcess`，代码不改，只改装配位置。
-- **Python worker**：无状态计算服务。不写用户文献库、不决定采用版本、不持有用户的第三方 API 密钥（本机模式）。本机与远程运行同一份代码、同一协议。
+- **Python worker**：无状态计算服务。不写用户文献库、不决定采用版本、不持久化用户的第三方 API 密钥（本机模式下，Jev 云 API 的凭据由 main 在每个 `evaluate` 作业的请求头中传入，worker 只在内存中使用，不落盘、不进日志、不进产物）。本机与远程运行同一份代码、同一协议（Q7）。
+- **质量评估一律经 worker**（Q9）：桌面端只通过 `oi-parse/1` 的 `evaluate` 作业请求评分，无论 Jev 在本机推理、在远程 worker 所在服务器推理，还是由 worker 转发给官方云 API / 用户 Docker 服务。桌面端没有第二条评分通路（§7.4）。
 
 ## 2. 分层
 
@@ -53,10 +57,153 @@ flowchart LR
 | **domain** | 实体、值对象、纯规则（公式占位校验、阅读顺序几何、锚点匹配、状态转换、预算计算） | `contracts`、`kernel`、本切片 domain | Node 内置模块、Electron、React、DOM、PDF.js、数据库驱动、HTTP、任何厂商 SDK、其他切片的 domain |
 | **application** | 用例（use case）、端口接口（ports）、编排、事务边界 | 本切片 domain、`contracts`、`kernel`、其他切片的**公开入口** `index.ts` | 任何 adapters、ui、Electron、Node IO |
 | **adapters** | 端口实现：SQLite 仓储、文件资产、HTTP provider、worker 客户端、IPC 处理器 | 本切片 application（实现其 ports）与 domain、`platform-node`、`contracts`、`kernel` | ui、其他切片的 adapters |
-| **ui** | React 组件、hooks、视图模型；通过 `window.oi` 调命令、订阅事件 | 本切片 domain（只用纯函数与类型）、`contracts`、`ui-kit`、React、PDF.js（仅 reader 切片） | application、adapters、`platform-node`、Electron、Node 内置模块、其他切片的 ui |
+| **ui** | React 组件、hooks、视图模型；通过 `window.oi` 调命令、订阅事件 | 本切片的展示 seam `src/pure.ts`（纯函数与类型，§2.4）、`contracts`、`ui-kit`、React、PDF.js（仅 reader 切片） | 本切片 domain / application 的内部文件、adapters、`platform-node`、Electron、Node 内置模块、其他切片的 ui |
 | **workers**（Python） | 预处理、引擎、质量评估的计算 | worker 内部分层（§10.3）与生成的协议模型 | 任何 TS 代码、用户文献库、桌面数据目录 |
 
 **装配**只发生在 `apps/desktop/src/main/`（TS）和 `workers/parser/oi_worker/__main__.py`（Python）。只有装配根可以同时看到 application 与 adapters。
+
+### 2.1 UI 与业务核心解耦（Q3，Wisdom 2026-10-30 原文）
+
+以下为原文，任何人不得删改或弱化；执行细则与交接模板见 [RULES.md](./RULES.md) §8，CI 规则见 §13 的 G13–G17。所有涉及 UI 或 core 的交接指令都必须引用本节与 RULES §8。
+
+> UI 与业务核心解耦（functional core, imperative shell）。改 UI 不得改变核心行为，也不得让核心测试失败。
+>
+> - core module：业务规则。deep module，接口小，实现藏在里面。
+> - seam：核心对外的接口。穿过 seam 的只有普通数据（输入、结果、错误），没有组件、DOM、事件对象、路由类型。
+> - UI adapter：把用户操作翻译成对 seam 的一次调用，再把结果画出来。业务规则不写在组件里。
+> - dependency rule：UI 依赖 core。core 不 import UI、框架组件、DOM、路由、样式。
+>
+> 执行规则：
+>
+> 1. 校验、计价、状态转移、权限、失败条件只写在 core。
+> 2. 改 UI（布局、文案、组件、交互）时，默认不改 core 文件。
+> 3. 现有 seam 不够用时先停下来说明缺什么，不要为了迁就页面去加参数、改返回形状。
+> 4. 核心测试直接调用 seam，不渲染 UI。这是完成标准。
+> 5. 做完说明：改了哪些 UI 文件，core 是否没动，核心测试是否通过。
+
+### 2.2 调研依据
+
+调研时间 2026-10-30。下表只列与本约束直接相关的要点；「落到本项目」一栏是本文据此做出的具体规定。
+
+| 来源 | 要点 | 落到本项目 |
+| --- | --- | --- |
+| Gary Bernhardt，[Functional Core, Imperative Shell](https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell)（2012） | 纯函数核心被一层命令式外壳包住，外壳负责输入输出、数据库、网络，依据核心算出的值行动；核心很容易测，常常不需要 test double；外壳的条件分支很少 | 规则写在 domain（纯函数）；adapters 与 `ipc-handlers.ts` 只做转接、不写业务分支（F-02）；core 测试用 `testing/` 里的 fake 端口即可，不需要 mock 框架 |
+| Gary Bernhardt，[Boundaries](https://www.destroyallsoftware.com/talks/boundaries)（SCNA 2012） | 用简单值（而不是复杂对象）作为组件与子系统之间的边界 | seam 只传普通数据（§2.4 第 1 条） |
+| Alistair Cockburn，[Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) | 应用应能同样被用户、程序、自动测试、批处理驱动，并能脱离真实设备与数据库独立开发测试；业务逻辑渗入 UI 后无法自动测试、无法换驱动方；「新加一层并承诺不放业务逻辑」若**没有检测违规的机制**，几年后又会塞满业务逻辑；端口按「目的」划分，一个端口可插多个适配器（GUI、测试夹具、批处理） | UI 与 core 测试是同一个 seam 的两个驱动方适配器；执行规则 4 就是「检测违规的机制」，并由 G16 自动检查；SQLite、HTTP、worker 是被驱动方适配器，经 application 端口接入 |
+| Mark Seemann，[Functional architecture is Ports and Adapters](https://blog.ploeh.dk/2016/03/18/functional-architecture-is-ports-and-adapters/)（2016） | 纯函数在中心、不纯代码推到系统边缘，在组合根装配；在面向对象代码里维持这种结构「像推石头上山」，稍不留神就滑回去 | 只靠评审守不住，边界必须由机器检查（G13–G17）；不纯的实现只在 `apps/desktop/src/main/` 装配根注入 |
+| John Ousterhout，[A Philosophy of Software Design](https://web.stanford.edu/~ouster/cgi-bin/aposd.php) 第 4–5 章 | 最好的模块是「深」的：功能强、接口远比实现简单；接口复杂而功能少的「浅模块」是红旗；信息隐藏让修改实现不波及调用方。第 2 版专门讨论了与 Clean Code 在方法长度上的分歧 | 每个切片只有一个用例 seam（`src/index.ts`）和一个展示 seam（`src/pure.ts`）；一个用户操作对应一次 seam 调用；为迁就页面加参数等于把实现细节泄漏到接口（执行规则 3）。§6 的行数上限保留不变，但只用来拆 seam **背后**的实现，不得把一个 seam 拆成一串浅函数 |
+| Electron 官方文档：[Process Model](https://www.electronjs.org/docs/latest/tutorial/process-model)、[Context Isolation](https://www.electronjs.org/docs/latest/tutorial/context-isolation)、[IPC](https://www.electronjs.org/docs/latest/tutorial/ipc)、[Security](https://www.electronjs.org/docs/latest/tutorial/security) | renderer 按 Web 标准运行、默认不能用 Node；preload 经 `contextBridge` 暴露 API，**不要**直接暴露 `ipcRenderer.send`，应每个 IPC 消息一个方法；`contextBridge` 不能传自定义原型与 Symbol；IPC 用结构化克隆，DOM 对象不能序列化；`handle` 中抛出的错误到 renderer 只剩 `message`；utility 进程适合 CPU 密集或易崩溃的组件；要校验每条 IPC 消息的发送方 | 跨进程 seam = `contracts/src/ipc/<feature>.ts` 生成的 `window.oi.<feature>.<command>`，一条命令一个方法；seam 类型必须能结构化克隆（这也是「普通数据」的机器判据）；错误作为 `Result` 数据返回，不靠异常穿越 IPC；core 不依赖 renderer，可在 main 或 utility 进程运行 |
+| [dependency-cruiser 规则参考](https://github.com/sverweij/dependency-cruiser/blob/main/doc/rules-reference.md) | `forbidden` 规则按 `path` / `pathNot` 正则匹配；`$1` 组匹配可表达「同一切片」；`reachable` 检查传递依赖；`dependencyTypes` 可区分 `type-only` 导入（需开启 `tsPreCompilationDeps`） | G13、G15、G16 的写法（§13）；type-only 导入也算依赖，core 不能 `import type` React 类型 |
+| [eslint-plugin-boundaries](https://github.com/javierbrea/eslint-plugin-boundaries) | 把文件归类为元素类型，按「默认禁止 + 白名单」声明元素间与外部包的依赖，在编辑器里即时报错 | M1 评估作为编辑器内即时反馈；CI 的权威检查仍是 dependency-cruiser，两者规则从同一份元素定义生成，避免漂移 |
+| [Bulletproof React：项目结构](https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md) | 按 feature 组织；禁止跨 feature import（`import/no-restricted-paths`），在应用层组合；代码单向流动 shared → features → app | 与 §3 的功能切片、§5.3 的插槽组合一致 |
+| VS Code：[Source Code Organization](https://github.com/microsoft/vscode/wiki/Source-Code-Organization) 与仓库 [`eslint.config.js`](https://github.com/microsoft/vscode/blob/main/eslint.config.js)（查阅提交 `3ee7c48`） | 核心分 `base` / `platform` / `editor` / `workbench` / `code` 层；每层内按目标环境分 `common`（只用基础 JS API）/ `browser`（DOM）/ `node` / `electron-*`，各自只能用规定的下层；每个 contribution 只从**单个文件**暴露内部 API，不得伸进别人的内部；服务经构造函数注入；用自定义 ESLint 规则 `local/code-layering` 与 `local/code-import-patterns` 检查，配置旁注明「Do not relax these rules」（该提交中两条规则为 warn 级） | core 对应 VS Code 的 `common`：core 的 tsconfig 不含 DOM 与 Node 类型（G14）；每个切片单入口 seam；依赖注入只在装配根；本项目把同类规则设为 error 级，CI 失败而非提醒 |
+| Cursor：[Keeping the Cursor app stable](https://cursor.com/blog/app-stability)（2026-04-21） | 桌面应用建立在 VS Code 与 Electron 之上，是多进程架构：renderer 进程承载编辑器与 agents 窗口，utility 进程承载扩展、存储与 agent 功能；renderer 崩溃最严重；跨进程的超大消息与内存问题强相关，已对其埋点；扩展放在独立进程隔离 | 重计算不放 renderer（§1 utility 进程与 worker）；seam 消息不带大块数据，页面图、PDF、音频只传 `assetId`（§2.4 第 4 条）；IPC 载荷超过阈值记诊断事件（§11）。Cursor 内部代码分层**未见公开资料**，本文不据此推断 |
+
+### 2.3 术语落到代码
+
+| 约束中的术语 | 本项目落点 | 对应的层 |
+| --- | --- | --- |
+| **core module** | `packages/features/*/src/domain/**`（纯规则）与 `application/**`（用例编排、端口接口）；Python 侧的纯规则模块（`engines/reading_order/`、`engines/e2e_b/mapping.py`、`quality/batching.py`） | domain、application |
+| **seam** | 用例 seam：`packages/features/<f>/src/index.ts`（用例工厂、输入 / 结果 / 错误类型）；展示 seam：`src/pure.ts`（可打包进 renderer 的纯函数与类型）；跨进程 seam：`contracts/src/ipc/<f>.ts` 及由它生成的 `window.oi.<f>.*` | 契约（`contracts`）与切片公开入口 |
+| **UI adapter** | `packages/features/*/src/ui/**`、`apps/desktop/src/renderer/**` | ui |
+| **imperative shell**（被驱动方适配器与装配） | `features/*/src/adapters/**`（其中 `ipc-handlers.ts` 是驱动方：IPC → seam）、`platform-node`、`worker-client`、`apps/desktop/src/main/**`、生成的 preload；worker 的 `api/`、`jobs/`、`runtime/` 与模型推理 | adapters、workers |
+| **dependency rule** | UI → seam → core；shell → core（实现端口）；core 只依赖 `contracts`、`kernel`、本切片内部与其他切片的 seam | §5.1 |
+
+说明：application 用例经端口调用外界，严格说不是纯函数。本项目把**规则**放在 domain（纯），application 只做编排与事务边界；两者合称 core，都不得碰 UI。执行规则 1 的五类规则（校验、计价、状态转移、权限、失败条件）一律落在 domain，§2.5 逐切片列出。
+
+### 2.4 seam 的形状规则
+
+1. **只有普通数据**：字符串、数字、布尔、`null`、数组、普通对象、品牌化 ID（运行时仍是字符串）。不传类实例、函数、DOM 节点、React 元素、事件对象、路由对象、`AbortSignal`、`Error` 实例。判据：值能被结构化克隆且克隆后语义不变。
+2. **错误是数据**：返回 `Result<T, E>`，`E` 是带 `code` 的判别联合，字段只有普通数据；用例不向 seam 外抛异常。
+3. **一个用户操作 = 一次 seam 调用**：长任务立即返回 `jobId`，进度经 `jobs` 事件推送；取消是另一次调用 `jobs.cancel({ jobId })`。
+4. **大数据不过 seam**：页面图、PDF、音频、裁图只传 `assetId`，由受控协议 `oi-asset://` 取用（§9）。
+5. **不含展示信息**：输入不带文案、颜色、像素布局；结果不带可直接注入的 HTML。显示决策（例如公式显示原图还是 LaTeX）以枚举值返回，由 UI 决定怎么画。
+6. **小而深**：每个切片一个 `index.ts`、一个 `pure.ts`，导出清单登记在切片 `README.md`。新增或修改导出按执行规则 3 处理：先停下说明缺什么，再单独提 seam PR（契约先行，RULES §3），合入后再做 UI。
+7. **renderer 只用两种 seam**：`pure.ts`（同进程纯函数，例如滚动跟随的几何计算）与 `window.oi`（跨进程命令）。renderer 不直接调用 application 用例。
+
+### 2.5 与 5 层、15 个切片的映射
+
+Q3 的要求是映射到 5 层与 14 个切片；Q4 决定新增 `formula-source` 切片后共 15 个，`writing` 为预留位（§4.4，v2 不建）。下表「core」列给出执行规则 1 的五类规则所在文件；CI 规则用通配路径覆盖全部切片，新增切片只要遵守 §3.1 模板即自动受约束。
+
+| 切片 | core：规则所在（校验 / 计价 / 状态转移 / 权限 / 失败条件） | seam | UI adapter | shell 适配器 |
+| --- | --- | --- | --- | --- |
+| `library` | `document-identity`（校验：哈希身份）、`library-record`（校验：元数据） | `importPdf`、`listLibrary`、`updateProgress`、`getBibliographicRecords`（§4.4 预留） | `ui/library-list.tsx` | `sqlite-library-repository`、文件资产 |
+| `document` | `accepted-revision`（失败条件）、`adopt-policy`（状态转移、权限：compare 与 adopt）、`source-audit`（失败条件） | `adoptPage`、`compareCandidates`、`getAcceptedRevision` | 无（由 reader 渲染） | `sqlite-document-repository` |
+| `parsing` | `engine-capabilities`、`layout-profile`（权限：高质量档是否可选，Q10）、`text-layer/*` | `submitParse`、`getParseCapabilities` | 无（状态显示在 reader） | `worker-parse-gateway`、`text-layer-engine`、`cloud-ocr/*` |
+| `jobs` | `job-state-machine`（状态转移）、`idempotency`（失败条件：能否重发） | `cancelJob`、`listJobs`、事件 `onJobEvent` | 无 | `sqlite-job-store` |
+| `formula` | `formula-policy`（失败条件：候选优先级链，§7.5）、`charset-check`、`equation-number`、`render-equivalence`（校验） | `decideFormula`；`pure.ts`：`formulaDisplayMode` | 无（`reader/ui/formula-view.tsx` 渲染） | `katex-renderer` |
+| `formula-source` | `arxiv-id`（校验）、`fetch-policy`（状态转移：限流与冷却）、`archive-limits`、`align-policy`（失败条件） | `resolveArxivSource`、`alignSource` | 无（来源标注由 reader 显示，开关在 settings） | `arxiv-http-client`、`sqlite-source-cache`、`node-gunzip` |
+| `quality` | `evaluation-status`（状态转移：verdict 规范化）、`scoring-coverage`（失败条件：未评分不得算已核验，Q1）、`low-score-routing`、`deployment-recommendation`（Q9） | `evaluateRegions`；`pure.ts`：`recommendEvaluatorDeployment` | 无（设置页属于 settings） | `worker-quality-evaluator` |
+| `repair` | `repair-plan`（权限：是否允许补救）、`budget-ledger`（计价）、`repair-limits`（失败条件） | `runRepair`、`getBudgetStatus` | 无（入口在 reader） | `openai-compatible-multimodal` |
+| `translation` | `placeholder`、`integrity-check`（校验、失败条件）、`cache-key` | `translatePage`、`polishTranslation` | 无（译文由 reader 渲染） | `providers/<vendor>` |
+| `reader` | `pairing`、`scroll-sync`、`viewport-mapping`（纯几何，经 `pure.ts` 在 renderer 运行） | `pure.ts` | `pdf-page-canvas`、`readout-pane`、`formula-view`、`selection-toolbar` | 无（数据经 `window.oi`） |
+| `notes` | `anchor-match`（失败条件：无法唯一重定位）、`note`（校验）、`markdown-export` | `createNote`、`reanchorNotes`、`exportNotes`、`getNotesByIds`（§4.4 预留） | `ui/notes-panel.tsx` | `sqlite-notes-repository` |
+| `qa` | `context-selection`、`citation`（失败条件：引用必须可定位） | `ask` | `ui/ask-panel.tsx` | `chat-provider` 适配器 |
+| `voice` | `speech-script`、`audio-segment`（校验：段落必须带锚点） | `generateNarration`、`transcribeNote` | `ui/narration-player.tsx`、`ui/voice-note-recorder.tsx` | TTS / ASR 适配器 |
+| `settings` | `provider-config-validate`（校验）、`budget-settings`（计价上限）、`translation-fallback`（权限，Q11）、`evaluator-deployment`（Q9） | `saveProvider`、`testConnection`、`setEvaluatorDeployment` | `ui/settings-pages/*` | `safe-storage-secret-store` |
+| `diagnostics` | `redaction-rules`（校验）、`retention`（失败条件：超限删除） | `exportBundle` | `ui/diagnostics-page.tsx` | `file-logger` |
+| `writing`（预留，v2 不建） | 引用必须解析到锚点（复用 `qa/citation` 规则） | §4.4 草案 | — | — |
+
+### 2.6 示例 seam
+
+```ts
+// packages/features/translation/src/index.ts —— 拟议 seam（用例 seam）
+import type { DocumentId, PageRevisionId, JobId, Result } from '@oi/contracts';
+
+export type TranslatePageInput = Readonly<{
+  documentId: DocumentId;
+  revisionId: PageRevisionId;      // 以采用版本为准；版本过期会返回 revision_stale
+  targetLang: 'zh-CN';
+}>;
+export type TranslatePageAccepted = Readonly<{
+  jobId: JobId;                    // 长任务：进度走 jobs 事件
+  reusedBlocks: number;            // 命中缓存、不再请求的块数
+  queuedBlocks: number;
+}>;
+export type TranslatePageError =
+  | Readonly<{ code: 'provider_not_configured' }>
+  | Readonly<{ code: 'budget_exhausted'; reservedMinor: number; limitMinor: number }>
+  | Readonly<{ code: 'revision_stale'; currentRevisionId: PageRevisionId }>;
+
+export interface TranslationSeam {
+  translatePage(input: TranslatePageInput): Promise<Result<TranslatePageAccepted, TranslatePageError>>;
+}
+export declare function createTranslationSeam(deps: TranslationDeps): TranslationSeam; // deps 只含端口，由装配根注入
+```
+
+```ts
+// packages/features/quality/src/pure.ts —— 拟议 seam（展示 seam，纯函数，可在 renderer 运行）
+export type HardwareProfile = Readonly<{
+  os: 'windows' | 'macos' | 'linux';
+  arch: 'x64' | 'arm64';
+  totalMemoryGB: number;
+  unifiedMemory: boolean;          // Apple Silicon 为 true
+  gpus: ReadonlyArray<Readonly<{ vendor: 'nvidia' | 'amd' | 'intel' | 'apple' | 'other'; vramGB: number | null }>>;
+}>;
+export type DeploymentAdvice = Readonly<{
+  recommended: 'local' | 'remote';
+  meetsOfficialHardware: boolean;  // 是否达到 Jev 官方硬件下限（§7.4）
+  platformDocumented: boolean;     // 官方文档是否覆盖该平台（Windows 未覆盖）
+  reason: 'apple-silicon-16gb' | 'nvidia-8gb' | 'below-official-minimum';
+}>;
+export declare function recommendEvaluatorDeployment(hw: HardwareProfile): DeploymentAdvice;
+```
+
+```ts
+// packages/features/quality/test/core/deployment-recommendation.test.ts —— core 测试：只调 seam，不渲染 UI
+import { expect, it } from 'vitest';
+import { recommendEvaluatorDeployment } from '../../src/pure';
+
+it('recommends remote when the machine is an 8 GB laptop with integrated graphics', () => {
+  const advice = recommendEvaluatorDeployment({
+    os: 'windows', arch: 'x64', totalMemoryGB: 8, unifiedMemory: false,
+    gpus: [{ vendor: 'intel', vramGB: null }],
+  });
+  expect(advice).toMatchObject({ recommended: 'remote', reason: 'below-official-minimum' });
+});
+```
+
+对应的 UI adapter（设置页）只做三件事：取硬件画像 → 调一次 `recommendEvaluatorDeployment` → 画出推荐项与「随时可改」的选择；保存时调一次 `window.oi.settings.setEvaluatorDeployment(...)`。推荐规则改动只发生在 `quality/domain`，设置页的布局、文案改动不触碰它。
 
 ## 3. 目录结构
 
@@ -86,9 +233,9 @@ open-immerse-v2/
 │  ├─ ui-kit/                         # 设计令牌与基础组件（按 Loom 的 DESIGN.md 实现）
 │  └─ features/                       # 按功能切片，见 §4
 │     ├─ library/  document/  parsing/  jobs/
-│     ├─ formula/  quality/  repair/  translation/
+│     ├─ formula/  formula-source/  quality/  repair/  translation/
 │     ├─ reader/  notes/  qa/  voice/
-│     └─ settings/  diagnostics/
+│     └─ settings/  diagnostics/       # writing/ 为预留位，v2 不建目录（§4.4）
 ├─ workers/
 │  └─ parser/                         # Python worker（uv 项目），见 §10.3
 ├─ fixtures/
@@ -107,7 +254,8 @@ packages/features/<name>/
 ├─ package.json            # 名称 @oi/feature-<name>；依赖声明即依赖许可
 ├─ README.md               # 一段话职责 + 公开 API + 所有者 + 热点文件
 ├─ src/
-│  ├─ index.ts             # 公开入口：只导出 application 的用例类型与工厂、domain 的公开类型
+│  ├─ index.ts             # 用例 seam：用例工厂与输入 / 结果 / 错误类型（§2.4）
+│  ├─ pure.ts              # 展示 seam：只转导出 domain 的纯函数与类型，可打包进 renderer
 │  ├─ domain/              # 纯规则；一个概念一个文件
 │  ├─ application/
 │  │  ├─ ports/            # 每个端口一个文件（接口 + 简短契约注释）
@@ -116,7 +264,10 @@ packages/features/<name>/
 │  ├─ ui/                  # 每个组件一个文件；hooks/ 与 view-models/ 分开
 │  └─ testing/             # 本切片对外提供的 fake 与契约测试套件
 ├─ migrations/             # 本切片拥有的 SQLite 表迁移：NNNN_<描述>.sql
-└─ test/                   # 单元 / 集成测试（与 src 结构镜像）
+└─ test/
+   ├─ core/                # core 测试：只 import index.ts / pure.ts / src/testing，Node 环境，不渲染 UI（G16）
+   ├─ adapters/            # 端口实现的契约测试
+   └─ ui/                  # 组件测试：只依赖 fake 的 window.oi，不断言业务规则
 ```
 
 切片之间只通过 `index.ts` 交互；UI 之间不互相 import，由应用外壳通过「插槽」组合（§5.3）。
@@ -135,7 +286,8 @@ packages/features/<name>/
 | `contracts/src/formula.ts` | `FormulaCandidate`、`FormulaDecision` |
 | `contracts/src/evaluation.ts` | `EvaluationResult`（scored / error / unavailable / not-run） |
 | `contracts/src/translation.ts` | `TranslationRecord`、受保护片段表 |
-| `contracts/src/anchor.ts` | `ContentAnchor`（笔记、问答、语音共用） |
+| `contracts/src/anchor.ts` | `ContentAnchor`（笔记、问答、语音共用；写作预留，§4.4） |
+| `contracts/src/citation.ts` | `Citation`（锚点 + 文献引用元数据：标题、作者、年份、DOI / arXiv 编号与版本、页、块）；问答与笔记导出共用，写作预留 |
 | `contracts/src/jobs.ts` | 任务种类、状态、事件 |
 | `contracts/src/provider-config.ts` | `ProviderConfig`（只含 `secretRef`，不含密钥） |
 | `contracts/src/errors.ts` | 错误码枚举与 `{code, message, retryable}` 形状 |
@@ -163,19 +315,20 @@ packages/features/<name>/
 
 | 切片 | 职责（一句话） | 关键文件（每个文件单一职责） |
 | --- | --- | --- |
-| `library` | 文献导入、身份（SHA-256）、元数据、列表、阅读进度 | `domain/document-identity.ts`（哈希身份与去重规则）· `domain/library-record.ts`（元数据校验）· `application/use-cases/import-pdf.ts` · `application/use-cases/list-library.ts` · `application/use-cases/update-progress.ts` · `application/ports/library-repository.ts` · `adapters/sqlite-library-repository.ts` · `adapters/v1-import/*`（只读 v1 导出包，先 dry-run 报告；待 Q8） · `ui/library-list.tsx` |
+| `library` | 文献导入、身份（SHA-256）、元数据、列表、阅读进度 | `domain/document-identity.ts`（哈希身份与去重规则）· `domain/library-record.ts`（元数据校验）· `application/use-cases/import-pdf.ts` · `application/use-cases/list-library.ts` · `application/use-cases/update-progress.ts` · `application/use-cases/get-bibliographic-records.ts`（按 ID 批量只读，写作预留，§4.4） · `application/ports/library-repository.ts` · `adapters/sqlite-library-repository.ts` · `ui/library-list.tsx`。不做 v1 数据迁移（Q8），没有 v1 导入器 |
 | `document` | 统一文档模型：解析运行、候选页、采用版本、来源审计、坐标帧 | `domain/accepted-revision.ts`（采用不变式）· `domain/source-audit.ts`（missing / duplicates）· `domain/coordinate-frame.ts`（矩阵与换算）· `domain/block-id.ts`（稳定块号）· `domain/adopt-policy.ts`（compare 与 adopt 区分）· `application/use-cases/adopt-page.ts`（乐观锁原子切换）· `application/ports/document-repository.ts` · `adapters/sqlite-document-repository.ts` |
-| `parsing` | 解析任务编排、引擎选择、文字层基础档 | `domain/engine-capabilities.ts` · `domain/text-layer/`（阅读顺序、栏判定、跨页续接、页眉页脚剔除、字形清洗；每条规则一个文件，自 v1 移植）· `application/use-cases/submit-parse.ts` · `application/ports/parse-gateway.ts` · `adapters/worker-parse-gateway.ts` · `adapters/text-layer-engine.ts`（pdfjs-dist 提取 → domain 规则） |
+| `parsing` | 解析任务编排、引擎选择、文字层基础档、云 OCR 识别来源 | `domain/engine-capabilities.ts` · `domain/layout-profile.ts`（标准档 / 高质量档；高质量档只在基准证明后开放，Q10）· `domain/text-layer/`（阅读顺序、栏判定、跨页续接、页眉页脚剔除、字形清洗；每条规则一个文件，自 v1 移植）· `application/use-cases/submit-parse.ts` · `application/ports/parse-gateway.ts` · `application/ports/ocr-provider.ts`（云 OCR，§7.7）· `adapters/worker-parse-gateway.ts` · `adapters/text-layer-engine.ts`（pdfjs-dist 提取 → domain 规则）· `adapters/cloud-ocr/<vendor>.ts`（一家一个文件：百度、智谱） |
 | `jobs` | 持久任务记录、状态机、重启恢复、事件流 | `domain/job-state-machine.ts` · `domain/idempotency.ts` · `application/use-cases/resume-jobs.ts` · `application/ports/job-store.ts` · `adapters/sqlite-job-store.ts` |
-| `formula` | 公式候选、校验、显示决策、兜底顺序 | `domain/formula-policy.ts`（兜底顺序与换层判据）· `domain/charset-check.ts` · `domain/equation-number.ts` · `domain/render-equivalence.ts` · `domain/crop-geometry.ts`（裁图外扩与 18px 参考字号）· `application/use-cases/decide-formula.ts` · `application/ports/latex-renderer.ts` · `adapters/katex-renderer.ts` · `adapters/arxiv-source-candidates.ts`（待 Q4） |
-| `quality` | 质量评估端口与结果规范化 | `domain/evaluation-status.ts`（verdict → 规范状态）· `domain/low-score-routing.ts`（阈值按类别）· `application/ports/quality-evaluator.ts` · `adapters/worker-quality-evaluator.ts` · `adapters/remote-quality-evaluator.ts` |
+| `formula` | 公式候选、校验、显示决策、兜底顺序 | `domain/formula-policy.ts`（候选优先级链与换层判据，§7.5）· `domain/charset-check.ts` · `domain/equation-number.ts` · `domain/render-equivalence.ts` · `domain/crop-geometry.ts`（裁图外扩与 18px 参考字号） · `application/use-cases/decide-formula.ts` · `application/ports/latex-renderer.ts` · `adapters/katex-renderer.ts`（安全配置见 §7.6） |
+| `formula-source` | arXiv 源码校准公式：编号与版本识别、源码下载缓存、TeX 解析、与版面区域对齐、对齐失败回落（Q4，§7.6） | `domain/arxiv-id.ts` · `domain/fetch-policy.ts`（间隔、超时、冷却）· `domain/archive-limits.ts`（解包安全上限）· `domain/tar-reader.ts`（纯 tar 读取，gunzip 经端口注入）· `domain/tex-units.ts`（TeX → 公式单元）· `domain/macro-table.ts`（导言区宏 → KaTeX 宏，带展开上限）· `domain/source-align.ts`（词序列对齐与覆盖率）· `domain/align-policy.ts`（逐公式核对与回落判定）· `application/use-cases/resolve-arxiv-source.ts` · `application/use-cases/align-source.ts` · `application/ports/arxiv-source-client.ts` · `application/ports/source-cache.ts` · `application/ports/gunzip.ts` · `adapters/arxiv-http-client.ts` · `adapters/node-gunzip.ts` · `adapters/sqlite-source-cache.ts` |
+| `quality` | 质量评估端口、结果规范化、全路径评分不变式、部署推荐 | `domain/evaluation-status.ts`（verdict → 规范状态）· `domain/scoring-coverage.ts`（每个识别候选必须有评估记录，Q1）· `domain/low-score-routing.ts`（阈值按类别与 `evaluatorVersion`）· `domain/deployment-recommendation.ts`（本机 / 远程推荐，Q9）· `application/ports/quality-evaluator.ts` · `application/use-cases/evaluate-regions.ts` · `application/use-cases/reevaluate-pending.ts`（评分服务恢复后补评）· `adapters/worker-quality-evaluator.ts`（唯一实现：经 worker-client 提交 `evaluate` 作业） |
 | `repair` | 低分 / 不确定区域的多模态补救、预算账本 | `domain/repair-plan.ts` · `domain/budget-ledger.ts`（预留 / 结算 / 上限）· `domain/repair-limits.ts`（次数、并发、超时上限）· `application/use-cases/run-repair.ts` · `application/ports/multimodal-provider.ts` · `adapters/openai-compatible-multimodal.ts` |
 | `translation` | 自然语言翻译、占位保护、完整性校验、润色、缓存 | `domain/placeholder.ts`（抽取与恢复）· `domain/integrity-check.ts`（公式 / 数字 / 引用）· `domain/cache-key.ts` · `domain/segmenter.ts` · `application/use-cases/translate-page.ts` · `application/use-cases/polish-translation.ts` · `application/ports/translation-provider.ts` · `adapters/providers/<vendor>.ts`（一家一个文件） |
 | `reader` | PDF 显示、页面虚拟化、对照跳转、裁图显示（仅 renderer） | `domain/pairing.ts`（块配对与跟随）· `domain/scroll-sync.ts` · `domain/viewport-mapping.ts` · `ui/pdf-page-canvas.tsx` · `ui/page-virtualizer.ts` · `ui/readout-pane.tsx` · `ui/formula-view.tsx` · `ui/selection-toolbar.tsx` · `ui/hooks/use-document-session.ts` |
-| `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx` |
+| `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `application/use-cases/get-notes-by-ids.ts`（按 ID 批量只读，写作预留，§4.4） · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx` |
 | `qa` | 论文问答、上下文选取、引用 | `domain/context-selection.ts` · `domain/citation.ts` · `application/use-cases/ask.ts` · `application/ports/chat-provider.ts` · `ui/ask-panel.tsx` |
 | `voice` | TTS 朗读 / 讲解、ASR 语音笔记 | `domain/speech-script.ts` · `domain/audio-segment.ts` · `application/ports/tts-port.ts` · `application/ports/asr-port.ts` · `application/use-cases/generate-narration.ts` · `application/use-cases/transcribe-note.ts` |
-| `settings` | 非密钥设置、provider 配置、密钥引用绑定、预算设置 | `domain/provider-config-validate.ts` · `domain/budget-settings.ts` · `domain/translation-fallback.ts`（未配置翻译时是否借用多模态服务，默认关；待 Q11） · `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
+| `settings` | 非密钥设置、provider 配置、密钥引用绑定、预算设置 | `domain/provider-config-validate.ts` · `domain/budget-settings.ts` · `domain/translation-fallback.ts`（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/evaluator-deployment.ts`（Jev 本机 / 远程选择与推荐值的关系，Q9）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
 | `diagnostics` | 诊断事件记录、诊断包导出、脱敏 | `domain/redaction-rules.ts`（自 v1 移植）· `domain/retention.ts`（保留天数与体积上限）· `application/use-cases/export-bundle.ts` · `ui/diagnostics-page.tsx` |
 
 ### 4.3 切片之间的依赖（允许的方向）
@@ -190,6 +343,9 @@ flowchart TD
   parsing --> document
   parsing --> jobs
   formula --> document
+  fsrc["formula-source"] --> document
+  fsrc --> formula
+  fsrc --> jobs
   quality --> document
   repair --> quality
   repair --> formula
@@ -205,12 +361,67 @@ flowchart TD
   voice --> jobs
   settings
   diagnostics
+  writing["writing（预留，v2 不建）"] -.-> notes
+  writing -.-> library
+  writing -.-> document
+  writing -.-> qa
 ```
 
-- 箭头表示「可以 import 对方的 `index.ts`」。图上没有的边一律禁止，CI 用 dependency-cruiser 按此矩阵检查。
+- 箭头表示「可以 import 对方的 `index.ts`」。图上没有的边一律禁止，CI 用 dependency-cruiser 按此矩阵检查。虚线是 `writing` 的预留边（§4.4），v2 不进 dependency-cruiser 矩阵。
+- `formula-source` 依赖 `formula` 的公开核对函数（字符集、编号、可渲染性），而不是反过来：`formula` 只从 `document` 读取候选，不知道候选来自 arXiv 还是引擎。
 - `document` 与 `jobs` 不依赖任何其他切片。`settings`、`diagnostics` 不被业务切片 import：业务切片通过端口拿到配置与日志器，由装配根注入。
 - `reader` 只有 ui 与纯 domain，不出现在图中：它通过 `window.oi` 调用其他切片的 IPC 命令，不 import 其他切片。
 - 新增一条边需要 ADR，并在同一个 PR 里更新本图与 dependency-cruiser 配置。
+
+### 4.4 预留切片 `writing`（Q5）
+
+决定：写作辅助（带引用的大纲、段落草稿）移出 v2 实现范围，但架构提前设计好。v2 **不建** `packages/features/writing/` 目录、不写代码；v2 要做的是保证下面列出的数据与 seam 已经存在且有测试（PRD AC-27），后续阶段按本节直接落地，不需要改动已有切片的形状。
+
+**位置**：`packages/features/writing/`，结构同 §3.1 模板；UI 放入外壳预留的插槽 `writing.main`、`writing.side`（v2 只登记插槽名，不注册组件）；IPC 通道名 `writing.*` 与 SQLite 表前缀 `wr_` 在命名登记中保留，v2 不得被其他切片占用。
+
+**依赖的数据模型**（全部由 v2 已有切片提供）：
+
+| 数据 | 来源 | 写作的用途 | v2 必须保证 |
+| --- | --- | --- | --- |
+| 笔记 `Note` | `notes` | 写作素材 | 稳定 ID；含 `ContentAnchor`、原文引文、用户正文、标签；seam 提供 `getNotesByIds`（批量只读） |
+| 引用 `Citation` | `contracts/src/citation.ts` | 段落里的出处 | 能解析到（文献、采用版本、页、块）；无法定位时为「未核对」，不冒充已核对 |
+| 文献引用元数据 | `library` | 参考文献列表 | 标题、作者、年份、DOI、arXiv 编号与版本（版本来自 `formula-source` 的识别结果）；seam 提供 `getBibliographicRecords` |
+| 采用版本的原文块 | `document` | 引文核对 | `getAcceptedRevision` 返回块文本、页、bbox |
+| 问答回答 | `qa` | 可选素材 | 回答带 `Citation`；问答会话持久化（PRD S8） |
+
+**seam 草案**（只含普通数据，遵守 §2.4）：
+
+```ts
+// packages/features/writing/src/index.ts —— 预留草案，v2 不实现
+export type DraftOutlineInput = Readonly<{
+  topic: string;
+  noteIds: readonly NoteId[];
+  documentIds: readonly DocumentId[];
+  targetLang: 'zh-CN' | 'en';
+}>;
+export type DraftParagraphInput = Readonly<{ outlineId: OutlineId; sectionIndex: number; style: 'academic' | 'plain' }>;
+export type DraftClaim = Readonly<{ text: string; citations: readonly Citation[]; unsourced: boolean }>;
+export type WritingError =
+  | Readonly<{ code: 'no_sources' }>
+  | Readonly<{ code: 'citation_unresolved'; claimIndex: number }>
+  | Readonly<{ code: 'provider_not_configured' }>
+  | Readonly<{ code: 'budget_exhausted'; reservedMinor: number; limitMinor: number }>;
+
+export interface WritingSeam {
+  draftOutline(input: DraftOutlineInput): Promise<Result<{ jobId: JobId }, WritingError>>;
+  draftParagraph(input: DraftParagraphInput): Promise<Result<{ jobId: JobId }, WritingError>>;
+  exportDraft(input: Readonly<{ draftId: DraftId; format: 'markdown' | 'bibtex' }>): Promise<Result<{ assetId: AssetId }, WritingError>>;
+}
+// pure.ts：verifyClaims(claims: readonly DraftClaim[]): readonly ClaimCheck[] —— 每条论断要么带可定位引用，要么显式 unsourced
+```
+
+**扩展点**：
+
+1. 插槽 `writing.main` / `writing.side`（外壳登记名）。
+2. 端口复用：模型调用复用 `qa` 的 `ChatProvider` 端口；费用复用 `repair/domain/budget-ledger.ts` 的预留与结算规则，不另写计价。
+3. 引用核对复用 `qa/domain/citation.ts`（经 `qa` 的 seam 导出），写作不复制规则。
+4. 导出以 `notes/domain/markdown-export.ts` 的引用格式为基础；BibTeX 在写作阶段新增。
+5. 依赖方向：`writing` 只读依赖 `notes`、`library`、`document`、`qa` 的 seam；任何切片不得依赖 `writing`（§4.3 虚线）。
 
 ## 5. 依赖方向与禁止事项
 
@@ -234,7 +445,7 @@ flowchart TB
   PY["workers/parser（Python）"]
 
   UI --> UK
-  UI --> DOM
+  UI -- "只经 src/pure.ts" --> DOM
   UI --> C
   PRE --> C
   MAIN --> ADP
@@ -255,7 +466,7 @@ flowchart TB
   PY -. "生成的协议模型" .-> C
 ```
 
-只允许箭头方向。反方向（例如 domain → application、application → adapters、ui → application、platform-node → features）一律禁止。
+只允许箭头方向。反方向（例如 domain → application、application → adapters、ui → application、platform-node → features）一律禁止。ui 到 domain 的箭头只能经过本切片的 `src/pure.ts`（§2.4），不得 import domain 内部文件。
 
 ### 5.2 禁止事项（CI 强制或评审一票否决）
 
@@ -274,6 +485,9 @@ flowchart TB
 | F-11 | 手改生成文件（契约生成的 JSON Schema、Python 模型、preload API） | 两份定义漂移 | CI 重新生成并 `git diff --exit-code` |
 | F-12 | `any`、`@ts-ignore`、`eslint-disable` 无理由 | 绕过类型与规则 | ESLint：必须带说明；`@ts-expect-error` 需描述 |
 | F-13 | 引擎 / 模型 / 服务商名写死在 domain 或 application | 可替换性 | 名称只出现在 adapters 与配置 |
+| F-14 | core（domain、application、seam、`contracts`、`kernel`）import UI、React、框架组件、DOM、路由、样式，包括 type-only 导入 | Q3 约束（§2.1）；v1 `lib/pdf-blocks.js` 把 DOM 裁图混进块规则 | G13、G14 |
+| F-15 | 业务规则（校验、计价、状态转移、权限、失败条件）写在组件、hooks 或 `ipc-handlers.ts` 里 | Q3 执行规则 1；v1 `viewer.js` 中状态判定与渲染写在同一组函数（§14.2 第 4 条） | 评审清单（RULES §5）+ G16：规则必须有经 seam 的 core 测试 |
+| F-16 | 同一 PR 同时改 UI 与 core；为迁就页面改 seam 参数或返回形状 | Q3 执行规则 2、3 | G17 |
 
 ### 5.3 UI 组合：插槽而不是互相 import
 
@@ -307,16 +521,22 @@ flowchart TB
 
 ```mermaid
 flowchart TD
-  IN["原 PDF + SHA-256"] --> PRE["预处理<br/>文字层检测 · 页面渲染 · 坐标帧<br/>（A、B 共用同一张页面图）"]
-  PRE --> A["引擎 A：模块化<br/>版面检测 · 文字层对齐 / OCR 兜底<br/>公式识别 · 表格 · 自写阅读顺序"]
+  IN["原 PDF + SHA-256"] --> PRE["预处理（pypdfium2）<br/>文字层检测 · 页面渲染 · 坐标帧<br/>（所有识别来源共用同一张页面图）"]
+  IN --> AX["公式来源：arXiv 源码（§7.6）<br/>编号 + 版本 → 下载缓存 → TeX 解析 → 区域对齐<br/>对齐失败的公式不产生候选"]
+  PRE --> A["引擎 A：模块化<br/>版面检测（标准档 V3 / 高质量档 plus-L）<br/>文字层对齐 / OCR 兜底 · 公式识别 · 表格 · 自写阅读顺序"]
   PRE --> B["引擎 B：端到端流水线<br/>版面 → 裁剪 → 识别 → 组装<br/>（对比与兜底）"]
+  PRE --> CO["云 OCR（可选，BYOK，§7.7）<br/>按版面区域裁片识别"]
   PRE --> T["文字层基础档<br/>（无服务时降级，TS 实现）"]
   A --> N["规范化为统一文档模型<br/>（候选页 PageCandidate）"]
   B --> N
+  CO --> N
   T --> N
-  N --> Q["质量评估<br/>按区域打分（text / formula / table）<br/>只有 scored 算分"]
-  Q --> D{"有效低分<br/>或公式有明确不确定证据？"}
-  D -- "否（含评分错误 / 未评分）" --> ACC["采用：AcceptedPageRevision"]
+  AX -- "对齐通过的公式候选" --> N
+  N --> Q["质量评估（Jev）<br/>所有识别候选都评分（Q1）<br/>按区域：text / formula / table；只有 scored 算分"]
+  Q --> D{"按 §7.5 优先级链选出的候选<br/>是否有效低分或有明确不确定证据？"}
+  D -- "否" --> ACC["采用：AcceptedPageRevision"]
+  D -- "评分错误 / 不可用 / 阈值未定标" --> PEND["采用并标「待评分」<br/>不算已核验、不触发补救<br/>评分恢复后自动补评"]
+  PEND --> ACC
   D -- "是，且补救开启、预算可用" --> RP["区域补救（仅目标区域）<br/>先试引擎 B 区域候选（若声明支持）<br/>仍低分再调用多模态"]
   D -- "是，但补救关闭 / 预算到限" --> FB["保留原图 + 候选，标待复核"]
   RP --> Q2["重新校验 + 重新评分"]
@@ -329,11 +549,14 @@ flowchart TD
 
 流水线约束（上游核实结论见差异清单 §2）：
 
-- **当前选型**（只写在 adapters 与配置里，F-13）：引擎 A = 版面模型（PP-DocLayoutV3 或 PP-DocLayout_plus-L，Q10）+ PP-FormulaNet 系列 + PaddleOCR 兜底 + 自写阅读顺序；引擎 B = MiniCPM-OCR 1.0 官方 SDK（`minicpm-ocr`，版面后端用 `ppdoclayout3_torch`，不依赖 PaddlePaddle）；质量评估 = MiniCPM-OCR Jev（部署见 §7.4）。型号、SDK 版本、上游提交与权重 sha256 记入 `EngineCapabilities.models[]` 与每次 `ParseRun`。
-- **版面同源**：B 的 SDK 固定使用 PP-DocLayoutV3，阅读顺序也来自它，而不是来自 OCR 模型。A 若同样选 V3，A/B 的版面判断同源：对比视图必须标注「版面同源」，A/B 一致不能作为互相印证的证据。
-- **页面图**：预处理统一渲染页面图并生成 `CoordinateFrame`；A、B 使用同一张图。B 以图片输入 SDK，不安装其 `pdf` extra（该 extra 依赖 PyMuPDF）。预处理默认用 pypdfium2，是否改用 PyMuPDF 见 Q6。
+- **当前选型**（只写在 adapters 与配置里，F-13）：引擎 A = 版面模型 + PP-FormulaNet 系列 + PaddleOCR 兜底 + 自写阅读顺序；引擎 B = MiniCPM-OCR 1.0 官方 SDK（`minicpm-ocr`，版面后端用 `ppdoclayout3_torch`，不依赖 PaddlePaddle）；质量评估 = MiniCPM-OCR Jev（部署见 §7.4）。按 Q1，MiniCPM-OCR 1.0 与 Jev 照用：锁定上游提交、SDK 版本与权重 sha256，记入 `EngineCapabilities.models[]` 与每次 `ParseRun`，M6 开工前复核一次。
+- **引擎 A 的版面档位（Q10）**：标准档 = PP-DocLayoutV3，M3 起步即用；基准集另跑 PP-DocLayout_plus-L 对照。plus-L 若在阅读顺序与版面指标上「明显更好」（判据待基准定标，PRD QM-13），作为「高质量档」在设置中供用户选择；否则不开放。档位是配置值，记入 `ParseRun`，切换只影响新的解析，不改已采用版本。
+- **版面同源**：B 的 SDK 固定使用 PP-DocLayoutV3，阅读顺序也来自它，而不是来自 OCR 模型。A 用标准档（V3）时，A/B 的版面判断同源：对比视图必须标注「版面同源」，A/B 一致不能作为互相印证的证据。A 用高质量档（plus-L）时不同源，但 plus-L 不输出阅读顺序，顺序完全由自写算法给出。
+- **页面图（Q6）**：预处理统一用 pypdfium2 渲染页面图并生成 `CoordinateFrame`；所有识别来源使用同一张图。B 以图片输入 SDK，不安装其 `pdf` extra（该 extra 依赖 PyMuPDF）。PyMuPDF 禁止引入（AGPL，与本项目 Apache-2.0 许可证政策冲突，RULES §1.5）。
+- **全路径评分（Q1）**：所有产出识别结果的路径——引擎 A、引擎 B、云 OCR（百度、智谱等）、arXiv 源码对齐、多模态补救——产出的候选都必须经过 Jev 评分，结果写入候选的 `EvaluationResult`。`quality/domain/scoring-coverage.ts` 是唯一判定处：没有评估记录的识别候选不能进入采用版本；评分服务错误或不可用时，记录为 `error` / `unavailable` 并标「待评分」，可以采用用于阅读，但不算已核验、不触发补救，评分恢复后由 `reevaluate-pending` 自动补评。文字层基础档的文字直接取自 PDF 文字层，不是识别结果，不在此列；但其公式区域不产生 LaTeX 候选，只显示原页裁图。
+- **低分再补**：只有经 §7.5 优先级链选出、且有效低分（`scored` 且低于该类别、该 `evaluatorVersion` 的阈值）或有明确不确定证据的区域才进入多模态补救；补救结果是新的识别候选，同样重新校验、重新评分。
 - **补救时序**：某区域的补救必须在该区域进入采用版本**之前**完成；已采用区域的翻译可以与其他区域的补救并行，但同一区域不能先用未核验内容翻译。
-- **评分错误不是低分**：评分错误、未配置、未运行的区域照常进入采用版本并标「未评分」；公式仍按 `formula-policy` 默认显示原页裁图。它们不进入补救（PRD AC-05）。
+- **评分错误不是低分**：评分错误、未配置、未运行、阈值未定标的区域不进入补救（PRD AC-05）；公式仍按 `formula-policy` 默认显示原页裁图。
 
 ### 7.2 Python 侧引擎接口（worker 内部）
 
@@ -362,9 +585,10 @@ class ReadingOrderer(Protocol):         # 自写算法；版本号进入产物
     version: str
     def order(self, regions: list[LayoutRegion]) -> list[str]: ...
 
-# 可选：worker 本机托管的质量评估模型（默认不启用，见 §7.4、Q9）
-class QualityEvaluatorModel(Protocol):
+# 质量评估后端（§7.4、Q9）：本机推理与远程 HTTP 两种实现，对 api/ 暴露同一个接口
+class QualityEvaluatorBackend(Protocol):
     max_batch: int                      # Jev 为 64
+    def describe(self) -> EvaluatorDescriptor: ...   # 部署方式、模型版本、渲染环境、template_md5 → evaluatorVersion
     def evaluate(self, items: list[EvalItem]) -> list[EvalOutcome]: ...
     # EvalItem: 原区域图 + 候选文本 + 类别（text / formula / table）+ 可选渲染图
     # EvalOutcome: 上游原始 verdict 与原始分，原样返回；规范化在 TS 的 quality/domain 完成
@@ -381,8 +605,12 @@ interface ParseGateway {                       // features/parsing/application/p
   cancel(jobId: JobId): Promise<CancelReceipt>;
   fetchCandidate(ref: ArtifactRef): Promise<PageCandidate>;
 }
-interface QualityEvaluator {                   // features/quality/application/ports
-  evaluate(input: RegionEvaluationInput): Promise<EvaluationResult>; // 非 scored 状态不得带分数
+interface QualityEvaluator {                   // features/quality/application/ports；唯一实现 worker-quality-evaluator
+  evaluate(input: RegionEvaluationInput): Promise<EvaluationResult>; // 非 scored 状态不得带分数；带 evaluatorVersion
+}
+interface OcrProvider {                        // features/parsing/application/ports（云 OCR，§7.7）
+  capabilities(): OcrCapabilities;             // 行级坐标、是否识别公式、单次图片上限、计费单位
+  recognize(input: OcrRegionInput): Promise<OcrRegionCandidate>; // 输入版面区域裁片；输出是候选，必须送评（Q1）
 }
 interface MultimodalRepairProvider {           // features/repair/application/ports
   estimate(input: RepairInput): Promise<CostEstimate | 'unknown'>;
@@ -401,21 +629,102 @@ interface LatexRenderer { check(latex: string): RenderCheck }   // 只证明语�
 - 引擎不支持区域级解析时必须在 `capabilities` 里声明；用例据此拒绝或显示「需整页运行」及估算费用，不能隐式扩大收费范围。
 - 质量评估的 `error` / `unavailable` / `not-run` 不得触发补救（AC-05）。
 - 上游 verdict 的规范化只在 `quality/domain/evaluation-status.ts` 做，上游原值保存在 `providerVerdict`。以 Jev 为例：`scored` → `scored`（带 `rawScore`）；`precheck_reject` → `error/invalid_candidate`；`render_error` → `error/render_failed`；`missing_original_image` → `error/missing_image`；`encode_error` → `error/encode_failed`；`forward_error` → `error/service_failed`；其他任何值 → `error/unknown_verdict`。上游返回的 0.0 / -1.0 占位分一律丢弃。
-- 阈值按（类别, `evaluatorVersion`）分别定标；`evaluatorVersion` 包含模型版本与部署方式（含渲染环境）。上游默认阈值 0.5 不使用（PRD QM-05）。
+- 阈值按（类别, `evaluatorVersion`）分别定标；`evaluatorVersion` 包含模型版本、部署方式、推理后端与量化档、渲染环境。上游默认阈值 0.5 不使用（PRD QM-05）。某个 `evaluatorVersion` 尚无定标阈值时，分数照常记录，但 `low-score-routing` 返回「未定标」，不触发补救。
 - 补救、翻译都经过 `budget-ledger` 预留；预留失败即进入 `waiting-budget`。
 
 ### 7.4 质量评估的部署（Q9）
 
-| 部署 | 适配器 | 分数可比性 | 硬件（官方说法） |
-| --- | --- | --- | --- |
-| 官方云 API（默认候选） | `quality/adapters/remote-quality-evaluator.ts` | 与 Docker 镜像一致 | 本机无要求；开通条件与价格未核实 |
-| 用户自建 Docker 服务（默认候选） | 同上，只换 Base URL 与 `secretRef` | 与云 API 一致，可与官方数值直接比较 | Linux + NVIDIA ≥ 12 GB、驱动 ≥ 535 |
-| worker 本机 SDK 部署（可选，默认关） | `quality/adapters/worker-quality-evaluator.ts` → `oi_worker/quality/` | 排序稳定，绝对值可能与 Docker 有差异，须单独定标 | NVIDIA ≥ 8 GB 或 Apple M 系列 ≥ 16 GB 统一内存 |
+决定：Jev 同时支持本机与远程运行，用户在设置里选择；默认按机器硬件推荐，用户随时可改。开发机（32 GB）必须能在本机跑通。
 
-- 最低目标设备（8 GB 核显 / M1 8 GB）不满足本机部署条件，设置界面只在能力探测通过后才提供本机选项。
-- macOS 上官方只支持纯评分服务（渲染图由调用方提供），本机模式在 macOS 需要 worker 自己渲染候选文本，分数不能与官方数值比较；因此 macOS 本机模式排在 Linux / Windows 之后评估。
-- 适配器在健康检查时记录服务返回的模板指纹（Jev Docker API 的 `template_md5`）；指纹变化视为新的 `evaluatorVersion`，旧阈值不再适用。
+**worker 接口对两种部署一致。** 桌面端只有一个适配器 `quality/adapters/worker-quality-evaluator.ts`：经 `worker-client` 向 worker 提交 `POST /v1/jobs`（`kind: "evaluate"`），请求与产物使用同一份 schema（`contracts/src/worker/evaluate.ts`）。本机与远程的差别只在 worker 地址与鉴权（§10.1），与解析作业完全相同。worker 内部由 `quality/backends/` 选择后端，两种后端实现同一个 `QualityEvaluatorBackend`（§7.2）：
+
+| 设置中的选择 | 请求发往 | worker 内后端 | 分数可比性 | 硬件（官方说法） |
+| --- | --- | --- | --- | --- |
+| 本机 | 本机 worker（`127.0.0.1`） | `local_engine`：本机推理引擎（llama.cpp / Ollama 的 GGUF 路线）+ Jev 评分服务层 | 排序稳定，绝对值与 Docker / 云 API 可能不同；渲染图由 worker 自备，分数不能与官方数值比较，必须单独定标 | NVIDIA ≥ 8 GB 显存，或 Apple M 系列 ≥ 16 GB 统一内存 |
+| 远程：自建 worker | 远程 worker | `local_engine`（在服务器上推理，可用 vLLM / SGLang） | 同上，按服务器环境单独定标 | vLLM ≥ 12 GB、SGLang ≥ 16 GB、llama.cpp / Ollama ≥ 8 GB 显存 |
+| 远程：官方云 API | 本机或远程 worker | `jev_http`（图片带 `data:image/png;base64,` 前缀） | 与 Docker 一致，可与官方数值直接比较 | 本机无要求；开通条件与价格**未核实** |
+| 远程：用户自建 Docker 服务 | 本机或远程 worker | `jev_http`（图片**不带**前缀） | 与云 API 一致 | Linux + NVIDIA ≥ 12 GB、驱动 ≥ 535 |
+
+- 本机 worker 只做转发时不加载任何模型，只装基础依赖；基础安装体积**未实测**，M1 统计。
+- `jev_http` 统一处理两种图片编码差异，由契约测试覆盖两种形态；Jev 云 API 的凭据按 §1 的约定只随作业传入。
+- 两种后端都把上游 verdict 与原始分原样放进产物；规范化只在 TS 的 `quality/domain/evaluation-status.ts` 做（§7.3），本机与远程走同一条规范化路径。
+
+**推荐规则**（`quality/domain/deployment-recommendation.ts`，纯函数，示例见 §2.6）：
+
+1. Apple Silicon 且统一内存 ≥ 16 GB → 推荐本机（`apple-silicon-16gb`）。
+2. NVIDIA 独显且显存 ≥ 8 GB → 推荐本机（`nvidia-8gb`）。Jev 官方部署文档只覆盖 Linux + NVIDIA 与 macOS，Windows 上 `platformDocumented = false`，界面注明「官方文档未覆盖 Windows」。
+3. 其他情况（含 8 GB 内存核显机、M1 8 GB）→ 推荐远程（`below-official-minimum`）。
+4. 推荐值只是默认，用户随时可改。选择「本机」但未达官方下限时，界面注明「不在官方硬件要求内，速度与可用性未核实」，仍允许尝试。
+5. 本机模式启用前必须通过官方启动自检与参考样例比对（上游说明：只有启动自检能确认后端可用；参考样例三项分数与参考值相差 0.02 以内为正常，见 MiniCPM-OCR `1269e4f` 的 `docs/llamacpp_deploy_jev_en.md:326`）。不通过则不启用本机模式，保留原来的选择并提示原因。
+
+硬件画像来源：main 进程提供操作系统、架构、总内存；GPU 厂商与显存由 worker `runtime/` 设备探测，经 `GET /v1/capabilities` 返回。画像只含普通数据，交给纯函数判断。
+
+**切换的语义**：
+
+- 切换只影响之后提交的 `evaluate` 作业；在途作业按原部署完成。
+- 每条 `EvaluationResult` 带 `evaluatorVersion`；切换部署即产生新的 `evaluatorVersion`，旧结果保留原版本、不改写。
+- 新 `evaluatorVersion` 没有定标阈值时只记分、不路由（§7.3），不触发补救。
+- 适配器在健康检查时记录 Docker API 返回的 `template_md5` 与本机渲染环境指纹；指纹变化视为新的 `evaluatorVersion`，旧阈值不再适用。
 - 适配器按 64 项分批；单次请求失败只影响该批，按 `error/service_failed` 记录，不扩大为整页失败。
+
+**开发机（32 GB）本机跑通。** 开发机若是 Apple M 系列，或带 ≥ 8 GB 显存的 NVIDIA 显卡，满足官方要求（上游自测环境之一是 Apple M5 / 16 GB，`docs/SKILL_jev_en.md:556`）。若开发机是没有 NVIDIA 独显的 x86 机器，官方文档没有 CPU 推理路线，能否本机跑**未核实**；需要先确认开发机型号。M6 的退出条件要求开发机在本机模式下通过启动自检与参考样例比对（PRD §8）。
+
+**macOS 与 Windows 的本机渲染。** 上游「渲染 + 评分」服务依赖 `apt-get` 固定字体环境，只支持 Linux；macOS 只能跑纯评分服务、由调用方提供渲染图。桌面的两个目标平台都不是 Linux，所以本机模式下由 worker 的 `quality/render/` 自己把候选文本渲染成图，渲染器与字体包版本固定并写入 `evaluatorVersion`。具体渲染实现 M6 选定，这是本机模式最大的实现风险。
+
+### 7.5 公式候选优先级链（Q1、Q4）
+
+`formula/domain/formula-policy.ts` 按以下顺序为每个公式区域选择要采用的候选。每一步的候选都必须已有评估记录（§7.1「全路径评分」）：
+
+1. **arXiv 源码候选**：对齐通过（§7.6），程序核对（位置、字符集、编号、可渲染）通过，且 Jev `scored` 不低于阈值 → 采用为「已核验 LaTeX（来源：arXiv 源码）」。
+2. **识别候选**（引擎 A、引擎 B、云 OCR）：程序核对通过且 Jev 不低于阈值 → 采用为已核验 LaTeX。多个候选都通过时按（评分、来源权重）排序，来源权重是配置值，由基准定标。
+3. **补救**：选出的候选有效低分或有明确不确定证据，且补救开启、预算可用 → 多模态补救；补救结果重新核对、重新评分，通过则采用。
+4. **其余情况** → 显示原页裁图，保留全部候选供查看与复制；评分不可用的标「待评分」。
+
+arXiv 候选不因「来自源码」而免评分或免核对：源码版本可能与 PDF 不一致，对齐也可能错位。arXiv 候选低分时直接进入第 2 步；补救的对象是区域，不是某个来源。
+
+### 7.6 公式来源模块 `formula-source`（Q4）
+
+决定：做，arXiv 源码校准公式进入 M0–M8（PRD §8：M4 交付模块，M6 接入评分与优先级链）。v1 已有完整实现，可复用的规则与测试见 [v1 审查](./docs/v1-review.md) §4.17。
+
+```mermaid
+flowchart LR
+  ID["编号与版本识别<br/>第 1 页戳 / 元数据 / 用户输入"] --> C{"本地缓存<br/>（编号, 版本）"}
+  C -- "命中" --> P
+  C -- "未命中" --> F["下载<br/>≥ 3 s 间隔 · 单连接 · 20 s 超时<br/>403 / 429 → 冷却 24 h"]
+  F --> U["解包<br/>gzip（tar 或单个 tex）<br/>路径与体积上限检查"]
+  U --> P["TeX 解析<br/>主文件 · \input · 宏 · 公式单元 · 编号"]
+  P --> AL["与版面区域对齐<br/>整体词覆盖率 · 逐公式核对"]
+  AL -- "通过" --> CAND["arXiv 公式候选<br/>→ 统一文档模型 → Jev（§7.5）"]
+  AL -- "失败" --> FB["回落：该公式只走识别链路<br/>记录原因码"]
+```
+
+| 子能力 | 规则（domain，纯函数） | 实现（adapters） | v1 来源（`96f1dfe`） |
+| --- | --- | --- | --- |
+| 编号与版本识别 | 新格式 `NNNN.NNNNN` 与旧格式 `archive/NNNNNNN`，可带 `vN`；来源优先级：第 1 页 arXiv 戳 → PDF 元数据与文件名 → 用户输入。没有版本时取最新版并标「版本未知」：对齐门槛不放松，逐公式核对决定是否采用，界面注明来源版本未确认 | — | `lib/arxiv-id.js:5-8`、`:34-49`、`:84-113` |
+| 下载 | 两次请求间隔 ≥ 3 s、同一时刻单连接、超时 20 s；403 / 429 进入 24 h 冷却并持久化；离线、超时、HTTP 错误、解包失败各有原因码；不得为绕过限流使用多连接或多机 | `arxiv-http-client.ts` 经 `platform-node/http`；端点沿用 v1 的 `https://arxiv.org/src/<编号><版本>`，是否改用 arXiv 为程序访问推荐的 `export.arxiv.org` **未核实**，M4 开工前确认 | `background/arxiv-source.js:8-10`、`:17-24`、`:178`、`:237-267` |
+| 缓存 | 源码缓存键 =（编号, 版本）；对齐结果另存，键 =（编号, 版本, PDF sha256, 对齐算法版本）；二次打开不下载、不重算；「只有 PDF、没有源码」也缓存，避免重复请求；清缓存不清冷却记录 | `sqlite-source-cache.ts`（表前缀 `fsrc_`）+ 文件资产 | `background/arxiv-source.js:26-33`、`:312-339`、`:378-384`；`lib/formula-arxiv-gate.js:31-45` |
+| 解包 | 只接受 gzip（tar 或单个 tex）；拒绝路径穿越、绝对路径、符号链接与硬链接、设备文件；文件数 ≤ 2000、解压后 ≤ 50 MB、单个资源 ≤ 30 MB；只写缓存目录 | `node-gunzip.ts`（Node `zlib`，带解压输出上限）；tar 读取是 domain 纯函数 `tar-reader.ts`（与 v1 相同，gunzip 注入），不引入新依赖 | `lib/arxiv-src-unpack.js:18`、`:262-302` |
+| TeX 解析 | 找主文件；跟随 `\input` / `\include`（只在包内、有深度上限）；数学环境与 `$…$`、`\[…\]` 抽成公式单元，带行内 / 行间、编号、所在节；导言区 `\newcommand` / `\def` 转成 KaTeX `macros`，展开次数受 `maxExpand` 限制 | — | `lib/latex-units.js:6-18`、`:40-75`、`:145-163` |
+| 与版面区域对齐 | n-gram 锚点分段的词序列对齐；整体词覆盖率 < 0.85 则整篇不用源码；逐公式核对：位置（落在版面公式区域内）、字符集、编号、可渲染，任一不过则该公式回落 | — | `lib/source-align.js:7-13`、`:17`；`lib/formula-tiers/arxiv.js:35-75`；`lib/formula-arxiv-gate.js:18-30` |
+| KaTeX 安全渲染 | `throwOnError: true`、`trust: false`、`maxSize: 20`、`maxExpand: 1000`、单个公式 ≤ 8000 字符；`\href`、`\url`、`\includegraphics`、`\html*` 一律判为不可渲染（KaTeX 在 `trust: false` 下不抛错，而是用错误色绘制，所以必须显式检查）；显示时只挂载 KaTeX 生成的 DOM，不把 HTML 字符串赋给节点 | `formula/adapters/katex-renderer.ts`（核对）与 `reader/ui/formula-view.tsx`（显示）共用 `formula` 的同一份选项常量 | `lib/formula-katex.js:1-30`、`:40-77` |
+| 回落 | 对齐失败、版本不符、超时、冷却中、解包被拒、KaTeX 不可渲染、Jev 低分：只让该公式（或整篇）回到识别链路，记录原因码；不弹错、不打断阅读 | — | `lib/formula-tiers/arxiv.js:66-75` |
+
+- **使用条款**：arXiv API 使用条款允许为个人使用或研究检索、存储、使用 e-print 内容，禁止在自己的服务器上存储并对外提供（[Terms of Use for arXiv APIs](https://info.arxiv.org/help/api/tou.html)，2026-10-30 查阅）。因此源码只缓存在用户本机：不上传远程 worker、不进诊断包、不随导出分发；导出的 Markdown 只含采用的公式 LaTeX。
+- **速率**：同一条款对旧版 API 的限制是「每三秒不超过一次请求、同一时间单连接，适用于用户控制的全部机器」。源码下载不在该条列举范围内，本项目仍按同一口径执行（v1 同为 3 s）。
+- **分层**：判断「现在能不能发请求」的规则在 `domain/fetch-policy.ts`，用可注入时钟测试；网络、文件与 SQLite 属于 shell。
+
+### 7.7 云 OCR 识别来源（Q1）
+
+用户可以配置第三方云 OCR（自带密钥）作为额外的识别来源。输入是版面区域裁片（版面来自引擎 A 或文字层基础档），输出是文字候选；坐标沿用我们自己的版面区域，不依赖服务商返回的坐标做定位。候选与引擎 A / B 一样进入统一文档模型，并且必须送 Jev 评分（§7.1）。
+
+| 服务 | 官方文档（2026-10-30 查阅） | 已从文档确认 | 未核实 |
+| --- | --- | --- | --- |
+| 百度智能云「通用文字识别（高精度含位置版）」 | [文档](https://cloud.baidu.com/doc/OCR/s/tk3h7y2aq) | `POST https://aip.baidubce.com/rest/2.0/ocr/v1/accurate`，`access_token` 鉴权；图片 / URL / PDF / OFD 四选一，base64 + urlencode 后 ≤ 10 MB；返回 `words_result[].words` 与行级 `location`（左上原点）；可选单字位置、行置信度、段落 | 学术公式（LaTeX）识别能力；计价与免费额度的当前值 |
+| 智谱 GLM-OCR 文档解析 | [API 参考](https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90)、[模型介绍](https://docs.bigmodel.cn/cn/guide/models/vlm/glm-ocr) | `POST https://open.bigmodel.cn/api/paas/v4/layout_parsing`，Bearer 鉴权，`model: "glm-ocr"`；PDF / JPG / PNG，单图 ≤ 10 MB、PDF ≤ 50 MB、≤ 100 页；返回 `md_results`、`layout_details[].bbox_2d` / `label` / `content` 与 `usage` | 公式输出格式与质量；官方宣称的 OmniDocBench V1.5 94.62 分（官方自测）；价格稳定性 |
+| 智谱 OCR 服务 | [文档](https://docs.bigmodel.cn/cn/guide/tools/zhipu-ocr) | `POST https://open.bigmodel.cn/api/paas/v4/files/ocr`，`tool_type` 目前只有 `hand_write`（手写体）；返回行级 `location` 与 `words` | 是否适用于印刷体论文；v2 只登记、默认不接入 |
+
+- 计价不写死：适配器上报计费单位（次 / 页 / token），单价来自用户配置，否则记「未知」（PRD QM-10）；每次调用都经预算账本预留。
+- M6 接入前按当时的官方文档逐字段复核；与本表不符时先更新本表与差异清单 §7，再写适配器（RULES §7）。
 
 ## 8. 数据模型与存储
 
@@ -435,7 +744,7 @@ interface LatexRenderer { check(latex: string): RenderCheck }   // 只证明语�
 └─ secrets.bin                  # safeStorage 密文；不入 SQLite、不随导出
 ```
 
-- 表按切片加前缀（`lib_`、`doc_`、`job_`、`tr_`、`note_`、`qa_`、`voice_`、`set_`、`diag_`），只有拥有该前缀的切片的 adapters 可以读写。跨切片查询走对方的用例，不跨前缀 JOIN。
+- 表按切片加前缀（`lib_`、`doc_`、`job_`、`fsrc_`、`tr_`、`note_`、`qa_`、`voice_`、`set_`、`diag_`；`wr_` 为 writing 预留），只有拥有该前缀的切片的 adapters 可以读写。跨切片查询走对方的用例，不跨前缀 JOIN。
 - 迁移文件放在各切片 `migrations/`，运行器按（切片, 版本号）排序执行并记录在 `schema_migrations`；**两个切片的迁移永远不会改同一个文件**。
 - 写入顺序：资产写暂存 → 校验摘要 → 事务内写引用 → 提交。失败不留半份文献。
 - 采用版本切换使用乐观锁（比较旧 `revisionId`）；过期任务结果不能覆盖新版本。
@@ -474,14 +783,14 @@ interface LatexRenderer { check(latex: string): RenderCheck }   // 只证明语�
 | 鉴权 | 每次启动生成的一次性 Bearer 令牌（经 stdin 传入，不进命令行参数） | 服务令牌（`secretRef`） |
 | 资产 | 统一上传，不传本机路径 | 统一上传 |
 
-备选方案（stdio JSON-RPC）及取舍见差异清单 Q7。
+Q7 已决定：本机与远程同一协议 HTTP + SSE；stdio JSON-RPC 不采用（取舍见差异清单 §6）。
 
 ### 10.2 端点
 
 | 方法与路径 | 作用 |
 | --- | --- |
 | `GET /v1/health` | 存活与协议版本 |
-| `GET /v1/capabilities` | 可用引擎、模型清单（名称、版本、权重摘要）、是否支持区域解析、取消方式、资源限制 |
+| `GET /v1/capabilities` | 可用引擎、模型清单（名称、版本、权重摘要）、是否支持区域解析、取消方式、资源限制；设备探测结果（GPU 厂商、显存）；可用的质量评估后端与 `evaluatorVersion`（§7.4） |
 | `POST /v1/assets` | 上传 PDF / 页面图，返回 `ArtifactRef {id, sha256, mediaType}` |
 | `POST /v1/jobs` | 提交 `parse` / `evaluate` / `render`，带 `idempotencyKey`、`engineId`、页范围、配置摘要；返回 `202 {jobId}` |
 | `GET /v1/jobs/{id}` | 阶段、已完成页、错误、是否可重试 |
@@ -497,28 +806,33 @@ interface LatexRenderer { check(latex: string): RenderCheck }   // 只证明语�
 
 ```text
 workers/parser/
-├─ pyproject.toml            # uv；重依赖放 optional extras：engine-a（Paddle）、engine-b（torch + minicpm-ocr，不含其 pdf extra）、jev-local
+├─ pyproject.toml            # uv；重依赖放 optional extras：engine-a（Paddle）、engine-b（torch + minicpm-ocr，不含其 pdf extra）、jev-local（本机推理）；基础安装只含 FastAPI、pypdfium2 等轻依赖
 ├─ oi_worker/
 │  ├─ __main__.py            # 入口：读配置 → 装配 → 启动服务（≤150 行）
 │  ├─ api/                   # FastAPI 路由：一个资源一个文件（health / jobs / assets / artifacts / auth / sse）
 │  ├─ protocol/              # 生成的 pydantic 模型，禁止手改
 │  ├─ jobs/                  # 任务注册、取消令牌、工作目录生命周期
-│  ├─ preprocess/            # 打开 PDF、文字层、页面渲染、坐标帧：一个职责一个文件；默认 pypdfium2（Q6）
+│  ├─ preprocess/            # 打开 PDF、文字层、页面渲染、坐标帧：一个职责一个文件；只用 pypdfium2（Q6，禁止 PyMuPDF）
 │  ├─ engines/
 │  │  ├─ base.py             # §7.2 的 Protocol
 │  │  ├─ modular_a/          # layout.py / text_align.py / ocr_fallback.py / formula.py / table.py / assemble.py
 │  │  ├─ reading_order/      # columns.py / xy_cut.py / cross_column.py / continuation.py
 │  │  └─ e2e_b/              # pipeline_adapter.py（以页面图调用 SDK）/ mapping.py（块级记录 → 候选页；block_id、order 只作运行内标识）
-│  ├─ quality/               # 可选：本机 SDK 部署的 Jev 适配，原样返回 verdict（默认不启用，§7.4）
+│  ├─ quality/               # Jev 评分（§7.4）：本机与远程 worker 同一代码
+│  │  ├─ backends/           # local_engine.py（本机推理 + 评分服务层）/ jev_http.py（官方云 API、Docker API，处理前缀差异）
+│  │  ├─ render/             # 本机模式自备渲染图：固定渲染器与字体版本，写入 evaluatorVersion
+│  │  ├─ batching.py         # 64 项分批（纯规则）
+│  │  └─ self_check.py       # 官方启动自检与参考样例比对
 │  └─ runtime/               # 模型清单（含权重 sha256）、设备探测、内存限制
 └─ tests/                    # pytest；与包结构镜像
 ```
 
-Python 分层用 `import-linter` 强制：`api → jobs → engines | quality → preprocess → protocol`，不允许反向；`engines/modular_a` 与 `engines/e2e_b` 互不 import。不同引擎的重依赖可以拆成独立 venv / 容器，由 `runtime` 按引擎分别启动。
+Python 分层用 `import-linter` 强制：`api → jobs → engines | quality → preprocess → protocol`，不允许反向；`engines/modular_a` 与 `engines/e2e_b` 互不 import；`quality/backends/local_engine` 与 `jev_http` 互不 import。Python 侧的 core（`engines/reading_order/`、`engines/e2e_b/mapping.py`、`quality/batching.py`）另加 forbidden 契约：不得 import `fastapi`、`starlette`、`httpx`、`torch`、`paddle`、`pypdfium2` 等 IO 与推理依赖（§2.3）。不同引擎的重依赖可以拆成独立 venv / 容器，由 `runtime` 按引擎分别启动。
 
 ## 11. 可观测性
 
 - **日志**：`kernel` 只定义 `Logger` 接口；`platform-node/logging/file-logger.ts` 输出 JSON 行。字段：`ts`、`level`、`event`（来自 `contracts/src/diag-events.ts` 白名单）、`feature`、`requestId`、`jobId`、`parseRunId`、`durationMs`、`errorCode`。不记录正文、译文、提示词、密钥。
+- **IPC 载荷**：单条 IPC 消息或 worker 产物超过阈值（默认 1 MB，可配置）记诊断事件 `ipc.oversize`，带通道名与字节数，不带内容；大数据一律走 `assetId`（§2.4）。
 - **关联**：每次 IPC 调用生成 `requestId`，透传到 worker（请求头 `OI-Request-Id`）与 provider 调用日志。
 - **Python worker**：结构化 JSON 写 stderr，supervisor 收集并加上 `source: worker`。
 - **诊断包**：保留天数与体积上限沿用 v1 起点（7 天、2 MB，见 v1 审查），可在设置调整；导出前统一走 `diagnostics/domain/redaction-rules.ts`；导出内容只含计数、哈希、阶段耗时、错误码、设置摘要（无密钥）。
@@ -529,11 +843,10 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 
 | 层 | 工具 | 要求 |
 | --- | --- | --- |
-| domain | Vitest / pytest | 纯函数，无 IO；每条从 v1 移植的规则带原 v1 用例 |
-| application | Vitest + `testing/` 里的 fake 端口 | 不启动 Electron、不联网、不加载模型 |
+| core（domain + application，经 seam） | Vitest 工程 `core`（`environment: 'node'`）/ pytest | 测试文件放 `test/core/`，只 import `src/index.ts`、`src/pure.ts`、`src/testing/**`；不渲染 UI、不启动 Electron、不联网、不加载模型；每条从 v1 移植的规则带原 v1 用例。这是 Q3 的完成标准（G16） |
 | adapters | 契约测试套件 | 每个端口在 `testing/` 提供一份共享契约测试，内存实现与 SQLite 实现都跑同一份 |
 | 协议 | TS + Python 双侧 | `fixtures/protocol/` 合法样例通过、非法样例拒绝 |
-| ui | Vitest + Testing Library | 组件只依赖 fake 的 `window.oi` |
+| ui | Vitest + Testing Library | 组件只依赖 fake 的 `window.oi`；只断言「调用了哪个 seam、怎么画结果」，不断言业务规则（规则已由 core 测试覆盖） |
 | e2e | Playwright Electron | 只做少量冒烟：开窗、导入、阅读、重开 |
 | 基准 | 独立脚本 | 不作为 CI 门禁；结果写入 `docs/acceptance/` |
 
@@ -551,14 +864,21 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 | G2 Lint | ESLint（typescript-eslint strict-type-checked）、ruff | 含 F-06、F-08、F-12、`max-lines-per-function`、`complexity`、`no-restricted-imports` |
 | G3 类型检查 | `tsc -b`（strict）、mypy `--strict` 或 pyright strict | 0 错误 |
 | G4 行数 | `tools/check-file-size` | §6 的硬上限；allowlist 必须有 ADR 与到期里程碑 |
-| G5 依赖方向 | dependency-cruiser | `no-circular`、`layer-direction`、`no-cross-feature-internals`、`feature-dependency-matrix`（§4.3）、`renderer-isolation`、`electron-only-in-desktop`、`contracts-is-leaf` |
-| G6 Python 分层 | import-linter | §10.3 的层次契约 |
+| G5 依赖方向 | dependency-cruiser | `no-circular`、`layer-direction`、`no-cross-feature-internals`、`feature-dependency-matrix`（§4.3）、`renderer-isolation`、`electron-only-in-desktop`、`contracts-is-leaf`；Q3 相关规则单列为 G13、G15、G16 |
+| G6 Python 分层 | import-linter | §10.3 的层次契约，含 Python core 的 forbidden 契约 |
 | G7 生成物无漂移 | `pnpm codegen && git diff --exit-code` | 契约、preload、pydantic 模型 |
 | G8 单元与契约测试 | Vitest、pytest | 按 RULES.md §4 的运行纪律 |
 | G9 密钥扫描 | gitleaks | 0 命中 |
-| G10 依赖许可证 | license-checker、pip-licenses；`runtime` 模型清单校验 | 拒绝未审批的 GPL / AGPL / 非商用 / 自定义许可证（如 PyMuPDF、MinerU Open Source License）；模型权重的许可证在模型清单登记并按同一白名单检查（RULES §1.5） |
+| G10 依赖许可证 | license-checker、pip-licenses；`runtime` 模型清单校验 | 项目许可证为 Apache-2.0（Q6）：依赖必须与之兼容；GPL / AGPL 一律拒绝（包括 PyMuPDF，以及经上游 extras 间接引入的情况）；LGPL、非商用、自定义许可证（如 MinerU Open Source License）未经用户批准即拒绝；模型权重的许可证在模型清单登记并按同一规则检查（RULES §1.5） |
 | G11 热点文件 | `tools/check-hotspots` | 改动热点文件（装配根、`slots.ts`、契约）的 PR 必须在描述中声明，且单 PR 对每个热点文件的改动 ≤ 30 行 |
 | G12 PR 体量 | 脚本 | 非生成代码改动 > 600 行时要求拆分或写明理由 |
+| G13 core 不依赖 UI | dependency-cruiser 规则 `core-no-ui`；开启 `tsPreCompilationDeps`，type-only 导入也算 | from：`^packages/(contracts\|kernel)/`、`^packages/features/[^/]+/src/(domain\|application)/`、`^packages/features/[^/]+/src/(index\|pure)\.ts$`。to（命中任一即失败）：`react`、`react-dom`、`react/jsx-runtime`；路由库（`react-router*`、`@tanstack/*router*`、`wouter`）；样式（`\.(css\|scss\|sass\|less)$`、`styled-components`、`@emotion/*`、`@vanilla-extract/*`）；`electron`、`pdfjs-dist`；`@oi/ui-kit`；`^packages/features/[^/]+/src/ui/`；`^apps/desktop/src/(renderer\|preload)/`；`@testing-library/*` |
+| G14 core 编译环境 | `tsconfig.core.json` + ESLint `no-restricted-globals` | core 文件单独编译：`lib: ["ES2023"]`（不含 `DOM`）、`types: []`（不自动带入 `@types/react`、`@types/node`），出现 `window`、`document`、`HTMLElement`、`KeyboardEvent`、`process` 即类型错误；ESLint 对 core 路径禁用 `window`、`document`、`navigator`、`location`、`history`、`localStorage`、`sessionStorage`、`requestAnimationFrame` |
+| G15 UI 只经 seam | dependency-cruiser 规则 `ui-through-seam`、`pure-seam-stays-pure` | from `^packages/features/([^/]+)/src/ui/` 与 `^apps/desktop/src/renderer/`：to `^packages/features/[^/]+/src/(domain\|application\|adapters)/` 一律禁止，本切片只允许 `src/pure.ts`；`pure.ts` 用 `reachable: true` 检查，不得传递到达 application、adapters |
+| G16 core 测试只调 seam、不渲染 UI | Vitest 工程 `core` + dependency-cruiser 规则 `core-test-through-seam` | `core` 工程：`environment: 'node'`，include `packages/features/*/test/core/**`；文件内出现 `@vitest-environment` 注释即失败。`core-test-through-seam`：from `^packages/features/([^/]+)/test/core/`，to `^packages/features/$1/src/` 且 pathNot `^packages/features/$1/src/((index\|pure)\.ts\|testing/)` → 失败；to `react`、`@testing-library/*`、`jsdom`、`happy-dom`、`@oi/ui-kit`、`src/ui/` → 失败。每个切片 `README.md` 登记的 core 规则必须至少有一个 core 测试（脚本核对测试名中的规则编号） |
+| G17 UI 与 core 分开改 | `tools/check-ui-core-split` | 同一 PR 同时改动 UI 路径（`src/ui/**`、`apps/desktop/src/renderer/**`）与 core 路径（domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`）即失败：seam 变更必须单独成 PR 先合入（RULES §8 规则 3、§3 契约先行）。改动 UI 路径的 PR 描述必须包含「UI–core 交接说明」块（RULES §8.4），缺失即失败 |
+
+G13–G17 与 5 层、15 个切片的关系：规则全部按通配路径写（`features/[^/]+/src/<层>/`），因此对每个切片的 domain、application、ui 同时生效，不需要逐切片登记；§2.5 的映射表说明每个切片哪些文件落在哪一层。workers 层没有 UI，Q3 在 Python 侧的落点是 G6 的 core forbidden 契约。M1 的退出条件包含四个故意违规的样例 PR：core import React 类型、UI import application 用例、core 测试渲染组件、一个 PR 同时改 UI 与 core——都必须被 CI 拒绝（PRD §8）。
 
 ## 14. v1 教训：一个 16,641 行的文件是怎么长出来的，v2 怎么从制度上防止
 
@@ -595,6 +915,7 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 | 状态 | 禁止模块级可变状态；状态属于用例（持久）或组件（界面） | F-06 |
 | 测试 | 禁止读源码断言；每个端口有共享契约测试；domain 测试不依赖任何运行时 | F-08、§12 |
 | 并行 | 每个切片在 `README.md` 登记所有者与热点文件；契约改动先单独合入，再开实现 PR；热点文件单 PR 改动 ≤ 30 行 | G11、RULES.md §3 |
+| UI 与核心 | core 不依赖 UI（含类型）、core 编译环境无 DOM、UI 只经 seam、core 测试只调 seam、UI 与 core 分 PR 改（Q3） | §2.1–§2.6、G13–G17、RULES §8 |
 | 评审 | 评审清单逐项检查「这个文件承接几种变化」「新增依赖边是否在矩阵内」「是否有新的顶层状态」；不满足即退回 | RULES.md §5 |
 | 豁免 | 只能通过 ADR，且带到期里程碑；到期未清 CI 失败 | §6 |
 
@@ -632,14 +953,31 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 
 | 命令 | 作用 |
 | --- | --- |
-| `pnpm check` | G1–G7、G9–G12 全部静态门禁 |
+| `pnpm check` | G1–G7、G9–G15、G17 全部静态门禁 |
 | `pnpm test` | 全部 TS 测试（按 RULES.md §4 纪律运行） |
+| `pnpm test:core` | 只跑 core 测试（Node 环境，经 seam；Q3 的完成标准） |
 | `pnpm test:failed` | 只重跑上一次失败的测试 |
 | `uv run pytest` | worker 测试（在 `workers/parser/` 下） |
 | `pnpm dev` | 启动桌面开发版与本机 worker |
 
-## 16. 待决与变更
+## 16. 决策记录与变更
 
-- 需要用户拍板的问题统一在 [docs/v2-gap-and-changes.md](./docs/v2-gap-and-changes.md) §6，本文按其中「本文假设」先行。直接影响本文的：Q2（文字层基础档，§7.1）、Q6（PDF 渲染库，§7.1、§10.3）、Q7（worker 传输，§10.1）、Q8（v1 导入器，`library` 切片）、Q9（质量评估部署，§7.4）、Q10（引擎 A 版面模型，§7.1）。
+Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-gap-and-changes.md](./docs/v2-gap-and-changes.md) §6。各决定在本文的落点：
+
+| 编号 | 决定（摘要） | 本文落点 |
+| --- | --- | --- |
+| Q1 | MiniCPM-OCR 1.0 与 Jev 照用、锁版本、M6 前复核；所有识别路径（含云 OCR、arXiv 对齐、多模态补救）都经 Jev 评分 | §7.1「全路径评分」、§7.3、§7.5、§7.7；`quality/domain/scoring-coverage.ts` |
+| Q2 | 无解析服务时回落文字层基础档 | §7.1；`parsing/domain/text-layer/*` |
+| Q3 | UI 与业务核心解耦（functional core, imperative shell） | §2.1–§2.6、§3.1、§5、§12、G13–G17、§14.4；执行细则 RULES §8 |
+| Q4 | 做 arXiv 源码校准公式 | §4.2 `formula-source`、§4.3、§7.5、§7.6 |
+| Q5 | 写作辅助移出 v2 实现，架构预留 | §4.4、§4.3 虚线边、§8.2 `wr_` |
+| Q6 | pypdfium2；项目许可证 Apache-2.0；禁止 GPL / AGPL（含 PyMuPDF） | §7.1、§10.3、G10 |
+| Q7 | 本机与远程同一协议 HTTP + SSE | §1、§10.1 |
+| Q8 | 不做 v1 迁移，v2 从零开始 | §4.2 `library`（无导入器） |
+| Q9 | Jev 本机 / 远程可选，按硬件推荐，worker 接口一致 | §1、§2.6 示例、§7.4、§10.2、§10.3 |
+| Q10 | PP-DocLayoutV3 起步，plus-L 对照，明显更好时作为高质量档 | §7.1「版面档位」、`parsing/domain/layout-profile.ts` |
+| Q11 | 未配置翻译时借用多模态：保留、默认关、开启时提示消耗多模态额度 | §4.2 `settings/domain/translation-fallback.ts` |
+| Q12 | 不接 Unlimited-OCR，上游支持坐标输出后再评估 | 不进本文；记录在差异清单 §2.6 |
+
 - 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3 / M6 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
-- 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。
+- 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。
