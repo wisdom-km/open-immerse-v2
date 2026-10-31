@@ -2,17 +2,11 @@
 
 Open Immerse v2：把英文学术 PDF 做成可对照、可追溯、公式不走样的中文阅读。桌面应用，覆盖 Windows 与 macOS。
 
-没有上下文时按这个顺序读，不要跳到历史草案：
+没有上下文时按 [AGENTS.md](AGENTS.md) 读：先 [RULES.md](RULES.md) §6 与 §9，再只读该任务类型的节和点名的验收编号。不要先通读 PRD 与 ARCHITECTURE，也不要跳到历史草案。
 
-1. [PRD.md](PRD.md)：做什么、不做什么、验收编号。
-2. [ARCHITECTURE.md](ARCHITECTURE.md)：切片、端口、协议。
-3. [RULES.md](RULES.md) §6、§8 与 §9：禁止事项、界面与核心解耦、交接、一个 PR 怎样算做完。
-4. 涉及界面时再读 [DESIGN.md](DESIGN.md) 与 [docs/design-principles.md](docs/design-principles.md)。标「待审批」的视觉数值不是定稿。
-5. [docs/architecture/](docs/architecture/README.md) 是历史草案，不授权实现。
+与根目录三份规格冲突时，以规格为准（优先级见 RULES 文首）。不要实现矢量重绘、浏览器扩展、手机客户端、订阅计费。标「待审批」的视觉数值不是定稿。[docs/architecture/](docs/architecture/README.md) 是历史草案，不授权实现。
 
-与根目录三份规格冲突时，以规格为准（优先级见 RULES 文首）。不要实现矢量重绘、浏览器扩展、手机客户端、订阅计费。
-
-给 Agent 的短指针在 [AGENTS.md](AGENTS.md)。贡献方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+给 Agent 的短指针在 [AGENTS.md](AGENTS.md)。角色与升级见 [docs/WORKFLOW.md](docs/WORKFLOW.md)。贡献方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 规格（唯一真相源）
 
