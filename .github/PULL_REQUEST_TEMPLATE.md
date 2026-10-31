@@ -17,6 +17,20 @@
 - 结果摘要（通过 / 失败 / 跳过）：
 - 失败项与重跑记录：
 
+## 证据目录
+
+- `docs/evidence/<PR号>/`：
+- 大文件的 CI artifact 链接（没有就写「无」）：
+
+## agent 工作记录
+
+一小段即可。不另建完整 agent 对话记录，Cursor 已保存 transcript。不新建 `docs/agent-logs/`。
+
+- 读了哪些规格：
+- 关键决定：
+- 跑了哪些命令与结果：
+- 坑：
+
 ## 未验证项与风险
 
 ## UI–core 交接说明（ARCHITECTURE §2.1 / RULES §8）
@@ -29,7 +43,7 @@
 - core 是否没动：是 / 否（UI 改动任务中出现 core 改动即不合格）
 - 用到的 seam：
 - seam 是否够用：够用 / 不够用
-- 核心测试是否通过：`pnpm test:core` 于提交 `<SHA>`：通过 N / 失败 N / 跳过 N
+- 核心测试是否通过：M1 前写不适用（脚本尚未提供）；M1 起以 package.json 实际脚本为准，于提交 `<SHA>`：通过 N / 失败 N / 跳过 N
 - 未验证项与风险：
 
 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
