@@ -116,7 +116,7 @@ P0 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）�
 | P1-11 | README 阅读顺序；AGENTS.md；.github/ISSUE_TEMPLATE/task.md；.github/PULL_REQUEST_TEMPLATE.md。审查里的 `.cursor/rules` 是可选，没有加（N-11） | 已处理 |
 | P1-12 | PRD AC-20；ARCHITECTURE §7.4 推荐规则 1。没有名为「关掉 API 来源」的总开关 | 已处理 |
 | P1-13 | 与 P1-5 同一张表：ARCHITECTURE §8.1.1。解析、OCR、Jev 的用户可见词只有校验失败、网络错误、模型错误 | 已处理 |
-| P1-14 | DESIGN.md 文首（第 16 行）仍写「Loom 交付前 UI 只搭结构」。RULES 文首已写以 RULES 为准 | 未处理。过时句需 Loom 修改。本 PR 不改 DESIGN 正文（N-10）。负责人：Loom |
+| P1-14 | DESIGN.md 文首（第 16 行）仍写「Loom 交付前 UI 只搭结构」。RULES 文首已写以 RULES 为准 | 未处理。过时句需 Loom 修改。本 PR 不改 DESIGN 正文（N-10）。负责人：Loom。跟进见 §9 R12-P2-3 |
 | P1-15 | README「历史草案」。该目录不授权实现，冲突时以根目录三份规格为准 | 已处理 |
 
 ### P2
@@ -183,3 +183,21 @@ R-A 已解决。R-B 仍标为「M0 实测后决定」。
 | D-D | 版面部署和引擎 A 的「本地 / API」是一个开关还是两个 | ① 两个开关。版面只读 `RouteConfig.layout`；引擎 A 的设置只覆盖识别阶段。`deployment: 'api'` 在托管版面 API 核实之前不可选，不发请求。② 合成一个开关（要改 AC-96，版面作业与 `parse` 不再各走一次） | 两个旋钮都还在，没有唯一答案。审查建议是 `api` 不发请求，不是决定。未定之前 `api` 的请求为 0 | 阅读顺序实测里，AI Studio 托管 API 是否返回版面区域（PRD §8 已有的那一项）。结果写入差异清单 §7 之前，`api` 不发请求 |
 | D-E | 版面关掉时云 OCR 发不发 | ① 没有版面作业时该来源请求为 0，不发整页。② 允许发整页（须改 AC-71） | 规格写云 OCR 的输入是版面区域裁片，没有授权整页。审查建议是请求为 0，不是决定 | 四个预设都不默认打开云 OCR，路线对比覆盖不到。要测的话，在同一批上额外跑一次自定义组合：版面关，识别列表含云 OCR。记下有没有区域裁片；若禁止整页，请求是否应为 0；误发整页会不会进入阅读顺序。这次自定义不写成新预设 |
 | D-F | 开关开着、路线不含 Jev 时，重新识别是否可用 | ① 与其他「开关开着」相同，返回 `scoring_enabled`。② 路线不含 Jev 时允许进入。选 ② 仍要 W-1 先保留入口 | ①，含三个不含 Jev 的预设（AC-90 ①） | 与 W-1 同一批计数。再加上：这三个预设在开关默认开着时，核对不过、用户会想换来源、却被 `scoring_enabled` 拒绝的公式区域个数。W-1 决定入口在不在；本行决定开关开着时进不进得去 |
+
+## 9. PR #12 终审的 P2（Forge @ `e11e54b`，2026-10-31）
+
+PR #12 已合入 `main`（`c14e4b6`）。下面三条来自 Forge 对 `e11e54b` 的终审，不挡当前里程碑。本段只记状态，供同步到 GitHub 后提醒负责人。不改 `docs/adr/README.md`、`.cursor/install.sh`、`DESIGN.md`、`docs/design-principles.md`。
+
+| 编号 | 发现 | 状态 | 负责人 |
+| --- | --- | --- | --- |
+| R12-P2-1 | ADR 索引：`docs/adr/README.md` 末句仍写差异清单 §6.1–§6.11。§6.12（合入后复审的决定）已在差异清单。那一句改为 §6.1–§6.12，不抄决定正文 | 未处理。放进 Loom 的徽标 / 设计小 PR，与 R12-P2-3 同一个 PR，不单开 | Loom |
+| R12-P2-2 | 供应链：`.cursor/install.sh` 用 curl 管道到 sh 安装 uv（`https://astral.sh/uv/${uv_version}/install.sh`），没有校验哈希，并用 `sudo` 把 `uv` / `uvx` 链到 `/usr/local/bin` | 未处理。Agent 不改这个文件（RULES N-11；该条点名 `.cursor/environment.json`，其 `install` 即本脚本，两者都不改）。待 Wisdom 决定：钉住哈希 / 去掉 `sudo` / 维持现状 | Wisdom |
+| R12-P2-3 | 设计跟进，三处一起做：① DESIGN.md 文首仍是 §6 P1-14 那句「Loom 交付前 UI 只搭结构」；② `docs/design-principles.md` 正文 P2 的状态示例仍缺「格式已核对」「源码核对」「未评分」「占位框」；③ DESIGN 新增徽标 §3.7，验收 DS-28…DS-31 | 未处理。补丁在 Forge 交接里已备好。#12 已合入，由 Loom 另开该设计 PR。本记录不改这两份正文（N-10）。§6 P1-14 保持未处理，等该 PR 再改状态 | Loom |
+
+### 已知、不挡合入的风险
+
+下面三项仓库里已有记录，这里只提醒，不新开编号。
+
+- CI 门禁 G1–G18 仍是空跑，到 M1 才落地（§7 E-P1-6、E-P1-7；`docs/ci-and-environment.md`「当前是空跑」）。当前 CI 全绿不等于 ARCHITECTURE §13 已生效。
+- `main` 的分支保护要 Wisdom 在仓库设置里打开。Agent 不改分支保护（N-02；§7 E-P1-3）。
+- §8 的待定项等 M0。R-A 已决定；§8.2 与 R-B 仍未决定。选定之前不改编号核对或那些返回码。
