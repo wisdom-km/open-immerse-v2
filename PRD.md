@@ -444,8 +444,8 @@ Loom 的 [DESIGN.md](./DESIGN.md) DS-01–DS-31 与 §6.1、§6.2 验收的对�
 | DS-26 | 无 AC | 阅读主题 3 套。PRD S1 的「主题由 Loom 定」即此。 |
 | DS-27 | AC-03、AC-56 | `never_succeeded` 按 `failureKind` 三种文案 + 悬停详情。 |
 | DS-28 | AC-04、AC-85、AC-87 ①、AC-89 ② ③ | 徽标与占位框文字与标记一一对应：`format_checked`「格式已核对」、`source_checked`「源码核对」、`not-run/disabled`「未评分」、`page-placeholder`「图见原文第 N 页（点击查看）」；组件只按 `getBlocks` 标记选择。 |
-| DS-29 | 无 AC | 徽标只用 `--oi-reader-*`，文字 ≥ 4.5:1，不只靠颜色（视觉值待审批）。 |
-| DS-30 | 无对应 AC | 悬停 / 聚焦提示与 `aria-label` 都写明「未核验」。待 Wisdom 审批是否补 AC。 |
+| DS-29 | 无 AC | 徽标只用 `--oi-reader-*`，文字 ≥ 4.5:1，不只靠颜色（视觉值待审批）。三种徽标同用 `--oi-reader-muted`、只靠文字区分；占位框是链接，例外用 `--oi-reader-link` + 虚线描边，并靠虚线与「（点击查看）」文字区分。 |
+| DS-30 | 无对应 AC | 悬停 / 聚焦提示与 `aria-label` 都写明「未核验」。待 Wisdom 审批是否补 AC。问答中「未核验」由 AC-87 ④ / AC-89 ④ 覆盖。 |
 | DS-31 | AC-89 ③ | 点击占位框，左侧原文跳到第 N 页并定位该区域。 |
 
 ## 7. 基准集（定标前提）

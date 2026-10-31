@@ -2,7 +2,7 @@
 >
 > - 来源：Loom 的视觉与交互规格草案 v0.2（上传附件）。本说明之后的正文为 Loom v0.2 加走查修正。本次没有需要改的链接或格式：正文指向 [docs/design-principles.md](./docs/design-principles.md)，相对链接对仓库根目录是对的。正文由 Loom 维护，其他人不改（[RULES](./RULES.md) N-10）。
 > - 分工：界面细节以正文为准；需求、验收、里程碑以 [PRD](./PRD.md) 为准；切片、seam、外发同意的状态转移以 [ARCHITECTURE](./ARCHITECTURE.md) 为准。
-> - DS-01–DS-27 与 PRD 验收的对照表在 [PRD §6.3](./PRD.md#63-视觉与交互验收对照)。PRD 里对应的 AC 回引本文件的 DS 编号。
+> - DS-01–DS-31 与 PRD 验收的对照表在 [PRD §6.3](./PRD.md#63-视觉与交互验收对照)。PRD 里对应的 AC 回引本文件的 DS 编号。
 > - 正文已按 Loom 2026-10-30 对 PR #9 @ a6830bf 的走查修正（Loom 走查记录 PR9-a6830bf-LOOM.md：公式裁图参考字号 18px、DS-20 不再引用 G17、`never_succeeded` 文案对齐 AC-56、外发同意的 `vendorId` / `granted: null` / 撤回与开关文案对齐 ARCHITECTURE §7.0 第 6 条、删除已解决的「待核对」与附注）。剩余说明：
 >   1. **seam**：`settings.onEgressConsentRequired`、`settings.withdrawEgressConsent` 已写入 ARCHITECTURE §7.0 与 PRD §3.3 / AC-61，只有类型、没有实现；正文已改用契约字段名。
 >   2. **人日**：§3.2a 的「+1 人日」是 Loom 的粗估，不进 PRD / ARCHITECTURE。
@@ -225,14 +225,14 @@ flowchart TD
 
 | 状态 | 徽标文字（暂定，来自 PRD） | 何时出现（规格原文摘要） | 悬停 / 聚焦提示（tooltip，待审批） |
 | --- | --- | --- | --- |
-| 格式已核对 | 「格式已核对」 | `format-checked-latex`，标记 `format_checked`：评估记录为 `not-run/disabled`（评分开关关闭，或开着但路线不含 Jev），非 arXiv 候选的五项程序核对全过；不算已核验（D-A 01:14 修订；PRD AC-89 ②、§10） | 「程序核对通过（可渲染、字符集、编号、位置、与原文一致），未经质量评分，不算已核验」 |
+| 格式已核对 | 「格式已核对」 | `format-checked-latex`，标记 `format_checked`：评估记录为 `not-run/disabled`（评分开关关闭，或开着但路线不含 Jev），非 arXiv 候选的五项程序核对全过；不算已核验（D-A 01:14 修订；PRD AC-89 ②、§10） | 「程序核对通过（可渲染、字符集、编号、位置、与文字层或邻近内容一致），未经质量评分，不算已核验」 |
 | 源码核对 | 「源码核对」 | `source-checked-latex`，标记 `source_checked`：记录为 `not-run/disabled` 时 arXiv 源码候选整篇覆盖率 ≥ 0.85 且逐公式核对全过；当前不算已核验（PRD AC-87） | 「与 arXiv 作者源码核对一致，未经质量评分，不算已核验」 |
 | 未评分 | 「未评分」 | 界面标记：评估记录 `not-run/disabled`，用于正文、表格与没通过程序核对的公式；不算已核验，不自动补救、不自动补评（PRD §10、§3.4） | 「质量评分未运行。可在本文菜单「为本文评分」」 |
 | 占位框 | 「图见原文第 N 页（点击查看）」（文字暂定） | `page-placeholder`：没有候选通过且裁图拿不到时（AC-89 ③）；它本身就是占位块，不再叠加徽标 | 无单独 tooltip；点击跳到左侧原文第 N 页并定位该区域 |
 
-- Token（只用 `--oi-reader-*`）：文字 `--oi-reader-muted`（浅 5.7 / 深 6.6，过 4.5:1）；描边 1px `--oi-reader-line-strong`；底色 `--oi-reader-surface`（不填强调色）；焦点环 `--oi-reader-focus`。占位框：1px 虚线 `--oi-reader-line-strong`，文字 `--oi-reader-link`（可点击）。
+- Token（只用 `--oi-reader-*`）：文字 `--oi-reader-muted`（浅 5.7 / 深 6.6，过 4.5:1）；描边 1px `--oi-reader-line-strong`；底色 `--oi-reader-surface`（不填强调色）；焦点环 `--oi-reader-focus`。三种徽标（格式已核对 / 源码核对 / 未评分）同用 `--oi-reader-muted`，只靠文字区分。占位框是例外：它是可点击的占位块、不是徽标，因为是链接，用文字 `--oi-reader-link` + 1px 虚线 `--oi-reader-line-strong`；不靠颜色也能区分（虚线描边 + 「（点击查看）」文字）。
 - 形状 / 尺寸：胶囊式标签，字号 `--oi-reader-status-fs`（12），高 18，左右内边距 6，圆角 `--oi-radius-sm`（4）；行间公式放在公式右上，行内公式不内联插入，只在悬停 / 聚焦公式时显示；可点击目标仍 ≥ 24×24（DS-19，用外扩命中区）。占位框：块级，最小高 48，圆角 `--oi-radius-sm`。
-- 图标：无。四种状态只靠文字区分。
+- 图标：无。三种徽标只靠文字区分；占位框另靠虚线描边与「（点击查看）」文字区分。
 - 状态：默认（文字 + 细描边）；悬停或键盘聚焦显示上表 tooltip（`--oi-motion-fast`，不遮挡公式）；徽标不可操作，无按下 / 禁用态。占位框悬停底色叠加 `--oi-reader-highlight`，按下 / Enter 执行跳转。
 - 无障碍：文字对比 ≥ 4.5:1；不只靠颜色（不同状态同色，靠文字区分，`forced-colors` 下描边改 `CanvasText`）；徽标 `aria-label` 为「公式状态：格式已核对，未核验」等完整句；占位框为 `role=link`，`aria-label`「图见原文第 N 页，点击查看」。
 - 浅色 / 深色 / 白：都用上述 token 的对应值，不另加颜色。
@@ -367,9 +367,9 @@ flowchart TD
 | DS-18 | 界面放大 200% 不丢内容 | 手动 |
 | DS-19 | 所有可点击目标 ≥ 24×24 | 自动（axe target-size） |
 | DS-20 | 组件里无业务条件判断（Q3 执行规则 1–3）：依赖方向与 core 测试由 CI G13–G16 检查，「改 UI 不改 core」由评审清单 RULES §5 第 11 条与 §8 交接说明检查（原 G17 已于 2026-10-30 19:57 删除，ARCHITECTURE §13） | CI + 评审 |
-| DS-28 | 「格式已核对」「源码核对」「未评分」徽标与占位框文字逐字等于 §3.7；组件只按 `format_checked` / `source_checked` / `not-run` 标记与 `page-placeholder` 选择，不自行判断 | 组件测试 |
-| DS-29 | 徽标与占位框只引用 `--oi-reader-*`；三套阅读主题下文字 ≥ 4.5:1；无图标、不同状态同色，色盲模拟与 `forced-colors` 下仍可靠文字区分 | 自动 + 手动 |
-| DS-30 | 徽标悬停与键盘聚焦都显示 §3.7 的 tooltip；每个徽标有完整 `aria-label`（含「未核验」） | axe + e2e |
+| DS-28 | 「格式已核对」「源码核对」「未评分」徽标与占位框文字逐字等于 §3.7；组件只按 `format_checked` / `source_checked` / `not-run/disabled` 标记与 `page-placeholder` 选择，不自行判断 | 组件测试 |
+| DS-29 | 徽标与占位框只引用 `--oi-reader-*`；三套阅读主题下文字 ≥ 4.5:1；无图标。三种徽标（格式已核对 / 源码核对 / 未评分）同用 `--oi-reader-muted`，只靠文字区分；占位框是例外，用 `--oi-reader-link` + 虚线描边（它是链接），不靠颜色也可由虚线描边 + 「（点击查看）」文字区分；色盲模拟与 `forced-colors` 下仍可区分 | 自动 + 手动 |
+| DS-30 | 徽标悬停与键盘聚焦都显示 §3.7 的 tooltip；每个徽标有完整 `aria-label`（含「未核验」）。问答中「未核验」由 AC-87 ④ / AC-89 ④ 覆盖。 | axe + e2e |
 | DS-31 | 点击或回车占位框，左侧原文跳到第 N 页并定位该区域（AC-89 ③） | e2e |
 
 ## 6 需要 Wisdom 拍板的事 —— **已决定（Wisdom，2026-10-30 21:26 Asia/Shanghai，经 Forge 转达）**
