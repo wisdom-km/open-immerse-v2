@@ -1,6 +1,6 @@
 # open-immerse v2 协作与编码规则（RULES）
 
-状态：v0.6，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。v0.4 按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修复（Wisdom 2026-10-30 19:57 批准）：§5 第 15、16 条（付费调用先预留额度、跨切片编排只在 `ingest`），§8 删除 G17、改由评审与交接说明检查。v0.5 按评审的 P1 项与 Wisdom 2026-10-30 19:45、19:46 的服务商适配层要求：§4 服务商适配层的契约测试，§5 第 17、18 条（服务商细节只在 `packages/providers`、外发检查与凭据），N-05 开发者本机的 Key。v0.6 按 Wisdom 2026-10-30 21:12 批准的 PR C：§1.3 domain 纯函数的行数，§1.5 与 N-19 禁止复制 BabelDOC 代码，§2 一个 PR 一个切片与解析规则集的例外，§3 热点收窄与 UI 事件登记，§5 第 19 条（解析规则集两侧一致）。同版起 DESIGN.md 与 docs/design-principles.md 已入库，正文仍由 Loom 维护（N-10）。同日 22:45 增加 N-20：禁止在 core 或某个积木里写死另一个积木（§5 第 20 条）。同日 23:55、23:56 增加 N-21、N-22：依赖方向只能是界面 → 接口 → core，M1 起由 CI 挡住反向依赖（dependency-cruiser，见 [backlog](./docs/backlog.md) E-P1-6）；M1 门禁落地前不建业务切片（§5 第 21 条）。日期：2026-10-30（Asia/Shanghai）。
+状态：v0.6，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。v0.4 按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修复（Wisdom 2026-10-30 19:57 批准）：§5 第 15、16 条（付费调用先预留额度、跨切片编排只在 `ingest`），§8 删除 G17、改由评审与交接说明检查。v0.5 按评审的 P1 项与 Wisdom 2026-10-30 19:45、19:46 的服务商适配层要求：§4 服务商适配层的契约测试，§5 第 17、18 条（服务商细节只在 `packages/providers`、外发检查与凭据），N-05 开发者本机的 Key。v0.6 按 Wisdom 2026-10-30 21:12 批准的 PR C：§1.3 domain 纯函数的行数，§1.5 与 N-19 禁止复制 BabelDOC 代码，§2 一个 PR 一个切片与解析规则集的例外，§3 热点收窄与 UI 事件登记，§5 第 19 条（解析规则集两侧一致）。同版起 DESIGN.md 与 docs/design-principles.md 已入库，正文仍由 Loom 维护（N-10）。同日 22:45 增加 N-20：禁止在 core 或某个积木里写死另一个积木（§5 第 20 条）。同日 23:55、23:56 增加 N-21、N-22：依赖方向只能是界面 → 接口 → core，M1 起由 CI 挡住反向依赖（dependency-cruiser，见 [backlog](./docs/backlog.md) E-P1-6）；M1 门禁落地前不建业务切片（§5 第 21 条）。Wisdom 2026-10-31 起：调试模式默认关；日志不记密钥、不记论文正文，调试日志短期保留，只存本机（§4、§5 第 8 条、N-05）。同日 09:15：agent 工作记录写在 PR 描述，不另建对话记录（§2）。日期：2026-10-30（Asia/Shanghai）；上述变更为 2026-10-31。
 适用对象：所有人类开发者与 AI Agent。
 同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，Loom 2026-10-30 已入库。结构、状态与「当 seam 返回 X 时显示 Y」按 DESIGN 实现；标「待审批」的颜色、间距、字号不当作定稿。DESIGN 文首若仍写「Loom 交付前 UI 只搭结构」，以本句为准，那一句留给 Loom 删（N-10，本文件不改 DESIGN 正文）。其他人或 Agent **不得**改正文（N-10）。
 
@@ -69,6 +69,8 @@
   3. 测试证据：命令、结果摘要；失败项与重跑记录（§4）。
   4. 未验证项与风险。
   5. 改动了 UI 或 core 路径时，附「UI–core 交接说明」（§8.4）。任务类型为「UI 改动」时，core 目录零改动（N-16、N-21）。
+  6. 证据目录：`docs/evidence/<PR号>/` 的链接。放测试日志和截图。没有就写「无」。大文件写 CI artifact 链接，不把大二进制提交进仓库（N-12）。
+  7. agent 工作记录：一小段，写读了哪些规格、关键决定、跑了哪些命令与结果、坑。不另建完整 agent 对话记录，Cursor 已保存 transcript。不新建 `docs/agent-logs/`。
 - 合入方式由用户决定；任何人与 Agent 不自行合入他人或自己的 PR，除非用户明确要求。
 - **解析规则集的例外**（ARCHITECTURE §7.10）：改阅读顺序、扫描页判定或段落切分的规则时，TS `parsing/domain/text-layer/`、worker 对应的纯规则模块与 `fixtures/parsing-rules/` 必须在同一个 PR 里改；这是唯一允许一个 PR 同时动 TS 切片与 worker 的情形，PR 里不得夹带其他改动。
 
@@ -94,6 +96,8 @@
 - **两种来源同一套契约测试。** 有「本地 / API」两种来源的模型能力，两个来源跑同一份契约测试（假后端或去掉凭据与图片内容的录制样例）；只测其中一个来源不算完成（ARCHITECTURE §7.0）。
 - **服务商适配层的契约测试。** 每个格式适配器跑 `packages/providers/src/testing/` 里它支持的能力对应的共享套件，每条注册表记录至少跑 auth 与 errors；样例只用合成数据（假 Key 用登记在 gitleaks allowlist 的测试前缀，图片用合成图，不用真实论文页面），样例目录的 README 记来源文档链接与查阅日期（ARCHITECTURE §7.9.7）。
 - **跳过。** 门禁中出现 `skip` 视为失败，除非 PR 描述写明原因且关联 issue。
+- **调试模式。** 产品日志的调试模式默认关。打开后的明细仍不得含密钥、论文正文、译文、提示词、绝对路径（§5 第 8 条、N-05）。调试日志短期保留，只存本机；用户不主动选择就不上传（ARCHITECTURE §11）。保留天数不在这里填。
+- **证据目录。** Cloud Agent 与 Anvil 的测试日志、截图放在 `docs/evidence/<PR号>/`。大文件用 CI artifact 链接代替入库。产品运行日志在本机应用数据目录，工作记录在 PR 描述里，三处各写各的（ARCHITECTURE §11）。
 
 ## 5. 代码评审清单
 
@@ -106,7 +110,7 @@
 5. 入口与装配文件只有装配代码。
 6. 端口新增或变更时，`testing/` 中的契约测试同步更新，且至少两个实现（内存 / 真实）都跑过。
 7. 涉及公式、来源、版本、费用的改动有对应的 domain 测试，且覆盖失败路径。
-8. 日志与错误信息中没有正文、密钥、绝对路径。
+8. 日志与错误信息中没有正文、译文、提示词、密钥、绝对路径。默认不记密钥、不记论文正文。调试模式打开后同样禁止。日志只存本机，用户不主动选择就不上传。不把文档全文写入日志（N-05、ARCHITECTURE §11）。
 9. UI 改动遵循 DESIGN.md 与 docs/design-principles.md。标「待审批」的视觉数值不是定稿，不在实现 PR 里另写一套。
 10. PR 描述完整（§2）。
 11. UI 与核心解耦（§8）：业务规则（校验、计价、状态转移、权限、失败条件）只在 core；UI 改动 PR 中 core 文件零改动；seam 只传普通数据；新增或修改的规则有经 seam 的 core 测试且不渲染 UI。
@@ -131,7 +135,7 @@
 | N-02 | 直接推送到 `main` 或任何受保护分支；修改分支保护规则、仓库设置、CI 必需检查项 |
 | N-03 | 合入 PR、开启自动合并 |
 | N-04 | 发版：打 tag、创建 Release、发布安装包、签名 / 公证、发布 npm / PyPI 包 |
-| N-05 | 把任何密钥、令牌、证书、`.env` 内容写入仓库、PR 描述、Issue、日志或测试快照（含录制的 HTTP 样例）。面壁开放平台 Key 的变量名是 `MODELBEST_API_KEY`，值只放 Cursor Secrets 或用户本机安全存储（ARCHITECTURE §7.4「面壁 API」）。所有开发与测试用的 Key 只以环境变量提供：云端 Agent 经 Cursor Secrets 注入，开发者本机由开发者自己设为系统用户级或会话级环境变量，值不写进仓库里的脚本、`.vscode/launch.json` 或任务文件；变量名先登记在 ARCHITECTURE §15.4；不在仓库里创建、提交或让代码读取 `.env` 文件，不把 Key 写进命令行参数 |
+| N-05 | 把任何密钥、令牌、证书、`.env` 内容写入仓库、PR 描述、Issue、日志或测试快照（含录制的 HTTP 样例）。面壁开放平台 Key 的变量名是 `MODELBEST_API_KEY`，值只放 Cursor Secrets 或用户本机安全存储（ARCHITECTURE §7.4「面壁 API」）。所有开发与测试用的 Key 只以环境变量提供：云端 Agent 经 Cursor Secrets 注入，开发者本机由开发者自己设为系统用户级或会话级环境变量，值不写进仓库里的脚本、`.vscode/launch.json` 或任务文件；变量名先登记在 ARCHITECTURE §15.4；不在仓库里创建、提交或让代码读取 `.env` 文件，不把 Key 写进命令行参数。产品诊断日志与调试日志同样适用：不记论文正文与译文；只存本机，用户不主动选择就不上传（ARCHITECTURE §11） |
 | N-06 | 扩大范围：做任务未要求的功能、重构无关模块、加入 PRD §3.2 范围外的能力（网页翻译、浏览器扩展壳等） |
 | N-07 | 修改、推送或在旧仓库 `wisdom-km/open-immerse` 开 PR / Issue / 评论；旧仓库只能只读 clone 到临时目录参考 |
 | N-08 | 关闭或绕过 CI 门禁：删除 / 跳过测试、调高行数或复杂度上限、往 allowlist 加豁免、`--no-verify`，除非有用户批准的 ADR |
@@ -180,7 +184,7 @@ Wisdom 2026-10-30 23:56 在不改上面五条原文的前提下写死：核心�
 | 1 | 五类规则写成 `features/<f>/src/domain/` 下的纯函数，由 application 用例调用；组件、hooks、`ipc-handlers.ts` 里不出现这五类判断（显示用的格式化除外） | G13、G14（core 不能依赖 UI）；G16（规则必须有 core 测试） | 评审清单 §5 第 11 条：在组件里看到 `if` 判断业务条件即退回 |
 | 2 | 「core 文件」= domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`。UI 任务的分支只改 `src/ui/**`、`apps/desktop/src/renderer/**`、`ui-kit` | G18 拒绝「改 UI 又改另一个切片的 core」；同一切片内的 core 改动不由机器检查 | 任务类型为「UI 改动」时，交接说明中「core 是否没动」必须为「是」，评审对照 diff 核实；core 文件出现在 UI 改动任务的 diff 里即退回 |
 | 3 | 发现 seam 不够用：停止 UI 工作，在任务或 PR 中写明缺什么输入或结果、为什么现有 seam 不行；另开 seam PR（契约先行，§3 第 3 条），由 core 侧按领域语义设计，合入后再继续 UI | 契约 PR 的体量（G12）；被两个以上切片 import 的契约文件是热点（G11）；一个 PR 一个切片（G18） | 评审 seam PR 时检查：新增字段是否是领域概念，而不是某个页面的布局需要 |
-| 4 | core 测试放在 `test/core/`，只 import `src/index.ts`、`src/pure.ts`、`src/testing/**`，用 fake 端口；运行 `pnpm test:core` | G16（Node 环境、禁止 UI 依赖、规则覆盖核对） | 任务完成以 `pnpm test:core` 通过为准，组件测试通过不能代替 |
+| 4 | core 测试放在 `test/core/`，只 import `src/index.ts`、`src/pure.ts`、`src/testing/**`，用 fake 端口。M1 前此项写不适用（脚本尚未提供）；M1 起以 package.json 实际脚本为准 | G16（Node 环境、禁止 UI 依赖、规则覆盖核对） | 任务完成以该 core 测试通过为准，组件测试通过不能代替。M1 前不要求执行尚未提供的脚本 |
 | 5 | 在 PR 描述或任务回复中填写 §8.4 模板 | 无（G17 已删除） | 改动 UI 或 core 路径的 PR 缺少交接说明块即退回（§2）；评审核对说明与 diff 一致 |
 
 ### 8.3 交接指令必须引用
@@ -203,7 +207,7 @@ Wisdom 2026-10-30 23:56 在不改上面五条原文的前提下写死：核心�
 - core 是否没动：是 / 否（否时列出文件与原因；UI 改动任务中出现 core 改动即不合格，按规则 3 另开 seam PR）
 - 用到的 seam：`<切片>.<操作>`（`index.ts` / `pure.ts` / `window.oi`）
 - seam 是否够用：够用 / 不够用（不够用时写：缺什么输入或结果、为什么现有 seam 不行、对应的 seam PR 链接）
-- 核心测试是否通过：`pnpm test:core` 于提交 `<SHA>`：通过 N / 失败 N / 跳过 N
+- 核心测试是否通过：M1 前写不适用（脚本尚未提供）；M1 起以 package.json 实际脚本为准，于提交 `<SHA>`：通过 N / 失败 N / 跳过 N
 - 未验证项与风险：
 ```
 

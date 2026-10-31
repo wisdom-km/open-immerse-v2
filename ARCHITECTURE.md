@@ -1,6 +1,6 @@
 # open-immerse v2 架构规格（ARCHITECTURE）
 
-状态：v0.6，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。v0.3 并入 Wisdom 2026-10-30 17:32 批准的 Markdown 阅读方案（Loom，[docs/design/md-reader.md](./docs/design/md-reader.md)）：新增 `markdown` 切片（§4.5），译文改为按区块存 Markdown（§8.1.1）；同日并入 Loom 对译文区块四项风险的结论（§8.1.1，§16）；同日 18:37 并入 Jev 远程默认面壁开放平台（§7.4），18:44 并入「API 优先」原则（§7.0），19:11 并入 Wisdom 对四项风险的决定（数据外发同意对话框、引擎 A 三条路径、问答同时支持多模态与纯文本模型、M0 API 实测延后；§2.5、§4.2、§7.0、§7.3、§7.4、§16），19:30 把外发同意改为按服务商询问并加入「外发前询问」开关（§7.0 第 6 条）。Wisdom 2026-10-30 19:57 批准按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修改；v0.4 改 P0 四项并删除 G17：新增无界面的编排切片 `ingest` 与预算切片 `budget`（§2.5、§4.2、§4.3），main 与 utility 进程的固定职责（§1），所有付费调用先预留（§7.8），译文中未核验公式的裁图表示（§8.1.1），CI 门禁（§13）。v0.5 改评审的 P1 项，并按 Wisdom 2026-10-30 19:45、19:46 的要求新增服务商适配层：外发同意的措辞统一（§7.0 第 6 条），外发检查端口 `EgressCheck` 与远程 worker 不接收桌面的服务商 Key（§1、§7.0、§10.1），删除已被取代的旧表述（§7.4、§16），存储与协议的版本升级规则（§8.4、§10.4），Electron 加固（§9），服务商适配层 `packages/providers`（§7.9），开发者本机的 Key 注入（§15.4）。v0.6 按 Wisdom 2026-10-30 21:12 批准的 PR C：阅读顺序（§7.10）、BabelDOC 借鉴（§7.11）、评分分期（§7.1）、借用多模态是装配期复用（§4.3）、Markdown 单路径与块窗口（§4.5.3）、UI 事件登记（§5.3）、domain 纯函数的行数（§6）、worker 监管状态机（§10.5）、诊断保留量（§11）、热点收窄与 G18、CI 运行环境（§13）。同版入库 Loom 的设计稿，并定义外发同意事件 `settings.onEgressConsentRequired` 与命令 `settings.withdrawEgressConsent`（§7.0，Wisdom 2026-10-30 21:26）。
+状态：v0.6，规格基线（唯一真相源之一）。日期：2026-10-30（Asia/Shanghai）。Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，本文已按决定修改（结论汇总见 §16 与[差异清单](./docs/v2-gap-and-changes.md) §6）。v0.3 并入 Wisdom 2026-10-30 17:32 批准的 Markdown 阅读方案（Loom，[docs/design/md-reader.md](./docs/design/md-reader.md)）：新增 `markdown` 切片（§4.5），译文改为按区块存 Markdown（§8.1.1）；同日并入 Loom 对译文区块四项风险的结论（§8.1.1，§16）；同日 18:37 并入 Jev 远程默认面壁开放平台（§7.4），18:44 并入「API 优先」原则（§7.0），19:11 并入 Wisdom 对四项风险的决定（数据外发同意对话框、引擎 A 三条路径、问答同时支持多模态与纯文本模型、M0 API 实测延后；§2.5、§4.2、§7.0、§7.3、§7.4、§16），19:30 把外发同意改为按服务商询问并加入「外发前询问」开关（§7.0 第 6 条）。Wisdom 2026-10-30 19:57 批准按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修改；v0.4 改 P0 四项并删除 G17：新增无界面的编排切片 `ingest` 与预算切片 `budget`（§2.5、§4.2、§4.3），main 与 utility 进程的固定职责（§1），所有付费调用先预留（§7.8），译文中未核验公式的裁图表示（§8.1.1），CI 门禁（§13）。v0.5 改评审的 P1 项，并按 Wisdom 2026-10-30 19:45、19:46 的要求新增服务商适配层：外发同意的措辞统一（§7.0 第 6 条），外发检查端口 `EgressCheck` 与远程 worker 不接收桌面的服务商 Key（§1、§7.0、§10.1），删除已被取代的旧表述（§7.4、§16），存储与协议的版本升级规则（§8.4、§10.4），Electron 加固（§9），服务商适配层 `packages/providers`（§7.9），开发者本机的 Key 注入（§15.4）。v0.6 按 Wisdom 2026-10-30 21:12 批准的 PR C：阅读顺序（§7.10）、BabelDOC 借鉴（§7.11）、评分分期（§7.1）、借用多模态是装配期复用（§4.3）、Markdown 单路径与块窗口（§4.5.3）、UI 事件登记（§5.3）、domain 纯函数的行数（§6）、worker 监管状态机（§10.5）、诊断保留量（§11）、热点收窄与 G18、CI 运行环境（§13）。同版入库 Loom 的设计稿，并定义外发同意事件 `settings.onEgressConsentRequired` 与命令 `settings.withdrawEgressConsent`（§7.0，Wisdom 2026-10-30 21:26）。Wisdom 2026-10-31 批准诊断日志提前：规格在 M0，代码骨架在 M1，导出 UI 仍在 M2（§11）。同日 09:15：日志默认不记密钥与论文正文，调试日志短期保留，只存本机；M0/M1 不接云端追踪、不默认上报、不把文档全文写入日志。
 同级规格：[PRD.md](./PRD.md)（做什么）、[RULES.md](./RULES.md)（怎么协作）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，Loom 2026-10-30 已入库（正文不改，校正在文首入库说明）。本文只规定 UI 代码放在哪、依赖谁，不规定长什么样。
 本文与 `docs/architecture/0x_*_草案.md` 冲突时以本文为准，差异逐条列在 [docs/v2-gap-and-changes.md](./docs/v2-gap-and-changes.md)。本文中的目录、接口、协议均为**拟议设计**，M1 起按本文落地；落地前不代表已存在。
 
@@ -343,12 +343,12 @@ packages/features/<name>/
 | `contracts/src/egress.ts` | `EgressCheck` 端口与 `EgressDecision`（`allow` / `ask` / `refused`）；外发同意载荷 `EgressConsentRequired`、`EgressSendKind`、数据去向 `EgressDestination`（§7.0 第 6 条，只有类型） |
 | `contracts/src/budget.ts` | `BudgetGate` 端口（`reserve` / `settle` / `release`）、`ReserveRequest`、`Reservation`、`UsageReport`、`BudgetRefusal`、worker 作业的额度信封 `BudgetEnvelope`（§7.8） |
 | `contracts/src/errors.ts` | 错误码枚举与 `{code, message, retryable}` 形状 |
-| `contracts/src/diag-events.ts` | 诊断事件名与字段白名单 |
+| `contracts/src/diag-events.ts` | 诊断事件名与字段白名单（§11）。拟议路径，M1 随契约包落地；仓库还没有 `packages/` 时不建这个文件 |
 | `contracts/src/ipc/<feature>.ts` | 一个切片一个文件：该切片的 IPC 命令与事件定义。`settings` 的外发同意命令与事件在 `contracts/src/ipc/settings.ts`（§7.0，只有类型） |
 | `contracts/src/worker/*.ts` | `oi-parse/1` 协议消息（§10） |
 | `kernel/src/result.ts` | `Result<T, E>` |
 | `kernel/src/app-error.ts` | 错误基类与类型守卫 |
-| `kernel/src/logger.ts` | `Logger` 接口（无实现） |
+| `kernel/src/logger.ts` | `Logger` 接口（无实现）。调试模式默认关（§11） |
 | `kernel/src/clock.ts`、`id.ts` | 可注入的时间与 ID 生成 |
 | `platform-node/src/sqlite/connection.ts` | 打开数据库、WAL、单写者 |
 | `platform-node/src/sqlite/migrate.ts` | 汇总各切片 `migrations/` 并按（切片, 版本）执行 |
@@ -394,7 +394,7 @@ packages/features/<name>/
 | `qa` | 论文问答、上下文选取、引用 | `domain/context-selection.ts`（按 `ChatCapabilities.acceptsImages` 决定上下文只含文本，还是文本加区域裁图，§7.3）· `domain/citation.ts` · `application/use-cases/ask.ts`（流式回答经 `markdown` 的 seam 切分为已闭合块与未闭合尾部）· `application/ports/chat-provider.ts`（多模态模型与纯文本 LLM 共用一个端口，Wisdom 2026-10-30 19:11）· `adapters/llm-chat-provider.ts`（经 `@oi/providers` 的 `ChatTransport`；API 与本机 OpenAI 兼容服务共用，`acceptsImages` 取自模型的 `vision` 标记）· `ui/ask-panel.tsx`（回答用 ui-kit `MarkdownView`） |
 | `voice` | TTS 朗读 / 讲解、ASR 语音笔记 | `domain/speech-script.ts` · `domain/audio-segment.ts` · `application/ports/tts-port.ts` · `application/ports/asr-port.ts` · `application/use-cases/generate-narration.ts` · `application/use-cases/transcribe-note.ts` |
 | `settings` | 非密钥设置、provider 配置、密钥引用绑定（预算上限的规则与存储在 `budget`，设置页只经 `window.oi.budget.*` 读写） | `domain/provider-config-validate.ts` · `domain/translation-fallback.ts`（只判定开关与权限；借用的绑定由装配根完成，§4.3）（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/backend-choice.ts`（每个模型能力的「本地 / API」选择：有托管 API 时默认「API」，本地是同一接口后的一等选项，高级自建选项与推荐值的关系；覆盖 Jev、引擎 A 模型阶段、引擎 B、多模态、翻译、问答、TTS / ASR；API 优先，§7.0；Q9，§7.4）· `domain/egress-consent.ts`（按服务商记录数据外发同意：每个服务商一条记录，含已告知并同意的能力集合与时间；判断要不要弹对话框、对话框列哪些能力（首次列出全部、之后只列新增）；「外发前询问」开关（默认开，只能由用户在设置里关闭）；生成「数据去向」列表；开关为开且未同意时，该能力对该服务商的请求为 0；未作答不记已拒绝、下次再问；`withdrawEgressConsent` 只清已同意、不改记已拒绝；Wisdom 2026-10-30 19:11、19:30、21:26，§7.0 第 6 条）· `domain/egress-destination.ts`（目的主机分类：回环地址与用户标为「本机可信」的主机不算外发，其余都算；服务商身份按（`vendorId`, 主机）判定，主机不在该服务商的 `allowedHosts` 里就按新服务商处理；架构评审 P1-2）· `application/use-cases/check-egress.ts`（`EgressCheck` 的实现，由装配根注入到业务切片、`providers` 与 `worker-client`）· `application/use-cases/answer-egress-consent.ts` · `application/use-cases/withdraw-egress-consent.ts` · `application/use-cases/set-egress-prompt.ts` · `application/use-cases/list-egress-destinations.ts`· `application/use-cases/list-provider-presets.ts` · `application/ports/provider-catalog.ts` · `adapters/providers-catalog.ts`（经 `@oi/providers` 列出注册表里的服务商与模型）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
-| `diagnostics` | 诊断事件记录、诊断包导出、脱敏 | `domain/redaction-rules.ts`（自 v1 移植）· `domain/retention.ts`（保留天数与体积上限）· `application/use-cases/export-bundle.ts` · `ui/diagnostics-page.tsx` |
+| `diagnostics` | 诊断事件记录（M1 骨架，§11）、诊断包导出与脱敏（导出页在 M2） | `domain/redaction-rules.ts`（自 v1 移植）· `domain/retention.ts`（保留天数与体积上限）· `application/use-cases/export-bundle.ts` · `ui/diagnostics-page.tsx` |
 
 ### 4.3 切片之间的依赖（允许的方向）
 
@@ -1916,13 +1916,31 @@ stateDiagram-v2
 
 ## 11. 可观测性
 
-- **日志**：`kernel` 只定义 `Logger` 接口；`platform-node/logging/file-logger.ts` 输出 JSON 行。字段：`ts`、`level`、`event`（来自 `contracts/src/diag-events.ts` 白名单）、`feature`、`requestId`、`jobId`、`parseRunId`、`durationMs`、`errorCode`。不记录正文、译文、提示词、密钥；Markdown 阅读只记 `FileId`、文件数、耗时与错误码，不记文件路径与内容。
+Wisdom 2026-10-31 批准把产品诊断日志提前。与现有里程碑表一起看，切分是：本节规格算 M0；代码骨架（白名单枚举、`Logger`、流水线打点）在 M1，随契约包落地；一键导出、诊断页和保留天数设置仍在 M2（PRD US-14、AC-09、AC-10、AC-83）。本仓库还没有 `packages/`。`contracts/src/diag-events.ts` 仍是拟议路径，本规格不建这个文件，也不建目录树。实现是 M1 的代码任务（规格已在本节；[backlog](./docs/backlog.md)）。
+
+- **日志**：`kernel` 只定义 `Logger` 接口；`platform-node/src/logging/file-logger.ts` 输出 JSON 行。每条至少有 `ts`、`level`、`event`、`feature`。`event` 只能来自白名单。不记录正文、译文、提示词、密钥、绝对路径。Markdown 阅读只记 `FileId`、文件数、耗时与错误码，不记文件路径与内容。
+- **默认规则**（Wisdom 2026-10-31 09:15）：日志不记密钥，不记论文正文。调试日志短期保留。日志一律只存本机，用户不主动选择导出或上传，就不上传。
+- **诊断事件白名单**（评审里的「诊断事件没有枚举」，规格写在这里）：未列入的事件名不得出现在日志调用里。拟议事件 id 如下，M1 写入枚举时沿用这些名字：
+  - `egress.ask`：外发询问
+  - `budget.refused`：预算拒绝
+  - `upstream.server_error`：上游 5xx，只记 request id，不记响应体
+  - `scoring.unavailable`：评分不可用
+  - `pipeline.run`：解析、OCR、翻译的 run 日志（下一条）
+  - `ipc.oversize`：单条 IPC 或 worker 产物超限（下条「IPC 载荷」）
+- **流水线 run 日志**：每次解析、每次 OCR、每次翻译各记一条 `pipeline.run`。字段只有：`run_id`、`route`（路线或预设的 id）、`step`（结束或失败时所在步骤）、`status`、`error_class`（失败类别，不含上游原文）、`duration_ms`。成功时 `error_class` 为空。这些字段以及同一条日志的其他字段里，不写论文正文、译文、提示词、页面图、PDF 字节、密钥。
+- **调试模式**：开发者调试模式默认关。关着时只写白名单事件，不写步骤明细。打开后可以更细，明细仍然不写正文、译文、提示词、密钥和绝对路径。调试日志短期保留，短于产品诊断日志的可设置保留期；天数等 M2 实测，这里不填数字（RULES N-14）。默认关着时不产生调试文件。
+- **保留与脱敏**：产品诊断日志的保留天数和体积上限仍是设置项，默认值要能容下一次完整解析（20 页论文，含 Jev、引擎与翻译）的全部用量事件与错误码，M2 实测后定标（架构评审 P2-4；PRD AC-83）。v1 的 7 天、2 MB 只是实测前的起点。超过上限时按时间从旧到新滚动删除。导出前统一走 `diagnostics/domain/redaction-rules.ts`。导出内容只含计数、哈希、阶段耗时、错误码、设置摘要（无密钥）。调试日志不进入长期诊断包；若用户导出时带上调试日志，先再走一遍同一套脱敏，并且仍然没有正文和密钥。
+- **只存本机**：产品日志与调试日志都写在本机应用数据目录。崩溃记录同样只写本机，不自动上传。
+- **M0/M1 明确不做**（真遇到问题再评估，见 backlog）：接入 LangSmith 或其他云端追踪平台；默认把日志对外上报；把文档全文写进日志。这三件不在 M0/M1 的交付里，也不以「先接上、默认关掉」的方式加依赖。
 - **IPC 载荷**：单条 IPC 消息或 worker 产物超过阈值（默认 1 MB，可配置）记诊断事件 `ipc.oversize`，带通道名与字节数，不带内容；大数据一律走 `assetId`（§2.4）。
-- **关联**：每次 IPC 调用生成 `requestId`，透传到 worker（请求头 `OI-Request-Id`）与 provider 调用日志。
-- **Python worker**：结构化 JSON 写 stderr，supervisor 收集并加上 `source: worker`。
-- **诊断包**（架构评审 P2-4）：保留天数与体积上限是设置项（M2 诊断页）。默认值要能容下一次完整解析（20 页论文，含 Jev、引擎与翻译）的全部用量事件与错误码，M2 实测后定标；v1 的 7 天、2 MB 只是实测前的起点。超过上限时按时间从旧到新滚动删除；导出前统一走 `diagnostics/domain/redaction-rules.ts`；导出内容只含计数、哈希、阶段耗时、错误码、设置摘要（无密钥）。
-- **用量**：每次付费调用记录 provider、模型、token / 次数、估算费用（未知则为 `unknown`）、`jobId`，写入 `budget` 切片的账本（§7.8）并供界面显示。
-- **崩溃**：只写本机；不自动上传。
+- **关联**：每次 IPC 调用生成 `requestId`，透传到 worker（请求头 `OI-Request-Id`）与 provider 调用日志。`requestId` 可以和 `run_id` 同时出现，二者是两个字段。
+- **Python worker**：结构化 JSON 写 stderr，supervisor 收集并加上 `source: worker`。字段服从上面的白名单和禁止项。
+- **与 agent 证据分层**。产品运行日志、调试日志、PR 证据、agent 工作记录分开放：
+  - 产品运行日志：本机目录 `diagnostics/`。
+  - 调试日志：本机目录 `debug/`。默认不写。
+  - PR 证据：`docs/evidence/<PR号>/`。放 Cloud Agent 与 Anvil 的测试日志和截图。大文件用 CI artifact 链接，PR 描述写链接，不把大二进制提交进仓库（RULES N-12）。
+  - agent 工作记录：PR 描述里的一小段（读了哪些规格、关键决定、跑了哪些命令与结果、坑）。不另建 `docs/agent-logs/`，不把 Cursor 已保存的 transcript 再抄进仓库。
+- **用量**：每次付费调用记录 provider、模型、token / 次数、估算费用（未知则为 `unknown`）、`jobId`，写入 `budget` 切片的账本（§7.8）并供界面显示。费用记录不写论文正文。
 
 ## 12. 测试策略
 
@@ -1943,7 +1961,7 @@ stateDiagram-v2
 - CI 不调用付费 API、不下载模型权重；需要真实模型的测试标记为 `@model`，只在手动或夜间任务运行。
 - 每个模型能力的「本地」与「API」两个来源跑同一份契约测试（假后端或去掉凭据与图片内容的录制样例），这是「本地是一等选项」的完成标准（§7.0）。调用真实托管 API 的冒烟测试标记 `@live`（按 RULES §4 的 `@paid` 对待，有调用次数上限），只在对应 Key 已由 Cursor Secrets 注入时运行，否则跳过；不是 CI 门禁。
 - 运行纪律（每个提交 tip 全量只跑一次、失败只重跑失败项）见 RULES.md §4。
-- **core 测试不依赖界面（Wisdom 2026-10-30 23:56）。** `pnpm test:core` 在没有安装或编译界面包的情况下能跑完：不启动 Electron，不加载 renderer，不 import `src/ui/**`。只改界面（`src/ui/**`、`apps/desktop/src/renderer/**`、`ui-kit`）时，core 测试的期望与结果都不变（PRD AC-100）。
+- **core 测试不依赖界面（Wisdom 2026-10-30 23:56）。** core 测试在没有安装或编译界面包的情况下能跑完：不启动 Electron，不加载 renderer，不 import `src/ui/**`。只改界面（`src/ui/**`、`apps/desktop/src/renderer/**`、`ui-kit`）时，core 测试的期望与结果都不变（PRD AC-100）。M1 前此项写不适用（脚本尚未提供）；M1 起以 package.json 实际脚本为准。不新增空脚本顶替。
 
 ### 12.1 评测记录
 
@@ -2061,7 +2079,7 @@ G13–G16 与 5 层、18 个切片的关系：规则全部按通配路径写（`
 | --- | --- |
 | `pnpm check` | G1–G7、G9–G15 全部静态门禁 |
 | `pnpm test` | 全部 TS 测试（按 RULES.md §4 纪律运行） |
-| `pnpm test:core` | 只跑 core 测试（Node 环境，经 seam；Q3 的完成标准） |
+| core 测试 | 只跑 core 测试（Node 环境，经 seam；Q3 的完成标准）。M1 前此项写不适用（脚本尚未提供）；M1 起以 package.json 实际脚本为准。不在 package.json 里加空的 `test:core` |
 | `pnpm test:failed` | 只重跑上一次失败的测试 |
 | `uv run pytest` | worker 测试（在 `workers/parser/` 下） |
 | `pnpm dev` | 启动桌面开发版与本机 worker |
@@ -2116,6 +2134,7 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | 架构评审修复 A（Wisdom 2026-10-30 19:57 批准） | P0-1 新增无界面的编排切片 `ingest`，删除 `repair → quality`；P0-2 main 与 utility 的固定职责，密钥明文只在 main；P0-3 所有付费调用先经 `BudgetGate` 预留，账本移入新切片 `budget`，单价未知时按请求数 / 页数 / token 上限；P0-4 译文 `markdown` 不含未核验公式，裁图位置记在 `crops`，`getBlocks` 生成裁图节点；删除 G17，保留 G13–G16。20:57 按建议定下：采用 `budget` 切片；默认受限预算，各科目带保守的占位次数类上限，M0 实测后定标（§7.8 第 4 条）；评审建议的热点收窄（P1-11 后半）由 PR C 处理（本表末行） | §1、§2.5、§3、§4.1–§4.4、§5.2 F-16 / F-17、§7.1、§7.3、§7.8、§8.1.1、§8.2、§9、§10.2、§13；差异清单 §6.6 |
 | 架构评审修复 B 与服务商适配层（Wisdom 2026-10-30 19:45、19:46、19:57） | P1-1 同意规则措辞统一：拒绝只让该服务商对列出能力的请求为 0，其他服务商上已同意的能力照常；采纳「重新打开开关后照常询问」；P1-2 外发检查端口 `EgressCheck` 与目的主机分类；P1-3 远程 worker 不接收桌面的服务商 Key，本机 worker 只经回环地址接收；P1-4 删除已被取代的旧表述；P1-8 `ProviderFailure`；P1-9 存储与协议的版本升级规则；P1-10 Electron 加固；新增服务商适配层 `packages/providers`：按 API 格式写适配器、按服务商写注册表、能力标记、每个适配器的契约测试。20:57 按建议定下：各能力列出全部服务商、不预选；Gemini 默认原生格式，OpenAI 兼容端点为备选；百度 OCR 现在用 access_token；开发者本机的 Key 现在用环境变量；保留「本机可信」选项（默认没有）与「重新打开开关后照常询问」（§7.9.8、§15.4） | §1、§2、§2.5、§3、§4.1–§4.3、§5.1、§5.2 F-18、§7.0、§7.3、§7.4、§7.7、§7.9、§8.3、§8.4、§9、§10.1–§10.4、§12、§13、§15.4；差异清单 §6.7 |
 | PR C（Wisdom 2026-10-30 21:12） | 阅读顺序以版面模型为主、`reading_order/` 校验与兜底、规则集两侧对拍，百度云通用 OCR 不作主路线；M6 拆为 M6a–M6d，M3 加评分状态机与假评估器；BabelDOC 只借六项思路；P1-6、P1-7、P1-11 后半、P2-1–P2-8 | §3、§4.1–§4.3、§4.5.3、§4.5.4、§5.3、§6、§7.0、§7.1、§7.2、§7.7、§7.9.7、§7.10、§7.11、§8.1.1、§10.1–§10.3、§10.5、§11、§12、§13、§14.4；差异清单 §6.8；[backlog](./docs/backlog.md) |
+| 诊断日志（Wisdom 2026-10-31；09:15 补充默认规则与不做项） | 产品诊断日志的规格在 M0，代码骨架在 M1，导出 UI 仍在 M2。流水线 run 字段为 `run_id`、`route`、`step`、`status`、`error_class`、`duration_ms`。调试模式默认关。不记密钥、不记论文正文；调试日志短期保留；只存本机，用户不主动选择就不上传。M0/M1 不接 LangSmith 等云端追踪，不默认对外上报，不把文档全文写入日志。PR 证据在 `docs/evidence/<PR号>/`；agent 工作记录在 PR 描述，不另建对话记录 | §11；PRD S10、US-14、AC-101、§8；RULES §2、§4、§5 第 8 条、N-05 |
 
 - 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3、M6a、M6b 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
 - 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、架构评审新增的 `ingest` 切片及其九条出边、`budget` 切片与删除的 `repair → quality`，以及修复 B 新增的 `packages/providers` 包与 `providers-boundary` 规则、`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），以及 PR C 新增的 G18、`ui-events-declared`、`supervisor-state` 与解析规则集 `oi-rules/1`，在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。
