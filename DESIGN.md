@@ -221,7 +221,7 @@ flowchart TD
 
 用途：用文字告诉读者这一处公式（或区域）的 LaTeX / 原图是否经过核验，以及经过哪种核对，不只靠颜色（原则 P2）。
 
-出现位置：阅读区内，公式（行内、行间）旁与对比视图里；正文与表格区域只出现「未评分」。组件只按 `getBlocks` 给出的标记选样式，不自己判断（DS-20）。
+出现位置：阅读区内，公式（行内、行间）旁与对比视图里；正文与表格区域只出现「未评分」。组件只按 core 给出的数据选样式，不自己判断（DS-20）：「格式已核对」「源码核对」按 `getBlocks` 的标记 `format_checked` / `source_checked`（PRD AC-04）；「未评分」按评估记录 `not-run/disabled`（PRD AC-18、AC-84 ④）；占位框按 `getBlocks` 插入的 `kind: 'page_link'` 节点，即显示决定 `page-placeholder`（ARCHITECTURE §8.1.1；PRD AC-04、AC-89 ③）。
 
 | 状态 | 徽标文字（暂定，来自 PRD） | 何时出现（规格原文摘要） | 悬停 / 聚焦提示（tooltip，待审批） |
 | --- | --- | --- | --- |
@@ -234,7 +234,7 @@ flowchart TD
 - 形状 / 尺寸：胶囊式标签，字号 `--oi-reader-status-fs`（12），高 18，左右内边距 6，圆角 `--oi-radius-sm`（4）；行间公式放在公式右上，行内公式不内联插入，只在悬停 / 聚焦公式时显示；可点击目标仍 ≥ 24×24（DS-19，用外扩命中区）。占位框：块级，最小高 48，圆角 `--oi-radius-sm`。
 - 图标：无。三种徽标只靠文字区分；占位框另靠虚线描边与「（点击查看）」文字区分。
 - 状态：默认（文字 + 细描边）；悬停或键盘聚焦显示上表 tooltip（`--oi-motion-fast`，不遮挡公式）；徽标不可操作，无按下 / 禁用态。占位框悬停底色叠加 `--oi-reader-highlight`，按下 / Enter 执行跳转。
-- 无障碍：文字对比 ≥ 4.5:1；不只靠颜色（不同状态同色，靠文字区分，`forced-colors` 下描边改 `CanvasText`）；徽标 `aria-label` 为「公式状态：格式已核对，未核验」等完整句；占位框为 `role=link`，`aria-label`「图见原文第 N 页，点击查看」。
+- 无障碍：文字对比 ≥ 4.5:1；不只靠颜色（三种徽标同用 `--oi-reader-muted`，只靠文字区分；占位框例外，用 `--oi-reader-link` + 虚线描边，不靠颜色也可由虚线描边 + 「（点击查看）」文字区分；`forced-colors` 下描边改 `CanvasText`）；徽标 `aria-label` 为「公式状态：格式已核对，未核验」等完整句；占位框为 `role=link`，`aria-label`「图见原文第 N 页，点击查看」。
 - 浅色 / 深色 / 白：都用上述 token 的对应值，不另加颜色。
 
 ## 4 逐屏规格
@@ -367,7 +367,7 @@ flowchart TD
 | DS-18 | 界面放大 200% 不丢内容 | 手动 |
 | DS-19 | 所有可点击目标 ≥ 24×24 | 自动（axe target-size） |
 | DS-20 | 组件里无业务条件判断（Q3 执行规则 1–3）：依赖方向与 core 测试由 CI G13–G16 检查，「改 UI 不改 core」由评审清单 RULES §5 第 11 条与 §8 交接说明检查（原 G17 已于 2026-10-30 19:57 删除，ARCHITECTURE §13） | CI + 评审 |
-| DS-28 | 「格式已核对」「源码核对」「未评分」徽标与占位框文字逐字等于 §3.7；组件只按 `format_checked` / `source_checked` / `not-run/disabled` 标记与 `page-placeholder` 选择，不自行判断 | 组件测试 |
+| DS-28 | 「格式已核对」「源码核对」「未评分」徽标与占位框文字逐字等于 §3.7；组件只按来源选择、不自行判断：「格式已核对」「源码核对」按 `getBlocks` 标记 `format_checked` / `source_checked`；「未评分」按评估记录 `not-run/disabled`；占位框按 `getBlocks` 的 `page_link` 节点（显示决定 `page-placeholder`） | 组件测试 |
 | DS-29 | 徽标与占位框只引用 `--oi-reader-*`；三套阅读主题下文字 ≥ 4.5:1；无图标。三种徽标（格式已核对 / 源码核对 / 未评分）同用 `--oi-reader-muted`，只靠文字区分；占位框是例外，用 `--oi-reader-link` + 虚线描边（它是链接），不靠颜色也可由虚线描边 + 「（点击查看）」文字区分；色盲模拟与 `forced-colors` 下仍可区分 | 自动 + 手动 |
 | DS-30 | 徽标悬停与键盘聚焦都显示 §3.7 的 tooltip；每个徽标有完整 `aria-label`（含「未核验」）。问答中「未核验」由 AC-87 ④ / AC-89 ④ 覆盖。 | axe + e2e |
 | DS-31 | 点击或回车占位框，左侧原文跳到第 N 页并定位该区域（AC-89 ③） | e2e |
