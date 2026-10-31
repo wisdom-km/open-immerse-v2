@@ -55,6 +55,9 @@ venv = ".venv"
 
 # G6, ARCHITECTURE §10.3. modular_a/backends currently has only paddle_local.py,
 # so the pairwise backend contract starts when a second backend file exists.
+# reading_order/, preprocess/scan_detect.py, and modular_a/paragraphs.py are the
+# parsing-rule paths in RULES §2. An empty file there makes this PR a rules PR
+# (G18). Those three forbidden sources join the contract with the rules PR.
 [tool.importlinter]
 root_packages = ["oi_worker"]
 include_external_packages = true
@@ -99,9 +102,6 @@ modules = [
 name = "python core forbids io"
 type = "forbidden"
 source_modules = [
-  "oi_worker.engines.reading_order",
-  "oi_worker.engines.modular_a.paragraphs",
-  "oi_worker.preprocess.scan_detect",
   "oi_worker.engines.e2e_b.mapping",
   "oi_worker.quality.batching",
   "oi_worker.quality.http_errors",

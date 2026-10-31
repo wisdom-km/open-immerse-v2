@@ -25,7 +25,7 @@
 
 G12 的非生成改动超过 600 行（只改 `packages/contracts` 时是 200 行）时，提交说明或环境变量 `PR_BODY` 里要有一行以 `G12:` 开头。这是「写明理由」的机器标记；规格没有规定标记原文。不计入行数的只有 `pnpm-lock.yaml`、`workers/parser/uv.lock` 和 `dist/`。
 
-没有 `test:core` 脚本。core 测试文件是 `packages/features/*/test/core/**/*.ts`，和工具夹具一起由 Vitest 在 Node 环境收集。`packages/features/jobs` 是门禁样例：§4.3 里没有出边的最小切片形状，只导出 `sameJobId`，不是 §4.2 的任务状态机。G7 有一条生成器，把 `job-id.ts` 复制成 `job-id.gen.ts`。不改分支保护。
+没有 `test:core` 脚本。core 测试文件是 `packages/features/*/test/core/**/*.ts`，和工具夹具一起由 Vitest 在 Node 环境收集。`packages/features/jobs` 是门禁样例：§4.3 里没有出边的最小切片形状，只导出 `sameJobId`，不是 §4.2 的任务状态机。G7 有一条生成器，把 `job-id.ts` 复制成 `job-id.gen.ts`。G6 的 Python core forbidden 先覆盖 `mapping.py`、`batching.py`、`http_errors.py`。`reading_order/`、`preprocess/scan_detect.py`、`modular_a/paragraphs.py` 不在这棵树上：RULES §2 把这些路径当成解析规则 PR，必须同时带上 TS 文字层和夹具，且不能再带别的文件。不改分支保护。
 
 ### 版本
 
