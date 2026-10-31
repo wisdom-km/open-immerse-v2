@@ -1048,7 +1048,7 @@ interface BudgetGate {                         // contracts/src/budget.ts；budg
 规则：
 
 - `EngineId` 是配置值（如 `modular-a`、`e2e-b`、`text-layer`），模型名、权重版本记在 `EngineCapabilities.models[]` 与每次 `ParseRun` 中。
-- 引擎不支持区域级解析时必须在 `capabilities` 里声明；用例据此拒绝或显示「需整页运行」及估算费用，不能隐式扩大收费范围。
+- 引擎不支持区域级解析时必须在 `capabilities` 里声明；用例据此拒绝或显示「需整页运行」及估算费用，不能隐式扩大收费范围。「需整页运行」不授权在没有版面作业时把引擎 A 的识别、引擎 B 或云 OCR 改成整页请求：这三项请求为 0，整页只走多模态；识别列表含这三项之一且版面关着时，路线校验失败，原因码 `sources_require_layout`（D-E，§7.12）。
 - 质量评估的 `error` / `unavailable` / `not-run` 不得触发补救（AC-05）。
 - 上游 verdict 的规范化只在 `quality/domain/evaluation-status.ts` 做，上游原值保存在 `providerVerdict`。以 Jev 为例：`scored` → `scored`（带 `rawScore`）；`precheck_reject` → `error/invalid_candidate`；`render_error` → `error/render_failed`；`missing_original_image` → `error/missing_image`；`encode_error` → `error/encode_failed`；`forward_error` → `error/service_failed`；其他任何值 → `error/unknown_verdict`。上游返回的 0.0 / -1.0 占位分一律丢弃。HTTP 层的失败先由适配器映射为 `contracts/src/provider.ts` 的 `ProviderFailure`（TS 侧在 `packages/providers` 的 `formats/<format>/errors.ts`，worker 侧在 `quality/http_errors.py`，§7.9.5），再在这里规范化：`auth`、`quota` → `unavailable`（原因码同名），其余 → `error/<kind>`；同样不带分数、不触发补救。
 - 阈值按（类别, `evaluatorVersion`）分别定标；`evaluatorVersion` 包含模型版本、部署方式、推理后端与量化档、渲染环境。上游默认阈值 0.5 不使用（PRD QM-05）。某个 `evaluatorVersion` 尚无定标阈值时，分数照常记录，但 `low-score-routing` 返回「未定标」，不触发补救。
@@ -1147,10 +1147,10 @@ M0 的开发机验证（结果写入差异清单 §7，PRD §8 M0 退出条件�
 - **关闭期间。**
   - `evaluate-regions` 不提交 `evaluate` 作业，直接为每个新候选写 `not-run`（原因码 `disabled`），界面标「未评分」（§7.1「评估状态与界面标记」）。所以 Jev 的上游请求、Jev 科目的 `BudgetGate.reserve`、Jev 能力的 `EgressCheck.check` 都是 0 次。
   - 外发同意：面壁对话框只列当前确实要发往面壁的能力，评分关闭时就只有引擎 B（若选了 API）；「数据去向」列表同样不列 Jev。
-  - 识别照常（Wisdom 2026-10-30 22:23；22:45 起由路线配置表达，不再另设一套开关）：关掉评分不增删识别积木，也不改写路线。路线里已有的 OCR（引擎 A 的识别阶段、引擎 B、云 OCR）与多模态继续识别，结果都标「未评分」。多模态只要识别列表含它就运行。送评只在开关开着且路线含 Jev 时发生。要「只开 OCR」「只开多模态」或「两者都开」，改的是路线的识别列表（§7.12，PRD AC-88、AC-91）。
-    - 识别列表不含引擎 A 的识别阶段、引擎 B、云 OCR 时，这些请求为 0。版面是否运行由版面积木决定，与识别列表无关；版面关着时多模态收整页。可信文字层页上的正文仍用文字层。
+  - 识别照常（Wisdom 2026-10-30 22:23；22:45 起由路线配置表达，不再另设一套开关）：关掉评分不增删识别积木，也不改写路线，也不取消版面门禁。版面开着时，路线里已有的 OCR（引擎 A 的识别阶段、引擎 B、云 OCR）与多模态继续识别，结果都标「未评分」。没有版面作业时，引擎 A 的识别阶段、引擎 B、云 OCR 请求为 0，不发整页；整页只走多模态（D-E，§7.12）。多模态只要识别列表含它就运行。送评只在开关开着且路线含 Jev 时发生。要「只开 OCR」「只开多模态」或「两者都开」，改的是路线的识别列表（§7.12，PRD AC-88、AC-91）。
+    - 识别列表不含引擎 A 的识别阶段、引擎 B、云 OCR 时，这些请求为 0。版面是否运行由版面积木决定，与识别列表无关。版面关着时，即使识别列表含这三项，请求仍为 0，不发整页；路线校验失败，原因码 `sources_require_layout`，不静默跳过。整页只走多模态。可信文字层页上的正文仍用文字层。
     - 多模态作为识别来源时不是补救：由 `repair` 的 `recognizeRegions` 发请求。版面开着时，范围由 `repair/domain/recognition-scope.ts` 决定——公式区域、表格区域、文字层不是 `trusted` 的页上的正文区域，图区域不发，只发区域裁片。版面关着时发整页，规范化结果是 `WholePageRecognition`（§7.12、PRD AC-88 ③、AC-95），不在 `recognition-scope` 的区域清单里。两种都不上传原 PDF。
-    - 多模态与云 OCR 照常经外发同意与预算（§7.0 第 6 条、§7.7、§7.8）。多模态识别的预算科目是「多模态识别」，与「多模态补救」分开；该服务商此前只为补救同意过时，第一次识别请求前按 PRD AC-61 ⑦b 追加告知一次。没有配置多模态服务或云 OCR 时不发请求，界面提示可以去配置（待 Loom）。
+    - 允许发出的多模态与云 OCR 请求照常经外发同意与预算（§7.0 第 6 条、§7.7、§7.8）。版面关着时云 OCR 请求为 0，不进入外发检查与预算预留。多模态识别的预算科目是「多模态识别」，与「多模态补救」分开；该服务商此前只为补救同意过时，第一次识别请求前按 PRD AC-61 ⑦b 追加告知一次。没有配置多模态服务或云 OCR 时不发请求，界面提示可以去配置（待 Loom）。
   - 正文与表格按 §7.1「没有有效分数时的采用」；公式按 §7.5 第 4、5 步。「源码核对」与 `format-checked-latex` 在记录为 `not-run/disabled` 时出现，不论开关开或关。第 5 步通过是「格式已核对」，第 4 步通过是「源码核对」，都不算已核验。`checked-latex` 已并入 `format-checked-latex`，不再单独出现（Wisdom 2026-10-31 01:14）。
   - 没有自动补救（PRD AC-05）：没有批量、没有定时，核对失败也不触发请求。
   - **手动「重新识别」（Wisdom 2026-10-30 22:23，待 Wisdom 确认；PRD AC-90）。** 用户可以对单个区域（公式、表格或正文区域）手动发起「重新识别」，换一个来源，入口在阅读页（布局待 Loom）。命令是 `ingest.rerecognizeRegion`。

@@ -668,7 +668,7 @@ Wisdom 批准 Forge 的四条建议。Q10 不重开：标准档仍是 PP-DocLayo
 | PR C：阅读顺序、M6 拆分、BabelDOC 借鉴、评审其余项（Wisdom 2026-10-30 21:12） | 本文 §0 第 14 条、§2.11、§6.8；ARCH §4.3、§4.5、§5.3、§6、§7.11、§10.5、§11、§13；PRD AC-72–AC-84、§8；RULES §1.3、§1.5、§2、§3、N-19；[backlog](./backlog.md) |
 | 阅读顺序：模型顺序为主、`reading_order/` 校验与兜底、规则集两侧对拍、云 OCR 不作顺序来源（Wisdom 2026-10-30 21:12） | 本文 §2.4、§6.8、§7；ARCH §3、§4.1、§4.2、§7.0、§7.1、§7.2、§7.7、§7.10、§10.3、§12；PRD S2、AC-68–AC-71、QM-01、M0、M2、M3 |
 | 决策记录 Q1–Q12 | 本文 §6；PRD §9；ARCH §16 |
-| 版面两个部署设置、关掉版面时云 OCR 请求为 0、过渡默认 `multimodal-layout`、PP-DocLayoutV3 的 8 GB CPU 实测仍未核实（Wisdom 2026-10-31） | 本文 §0 第 16 条、§6.13、§7；ARCH §7.0、§7.7、§7.12、§16；PRD §3.5、AC-71、AC-86、AC-91、AC-96、§8 M0、§9；[backlog](./backlog.md) §8 |
+| 版面两个部署设置、关掉版面时引擎 A 的识别、引擎 B、云 OCR 请求都为 0、过渡默认 `multimodal-layout`、PP-DocLayoutV3 的 8 GB CPU 实测仍未核实（Wisdom 2026-10-31；11:14 起门禁覆盖这三项，见下一行） | 本文 §0 第 16 条、§6.13、§7；ARCH §7.0、§7.7、§7.12、§16；PRD §3.5、AC-71、AC-86、AC-91、AC-96、§8 M0、§9；[backlog](./backlog.md) §8 |
 | D-E 续定：没有版面作业时引擎 A 的识别、引擎 B、云 OCR 请求都为 0；组合校验失败，不静默跳过（Wisdom 2026-10-31 11:14） | 本文 §6.13；ARCH §7.1、§7.2、§7.12、§16；PRD §3.5、AC-88、AC-93、AC-96；[backlog](./backlog.md) §8 |
 | Markdown 阅读方案（D1–D7）、译文按区块存 Markdown | 本文 §6.1；ARCH §4.5、§8.1.1；PRD S13、§3.2、US-23–US-28、AC-30–AC-56、QM-15–QM-17、§8.1；RULES N-18；方案原文 `docs/design/md-reader.md` |
 | Jev 的 API 服务商是面壁开放平台、设置「本地 / API」、`MODELBEST_API_KEY` 的保管、引擎 B 的面壁 API 来源（Wisdom 2026-10-30 18:37） | 本文 §2.3.1、§7；ARCH §1、§2.6、§4.2、§7.1、§7.3、§7.4「面壁 API」、§8.3、§10.1–§10.3、§16；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、QM-14、M6a、M6b、§9 |
