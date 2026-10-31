@@ -13,3 +13,12 @@
 | `node ../../tools/gate-remediation/run.mjs --id G8 -- uv run pytest`（`workers/parser/`） | 0 | 3 passed |
 
 没有跑 `pnpm test:core`：package.json 没有这个脚本。没有跑 `tsc -b`。
+
+## 未知编号与规格引用
+
+提交 `31a07bfea7887ef77bf9e2ff346226a0c3c2b2f0`。`GATE_BASE=origin/main`。
+
+| 命令 | 退出码 | 结果 |
+| --- | --- | --- |
+| `corepack pnpm exec vitest run tools/gate-remediation` | 0 | 7 个文件、13 个测试通过 |
+| `corepack pnpm run check` | 0 | `check-pr-size` 打印 1509 行非生成改动，先前提交说明里的 `G12:` 仍被接受 |
