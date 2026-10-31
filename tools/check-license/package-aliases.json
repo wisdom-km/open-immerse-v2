@@ -1,0 +1,10 @@
+{
+  "aliases": [
+    {
+      "name": "pypdfium2",
+      "reported": "BSD-3-Clause, Apache-2.0, dependency licenses",
+      "spdx": "Apache-2.0 OR BSD-3-Clause",
+      "reason": "Q6 已采用。pip-licenses 读到的 License 字段不是 SPDX。"
+    }
+  ]
+}

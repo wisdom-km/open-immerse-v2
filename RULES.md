@@ -220,7 +220,7 @@ Wisdom 2026-10-30 23:56 在不改上面五条原文的前提下写死：核心�
 | 条件 | 怎样算达到 | 已有条文 |
 | --- | --- | --- |
 | 验收 ID 覆盖 | 改动对得上 PRD 的 US / AC，或 DESIGN 的 DS 时，描述列出编号。对不上就写「无」，不编编号 | §2 第 1 条；[PRD.md](./PRD.md) §6。DS 只读，不改 DESIGN 正文（N-10） |
-| 命令退出码 | 这次实际跑过的命令，退出码写在描述里，并写入 `docs/evidence/<PR号>/`。没跑的命令不要写成通过。需要全量时遵守 §4（同一个 tip 只跑一次）。空跑怎么读，以 [AGENTS.md](./AGENTS.md)「命令」为准：没有 `.ts` 时 typecheck 与 `pnpm test` 退出码 0 只说明空跑；本机 `uv run pytest` 退出码 5 是空目录。`test:core` 在 M1 前写不适用（脚本尚未提供）。CI 全绿不等于 ARCHITECTURE §13 的 G1–G18 | §2 第 3 条、§4；[docs/ci-and-environment.md](./docs/ci-and-environment.md)「当前是空跑」 |
+| 命令退出码 | 这次实际跑过的命令，退出码写在描述里，并写入 `docs/evidence/<PR号>/`。没跑的命令不要写成通过。需要全量时遵守 §4（同一个 tip 只跑一次）。命令怎么读，以 [AGENTS.md](./AGENTS.md)「命令」为准。`test:core` 不单设脚本，core 测试是 Vitest 的 `core` 工程。CI 全绿不等于 ARCHITECTURE §13 的 G1–G18 全部已有 | §2 第 3 条、§4；[docs/ci-and-environment.md](./docs/ci-and-environment.md)「门禁」 |
 | 证据目录 | `docs/evidence/<PR号>/` 放这次的测试日志和截图。没有就在描述里写「无」。大文件写 CI artifact 链接，不提交大二进制 | §2 第 6 条、§4「证据目录」；N-12 |
 | PR 描述工作记录 | 模板「agent 工作记录」写了：读了哪些规格、关键决定、命令与结果、坑。不新建 `docs/agent-logs/` | §2 第 7 条 |
 | 日志规则 | 这次若增加或修改日志：不记正文、译文、提示词、密钥、绝对路径；调试模式默认关；调试日志最多 7 天且总量上限 50 MB，只存本机。没改日志的 PR 在描述里写「未改日志」 | §4「调试模式」、§5 第 8 条、N-05；[ARCHITECTURE.md](./ARCHITECTURE.md) §11 |

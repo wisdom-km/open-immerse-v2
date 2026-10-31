@@ -1,0 +1,4 @@
+# G9. ARCHITECTURE §7.9.7 names a fixed test-key prefix but does not give the
+# string. No allowlist regex is registered until that string is in the spec.
+[extend]
+useDefault = true

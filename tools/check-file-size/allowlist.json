@@ -1,0 +1,21 @@
+{
+  "ignore": [
+    {
+      "pattern": "pnpm-lock.yaml",
+      "reason": "锁文件。ARCHITECTURE §6 不计行数。"
+    },
+    {
+      "pattern": "workers/parser/uv.lock",
+      "reason": "锁文件。ARCHITECTURE §6 不计行数。"
+    },
+    {
+      "pattern": "**/migrations/**/*.sql",
+      "reason": "迁移 SQL。ARCHITECTURE §6 不计行数。"
+    },
+    {
+      "pattern": "fixtures/protocol/**",
+      "reason": "协议样例。ARCHITECTURE §6 不计行数。"
+    }
+  ],
+  "exemptions": []
+}

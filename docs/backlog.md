@@ -150,13 +150,13 @@ P0 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）�
 | E-P1-11 | 事故复盘模板 | 已处理：`docs/incidents/TEMPLATE.md` |
 | E-P1-12 | 三种版本号 | 已处理。README「三种版本号」 |
 | E-P1-3 | 把两个 CI job 设为必需检查 | 未处理。仓库管理员做。Agent 不改分支保护（N-02） |
-| E-P1-4 | CODEOWNERS | 未处理。等 Wisdom 指定路径归属 |
-| E-P1-5 | Conventional Commits 检查 | 未处理。放进 M1 的 `pnpm check` |
-| E-P1-6 | dependency-cruiser 与 `tsconfig.core.json` | 未处理。M1，按 ARCHITECTURE §13 |
-| E-P1-7 | 空测试目录不再把 pytest 退出码 5 当成通过；Vitest 要有会失败的样例 | 未处理。M1。这次不改工作流 |
+| E-P1-4 | CODEOWNERS | 已处理。`.github/CODEOWNERS` 是 `* @wisdom-km`。按路径拆所有者仍等 Wisdom 指定 |
+| E-P1-5 | Conventional Commits 检查 | 已处理。`pnpm run check:commits`，并进 `pnpm check` |
+| E-P1-6 | dependency-cruiser 与 `tsconfig.core.json` | 已处理。规则在 `tools/check-deps/`，core 编译配置是 `tsconfig.core.json` |
+| E-P1-7 | 空测试目录不再把 pytest 退出码 5 当成通过；Vitest 要有会失败的样例 | 已处理。pytest 退出码 5 使 CI 失败；Vitest 夹具覆盖各门禁的违规样例 |
 | E-P1-8 | `docs/acceptance/` 结果格式 | 未处理。M0 开工时 |
 | E-P1-9 | 提示词目录与 Jev 模型卡 | 未处理。M4 / M6a |
-| E-P1-10 | Dependabot 与 gitleaks | 未处理。这次不加 |
+| E-P1-10 | Dependabot 与 gitleaks | gitleaks 8.30.1 已接入 CI（G9）。Dependabot 仍未加 |
 | E-P2-1–E-P2-10 | 并发取消、quarantine 目录、发版清单、崩溃只写本机、红队、`.env.example`、SECURITY.md、不用通用功能开关、Prettier、合入后是否删分支 | 未处理。按原报告的里程碑。E-P2-10 由管理员决定，Agent 不改仓库设置 |
 
 ## 8. M0 后决定（Wisdom 2026-10-31 01:08）
@@ -204,6 +204,6 @@ PR #12 已合入 `main`（`c14e4b6`）。下面三条来自 Forge 对 `e11e54b` 
 
 下面三项仓库里已有记录，这里只提醒，不新开编号。
 
-- CI 门禁 G1–G18 仍是空跑，到 M1 才落地（§7 E-P1-6、E-P1-7；`docs/ci-and-environment.md`「当前是空跑」）。当前 CI 全绿不等于 ARCHITECTURE §13 已生效。
+- CI 已跑一部分 ARCHITECTURE §13 门禁。还没接上的见 `docs/ci-and-environment.md`「门禁」。全绿不等于 G1–G18 全部已有。
 - `main` 的分支保护要 Wisdom 在仓库设置里打开。Agent 不改分支保护（N-02；§7 E-P1-3）。
 - §8 里尚未决定的项等 M0。R-A、D-D、D-E 已决定。W-4 的过渡默认已决定，正式全局默认与来源优先级未决定。R-B 与 §8.2 其余行仍未决定。选定之前不改编号核对或那些返回码。
