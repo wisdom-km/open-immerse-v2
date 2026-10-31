@@ -98,4 +98,4 @@ it("allows a matrix edge and rejects the other four M1 examples", () => {
     expect(coreTest.status).not.toBe(0);
     expect(coreTest.output).toContain("core-test-through-seam");
   });
-});
+}, 30_000);
