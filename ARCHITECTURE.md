@@ -1627,12 +1627,12 @@ M3 交付这一张表，验收是 PRD AC-102。它把已经写在 PRD AC-85、AC
 | D | 开 | 含 Jev | 已拒绝且询问开。`EgressCheck` 返回 `refused`：不连接，不发询问事件；已拒绝之后对话框出现 0 次（AC-61 ⑦c） | 任意。本行只断言外发这一道。预算同时拒绝时不另造合并码（见本节读表） | `unavailable/consent_required`。`scored`、`error`、`not-run` 为 0 | 上游请求 0。预留按 §7.9.5 第 4 条先做，结果不是 `allow` 时释放。不把「释放」写成「从未预留」 | 与 C-error 的显示相同。不是 `not-run/disabled`，所以第 4、5 步不出现 | 「待评分」。发 `onScoringUnavailable`（§7.4）。开关不改。不改发到别的服务商，也不擅自改成「本地」（AC-61 ④） |
 | E | 开 | 含 Jev | 未作答且询问开。`EgressCheck` 返回 `ask`：这次不发请求，也不等待对话框。没有未结束的询问时发 `settings.onEgressConsentRequired`；已有则不再发第二条（§7.0） | 任意。同 D，只断言外发这一道 | `unavailable/consent_required`。未作答不记已拒绝，也不记已同意（AC-61 ⑦h） | 同 D：上游请求 0，预留释放 | 与 C-error 的显示相同 | 「待评分」。发 `onScoringUnavailable`。开关不改。询问开着时，下次还要发送之前再问 1 次 |
 | F | 开 | 含 Jev | 已同意，或询问关（同 C，先让外发通过，只看预算这一道） | 受限且已到顶 | `unavailable/budget`（AC-06、§7.8 第 5 条）。`scored`、`error`、`not-run` 为 0 | 上游请求 0。`reserve` 拒绝，不发出 | 与 C-error 的显示相同 | 「待评分」。不发 `onScoringUnavailable`（AC-85 ②）。不触发补救。预算恢复后由 `resume-ingest` 补评（§7.8 第 5 条） |
-| G | 开 | 含 Jev | 同 F | 受限，且单价未知，又没有该科目的次数类上限 | `reserve` 返回已有的 `budget_cap_unset`，请求 0（§7.8 第 4 条）。评估记录仍用 §7.8 第 5 条已有的 `unavailable/budget`，不把 `budget_cap_unset` 写成第二种评估原因码 | 上游请求 0 | 与 C-error 的显示相同 | 「待评分」。不发 `onScoringUnavailable`。界面提示去填单价或上限（§7.8 第 4 条）。不新造原因码 |
+| G | 开 | 含 Jev | 同 F | 受限，且单价未知，又没有该科目的次数类上限 | `reserve` 返回已有的 `budget_cap_unset`，请求 0（§7.8 第 4 条，AC-63 ②）。评估记录写成 `unavailable/budget` 是推导：第 5 条只写「被拒之后」Jev 记 `unavailable`（原因码 `budget`），没有点名 `budget_cap_unset`。不把 `budget_cap_unset` 写成第二种评估原因码 | 上游请求 0 | 与 C-error 的显示相同 | 「待评分」。不发 `onScoringUnavailable`。界面提示去填单价或上限（§7.8 第 4 条）。不新造原因码 |
 | H | 开 | 含 Jev | 任意 | 任意 | 不产生新的 `not-run`。开关开着且路线含 Jev 时，`not-run` 出现 0 次（AC-84 ③、AC-97 ③） | 不因为外发或预算把一条本应送评的记录改成 `not-run/disabled` | 不适用：本行没有 `not-run/disabled` 候选 | 已有的 `not-run/disabled` 只来自过去的 A 或 B，不被本行改写。自动补评这些旧记录 0 次（AC-85 ⑤） |
 
 识别来源（多模态、引擎 B、云 OCR、引擎 A）是否发请求，仍只看路线的识别列表与版面门禁（AC-88、D-E），不看本表的评分列。那些请求自己的外发与预算仍按 AC-61 ⑦、AC-06，不并进 Jev 这一列。
 
-G 行只是把「单价未知且没有次数类上限」收成 §7.8 已经写出的两个返回：`reserve` 的 `budget_cap_unset`，以及第 5 条的评估原因码 `budget`。若第 4 条与第 5 条读出来的评估原因码不一致，以那两节原文为准，先改 G 行，不在测试里自选第三种码。
+G 行的 `reserve` 返回 `budget_cap_unset` 是 §7.8 第 4 条的原句。评估记录用 `unavailable/budget` 标为推导：第 5 条没有把 `budget_cap_unset` 写进原因码。AC-85、AC-89、AC-97 也没有写这一格。与第 4 条或第 5 条原文不一致时，以那两节为准，先改 G 行。不新造原因码。
 
 ## 8. 数据模型与存储
 
