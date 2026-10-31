@@ -1,0 +1,4 @@
+# 与 workers/parser/.uv-version 一起升级。改版本而不改这一行，安装会失败退出。
+# 下面这一行是 https://astral.sh/uv/<version>/install.sh 下载正文的 sha256（小写十六进制）。
+# 计算：curl -fsSL -o uv-install.sh "https://astral.sh/uv/<version>/install.sh" && sha256sum uv-install.sh
+f7a56e7afaec49a3bcbc3ac3cdbe917e7c6ce30e0d815308a12e531aa5ef23b7

@@ -116,7 +116,7 @@ P0 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）�
 | P1-11 | README 阅读顺序；AGENTS.md；.github/ISSUE_TEMPLATE/task.md；.github/PULL_REQUEST_TEMPLATE.md。审查里的 `.cursor/rules` 是可选，没有加（N-11） | 已处理 |
 | P1-12 | PRD AC-20；ARCHITECTURE §7.4 推荐规则 1。没有名为「关掉 API 来源」的总开关 | 已处理 |
 | P1-13 | 与 P1-5 同一张表：ARCHITECTURE §8.1.1。解析、OCR、Jev 的用户可见词只有校验失败、网络错误、模型错误 | 已处理 |
-| P1-14 | DESIGN.md 文首（第 16 行）仍写「Loom 交付前 UI 只搭结构」。RULES 文首已写以 RULES 为准 | 未处理。过时句需 Loom 修改。本 PR 不改 DESIGN 正文（N-10）。负责人：Loom。跟进见 §9 R12-P2-3 |
+| P1-14 | DESIGN.md 文首（第 16 行）仍写「Loom 交付前 UI 只搭结构」。RULES 文首已写以 RULES 为准 | 已处理 @ PR #14（main@eb87d53） |
 | P1-15 | README「历史草案」。该目录不授权实现，冲突时以根目录三份规格为准 | 已处理 |
 
 ### P2
@@ -186,13 +186,13 @@ R-A 已解决。R-B 仍标为「M0 实测后决定」。
 
 ## 9. PR #12 终审的 P2（Forge @ `e11e54b`，2026-10-31）
 
-PR #12 已合入 `main`（`c14e4b6`）。下面三条来自 Forge 对 `e11e54b` 的终审，不挡当前里程碑。本段只记状态，供同步到 GitHub 后提醒负责人。不改 `docs/adr/README.md`、`.cursor/install.sh`、`DESIGN.md`、`docs/design-principles.md`。
+PR #12 已合入 `main`（`c14e4b6`）。下面三条来自 Forge 对 `e11e54b` 的终审，不挡当前里程碑。本段只记状态，供同步到 GitHub 后提醒负责人。R12-P2-1、R12-P2-3 与 §6 P1-14 已由 PR #14（main@eb87d53）处理。
 
 | 编号 | 发现 | 状态 | 负责人 |
 | --- | --- | --- | --- |
-| R12-P2-1 | ADR 索引：`docs/adr/README.md` 末句仍写差异清单 §6.1–§6.11。§6.12（合入后复审的决定）已在差异清单。那一句改为 §6.1–§6.12，不抄决定正文 | 未处理。放进 Loom 的徽标 / 设计小 PR，与 R12-P2-3 同一个 PR，不单开 | Loom |
-| R12-P2-2 | 供应链：`.cursor/install.sh` 用 curl 管道到 sh 安装 uv（`https://astral.sh/uv/${uv_version}/install.sh`），没有校验哈希，并用 `sudo` 把 `uv` / `uvx` 链到 `/usr/local/bin` | 未处理。Agent 不改这个文件（RULES N-11；该条点名 `.cursor/environment.json`，其 `install` 即本脚本，两者都不改）。待 Wisdom 决定：钉住哈希 / 去掉 `sudo` / 维持现状 | Wisdom |
-| R12-P2-3 | 设计跟进，三处一起做：① DESIGN.md 文首仍是 §6 P1-14 那句「Loom 交付前 UI 只搭结构」；② `docs/design-principles.md` 正文 P2 的状态示例仍缺「格式已核对」「源码核对」「未评分」「占位框」；③ DESIGN 新增徽标 §3.7，验收 DS-28…DS-31 | 未处理。补丁在 Forge 交接里已备好。#12 已合入，由 Loom 另开该设计 PR。本记录不改这两份正文（N-10）。§6 P1-14 保持未处理，等该 PR 再改状态 | Loom |
+| R12-P2-1 | ADR 索引：`docs/adr/README.md` 末句仍写差异清单 §6.1–§6.11。§6.12（合入后复审的决定）已在差异清单。那一句改为 §6.1–§6.12，不抄决定正文 | 已处理 @ PR #14（main@eb87d53） | Loom |
+| R12-P2-2 | 供应链：`.cursor/install.sh` 用 curl 管道到 sh 安装 uv（`https://astral.sh/uv/${uv_version}/install.sh`），没有校验哈希，并用 `sudo` 把 `uv` / `uvx` 链到 `/usr/local/bin` | 已处理。钉住哈希：期望值在 `workers/parser/.uv-install.sha256`，与 `.uv-version` 放在一起；脚本把安装脚本下载到临时文件，sha256 通过后才执行，失败则 `exit 1`。保留 sudo 软链，注释写明 sudo 仅用于 Cloud Agent VM。Wisdom 2026-10-31 08:21 批准的 RULES N-11 一次性例外，仅限本任务；未改 N-11 条文，也未改 `.cursor/environment.json` | Wisdom |
+| R12-P2-3 | 设计跟进，三处一起做：① DESIGN.md 文首仍是 §6 P1-14 那句「Loom 交付前 UI 只搭结构」；② `docs/design-principles.md` 正文 P2 的状态示例仍缺「格式已核对」「源码核对」「未评分」「占位框」；③ DESIGN 新增徽标 §3.7，验收 DS-28…DS-31 | 已处理 @ PR #14（main@eb87d53） | Loom |
 
 ### 已知、不挡合入的风险
 
