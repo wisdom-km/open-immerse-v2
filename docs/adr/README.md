@@ -33,4 +33,4 @@
 | Q11 | 未配置翻译时能否借用多模态 | 差异清单 §6 的 Q11 行；ARCHITECTURE §16 的 Q11 行 |
 | Q12 | Unlimited-OCR 是否接入 | 差异清单 §6 的 Q12 行；ARCHITECTURE §16 的 Q12 行 |
 
-Q1–Q12 之后的决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.12。本索引不抄那些段落。
+Q1–Q12 之后的决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，以及 2026-10-31 的 D-D、D-E、W-4）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.13。本索引不抄那些段落。
