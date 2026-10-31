@@ -172,3 +172,87 @@ it("points every gate id at a script or a dependency-cruiser rule", () => {
     expect(gates.some((gate) => gate.id === id), id).toBe(true);
   }
 });
+
+const specFiles: Record<string, string> = {
+  ARCHITECTURE: "ARCHITECTURE.md",
+  RULES: "RULES.md",
+  PRD: "PRD.md",
+};
+
+const citedId = /\b(?:M1-DEFER-G\d+|N-\d+|E-P\d+-\d+|G\d+)\b/g;
+
+function readSpec(gate: unknown): string {
+  if (typeof gate !== "object" || gate === null || !("spec" in gate)) {
+    throw new Error("catalog gate is missing spec");
+  }
+  if (typeof gate.spec !== "string" || gate.spec.length === 0) {
+    throw new Error("catalog gate is missing spec");
+  }
+  return gate.spec;
+}
+
+function readSpecs(): string[] {
+  const parsed: unknown = JSON.parse(readFileSync("tools/gate-remediation/catalog.json", "utf8"));
+  if (typeof parsed !== "object" || parsed === null || !("gates" in parsed)) {
+    throw new Error("catalog.json has no gates");
+  }
+  if (!Array.isArray(parsed.gates)) {
+    throw new Error("catalog.json has no gates");
+  }
+  return parsed.gates.map((gate: unknown) => readSpec(gate));
+}
+
+function fileForClause(clause: string, current: string): string {
+  const pathMatch = /^([\w./-]+\.md)\b/.exec(clause);
+  if (pathMatch?.[1]) {
+    return pathMatch[1];
+  }
+  const named = /^(ARCHITECTURE|RULES|PRD)\b/.exec(clause);
+  const key = named?.[1];
+  if (key !== undefined) {
+    const file = specFiles[key];
+    if (file !== undefined) {
+      return file;
+    }
+  }
+  return current;
+}
+
+function citedPairs(spec: string): Array<{ file: string; id: string }> {
+  const pairs: Array<{ file: string; id: string }> = [];
+  let current = "";
+  for (const clause of spec.split(/[、;]/)) {
+    const text = clause.trim();
+    if (text.length === 0) {
+      continue;
+    }
+    current = fileForClause(text, current);
+    if (current.length === 0) {
+      throw new Error(`spec clause has no file: ${text}`);
+    }
+    for (const match of text.matchAll(citedId)) {
+      pairs.push({ file: current, id: match[0] });
+    }
+  }
+  return pairs;
+}
+
+function hasId(source: string, id: string): boolean {
+  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9-])`).test(source);
+}
+
+it("finds every cited id in the file named beside it", () => {
+  const deferrals = new Set<string>();
+  for (const spec of readSpecs()) {
+    for (const pair of citedPairs(spec)) {
+      const source = readFileSync(pair.file, "utf8");
+      expect(hasId(source, pair.id), `${pair.id} in ${pair.file}`).toBe(true);
+      if (pair.id.startsWith("M1-DEFER-")) {
+        expect(pair.file, pair.id).toBe("docs/backlog.md");
+        deferrals.add(pair.id);
+      }
+    }
+  }
+  expect([...deferrals].sort()).toEqual(["M1-DEFER-G1", "M1-DEFER-G3", "M1-DEFER-G5"]);
+});

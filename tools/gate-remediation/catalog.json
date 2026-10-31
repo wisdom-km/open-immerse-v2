@@ -4,7 +4,7 @@
       "id": "G1",
       "problem": "ruff format 报告 worker 源码与当前格式不一致。",
       "fix": "在 workers/parser 执行 uv run ruff format . 后重新提交。G1 的 Prettier 仍按 PRD §8 延后，不要为了这条去接 Prettier。",
-      "spec": "ARCHITECTURE §13 G1、PRD §8 M1-DEFER-G1",
+      "spec": "ARCHITECTURE §13 G1、PRD §8 (M1 deferrals); docs/backlog.md M1-DEFER-G1",
       "match": []
     },
     {
@@ -17,8 +17,8 @@
     {
       "id": "G3",
       "problem": "tsc 报告类型错误。当前必需的是 tsc --noEmit，不是 tsc -b。",
-      "fix": "按 tsc 指出的文件和行列改正类型，直到 tsc --noEmit 退出码为 0。不要改成 tsc -b，也不要打开 composite。那一项仍是 PRD §8 的 M1-DEFER-G3。tools/gate-fixtures/g3 只给测试证明文案，不进入必需检查。",
-      "spec": "ARCHITECTURE §13 G3、RULES §1.1、PRD §8 M1-DEFER-G3",
+      "fix": "按 tsc 指出的文件和行列改正类型，直到 tsc --noEmit 退出码为 0。不要改成 tsc -b，也不要打开 composite。那一项的编号在 docs/backlog.md，是 M1-DEFER-G3。tools/gate-fixtures/g3 只给测试证明文案，不进入必需检查。",
+      "spec": "ARCHITECTURE §13 G3、RULES §1.1、PRD §8 (M1 deferrals); docs/backlog.md M1-DEFER-G3",
       "match": []
     },
     {
@@ -39,7 +39,7 @@
       "id": "G5",
       "problem": "dependency-cruiser 报告依赖方向违规，例如循环、层方向、跨切片内部、切片矩阵、renderer 隔离、Electron 范围、contracts 叶子或 providers 边界。",
       "fix": "删掉这条 import，或改成 ARCHITECTURE §4.3 与 §5 允许的方向。任何切片都不要 import ingest 或 budget。ui-events-declared 仍是 M1-DEFER-G5，不要在这次里手写一份事件名单。",
-      "spec": "ARCHITECTURE §4.3、§5、§13 G5、PRD §8 M1-DEFER-G5",
+      "spec": "ARCHITECTURE §4.3、§5、§13 G5、PRD §8 (M1 deferrals); docs/backlog.md M1-DEFER-G5",
       "match": [
         "feature-dependency-matrix",
         "layer-direction",

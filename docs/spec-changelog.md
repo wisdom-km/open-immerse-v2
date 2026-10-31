@@ -8,6 +8,7 @@ PR #12 之前的规格 PR 不在这里重述。处理状态见 [backlog.md](back
 
 | 日期 | PR | 文件 | 摘要 |
 | --- | --- | --- | --- |
+| 2026-10-31 | [#21](https://github.com/wisdom-km/open-immerse-v2/pull/21) | `docs/gate-remediation.md`、`docs/spec-changelog.md` | G1、G3、G5 的延后编号改指 `docs/backlog.md` 里的 M1-DEFER-G1、M1-DEFER-G3、M1-DEFER-G5。PRD §8 只说明这三项延后，正文里没有这些编号 |
 | 2026-10-31 | [#21](https://github.com/wisdom-km/open-immerse-v2/pull/21) | `RULES.md`、`docs/gate-remediation.md`、`docs/ci-and-environment.md`、`AGENTS.md`、`workers/parser/AGENTS.md`、`docs/spec-changelog.md` | Wisdom 2026-10-31 14:27：门禁失败时追加编号、问题、改法、规格位置。文案只在 `tools/gate-remediation/catalog.json`。G3 增加 tsc 违例夹具，不把 `tsc -b` 收成必需检查 |
 | 2026-10-31 | [#20](https://github.com/wisdom-km/open-immerse-v2/pull/20) | `ARCHITECTURE.md`、`RULES.md`、`PRD.md`、`docs/backlog.md`、`docs/ci-and-environment.md`、`docs/spec-changelog.md` | Wisdom 2026-10-31 14:12：测试密钥前缀定为 `oitest_`（§7.9.7）。Python 类型检查锁定 pyright strict（RULES §1.2）。PSF-2.0 只放行 dev / CI 的 `typing_extensions`。PRD §8 M1 明确延后 G1 Prettier、G3 `tsc -b`、G5 `ui-events-declared`，backlog 各加一行 |
 | 2026-10-31 | [#20](https://github.com/wisdom-km/open-immerse-v2/pull/20) | `docs/ci-and-environment.md`、`docs/backlog.md`、`AGENTS.md`、`README.md`、`workers/parser/AGENTS.md`、`RULES.md`、`docs/spec-changelog.md` | 记下 M1 门禁里已经接上的检查，以及 G1、G3 的 `tsc -b` 与类型检查器二选一、G5 `ui-events-declared`、G6、G10 的 `license-checker` 与 MPL 独立文件条件、G11 契约热点、G16 规则编号覆盖、G9 测试前缀这些没有代为发明的缺口。RULES §9 里指向「当前是空跑」的句子改指「门禁」。`node` job 安装锁定的 uv，因为 `pnpm check` 里的 G10 要跑 `pip-licenses` |

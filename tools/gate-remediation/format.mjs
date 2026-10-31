@@ -66,11 +66,16 @@ export function loadCatalog() {
   return parsed.gates.map((gate) => readGate(gate, seen));
 }
 
-export function remediationBlock(id) {
+export function requireGate(id) {
   const gate = loadCatalog().find((item) => item.id === id);
   if (!gate) {
     fail(`unknown gate id ${id}`);
   }
+  return gate;
+}
+
+export function remediationBlock(id) {
+  const gate = requireGate(id);
   return [
     `gate-remediation: ${gate.id}`,
     `problem: ${gate.problem}`,
@@ -106,18 +111,51 @@ export function renderTable(gates) {
   return lines.join("\n");
 }
 
+function errorText(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function idsFromArgs(args) {
+  const ids = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg !== "--id") {
+      ids.push(arg);
+      continue;
+    }
+    const id = args[index + 1];
+    if (id === undefined || id.length === 0 || id === "--") {
+      console.error("usage: format.mjs --table | [--id] <gate> [gate...]");
+      process.exit(2);
+    }
+    ids.push(id);
+    index += 1;
+  }
+  return ids;
+}
+
 function runCli() {
   const args = process.argv.slice(2);
   if (args.length === 1 && args[0] === "--table") {
     process.stdout.write(`${renderTable(loadCatalog())}\n`);
     return;
   }
-  if (args.length === 0) {
-    console.error("usage: format.mjs --table | <id> [id...]");
+  const ids = idsFromArgs(args);
+  if (ids.length === 0) {
+    console.error("usage: format.mjs --table | [--id] <gate> [gate...]");
     process.exit(2);
   }
-  for (const id of args) {
-    process.stdout.write(`${remediationBlock(id)}\n`);
+  const blocks = [];
+  for (const id of ids) {
+    try {
+      blocks.push(remediationBlock(id));
+    } catch (error) {
+      console.error(errorText(error));
+      process.exit(2);
+    }
+  }
+  for (const block of blocks) {
+    process.stdout.write(`${block}\n`);
   }
 }
 

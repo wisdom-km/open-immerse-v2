@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 
-import { remediationBlock } from "./format.mjs";
+import { remediationBlock, requireGate } from "./format.mjs";
 
 function option(argv, name) {
   const index = argv.indexOf(name);
@@ -24,6 +24,12 @@ function main() {
   const id = option(head, "--id");
   if (!id || !command) {
     console.error("usage: run.mjs --id <gate> [--cwd dir] -- <command> [args]");
+    process.exit(2);
+  }
+  try {
+    requireGate(id);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
     process.exit(2);
   }
   const result = runChild(command, process.argv.slice(separator + 2), option(head, "--cwd"));
