@@ -2,6 +2,8 @@
 
 规格仍是唯一真相源。开工前按 [AGENTS.md](AGENTS.md) 的顺序读 [PRD.md](PRD.md)、[ARCHITECTURE.md](ARCHITECTURE.md)、[RULES.md](RULES.md)。本文不另写产品规则。
 
+开任务时使用 [.github/ISSUE_TEMPLATE/task.md](.github/ISSUE_TEMPLATE/task.md)。
+
 ## 分支与提交
 
 - 分支：`feature/<简短描述>`、`fix/<简短描述>`、`chore/<简短描述>`。小写、连字符。
