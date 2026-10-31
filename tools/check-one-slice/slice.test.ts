@@ -1,8 +1,10 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
+
+import { commandOutput, remediationBlock } from "../gate-remediation/block.js";
 
 const script = path.resolve("tools/check-one-slice/check.mjs");
 
@@ -22,13 +24,7 @@ function initRepo() {
 }
 
 function check(root: string, base: string) {
-  try {
-    execFileSync("node", [script, "--base", base], { cwd: root, encoding: "utf8" });
-    return 0;
-  } catch (error) {
-    const failed = error as { status?: number };
-    return failed.status ?? 1;
-  }
+  return spawnSync("node", [script, "--base", base], { cwd: root, encoding: "utf8" });
 }
 
 it("rejects two feature slices and allows one slice ui plus core (G18)", () => {
@@ -41,13 +37,17 @@ it("rejects two feature slices and allows one slice ui plus core (G18)", () => {
     writeFileSync(path.join(root, "packages/features/reader/src/domain/sync.ts"), "export const n = 1;\n");
     git(root, ["add", "."]);
     git(root, ["commit", "-m", "feat(reader): ui and core"]);
-    expect(check(root, base)).toBe(0);
+    const oneSlice = check(root, base);
+    expect(oneSlice.status).toBe(0);
+    expect(commandOutput(oneSlice)).not.toContain("gate-remediation:");
 
     mkdirSync(path.join(root, "packages/features/notes/src/domain"), { recursive: true });
     writeFileSync(path.join(root, "packages/features/notes/src/domain/note.ts"), "export const n = 1;\n");
     git(root, ["add", "."]);
     git(root, ["commit", "-m", "feat(notes): domain"]);
-    expect(check(root, base)).not.toBe(0);
+    const twoSlices = check(root, base);
+    expect(twoSlices.status).not.toBe(0);
+    expect(commandOutput(twoSlices)).toContain(remediationBlock("G18"));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

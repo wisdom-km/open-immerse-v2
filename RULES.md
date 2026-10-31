@@ -156,6 +156,8 @@
 | N-21 | 让核心业务依赖界面，或让界面直接访问 worker、存储、服务商。依赖方向只能是界面 → 接口 → core。禁止绕过 dependency-cruiser / eslint import 边界放行反向依赖（ARCHITECTURE §2.1、G13、G15，Wisdom 2026-10-30 23:56）。只改界面的 PR 不得修改 core 目录（domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`） |
 | N-22 | 在 M1 门禁 PR（ARCHITECTURE §13 的 G1–G18 脚本落地）合入之前，新建 `packages/features/**` 业务切片。在那之前允许的代码限于工具链、契约草稿与测试夹具。当前 CI 全绿只说明工具链能跑，不等于 §13 已生效 |
 
+门禁失败时，在工具原有输出后面追加改正说明：编号、问题、改法、规格位置。全文表在 [docs/gate-remediation.md](./docs/gate-remediation.md)，数据只在 `tools/gate-remediation/catalog.json`。不要在各个脚本里再写一份（Wisdom 2026-10-31 14:27）。
+
 ## 7. 文档规则
 
 - 全部文档用中文。代码标识符、命令、路径保持原文。

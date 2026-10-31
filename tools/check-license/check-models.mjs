@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 
+import { writeRemediation } from "../gate-remediation/format.mjs";
 import { licenseAllowed } from "./policy.mjs";
 
 function option(name, fallback) {
@@ -34,6 +35,7 @@ if (failures.length > 0) {
   for (const line of failures) {
     console.error(`  ${line}`);
   }
+  writeRemediation(["G10"]);
   process.exit(1);
 }
 

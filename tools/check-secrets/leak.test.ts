@@ -1,10 +1,13 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
 
+import { commandOutput, remediationBlock } from "../gate-remediation/block.js";
+
 const config = path.resolve(".gitleaks.toml");
+const runner = path.resolve("tools/gate-remediation/run.mjs");
 
 function git(cwd: string, args: string[]) {
   execFileSync("git", args, { cwd, stdio: "pipe" });
@@ -20,9 +23,11 @@ function binary(context: { skip: (note: string) => void }): string {
 }
 
 function detect(bin: string, root: string) {
-  execFileSync(bin, ["detect", "--source", root, "--config", config, "--no-banner", "--redact"], {
-    encoding: "utf8",
-  });
+  return spawnSync(
+    "node",
+    [runner, "--id", "G9", "--", bin, "detect", "--source", root, "--config", config, "--no-banner", "--redact"],
+    { encoding: "utf8" },
+  );
 }
 
 it("rejects a committed access key that lacks the oitest_ prefix (G9)", (context) => {
@@ -37,9 +42,9 @@ it("rejects a committed access key that lacks the oitest_ prefix (G9)", (context
     writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
     git(root, ["add", "secret.txt"]);
     git(root, ["commit", "-m", "chore: leak fixture"]);
-    expect(() => {
-      detect(bin, root);
-    }).toThrow();
+    const leaked = detect(bin, root);
+    expect(leaked.status).not.toBe(0);
+    expect(commandOutput(leaked)).toContain(remediationBlock("G9"));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -57,9 +62,9 @@ it("allows a synthetic key that uses the oitest_ prefix (G9)", (context) => {
     writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
     git(root, ["add", "secret.txt"]);
     git(root, ["commit", "-m", "chore: synthetic key"]);
-    expect(() => {
-      detect(bin, root);
-    }).not.toThrow();
+    const allowed = detect(bin, root);
+    expect(allowed.status).toBe(0);
+    expect(commandOutput(allowed)).not.toContain("gate-remediation:");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

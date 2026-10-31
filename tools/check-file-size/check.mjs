@@ -3,6 +3,8 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { writeRemediation } from "../gate-remediation/format.mjs";
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const skipDirectories = new Set([
   "node_modules",
@@ -135,6 +137,7 @@ if (failures.length > 0) {
   for (const line of failures) {
     console.error(`  ${line}`);
   }
+  writeRemediation(["G4"]);
   process.exit(1);
 }
 

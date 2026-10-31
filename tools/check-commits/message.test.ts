@@ -1,8 +1,10 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
+
+import { commandOutput, remediationBlock } from "../gate-remediation/block.js";
 
 function git(cwd: string, args: string[]) {
   execFileSync("git", args, { cwd, stdio: "pipe" });
@@ -20,12 +22,13 @@ it("rejects a subject outside Conventional Commits", () => {
     writeFileSync(path.join(root, "README.md"), "next\n");
     git(root, ["add", "README.md"]);
     git(root, ["commit", "-m", "update stuff"]);
-    expect(() =>
-      execFileSync("node", [path.resolve("tools/check-commits/check.mjs"), "--base", "HEAD~1"], {
-        cwd: root,
-        encoding: "utf8",
-      }),
-    ).toThrow();
+    const rejected = spawnSync(
+      "node",
+      [path.resolve("tools/check-commits/check.mjs"), "--base", "HEAD~1"],
+      { cwd: root, encoding: "utf8" },
+    );
+    expect(rejected.status).not.toBe(0);
+    expect(commandOutput(rejected)).toContain(remediationBlock("E-P1-5"));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

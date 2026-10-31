@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
 
+import { commandOutput, remediationBlock } from "../gate-remediation/block.js";
+
 const marker = ["@", "vitest-environment jsdom"].join("");
 
 it("rejects a vitest environment directive in the jobs core test (G16)", () => {
@@ -19,9 +21,10 @@ it("rejects a vitest environment directive in the jobs core test (G16)", () => {
     const result = spawnSync("node", [path.resolve("tools/check-core-tests/check.mjs"), "--root", root], {
       encoding: "utf8",
     });
-    const output = `${result.stdout}${result.stderr}`;
+    const output = commandOutput(result);
     expect(result.status).not.toBe(0);
     expect(output).toContain("job-id.test.ts");
+    expect(output).toContain(remediationBlock("G16"));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

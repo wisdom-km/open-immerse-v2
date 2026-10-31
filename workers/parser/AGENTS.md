@@ -16,19 +16,21 @@
 
 配置在 `pyproject.toml` 的 `[tool.ruff]`。
 
-- `uv run ruff check .`
-- `uv run ruff format --check .`
+- `node ../../tools/gate-remediation/run.mjs --id G2 -- uv run ruff check .`
+- `node ../../tools/gate-remediation/run.mjs --id G1 -- uv run ruff format --check .`
 
 ## pyright 与 import-linter
 
-- `uv run pyright`（RULES §1.2，strict）
-- `uv run lint-imports`（G6，ARCHITECTURE §10.3）
+- `node ../../tools/gate-remediation/run.mjs --id G3-pyright -- uv run pyright`（RULES §1.2，strict）
+- `node ../../tools/gate-remediation/run.mjs --id G6 -- uv run lint-imports`（G6，ARCHITECTURE §10.3）
+
+失败时追加的说明见仓库根 [docs/gate-remediation.md](../../docs/gate-remediation.md)。文案不在本文件复制。
 
 ## pytest
 
 配置在 `pyproject.toml` 的 `[tool.pytest.ini_options]`，`testpaths = ["tests"]`。
 
-- `uv run pytest`
+- `node ../../tools/gate-remediation/run.mjs --id G8 -- uv run pytest`
 - 有测试文件之后，单文件：`uv run pytest tests/test_<模块>.py`；按名称：`uv run pytest -k <名字>`
 
 `tests/` 里有用例。`uv run pytest` 收集到 0 个用例时退出码仍是 5，CI 不再把 5 改成通过。命令与退出码见根 [AGENTS.md](../../AGENTS.md)「命令」。

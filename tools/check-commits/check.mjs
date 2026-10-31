@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
 
+import { writeRemediation } from "../gate-remediation/format.mjs";
+
 const subjectPattern =
   /^(feat|fix|docs|refactor|test|chore|build|ci)(\([a-z0-9-]+\))?!?: .+/;
 
@@ -33,6 +35,7 @@ if (failures.length > 0) {
   for (const line of failures) {
     console.error(`  ${line}`);
   }
+  writeRemediation(["E-P1-5"]);
   process.exit(1);
 }
 

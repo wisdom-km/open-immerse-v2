@@ -1,10 +1,11 @@
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
 
-const depcruise = path.resolve("node_modules/.bin/depcruise");
+import { commandOutput, remediationBlock } from "../gate-remediation/block.js";
+
 const config = path.resolve("dependency-cruiser.config.mjs");
 
 function write(root: string, rel: string, text: string) {
@@ -24,19 +25,12 @@ function stubReact(root: string) {
 }
 
 function cruise(root: string) {
-  try {
-    const stdout = execFileSync(depcruise, ["--config", config, "--output-type", "err", "."], {
-      cwd: root,
-      encoding: "utf8",
-    });
-    return { status: 0, output: stdout };
-  } catch (error) {
-    const failed = error as { status?: number; stdout?: string; stderr?: string };
-    return {
-      status: failed.status ?? 1,
-      output: `${failed.stdout ?? ""}\n${failed.stderr ?? ""}`,
-    };
-  }
+  const result = spawnSync(
+    "node",
+    [path.resolve("tools/check-deps/check.mjs"), "--config", config],
+    { cwd: root, encoding: "utf8" },
+  );
+  return { status: result.status ?? 1, output: commandOutput(result) };
 }
 
 function withRoot(runCase: (root: string) => void) {
@@ -59,6 +53,7 @@ it("allows a matrix edge and rejects the other four M1 examples", () => {
     );
     const legal = cruise(root);
     expect(legal.status).toBe(0);
+    expect(legal.output).not.toContain("gate-remediation:");
 
     write(
       root,
@@ -69,6 +64,7 @@ it("allows a matrix edge and rejects the other four M1 examples", () => {
     const ingest = cruise(root);
     expect(ingest.status).not.toBe(0);
     expect(ingest.output).toContain("feature-dependency-matrix");
+    expect(ingest.output).toContain(remediationBlock("G5"));
 
     write(
       root,
@@ -78,6 +74,7 @@ it("allows a matrix edge and rejects the other four M1 examples", () => {
     const reactType = cruise(root);
     expect(reactType.status).not.toBe(0);
     expect(reactType.output).toContain("core-no-ui");
+    expect(reactType.output).toContain(remediationBlock("G13"));
 
     write(root, "packages/features/notes/src/application/use.ts", "export const id = 1;\n");
     write(
@@ -88,6 +85,7 @@ it("allows a matrix edge and rejects the other four M1 examples", () => {
     const ui = cruise(root);
     expect(ui.status).not.toBe(0);
     expect(ui.output).toContain("ui-through-seam");
+    expect(ui.output).toContain(remediationBlock("G15"));
 
     write(
       root,
@@ -97,5 +95,6 @@ it("allows a matrix edge and rejects the other four M1 examples", () => {
     const coreTest = cruise(root);
     expect(coreTest.status).not.toBe(0);
     expect(coreTest.output).toContain("core-test-through-seam");
+    expect(coreTest.output).toContain(remediationBlock("G16"));
   });
 }, 30_000);

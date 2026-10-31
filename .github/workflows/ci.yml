@@ -60,7 +60,7 @@ jobs:
           tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
 
       - name: Secret scan
-        run: /tmp/gitleaks detect --source . --config .gitleaks.toml --redact --no-banner
+        run: node tools/gate-remediation/run.mjs --id G9 -- /tmp/gitleaks detect --source . --config .gitleaks.toml --redact --no-banner
 
       - name: Check
         run: corepack pnpm run check
@@ -101,26 +101,26 @@ jobs:
           uv python install
           uv sync --frozen --extra dev
 
-      - name: Ruff
-        run: |
-          uv run ruff check .
-          uv run ruff format --check .
-
-      - name: Pytest
-        run: uv run pytest
-
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: ${{ github.workspace }}/.nvmrc
 
+      - name: Ruff
+        run: |
+          node "$GITHUB_WORKSPACE/tools/gate-remediation/run.mjs" --id G2 -- uv run ruff check .
+          node "$GITHUB_WORKSPACE/tools/gate-remediation/run.mjs" --id G1 -- uv run ruff format --check .
+
+      - name: Pytest
+        run: node "$GITHUB_WORKSPACE/tools/gate-remediation/run.mjs" --id G8 -- uv run pytest
+
       - name: Pyright
-        run: uv run pyright
+        run: node "$GITHUB_WORKSPACE/tools/gate-remediation/run.mjs" --id G3-pyright -- uv run pyright
         env:
           PYRIGHT_PYTHON_FORCE_VERSION: "1.1.407"
 
       - name: Import linter
-        run: uv run lint-imports
+        run: node "$GITHUB_WORKSPACE/tools/gate-remediation/run.mjs" --id G6 -- uv run lint-imports
 
       - name: Pip licenses
         working-directory: ${{ github.workspace }}
@@ -130,6 +130,11 @@ jobs:
         run: |
           if grep -E '^name = "(pymupdf|pymupdf-fonts|fitz)"$' uv.lock; then
             echo "PyMuPDF is AGPL and must not be locked" >&2
+            node "$GITHUB_WORKSPACE/tools/gate-remediation/format.mjs" G10 >&2
             exit 1
           fi
-          grep -q '^name = "pypdfium2"$' uv.lock
+          if ! grep -q '^name = "pypdfium2"$' uv.lock; then
+            echo "uv.lock must contain pypdfium2" >&2
+            node "$GITHUB_WORKSPACE/tools/gate-remediation/format.mjs" G10 >&2
+            exit 1
+          fi
