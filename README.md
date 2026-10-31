@@ -6,7 +6,7 @@ Open Immerse v2：把英文学术 PDF 做成可对照、可追溯、公式不走
 
 1. [PRD.md](PRD.md)：做什么、不做什么、验收编号。
 2. [ARCHITECTURE.md](ARCHITECTURE.md)：切片、端口、协议。
-3. [RULES.md](RULES.md) §6 与 §8：禁止事项、界面与核心解耦、交接。
+3. [RULES.md](RULES.md) §6、§8 与 §9：禁止事项、界面与核心解耦、交接、一个 PR 怎样算做完。
 4. 涉及界面时再读 [DESIGN.md](DESIGN.md) 与 [docs/design-principles.md](docs/design-principles.md)。标「待审批」的视觉数值不是定稿。
 5. [docs/architecture/](docs/architecture/README.md) 是历史草案，不授权实现。
 
@@ -22,6 +22,7 @@ Open Immerse v2：把英文学术 PDF 做成可对照、可追溯、公式不走
 - [docs/v1-review.md](docs/v1-review.md)：v1 哪些能用、哪些不用（附原文件与行号）。矢量重绘不立项。
 - [docs/v2-gap-and-changes.md](docs/v2-gap-and-changes.md)：模型核实、草案修改清单、待拍板问题。
 - [docs/backlog.md](docs/backlog.md)：架构评审各项的处理状态与留给里程碑的事。
+- [docs/spec-changelog.md](docs/spec-changelog.md)：规格文档的变更记录（日期、PR、文件、摘要）。安装包的变更记录不在这里，见「三种版本号」。
 - 视觉与交互：[DESIGN.md](DESIGN.md)、[docs/design-principles.md](docs/design-principles.md)（Loom 2026-10-30 入库）。
 
 ## 历史草案
