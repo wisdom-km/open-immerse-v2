@@ -23,6 +23,15 @@
 | CI / node | 成功 |
 | CI / python-worker | 成功 |
 
-## P2
+## 最终 tip
 
-Forge 审查结论是 PASS with nits。三处只改措辞：自审表头、合入主语、AGENTS 的门禁句。不重跑全量。这三处与本段在同一提交。该提交的 CI 仍是上面两项，结果以该提交的 Actions 为准。
+`5e4858906676bb569e4084416bb95453f67d6a01`
+
+Forge 的三条 P2 在这一笔：自审表头、合入主语、AGENTS 的门禁句。不重跑全量。该 tip 的 GitHub CI 4 项成功。`push` 与 `pull_request` 各跑一次。
+
+| 事件 | CI / node | CI / python-worker |
+| --- | --- | --- |
+| pull_request | [成功](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41184324663) | [成功](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41184324663) |
+| push | [成功](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41184320582) | [成功](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41184320582) |
+
+本段在随后的记录提交写入，不改 RULES、AGENTS 与 PR 模板。
