@@ -1,6 +1,6 @@
 # open-immerse v2 协作与编码规则（RULES）
 
-状态：v0.6，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。v0.4 按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修复（Wisdom 2026-10-30 19:57 批准）：§5 第 15、16 条（付费调用先预留额度、跨切片编排只在 `ingest`），§8 删除 G17、改由评审与交接说明检查。v0.5 按评审的 P1 项与 Wisdom 2026-10-30 19:45、19:46 的服务商适配层要求：§4 服务商适配层的契约测试，§5 第 17、18 条（服务商细节只在 `packages/providers`、外发检查与凭据），N-05 开发者本机的 Key。v0.6 按 Wisdom 2026-10-30 21:12 批准的 PR C：§1.3 domain 纯函数的行数，§1.5 与 N-19 禁止复制 BabelDOC 代码，§2 一个 PR 一个切片与解析规则集的例外，§3 热点收窄与 UI 事件登记，§5 第 19 条（解析规则集两侧一致）。同版起 DESIGN.md 与 docs/design-principles.md 已入库，正文仍由 Loom 维护（N-10）。同日 22:45 增加 N-20：禁止在 core 或某个积木里写死另一个积木（§5 第 20 条）。同日 23:55、23:56 增加 N-21、N-22：依赖方向只能是界面 → 接口 → core，M1 起由 CI 挡住反向依赖（dependency-cruiser，见 [backlog](./docs/backlog.md) E-P1-6）；M1 门禁落地前不建业务切片（§5 第 21 条）。Wisdom 2026-10-31 起：调试模式默认关；日志不记密钥、不记论文正文，只存本机（§4、§5 第 8 条、N-05）。调试日志最多保留 7 天，且总量上限 50 MB（先到先清）；用户可随时清空；关闭调试模式时询问是否删除（§4）。同日 09:15：agent 工作记录写在 PR 描述，不另建对话记录（§2）。同日文档 P1（Wisdom 已批）：增加 §9 Definition of Done，完成条件只指向已有规则，并与 PR 模板互引。日期：2026-10-31（Asia/Shanghai）。
+状态：v0.6，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。v0.4 按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修复（Wisdom 2026-10-30 19:57 批准）：§5 第 15、16 条（付费调用先预留额度、跨切片编排只在 `ingest`），§8 删除 G17、改由评审与交接说明检查。v0.5 按评审的 P1 项与 Wisdom 2026-10-30 19:45、19:46 的服务商适配层要求：§4 服务商适配层的契约测试，§5 第 17、18 条（服务商细节只在 `packages/providers`、外发检查与凭据），N-05 开发者本机的 Key。v0.6 按 Wisdom 2026-10-30 21:12 批准的 PR C：§1.3 domain 纯函数的行数，§1.5 与 N-19 禁止复制 BabelDOC 代码，§2 一个 PR 一个切片与解析规则集的例外，§3 热点收窄与 UI 事件登记，§5 第 19 条（解析规则集两侧一致）。同版起 DESIGN.md 与 docs/design-principles.md 已入库，正文仍由 Loom 维护（N-10）。同日 22:45 增加 N-20：禁止在 core 或某个积木里写死另一个积木（§5 第 20 条）。同日 23:55、23:56 增加 N-21、N-22：依赖方向只能是界面 → 接口 → core，M1 起由 CI 挡住反向依赖（dependency-cruiser，见 [backlog](./docs/backlog.md) E-P1-6）；M1 门禁落地前不建业务切片（§5 第 21 条）。Wisdom 2026-10-31 起：调试模式默认关；日志不记密钥、不记论文正文，只存本机（§4、§5 第 8 条、N-05）。调试日志最多保留 7 天，且总量上限 50 MB（先到先清）；用户可随时清空；关闭调试模式时询问是否删除（§4）。同日 09:15：agent 工作记录写在 PR 描述，不另建对话记录（§2）。同日文档 P1（Wisdom 已批）：增加 §9 Definition of Done，完成条件只指向已有规则，并与 PR 模板互引。同日：N-11 写明 Agent 不得改 `.cursor/environment.json` 与 `.cursor/install.sh`，改须 Wisdom 批准；#15 为一次性例外。日期：2026-10-31（Asia/Shanghai）。
 适用对象：所有人类开发者与 AI Agent。
 同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，Loom 2026-10-30 已入库。结构、状态与「当 seam 返回 X 时显示 Y」按 DESIGN 实现；标「待审批」的颜色、间距、字号不当作定稿。DESIGN 文首若仍写「Loom 交付前 UI 只搭结构」，以本句为准，那一句留给 Loom 删（N-10，本文件不改 DESIGN 正文）。其他人或 Agent **不得**改正文（N-10）。
 
@@ -142,7 +142,7 @@
 | N-08 | 关闭或绕过 CI 门禁：删除 / 跳过测试、调高行数或复杂度上限、往 allowlist 加豁免、`--no-verify`，除非有用户批准的 ADR |
 | N-09 | 手改生成文件（契约生成物、preload API、Python 协议模型） |
 | N-10 | 编写或修改 `DESIGN.md`、`docs/design-principles.md`，以及 `docs/design/**` 的正文（属于设计师 Loom）。例外：按用户指示把 Loom 交付的原文放入 `docs/design/`，并在文首加「入库说明」写明来源与规格校正；正文不改 |
-| N-11 | 修改 `.cursor/environment.json`，除非用户明确要求；建议写在 ARCHITECTURE §15 或 PR 描述里 |
+| N-11 | Agent 不得修改 `.cursor/environment.json` 与 `.cursor/install.sh`。要改须 Wisdom 批准；建议写在 ARCHITECTURE §15 或 PR 描述里。PR #15（Wisdom 2026-10-31 08:21）是一次性例外，只覆盖那次对 `install.sh` 的 sha256 校验，不作为以后的先例 |
 | N-12 | 在 CI 或自动测试中调用付费 API、下载模型权重、提交大体积二进制（PDF、权重、音频）进仓库 |
 | N-13 | 引入 GPL / AGPL 依赖（含 PyMuPDF，含经上游 extras 间接引入）；引入未经批准的 LGPL / 非商用 / 自定义许可证依赖 |
 | N-14 | 删除或改写用户数据迁移、已入库的规格历史，或把「待基准定标」的数值自行填成具体数字 |
@@ -224,7 +224,7 @@ Wisdom 2026-10-30 23:56 在不改上面五条原文的前提下写死：核心�
 | 证据目录 | `docs/evidence/<PR号>/` 放这次的测试日志和截图。没有就在描述里写「无」。大文件写 CI artifact 链接，不提交大二进制 | §2 第 6 条、§4「证据目录」；N-12 |
 | PR 描述工作记录 | 模板「agent 工作记录」写了：读了哪些规格、关键决定、命令与结果、坑。不新建 `docs/agent-logs/` | §2 第 7 条 |
 | 日志规则 | 这次若增加或修改日志：不记正文、译文、提示词、密钥、绝对路径；调试模式默认关；调试日志最多 7 天且总量上限 50 MB，只存本机。没改日志的 PR 在描述里写「未改日志」 | §4「调试模式」、§5 第 8 条、N-05；[ARCHITECTURE.md](./ARCHITECTURE.md) §11 |
-| 不动 N-10 / N-11 文件 | diff 里没有 `DESIGN.md`、`docs/design-principles.md`、`docs/design/**` 的正文，也没有 `.cursor/environment.json`、`.cursor/install.sh`。用户明确要求改其中某个文件时，描述写明是哪一次指示 | N-10、N-11。N-11 点名的是 `.cursor/environment.json`；`.cursor/install.sh` 按同一类环境安装脚本对待（#15 是已批准的一次性例外） |
+| 不动 N-10 / N-11 文件 | diff 里没有 `DESIGN.md`、`docs/design-principles.md`、`docs/design/**` 的正文，也没有 `.cursor/environment.json`、`.cursor/install.sh`。这两份环境文件 Agent 不得改；要改须 Wisdom 批准，并在描述里写明是哪一次。#15 是一次性例外 | N-10、N-11 |
 | 文档同步 | 改了规格的，同一 PR 改掉因此失真的其他规格句子和入口指针，并在规格变更记录里加一行。不把正文再抄进第二份文件 | §7；[docs/spec-changelog.md](./docs/spec-changelog.md) |
 
 PR 仍先开 Draft（§2）。上表未齐就保持 Draft。合入由用户决定（N-03）。

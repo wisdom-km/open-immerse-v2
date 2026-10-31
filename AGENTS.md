@@ -34,7 +34,7 @@
 | 任务类型 | 再读 |
 | --- | --- |
 | UI 改动 | [RULES.md](RULES.md) §8、§8.3、§8.4，以及 N-16、N-21；[ARCHITECTURE.md](ARCHITECTURE.md) §2.1–§2.6 与 §13 的 G13–G16；[DESIGN.md](DESIGN.md) 里对应的屏（§4）和 §3.7；[docs/design-principles.md](docs/design-principles.md) §1；[PRD.md](PRD.md) §6.3、AC-21、AC-100。不改 DESIGN 与 `docs/design/**` 的正文（N-10）。不改 core 目录 |
-| seam 变更 | [ARCHITECTURE.md](ARCHITECTURE.md) §2.3、§2.4、§4.1；[RULES.md](RULES.md) §2 的契约先行、§3 第 3 条、§8.2 规则 3 |
+| seam 变更 | [ARCHITECTURE.md](ARCHITECTURE.md) §2.3、§2.4、§4.1；[RULES.md](RULES.md) §3 第 3 条（契约先行）、§8.2 规则 3 |
 | core 改动 | [ARCHITECTURE.md](ARCHITECTURE.md) §2.1、§4.2 里该切片的那一行、§5、§6、§12；[RULES.md](RULES.md) §1.1、§5、§8；[PRD.md](PRD.md) §6 里对得上的 AC |
 | worker / parser | [workers/parser/AGENTS.md](workers/parser/AGENTS.md)；[ARCHITECTURE.md](ARCHITECTURE.md) §10 与 §7.2；[RULES.md](RULES.md) §1.2；[docs/ci-and-environment.md](docs/ci-and-environment.md) 的 Python 段 |
 | 纯文档 / 规格 | [RULES.md](RULES.md) §7、§9；本文；[.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md)。变更再记 [docs/spec-changelog.md](docs/spec-changelog.md)。不改 N-10、N-11 的文件 |
