@@ -1,3 +1,5 @@
+完成条件见 RULES.md §9。下面各栏对应该节，不另写一套。
+
 ## 改了什么、为什么
 
 关联的 US / AC：
@@ -6,7 +8,7 @@
 
 - 切片：
 - 热点文件（没有就写「无」）：
-- 任务类型：UI 改动 / seam 变更 / core 改动（三选一）
+- 任务类型：UI 改动 / seam 变更 / core 改动 / 不适用（纯文档写「不适用」，见 RULES §9）
 
 任务类型为「UI 改动」时，不得修改 core 目录（domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`）。见 RULES N-16、N-21 与 ARCHITECTURE §2.1。
 
@@ -31,13 +33,21 @@
 - 跑了哪些命令与结果：
 - 坑：
 
+## 完成条件里尚未单独成栏的三项（RULES §9）
+
+不另写规则，只填结果。验收编号、命令与退出码、证据目录、工作记录已在上面的栏目里。
+
+- 日志：未改日志 / 已按 RULES §4 与 ARCHITECTURE §11
+- N-10 / N-11 文件：未改 / Wisdom 批准（写出是哪一次；#15 是一次性例外）
+- 规格变更记录：`docs/spec-changelog.md` 已加本 PR 一行 / 这次不改规格，不适用
+
 ## 未验证项与风险
 
 ## UI–core 交接说明（ARCHITECTURE §2.1 / RULES §8）
 
 改动了 UI 或 core 路径时填写。只改文档且不涉及实现路径时写「不适用」。
 
-- 任务类型：UI 改动 / seam 变更 / core 改动（三选一）
+- 任务类型：UI 改动 / seam 变更 / core 改动 / 不适用（纯文档写「不适用」，见 RULES §9）
 - 涉及切片：
 - 改了哪些 UI 文件：
 - core 是否没动：是 / 否（UI 改动任务中出现 core 改动即不合格）
