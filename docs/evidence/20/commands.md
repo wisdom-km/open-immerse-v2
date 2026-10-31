@@ -15,3 +15,7 @@
 没有跑 `pnpm test:core`：package.json 没有这个脚本。core 测试文件的 include 在 `vitest.config.ts`。没有 `packages/features/**`。
 
 没有跑 mypy / pyright、Prettier、import-linter、`tsc -b`。原因在 PR 描述的缺口表。
+
+## Actions
+
+`ea23a85` 的 `CI / node`（run `41174753003`）在 `pnpm check` 的 `check:license:pip` 退出 1。该 runner 没有 `uv`，`spawnSync` 没有 stderr。`CI / python-worker` 通过，因为那个 job 先装了 uv。后续提交在 `node` job 安装锁定的 uv 和 worker Python，`check-pip.mjs` 改为 `uv run --frozen --extra dev`，并在找不到 `uv` 时打印错误。本机复跑 `node tools/check-license/check-pip.mjs` 退出码 0；`vitest run tools/check-license/reject.test.ts tools/check-license/models.test.ts` 为 2 个文件、3 个测试通过。

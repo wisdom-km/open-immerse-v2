@@ -29,12 +29,16 @@ function pipReport(argv) {
   }
   const result = spawnSync(
     "uv",
-    ["run", "pip-licenses", "--with-system", "--format=json"],
+    ["run", "--frozen", "--extra", "dev", "pip-licenses", "--with-system", "--format=json"],
     { cwd: "workers/parser", encoding: "utf8" },
   );
+  if (result.error) {
+    console.error(`check-license: ${result.error.message}`);
+    process.exit(1);
+  }
   if (result.status !== 0) {
     process.stderr.write(result.stderr ?? "");
-    process.exit(result.status === null ? 1 : result.status);
+    process.exit(result.status ?? 1);
   }
   return JSON.parse(result.stdout);
 }

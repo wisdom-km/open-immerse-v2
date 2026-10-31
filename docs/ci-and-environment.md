@@ -6,7 +6,7 @@
 
 ### 门禁
 
-工作流是 `.github/workflows/ci.yml`。`node` job 跑 `pnpm check`、`pnpm test` 和 gitleaks。`python-worker` job 跑 ruff、pytest、`tools/check-license/check-pip.mjs`，并核对 `uv.lock` 里的 PDF 依赖。pytest 收集到 0 个用例（退出码 5）时 CI 失败。
+工作流是 `.github/workflows/ci.yml`。`node` job 跑 `pnpm check`、`pnpm test` 和 gitleaks。`pnpm check` 里的 pip 许可证（G10）要调用 `uv run`，所以这个 job 也安装锁定版本的 uv 和 worker Python。`python-worker` job 跑 ruff、pytest、`tools/check-license/check-pip.mjs`，并核对 `uv.lock` 里的 PDF 依赖。pytest 收集到 0 个用例（退出码 5）时 CI 失败。
 
 `pnpm check` 包含：ESLint（G2）、`tsc`（G3）、`tsconfig.core.json`（G14）、`tools/check-file-size`（G4）、dependency-cruiser（G5、G13、G15、G16）、core 测试里的 `@vitest-environment`（G16）、npm / pip / 模型清单许可证（G10）、一个切片（G18）、Conventional Commits、热点文件行数（G11 的具名文件）、PR 体量（G12）、`pnpm codegen && git diff --exit-code`（G7）。
 
@@ -76,7 +76,7 @@ pytest 收集到 0 个用例时退出码是 5。CI 不再把 5 改成通过。�
 
 | Job | 步骤 | 缓存 |
 | --- | --- | --- |
-| `node` | `corepack pnpm install --frozen-lockfile`、gitleaks 8.30.1（校验 sha256）、`GATE_BASE=origin/main` 下的 `corepack pnpm run check`、`corepack pnpm test` | `actions/cache` 缓存 pnpm store，键来自 `pnpm-lock.yaml` |
+| `node` | `corepack pnpm install --frozen-lockfile`、锁定的 uv 与 `uv python install`（G10 的 `pip-licenses`）、gitleaks 8.30.1（校验 sha256）、`GATE_BASE=origin/main` 下的 `corepack pnpm run check`、`corepack pnpm test` | `actions/cache` 缓存 pnpm store，键来自 `pnpm-lock.yaml`。`setup-uv` 缓存 `workers/parser/uv.lock` 与该 Python |
 | `python-worker` | 安装锁定的 uv 与 Python、`uv sync --frozen --extra dev`、`ruff check`、`ruff format --check`、pytest（退出码 5 失败）、`node tools/check-license/check-pip.mjs`、确认锁文件含 `pypdfium2` 且不含 PyMuPDF | `astral-sh/setup-uv` 缓存 `workers/parser/uv.lock`，并缓存该 Python 解释器 |
 
 建议在保护分支上把这两个 check 设为必需：`CI / node`、`CI / python-worker`。是否启用由仓库管理员决定；Agent 不修改分支保护。
