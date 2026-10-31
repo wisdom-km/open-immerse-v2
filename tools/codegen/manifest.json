@@ -1,0 +1,8 @@
+{
+  "generators": [
+    {
+      "input": "packages/features/jobs/src/domain/job-id.ts",
+      "output": "packages/features/jobs/src/domain/job-id.gen.ts"
+    }
+  ]
+}

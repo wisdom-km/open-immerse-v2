@@ -4,16 +4,28 @@
 
 仓库还没有业务代码。这一节只说明怎么把 Node 与 Python worker 的工具链跑起来。项目许可证是 Apache-2.0。PDF 依赖锁定为 `pypdfium2`（Apache-2.0 OR BSD-3-Clause，当前 `5.14.0`）。禁止 PyMuPDF / `fitz`（AGPL-3.0）。CI 不调用付费 API，不读取密钥。
 
-### 当前是空跑
+### 门禁
 
-工作流是 `.github/workflows/ci.yml`。它今天全绿，不表示 ARCHITECTURE §13 的 G1–G18 已经在跑。
+工作流是 `.github/workflows/ci.yml`。`node` job 跑 `pnpm check`、`pnpm test` 和 gitleaks。`pnpm check` 里的 pip 许可证（G10）要调用 `uv run`，所以这个 job 也安装锁定版本的 uv 和 worker Python。`python-worker` job 跑 ruff、pyright、import-linter、pytest、`tools/check-license/check-pip.mjs`，并核对 `uv.lock` 里的 PDF 依赖。pytest 收集到 0 个用例（退出码 5）时 CI 失败。两个 job 的 `setup-uv` 都把 `version` 设成 `pyproject.toml` 的 `required-version`（`0.13.6`）。
 
-- 没有 `.ts` / `.tsx` 时，`tools/typecheck.mjs` 打印 `typecheck: no .ts or .tsx sources; skipped.` 并以退出码 0 结束，不会跑 `tsc`。
-- pytest 没有收集到测试时退出码是 5。工作流里的 pytest 步骤把 5 改成退出码 0，并打印 `pytest: no tests collected; empty run allowed.`。本机直接跑 `uv run pytest` 仍会看到退出码 5。
-- ruff 和锁文件里的包名检查会真的失败。它们不是 §13 的门禁。
-- `package.json` 没有 `test:core`。M1 前 PR 里此项写不适用（脚本尚未提供）；M1 起以 package.json 实际脚本为准。不在这里加空脚本。
+`pnpm check` 包含：ESLint（G2）、`tsc`（G3）、`tsconfig.core.json`（G14）、`tools/check-file-size`（G4）、dependency-cruiser（G5、G13、G15、G16）、core 测试里的 `@vitest-environment`（G16）、npm / pip / 模型清单许可证（G10）、一个切片（G18）、Conventional Commits、热点文件行数（G11 的具名文件）、PR 体量（G12）、`pnpm codegen && git diff --exit-code`（G7）。
 
-真正的门禁（G1–G18，含依赖方向、许可证扫描、会失败的测试）在 M1 的门禁 PR 补上。此前不新建 `packages/features/**` 业务切片（RULES N-22）。本文只写明现状，不改工作流，也不改分支保护。
+还没接上，规格怎么写就怎么留着，不另造行为：
+
+| 门禁 | 原因 |
+| --- | --- |
+| G1 Prettier | Wisdom 2026-10-31 14:12 明确延后（PRD §8 M1，backlog M1-DEFER-G1，仍按 E-P2）。Python 格式是 ruff format，已经在 CI |
+| G3 `tsc -b` | Wisdom 2026-10-31 14:12 明确延后（backlog M1-DEFER-G3）。`composite` 会写出声明文件。第一个包使用 project references 之前保持 `tsc --noEmit`。Python 类型检查已锁定 pyright strict |
+| G5 `ui-events-declared` | Wisdom 2026-10-31 14:12 明确延后（backlog M1-DEFER-G5）。怎样从代码认出发布和订阅，规格还没有写。`contracts/src/ui-events.ts` 也还没有 |
+| G10 `license-checker` | 规格写的是这个工具。pnpm 工作区里它跟不上锁文件，改用 `pnpm licenses list --json`，规则仍是 §1.5。MPL-2.0「只作为独立文件」这一条没有机器检查 |
+| G11 契约热点 | 装配根 `composition-root.ts` 和 `slots.ts` 的 30 行上限在跑。被两个以上切片 import 的契约文件要等有了 `packages/contracts` 再按 import 图算，不手写名单 |
+| G16 规则编号覆盖 | 切片 README 怎么登记 core 规则，规格没有格式。`@vitest-environment` 和 `core-test-through-seam` 在跑 |
+
+`minimatch` 的许可证是 BlueOak-1.0.0，不在 §1.5 白名单里。它是 ESLint 工具链的既有间接依赖。例外只写在 `tools/check-license/unlisted-permissive.json`，不是新的白名单。
+
+G12 的非生成改动超过 600 行（只改 `packages/contracts` 时是 200 行）时，提交说明或环境变量 `PR_BODY` 里要有一行以 `G12:` 开头。这是「写明理由」的机器标记；规格没有规定标记原文。不计入行数的只有 `pnpm-lock.yaml`、`workers/parser/uv.lock` 和 `dist/`。
+
+没有 `test:core` 脚本。core 测试文件是 `packages/features/*/test/core/**/*.ts`，和工具夹具一起由 Vitest 在 Node 环境收集。`packages/features/jobs` 是门禁样例：§4.3 里没有出边的最小切片形状，只导出 `sameJobId`，不是 §4.2 的任务状态机。G7 有一条生成器，把 `job-id.ts` 复制成 `job-id.gen.ts`。G6 的 Python core forbidden 先覆盖 `mapping.py`、`batching.py`、`http_errors.py`。`reading_order/`、`preprocess/scan_detect.py`、`modular_a/paragraphs.py` 不在这棵树上：RULES §2 把这些路径当成解析规则 PR，必须同时带上 TS 文字层和夹具，且不能再带别的文件。不改分支保护。
 
 ### 版本
 
@@ -37,10 +49,12 @@ corepack enable
 corepack pnpm install --frozen-lockfile
 corepack pnpm run lint
 corepack pnpm run typecheck
+corepack pnpm run typecheck:core
 corepack pnpm test
+corepack pnpm run check
 ```
 
-`pnpm test` 使用 Node 自带的 `node --test`。还没有 `.ts` / `.tsx` 时，`pnpm run typecheck` 说明一句后成功退出；一旦出现这类源文件，就执行 `tsc --noEmit`，类型错误会使命令失败。
+`pnpm test` 是 Vitest。`pnpm run typecheck` 在有 `.ts` / `.tsx` 时执行 `tsc --noEmit`。`pnpm check` 会跑 `git diff`，工作区必须干净，对比基线默认是 `main`。
 
 Python worker 在 `workers/parser/`：
 
@@ -52,7 +66,7 @@ uv run ruff format --check .
 uv run pytest
 ```
 
-还没有测试时，pytest 退出码是 5。CI 把 5 当成空跑通过；测试失败（退出码 1）或其他错误仍然失败。本机直接跑 `uv run pytest` 时，空目录仍会看到退出码 5。
+pytest 收集到 0 个用例时退出码是 5。CI 不再把 5 改成通过。本机直接跑 `uv run pytest` 时，空目录仍会看到退出码 5。
 
 ### GitHub Actions
 
@@ -60,8 +74,8 @@ uv run pytest
 
 | Job | 步骤 | 缓存 |
 | --- | --- | --- |
-| `node` | `corepack enable`、`corepack pnpm install --frozen-lockfile`、`corepack pnpm run lint`、`corepack pnpm run typecheck`、`corepack pnpm test` | `actions/cache` 缓存 pnpm store，键来自 `pnpm-lock.yaml` |
-| `python-worker` | 安装锁定的 uv 与 Python、`uv sync --frozen --extra dev`、`ruff check`、`ruff format --check`、pytest（允许退出码 5）、确认锁文件含 `pypdfium2` 且不含 PyMuPDF | `astral-sh/setup-uv` 缓存 `workers/parser/uv.lock`，并缓存该 Python 解释器 |
+| `node` | `corepack pnpm install --frozen-lockfile`、锁定的 uv 与 `uv python install`（G10 的 `pip-licenses`）、gitleaks 8.30.1（校验 sha256）、`GATE_BASE=origin/main` 下的 `corepack pnpm run check`、`corepack pnpm test` | `actions/cache` 缓存 pnpm store，键来自 `pnpm-lock.yaml`。`setup-uv` 缓存 `workers/parser/uv.lock` 与该 Python |
+| `python-worker` | 安装 uv `0.13.6` 与 Python、`uv sync --frozen --extra dev`、`ruff check`、`ruff format --check`、pytest（退出码 5 失败）、`pyright`、`lint-imports`、`node tools/check-license/check-pip.mjs`、确认锁文件含 `pypdfium2` 且不含 PyMuPDF | `astral-sh/setup-uv` 缓存 `workers/parser/uv.lock`，并缓存该 Python 解释器 |
 
 建议在保护分支上把这两个 check 设为必需：`CI / node`、`CI / python-worker`。是否启用由仓库管理员决定；Agent 不修改分支保护。
 

@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "useUnknownInCatchVariables": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "types": [],
+    "skipLibCheck": true,
+    "isolatedModules": true
+  },
+  "files": ["tools/tsconfig-core/anchor.ts"],
+  "include": [
+    "packages/contracts/**/*.ts",
+    "packages/kernel/**/*.ts",
+    "packages/features/**/src/domain/**/*.ts",
+    "packages/features/**/src/application/**/*.ts",
+    "packages/features/**/src/index.ts",
+    "packages/features/**/src/pure.ts"
+  ],
+  "exclude": ["node_modules", "dist", "coverage", "tools/gate-fixtures"]
+}

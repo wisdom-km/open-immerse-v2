@@ -9,7 +9,13 @@ requires-python = ">=3.11.18,<3.12"
 dependencies = ["pypdfium2==5.14.0"]
 
 [project.optional-dependencies]
-dev = ["pytest==9.2.0", "ruff==0.17.3"]
+dev = [
+    "pytest==9.2.0",
+    "ruff==0.17.3",
+    "pip-licenses==5.5.5",
+    "import-linter==2.5",
+    "pyright==1.1.407",
+]
 
 [tool.uv]
 package = false
@@ -20,7 +26,97 @@ target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+select = ["E", "F", "I", "UP", "B", "C901", "PLR0915"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.pylint]
+max-statements = 80
+
+# ARCHITECTURE §6：Python core 纯函数不受 80 行限制，仍受圈复杂度约束。
+[tool.ruff.lint.per-file-ignores]
+"oi_worker/engines/reading_order/**" = ["PLR0915"]
+"oi_worker/engines/modular_a/paragraphs.py" = ["PLR0915"]
+"oi_worker/preprocess/scan_detect.py" = ["PLR0915"]
+"oi_worker/engines/e2e_b/mapping.py" = ["PLR0915"]
+"oi_worker/quality/batching.py" = ["PLR0915"]
+"oi_worker/quality/http_errors.py" = ["PLR0915"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+include = ["oi_worker", "tests"]
+pythonVersion = "3.11"
+venvPath = "."
+venv = ".venv"
+
+# G6, ARCHITECTURE §10.3. modular_a/backends currently has only paddle_local.py,
+# so the pairwise backend contract starts when a second backend file exists.
+# reading_order/, preprocess/scan_detect.py, and modular_a/paragraphs.py are the
+# parsing-rule paths in RULES §2. An empty file there makes this PR a rules PR
+# (G18). Those three forbidden sources join the contract with the rules PR.
+[tool.importlinter]
+root_packages = ["oi_worker"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "worker layers"
+type = "layers"
+layers = [
+  "oi_worker.api",
+  "oi_worker.jobs",
+  "oi_worker.engines | oi_worker.quality",
+  "oi_worker.preprocess",
+  "oi_worker.protocol",
+]
+
+[[tool.importlinter.contracts]]
+name = "engines stay apart"
+type = "independence"
+modules = [
+  "oi_worker.engines.layout",
+  "oi_worker.engines.modular_a",
+  "oi_worker.engines.e2e_b",
+]
+
+[[tool.importlinter.contracts]]
+name = "quality backends stay apart"
+type = "independence"
+modules = [
+  "oi_worker.quality.backends.local_engine",
+  "oi_worker.quality.backends.jev_http",
+]
+
+[[tool.importlinter.contracts]]
+name = "e2e backends stay apart"
+type = "independence"
+modules = [
+  "oi_worker.engines.e2e_b.backends.sdk_local",
+  "oi_worker.engines.e2e_b.backends.modelbest_api",
+]
+
+[[tool.importlinter.contracts]]
+name = "python core forbids io"
+type = "forbidden"
+source_modules = [
+  "oi_worker.engines.e2e_b.mapping",
+  "oi_worker.quality.batching",
+  "oi_worker.quality.http_errors",
+]
+forbidden_modules = [
+  "fastapi",
+  "starlette",
+  "httpx",
+  "torch",
+  "paddle",
+  "pypdfium2",
+]
+
+[[tool.importlinter.contracts]]
+name = "no pymupdf"
+type = "forbidden"
+source_modules = ["oi_worker"]
+forbidden_modules = ["pymupdf", "fitz"]

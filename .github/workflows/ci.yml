@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -35,14 +37,40 @@ jobs:
       - name: Install dependencies
         run: corepack pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: corepack pnpm run lint
+      - name: Fetch main
+        run: git fetch origin main
 
-      - name: Typecheck
-        run: corepack pnpm run typecheck
+      - name: Setup uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          working-directory: workers/parser
+          enable-cache: true
+          cache-python: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install worker Python
+        working-directory: workers/parser
+        run: uv python install
+
+      - name: Install gitleaks
+        run: |
+          curl -fsSL -o /tmp/gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  /tmp/gitleaks.tar.gz" | sha256sum -c
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+
+      - name: Secret scan
+        run: /tmp/gitleaks detect --source . --config .gitleaks.toml --redact --no-banner
+
+      - name: Check
+        run: corepack pnpm run check
+        env:
+          GATE_BASE: origin/main
 
       - name: Unit tests
         run: corepack pnpm test
+        env:
+          GITLEAKS_BIN: /tmp/gitleaks
 
   python-worker:
     name: python-worker
@@ -57,6 +85,7 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
+          version: "0.13.6"
           working-directory: workers/parser
           enable-cache: true
           cache-python: true
@@ -78,15 +107,24 @@ jobs:
           uv run ruff format --check .
 
       - name: Pytest
-        run: |
-          set +e
-          uv run pytest
-          status=$?
-          if [ "$status" -eq 5 ]; then
-            echo "pytest: no tests collected; empty run allowed."
-            exit 0
-          fi
-          exit "$status"
+        run: uv run pytest
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: ${{ github.workspace }}/.nvmrc
+
+      - name: Pyright
+        run: uv run pyright
+        env:
+          PYRIGHT_PYTHON_FORCE_VERSION: "1.1.407"
+
+      - name: Import linter
+        run: uv run lint-imports
+
+      - name: Pip licenses
+        working-directory: ${{ github.workspace }}
+        run: node tools/check-license/check-pip.mjs
 
       - name: Check PDF dependency pin
         run: |

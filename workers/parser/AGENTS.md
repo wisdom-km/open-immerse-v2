@@ -19,6 +19,11 @@
 - `uv run ruff check .`
 - `uv run ruff format --check .`
 
+## pyright 与 import-linter
+
+- `uv run pyright`（RULES §1.2，strict）
+- `uv run lint-imports`（G6，ARCHITECTURE §10.3）
+
 ## pytest
 
 配置在 `pyproject.toml` 的 `[tool.pytest.ini_options]`，`testpaths = ["tests"]`。
@@ -26,6 +31,6 @@
 - `uv run pytest`
 - 有测试文件之后，单文件：`uv run pytest tests/test_<模块>.py`；按名称：`uv run pytest -k <名字>`
 
-还没有测试时，本机 `uv run pytest` 的退出码是 5（空目录）。CI 把 5 当成空跑通过。退出码怎么读，见根 [AGENTS.md](../../AGENTS.md)「命令」和 [docs/ci-and-environment.md](../../docs/ci-and-environment.md)「当前是空跑」。这里不另抄实测表。
+`tests/` 里有用例。`uv run pytest` 收集到 0 个用例时退出码仍是 5，CI 不再把 5 改成通过。命令与退出码见根 [AGENTS.md](../../AGENTS.md)「命令」。
 
 PDF 只用 `pypdfium2`。不要加 PyMuPDF / `fitz`（[RULES.md](../../RULES.md) §1.5）。重依赖放在哪一层见 ARCHITECTURE §10.3 与 RULES §1.2。

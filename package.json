@@ -9,13 +9,29 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "typecheck": "node tools/typecheck.mjs",
-    "test": "node --test"
+    "typecheck:core": "tsc -p tsconfig.core.json --noEmit --pretty false",
+    "test": "vitest run",
+    "codegen": "node tools/codegen/run.mjs",
+    "check:size": "node tools/check-file-size/check.mjs",
+    "check:deps": "node tools/check-deps/check.mjs",
+    "check:core-tests": "node tools/check-core-tests/check.mjs",
+    "check:license:npm": "node tools/check-license/check-npm.mjs",
+    "check:license:pip": "node tools/check-license/check-pip.mjs",
+    "check:license:models": "node tools/check-license/check-models.mjs",
+    "check:one-slice": "node tools/check-one-slice/check.mjs",
+    "check:commits": "node tools/check-commits/check.mjs",
+    "check:hotspots": "node tools/check-hotspots/check.mjs",
+    "check:pr-size": "node tools/check-pr-size/check.mjs",
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run typecheck:core && pnpm run check:size && pnpm run check:deps && pnpm run check:core-tests && pnpm run check:license:npm && pnpm run check:license:pip && pnpm run check:license:models && pnpm run check:one-slice && pnpm run check:commits && pnpm run check:hotspots && pnpm run check:pr-size && pnpm run codegen && git diff --exit-code"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@types/node": "22.20.5",
+    "dependency-cruiser": "17.4.3",
     "eslint": "10.13.0",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.72.1"
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.0.5"
   },
   "packageManager": "pnpm@10.34.9+sha512.f49b5a8ea0fdedb44bb3c0c1d6575092a53c2950d95b7ad15df11f17974877a2de3a01c07e934e9b28ce716e51c09a94962c7306d09be2e1e4b18a8c8762fd32"
 }

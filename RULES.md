@@ -24,7 +24,7 @@
 ### 1.2 Python（worker）
 
 - Python 版本以 `workers/parser/pyproject.toml` 为准；依赖用 `uv` 管理，`uv.lock` 入库。
-- ruff（lint + format）、mypy `--strict`（或 pyright strict，M1 二选一后锁定）。
+- ruff（lint + format）、pyright strict（Wisdom 2026-10-31 14:12 锁定。不再用 mypy）。
 - 类型注解覆盖全部公开函数；协议模型只来自生成的 `oi_worker/protocol/`，不得手改。
 - 重依赖（Paddle、Torch、vLLM 等）只能出现在对应引擎目录与 `runtime/`，不得出现在 `api/`、`jobs/`、`preprocess/`。
 - 模型与权重只从 `runtime/` 模型清单登记的来源加载，并校验 sha256；需要 `trust_remote_code` 的模型必须锁定 `revision` 到具体提交，并在 PR 描述说明。
@@ -49,6 +49,7 @@
 - 新增运行时依赖须在 PR 描述写：用途、许可证、体积、替代方案。
 - 本项目许可证为 **Apache-2.0**（Q6，见根目录 `LICENSE`）。新依赖必须与 Apache-2.0 兼容。
 - 许可证白名单：MIT、Apache-2.0、BSD-2/3、ISC、MPL-2.0（仅作为独立文件使用时）。
+- PSF-2.0 只允许出现在不随应用发布的 dev / CI 工具上。包名写在 `tools/check-license/dev-only.json`。当前是 `typing_extensions`（import-linter 的传递依赖，Wisdom 2026-10-31 14:12）。运行时依赖用到 PSF-2.0 仍然拒绝。
 - **禁止 GPL / AGPL**（任何版本），不接受例外申请。已知禁止项：PyMuPDF（AGPL-3.0；包括作为 MiniCPM SDK `pdf` extra 被间接引入），以及 MinerU 在 2026-04-14 之前以 AGPL-3.0 发布的版本。
 - LGPL、非商用、自定义许可证一律需要用户批准；已知需批准的：MinerU 当前版本（MinerU Open Source License，Apache-2.0 加附加条款）。
 - 间接依赖同样适用：引入一个包前检查它的 extras 与传递依赖，不得借上游包把需批准的许可证带进来。
@@ -220,7 +221,7 @@ Wisdom 2026-10-30 23:56 在不改上面五条原文的前提下写死：核心�
 | 条件 | 怎样算达到 | 已有条文 |
 | --- | --- | --- |
 | 验收 ID 覆盖 | 改动对得上 PRD 的 US / AC，或 DESIGN 的 DS 时，描述列出编号。对不上就写「无」，不编编号 | §2 第 1 条；[PRD.md](./PRD.md) §6。DS 只读，不改 DESIGN 正文（N-10） |
-| 命令退出码 | 这次实际跑过的命令，退出码写在描述里，并写入 `docs/evidence/<PR号>/`。没跑的命令不要写成通过。需要全量时遵守 §4（同一个 tip 只跑一次）。空跑怎么读，以 [AGENTS.md](./AGENTS.md)「命令」为准：没有 `.ts` 时 typecheck 与 `pnpm test` 退出码 0 只说明空跑；本机 `uv run pytest` 退出码 5 是空目录。`test:core` 在 M1 前写不适用（脚本尚未提供）。CI 全绿不等于 ARCHITECTURE §13 的 G1–G18 | §2 第 3 条、§4；[docs/ci-and-environment.md](./docs/ci-and-environment.md)「当前是空跑」 |
+| 命令退出码 | 这次实际跑过的命令，退出码写在描述里，并写入 `docs/evidence/<PR号>/`。没跑的命令不要写成通过。需要全量时遵守 §4（同一个 tip 只跑一次）。命令怎么读，以 [AGENTS.md](./AGENTS.md)「命令」为准。`test:core` 不单设脚本。core 测试文件在 `packages/features/*/test/core/`，由 Vitest 以 Node 环境收集。CI 全绿不等于 ARCHITECTURE §13 的 G1–G18 全部已有 | §2 第 3 条、§4；[docs/ci-and-environment.md](./docs/ci-and-environment.md)「门禁」 |
 | 证据目录 | `docs/evidence/<PR号>/` 放这次的测试日志和截图。没有就在描述里写「无」。大文件写 CI artifact 链接，不提交大二进制 | §2 第 6 条、§4「证据目录」；N-12 |
 | PR 描述工作记录 | 模板「agent 工作记录」写了：读了哪些规格、关键决定、命令与结果、坑。不新建 `docs/agent-logs/` | §2 第 7 条 |
 | 日志规则 | 这次若增加或修改日志：不记正文、译文、提示词、密钥、绝对路径；调试模式默认关；调试日志最多 7 天且总量上限 50 MB，只存本机。没改日志的 PR 在描述里写「未改日志」 | §4「调试模式」、§5 第 8 条、N-05；[ARCHITECTURE.md](./ARCHITECTURE.md) §11 |
