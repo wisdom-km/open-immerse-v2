@@ -1,6 +1,6 @@
 # 待办与架构评审处理状态
 
-状态：v0.6。日期：2026-10-30（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。
+状态：v0.6。日期：2026-10-30（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。
 用途：逐条记录[架构评审](./reviews/2026-10-30-architecture-review.md)的每个发现由哪个规格 PR 处理、落在规格哪里，以及还没处理、留给哪个里程碑的事。决定的理由见[差异清单](./v2-gap-and-changes.md) §6.6–§6.12；本文只记状态，不重述规格。§5 记 Jev 开关审查（2026-10-30 22:06）各项的处理状态。§8 是 M0 之后才由 Wisdom 选的清单（2026-10-31 01:08），选项写在那里，这里不代选。
 
 三个规格 PR：
@@ -62,10 +62,11 @@
 | 阅读顺序校验、题注绑定、扫描页判定、段落切分的阈值 | 基准定标（M3） | ARCH §7.10、§7.11；PRD QM-01、QM-02 |
 | 百度 AI Studio PaddleOCR 托管 API 能否作为引擎 A 的来源 | M3 开工前 | ARCH §7.0；差异清单 §2.4.1 |
 | worker 监管的重启上限与超时默认值 | M3（supervisor 实现 PR） | ARCH §10.5 |
-| 诊断保留天数与体积的默认值 | M2 实测后 | ARCH §11 |
+| 产品诊断日志的保留天数与体积默认值 | M2 实测后。调试日志已定：最多 7 天，总量上限 50 MB（先到先清）；用户可随时清空；关闭调试模式时询问是否删除。不套用到产品诊断日志 | ARCH §11；PRD AC-101 |
 | 诊断日志代码（白名单枚举、`Logger`、解析 / OCR / 翻译的 run 打点） | M1。规格已写入 ARCHITECTURE §11（Wisdom 2026-10-31）。仓库还没有 `packages/`，不在规格 PR 里建 `contracts/src/diag-events.ts` | ARCH §11；PRD S10、US-14、AC-101 |
 | 一键导出诊断包与诊断页 | M2。记录骨架不提前到导出 UI | PRD US-14、AC-09、AC-10、AC-83 |
 | 接 LangSmith 等云端追踪、默认对外上报日志、把文档全文写入日志 | M0/M1 明确不做。真遇到问题再评估 | ARCH §11；PRD AC-101 ④ |
+| 请 Loom 更新 `docs/design/md-reader.md` MD-16 的 `test:core` 措辞 | Loom。N-10，agent 不改该文件。M1 前按 AGENTS.md：此项写不适用（脚本尚未提供）；M1 起以 package.json 实际脚本为准 | MD-16；AGENTS.md 命令节 |
 | Markdown 块窗口预算的默认值 | M2 实测后 | ARCH §4.5.3 |
 | 首批 ADR：G18、`ui-events-declared`、`supervisor-state`、解析规则集 `oi-rules/1` | M1 建立 `docs/adr/` 时 | ARCH §16 |
 | 高质量档是否开放 | M6d，QM-13 由用户拍板 | PRD §8 M6d |

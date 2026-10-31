@@ -25,9 +25,9 @@
 
 ## 命令
 
-下列命令于 2026-10-31 在本机跑过。Node 以 `.nvmrc` 的 20.19.2 为准。空跑的细节见 [docs/ci-and-environment.md](docs/ci-and-environment.md)「当前是空跑」。worker 命令的工作目录是 `workers/parser/`。
+下列命令于 2026-10-31 在 Cloud Agent 环境跑过。Node 以 `.nvmrc` 的 20.19.2 为准。空跑的细节见 [docs/ci-and-environment.md](docs/ci-and-environment.md)「当前是空跑」。worker 命令的工作目录是 `workers/parser/`。
 
-本机若 `node` 不在 nvm 那一版的目录里，先把该目录放在 PATH 前面再跑 `corepack pnpm`。2026-10-31 用 Node v20.19.2 复跑，退出码与下表相同。
+Cloud Agent 的 PATH 里 `/exec-daemon/node`（v22.23.4）排在 nvm 前面。不把 nvm 的 bin 放在 PATH 前面时，`node -v` 仍是 v22.23.4。下表是把 `/home/ubuntu/.nvm/versions/node/v20.19.2/bin` 放在 PATH 前面之后的退出码。先放这个目录，再跑 `corepack pnpm`。
 
 | 步骤 | 命令 | 退出码 | 验证备注 |
 | --- | --- | --- | --- |
