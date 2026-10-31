@@ -11,6 +11,9 @@ function readIds(name) {
 
 const whitelist = readIds("whitelist.json");
 const unlistedPermissive = readIds("unlisted-permissive.json");
+const devOnly = JSON.parse(readFileSync(path.join(directory, "dev-only.json"), "utf8"));
+const devOnlyIds = new Set(devOnly.ids);
+const devOnlyPackages = new Set(devOnly.packages);
 const aliases = JSON.parse(
   readFileSync(path.join(directory, "package-aliases.json"), "utf8"),
 ).aliases;
@@ -49,11 +52,14 @@ function tokenize(source) {
   return tokens;
 }
 
-function idAllowed(id) {
+function idAllowed(id, packageName) {
   if (deniedFamily.test(id)) {
     return false;
   }
-  return whitelist.has(id) || unlistedPermissive.has(id);
+  if (whitelist.has(id) || unlistedPermissive.has(id)) {
+    return true;
+  }
+  return devOnlyIds.has(id) && devOnlyPackages.has(packageName);
 }
 
 function parsePrimary(tokens, position) {
@@ -94,20 +100,20 @@ function parseOr(tokens, position) {
   return [left, next];
 }
 
-function evaluateNode(node) {
+function evaluateNode(node, packageName) {
   if (node.op === "OR") {
-    return evaluateNode(node.left) || evaluateNode(node.right);
+    return evaluateNode(node.left, packageName) || evaluateNode(node.right, packageName);
   }
   if (node.op === "AND") {
-    return evaluateNode(node.left) && evaluateNode(node.right);
+    return evaluateNode(node.left, packageName) && evaluateNode(node.right, packageName);
   }
   if (node.op === "WITH") {
     return false;
   }
-  return idAllowed(node.id);
+  return idAllowed(node.id, packageName);
 }
 
-export function expressionAllowed(raw) {
+export function expressionAllowed(raw, packageName) {
   const source = preprocess(raw);
   if (source.length === 0) {
     return false;
@@ -117,7 +123,7 @@ export function expressionAllowed(raw) {
   if (next !== tokens.length) {
     return false;
   }
-  return evaluateNode(node);
+  return evaluateNode(node, packageName);
 }
 
 export function reportedLicense(packageName, reported) {
@@ -129,7 +135,7 @@ export function reportedLicense(packageName, reported) {
 
 export function licenseAllowed(packageName, reported) {
   try {
-    return expressionAllowed(reportedLicense(packageName, reported));
+    return expressionAllowed(reportedLicense(packageName, reported), packageName);
   } catch {
     return false;
   }

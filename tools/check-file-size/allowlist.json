@@ -15,6 +15,10 @@
     {
       "pattern": "fixtures/protocol/**",
       "reason": "协议样例。ARCHITECTURE §6 不计行数。"
+    },
+    {
+      "pattern": "packages/features/jobs/src/domain/job-id.gen.ts",
+      "reason": "G7 生成物，由 tools/codegen 从 job-id.ts 复制。"
     }
   ],
   "exemptions": []

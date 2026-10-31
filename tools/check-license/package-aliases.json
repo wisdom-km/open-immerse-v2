@@ -5,6 +5,24 @@
       "reported": "BSD-3-Clause, Apache-2.0, dependency licenses",
       "spdx": "Apache-2.0 OR BSD-3-Clause",
       "reason": "Q6 已采用。pip-licenses 读到的 License 字段不是 SPDX。"
+    },
+    {
+      "name": "grimp",
+      "reported": "BSD License",
+      "spdx": "BSD-2-Clause",
+      "reason": "发行元数据的 Classifier 写成 BSD License。包内 LICENSE 是 BSD 2-Clause。"
+    },
+    {
+      "name": "import-linter",
+      "reported": "BSD License",
+      "spdx": "BSD-2-Clause",
+      "reason": "发行元数据的 Classifier 写成 BSD License。包内 LICENSE 是 BSD 2-Clause。"
+    },
+    {
+      "name": "nodeenv",
+      "reported": "BSD License",
+      "spdx": "BSD-2-Clause",
+      "reason": "pip-licenses 报 BSD License。LICENSE 是两条条件的 BSD，对应 BSD-2-Clause。pyright 的传递依赖，不随应用发布。"
     }
   ]
 }
