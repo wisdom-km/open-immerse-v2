@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
 
+import { writeRemediation } from "../gate-remediation/format.mjs";
+
 const namedHotspots = new Set(["composition-root.ts", "slots.ts"]);
 const lineLimit = 30;
 
@@ -58,6 +60,7 @@ if (failures.length > 0) {
   for (const line of failures) {
     console.error(`  ${line}`);
   }
+  writeRemediation(["G11"]);
   process.exit(1);
 }
 

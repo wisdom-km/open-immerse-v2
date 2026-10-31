@@ -58,13 +58,13 @@ Cloud Agent 的 PATH 里 `/exec-daemon/node`（v22.23.4）排在 nvm 前面。�
 | typecheck | `corepack pnpm run typecheck` | 0 | 已有 `.ts`。`tsc --noEmit --project tsconfig.json`。类型错误会使命令失败 |
 | typecheck:core | `corepack pnpm run typecheck:core` | 0 | G14。`tsc -p tsconfig.core.json --noEmit`。`lib` 只有 ES2023，`types` 为空 |
 | test | `corepack pnpm test` | 0 | Vitest，`environment: node`。include 含 `tools/**/*.test.ts` 与 `packages/features/*/test/core/**/*.ts`。没有 `test:core` 脚本 |
-| check | `corepack pnpm run check` | 0 | G2、G3、G4、G5、G7、G10、G11、G12、G13–G16、G18 与 Conventional Commits。G12 超过 600 行时提交说明或 `PR_BODY` 里要有一行 `G12:`。对比基线默认 `main`，CI 设 `GATE_BASE=origin/main` |
+| check | `corepack pnpm run check` | 0 | G2、G3、G4、G5、G7、G10、G11、G12、G13–G16、G18 与 Conventional Commits。失败时 stderr 追加 [docs/gate-remediation.md](docs/gate-remediation.md) 的说明。G12 超过 600 行时提交说明或 `PR_BODY` 里要有一行 `G12:`。对比基线默认 `main`，CI 设 `GATE_BASE=origin/main` |
 | core 测试 | 不执行 | 脚本尚未提供 | `package.json` 没有 `test:core`。2026-10-31 试跑 `corepack pnpm test:core`，退出码 254（Command "test:core" not found）。M1 前 PR 里此项写不适用（脚本尚未提供）；M1 起以 package.json 实际脚本为准。不要加空脚本。`docs/design/md-reader.md` 的 MD-16 仍写着这个命令名，该文件归 Loom（N-10），本表不改它；M1 前不要跑 |
 | worker 安装 | `uv python install`，然后 `uv sync --frozen --extra dev` | 0，0 | Python 3.11.18 已在；uv 0.13.6 |
-| worker lint | `uv run ruff check .`，以及 `uv run ruff format --check .` | 0，0 | ruff 0.17.3 |
-| worker 类型 | `uv run pyright` | 0 | RULES §1.2。strict。钉在 pyright 1.1.407 |
-| worker 分层 | `uv run lint-imports` | 0 | G6。契约在 `workers/parser/pyproject.toml` |
-| worker 测试 | `uv run pytest` | 0 | 收集到测试。退出码 5（0 个用例）不再被 CI 改成通过 |
+| worker lint | `node ../../tools/gate-remediation/run.mjs --id G2 -- uv run ruff check .`，以及把 `--id` 换成 `G1` 再跑 `uv run ruff format --check .` | 0，0 | 工作目录是 `workers/parser/`。ruff 0.17.3。失败时追加改正说明 |
+| worker 类型 | `node ../../tools/gate-remediation/run.mjs --id G3-pyright -- uv run pyright` | 0 | 工作目录是 `workers/parser/`。RULES §1.2。strict。钉在 pyright 1.1.407 |
+| worker 分层 | `node ../../tools/gate-remediation/run.mjs --id G6 -- uv run lint-imports` | 0 | 工作目录是 `workers/parser/`。G6。契约在 `workers/parser/pyproject.toml` |
+| worker 测试 | `node ../../tools/gate-remediation/run.mjs --id G8 -- uv run pytest` | 0 | 工作目录是 `workers/parser/`。收集到测试。退出码 5（0 个用例）不再被 CI 改成通过 |
 | JS 单测 | `corepack pnpm exec vitest run <文件>` | 0 | 例如 `tools/check-file-size/limit.test.ts`。过滤：`corepack pnpm exec vitest run --test-name-pattern '<名字>'` |
 | Python 单测 | `uv run pytest tests/test_<模块>.py`，或 `uv run pytest -k <名字>` | 0 | 例如 `tests/test_smoke.py`。指向不存在的文件时退出码 4 |
 

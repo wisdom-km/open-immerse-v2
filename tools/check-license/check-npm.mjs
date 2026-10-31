@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
+import { writeRemediation } from "../gate-remediation/format.mjs";
 import { licenseAllowed } from "./policy.mjs";
 
 function packagesFromPnpm(report) {
@@ -26,6 +27,7 @@ function reportFromArgs(argv) {
   });
   if (result.status !== 0) {
     process.stderr.write(result.stderr ?? "");
+    writeRemediation(["G10"]);
     process.exit(result.status === null ? 1 : result.status);
   }
   return JSON.parse(result.stdout);
@@ -43,6 +45,7 @@ if (failures.length > 0) {
   for (const line of failures) {
     console.error(`  ${line}`);
   }
+  writeRemediation(["G10"]);
   process.exit(1);
 }
 

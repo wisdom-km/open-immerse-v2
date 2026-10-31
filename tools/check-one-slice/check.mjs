@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
 
+import { writeRemediation } from "../gate-remediation/format.mjs";
+
 const workerRules = [
   "workers/parser/oi_worker/engines/reading_order/",
   "workers/parser/oi_worker/preprocess/scan_detect.py",
@@ -89,6 +91,7 @@ if (failures.length > 0) {
   for (const line of failures) {
     console.error(`  ${line}`);
   }
+  writeRemediation(["G18"]);
   process.exit(1);
 }
 

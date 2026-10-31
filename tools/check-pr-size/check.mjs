@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
 
+import { writeRemediation } from "../gate-remediation/format.mjs";
+
 const limit = 600;
 const generated = ["pnpm-lock.yaml", "workers/parser/uv.lock"];
 
@@ -58,6 +60,7 @@ if (total > contractLimit && !hasReason()) {
   console.error(
     `check-pr-size: ${total} non-generated lines > ${contractLimit} without a G12: reason (G12)`,
   );
+  writeRemediation(["G12"]);
   process.exit(1);
 }
 

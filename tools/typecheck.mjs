@@ -2,6 +2,8 @@ import { spawnSync } from "node:child_process";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 
+import { writeRemediation } from "./gate-remediation/format.mjs";
+
 const SKIP_DIRECTORIES = new Set(["node_modules", "dist", "coverage"]);
 
 async function containsTypeScript(directory) {
@@ -34,4 +36,10 @@ const result = spawnSync(
   ["--noEmit", "--pretty", "false", "--project", "tsconfig.json"],
   { stdio: "inherit" },
 );
-process.exit(result.status === null ? 1 : result.status);
+if ((result.status ?? 1) !== 0) {
+  if (result.error) {
+    console.error(result.error.message);
+  }
+  writeRemediation(["G3"]);
+  process.exit(result.status === null ? 1 : result.status);
+}

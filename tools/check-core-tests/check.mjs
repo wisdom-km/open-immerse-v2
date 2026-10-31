@@ -2,6 +2,8 @@ import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { writeRemediation } from "../gate-remediation/format.mjs";
+
 function option(name, fallback) {
   const index = process.argv.indexOf(name);
   return index === -1 ? fallback : process.argv[index + 1];
@@ -47,6 +49,7 @@ if (failures.length > 0) {
   for (const line of failures) {
     console.error(`  ${line}`);
   }
+  writeRemediation(["G16"]);
   process.exit(1);
 }
 

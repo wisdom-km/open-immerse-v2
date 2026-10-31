@@ -7,9 +7,9 @@
     "node": ">=20.19.2"
   },
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
+    "lint": "node tools/gate-remediation/run.mjs --id G2 -- eslint . --max-warnings 0",
     "typecheck": "node tools/typecheck.mjs",
-    "typecheck:core": "tsc -p tsconfig.core.json --noEmit --pretty false",
+    "typecheck:core": "node tools/gate-remediation/run.mjs --id G14 -- tsc -p tsconfig.core.json --noEmit --pretty false",
     "test": "vitest run",
     "codegen": "node tools/codegen/run.mjs",
     "check:size": "node tools/check-file-size/check.mjs",
@@ -22,7 +22,7 @@
     "check:commits": "node tools/check-commits/check.mjs",
     "check:hotspots": "node tools/check-hotspots/check.mjs",
     "check:pr-size": "node tools/check-pr-size/check.mjs",
-    "check": "pnpm run lint && pnpm run typecheck && pnpm run typecheck:core && pnpm run check:size && pnpm run check:deps && pnpm run check:core-tests && pnpm run check:license:npm && pnpm run check:license:pip && pnpm run check:license:models && pnpm run check:one-slice && pnpm run check:commits && pnpm run check:hotspots && pnpm run check:pr-size && pnpm run codegen && git diff --exit-code"
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run typecheck:core && pnpm run check:size && pnpm run check:deps && pnpm run check:core-tests && pnpm run check:license:npm && pnpm run check:license:pip && pnpm run check:license:models && pnpm run check:one-slice && pnpm run check:commits && pnpm run check:hotspots && pnpm run check:pr-size && pnpm run codegen && node tools/gate-remediation/run.mjs --id G7 -- git diff --exit-code"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

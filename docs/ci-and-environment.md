@@ -10,6 +10,8 @@
 
 `pnpm check` 包含：ESLint（G2）、`tsc`（G3）、`tsconfig.core.json`（G14）、`tools/check-file-size`（G4）、dependency-cruiser（G5、G13、G15、G16）、core 测试里的 `@vitest-environment`（G16）、npm / pip / 模型清单许可证（G10）、一个切片（G18）、Conventional Commits、热点文件行数（G11 的具名文件）、PR 体量（G12）、`pnpm codegen && git diff --exit-code`（G7）。
 
+失败时在原输出后面追加改正说明。文案只在 `tools/gate-remediation/catalog.json`，对照表在 [gate-remediation.md](gate-remediation.md)。`tsc -b` 仍不是必需检查（M1-DEFER-G3）。G3 的违例样例在 `tools/gate-fixtures/g3/`，不在主 `tsconfig` 的编译范围内。
+
 还没接上，规格怎么写就怎么留着，不另造行为：
 
 | 门禁 | 原因 |
@@ -61,9 +63,11 @@ Python worker 在 `workers/parser/`：
 ```bash
 uv python install
 uv sync --frozen --extra dev
-uv run ruff check .
-uv run ruff format --check .
-uv run pytest
+node ../../tools/gate-remediation/run.mjs --id G2 -- uv run ruff check .
+node ../../tools/gate-remediation/run.mjs --id G1 -- uv run ruff format --check .
+node ../../tools/gate-remediation/run.mjs --id G8 -- uv run pytest
+node ../../tools/gate-remediation/run.mjs --id G3-pyright -- uv run pyright
+node ../../tools/gate-remediation/run.mjs --id G6 -- uv run lint-imports
 ```
 
 pytest 收集到 0 个用例时退出码是 5。CI 不再把 5 改成通过。本机直接跑 `uv run pytest` 时，空目录仍会看到退出码 5。
@@ -74,8 +78,8 @@ pytest 收集到 0 个用例时退出码是 5。CI 不再把 5 改成通过。�
 
 | Job | 步骤 | 缓存 |
 | --- | --- | --- |
-| `node` | `corepack pnpm install --frozen-lockfile`、锁定的 uv 与 `uv python install`（G10 的 `pip-licenses`）、gitleaks 8.30.1（校验 sha256）、`GATE_BASE=origin/main` 下的 `corepack pnpm run check`、`corepack pnpm test` | `actions/cache` 缓存 pnpm store，键来自 `pnpm-lock.yaml`。`setup-uv` 缓存 `workers/parser/uv.lock` 与该 Python |
-| `python-worker` | 安装 uv `0.13.6` 与 Python、`uv sync --frozen --extra dev`、`ruff check`、`ruff format --check`、pytest（退出码 5 失败）、`pyright`、`lint-imports`、`node tools/check-license/check-pip.mjs`、确认锁文件含 `pypdfium2` 且不含 PyMuPDF | `astral-sh/setup-uv` 缓存 `workers/parser/uv.lock`，并缓存该 Python 解释器 |
+| `node` | `corepack pnpm install --frozen-lockfile`、锁定的 uv 与 `uv python install`（G10 的 `pip-licenses`）、gitleaks 8.30.1（校验 sha256；失败时追加 G9 说明）、`GATE_BASE=origin/main` 下的 `corepack pnpm run check`、`corepack pnpm test` | `actions/cache` 缓存 pnpm store，键来自 `pnpm-lock.yaml`。`setup-uv` 缓存 `workers/parser/uv.lock` 与该 Python |
+| `python-worker` | 安装 uv `0.13.6` 与 Python、`uv sync --frozen --extra dev`、`ruff check`（G2）、`ruff format --check`（G1）、pytest（G8，退出码 5 失败）、`pyright`（G3-pyright）、`lint-imports`（G6）、`node tools/check-license/check-pip.mjs`、确认锁文件含 `pypdfium2` 且不含 PyMuPDF（失败时追加 G10 说明） | `astral-sh/setup-uv` 缓存 `workers/parser/uv.lock`，并缓存该 Python 解释器 |
 
 建议在保护分支上把这两个 check 设为必需：`CI / node`、`CI / python-worker`。是否启用由仓库管理员决定；Agent 不修改分支保护。
 

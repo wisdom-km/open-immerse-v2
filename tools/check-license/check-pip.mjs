@@ -1,7 +1,14 @@
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
+import { writeRemediation } from "../gate-remediation/format.mjs";
 import { licenseAllowed } from "./policy.mjs";
+
+function reject(message) {
+  console.error(message);
+  writeRemediation(["G10"]);
+  process.exit(1);
+}
 
 function option(name, fallback) {
   const index = process.argv.indexOf(name);
@@ -13,12 +20,10 @@ const lockfile = option("--lockfile", "workers/parser/uv.lock");
 function assertPdfPin() {
   const text = readFileSync(lockfile, "utf8");
   if (/^name = "(pymupdf|pymupdf-fonts|fitz)"$/m.test(text)) {
-    console.error("check-license: PyMuPDF is AGPL and must not be locked");
-    process.exit(1);
+    reject("check-license: PyMuPDF is AGPL and must not be locked");
   }
   if (!/^name = "pypdfium2"$/m.test(text)) {
-    console.error("check-license: uv.lock must contain pypdfium2");
-    process.exit(1);
+    reject("check-license: uv.lock must contain pypdfium2");
   }
 }
 
@@ -33,11 +38,11 @@ function pipReport(argv) {
     { cwd: "workers/parser", encoding: "utf8" },
   );
   if (result.error) {
-    console.error(`check-license: ${result.error.message}`);
-    process.exit(1);
+    reject(`check-license: ${result.error.message}`);
   }
   if (result.status !== 0) {
     process.stderr.write(result.stderr ?? "");
+    writeRemediation(["G10"]);
     process.exit(result.status ?? 1);
   }
   return JSON.parse(result.stdout);
@@ -60,6 +65,7 @@ if (failures.length > 0) {
   for (const line of failures) {
     console.error(`  ${line}`);
   }
+  writeRemediation(["G10"]);
   process.exit(1);
 }
 
