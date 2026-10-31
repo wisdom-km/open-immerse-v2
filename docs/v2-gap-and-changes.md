@@ -1,6 +1,6 @@
 # v2 差异与修改清单
 
-状态：v0.6。日期：2026-10-30（Asia/Shanghai）；上游查询时间 2026-10-29（UTC），Q3 / Q4 / Q9 相关补充查询与各服务商 API 格式查询 2026-10-30（§2.10）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定（§6）；Markdown 阅读方案于 2026-10-30 17:32 批准（§6.1）；Loom 同日对译文区块四项风险给出结论（§6.2）；Wisdom 同日 18:37 决定 Jev 远程默认用面壁开放平台托管 API（§2.3.1），18:44 定下「API 优先」原则（§0 第 4 条、§2.4.1、§6.3），19:11 对四项风险作出决定（§6.4），19:30 把数据外发同意改为按服务商询问并加入「外发前询问」开关（§6.5），19:57 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修复：v0.4 修复 4 个 P0 并删除 G17（§6.6）；v0.5 修复 P1 项，并按 Wisdom 19:45、19:46 的要求新增服务商适配层（§0 第 13 条、§2.10、§6.7）；v0.6 按 Wisdom 21:12 批准的 PR C 写入阅读顺序、M6 拆分、BabelDOC 借鉴与评审其余项（§0 第 14 条、§2.4、§2.11、§6.8、§7），各评审项的处理状态见 [backlog](./backlog.md)。
+状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。已决定的事项在 §6，未核实的说法在 §7。日期：2026-10-31（Asia/Shanghai）。
 用途：把三类输入——用户提供的双引擎方案（[附件原文](./architecture/inputs/pdf_translation_architecture.md)）、`docs/architecture/` 下的 01 / 02 / 03 草案、v1 实际实现（见 [v1 审查](./v1-review.md)）——与上游模型的官方资料逐条对照，列出**需要改的地方、冲突点、未核实的说法**，并给出统一编号的决策问题（Q1–Q12，现已全部决定）。
 结论已写入根目录规格：[PRD.md](../PRD.md)、[ARCHITECTURE.md](../ARCHITECTURE.md)、[RULES.md](../RULES.md)。三份规格与本文冲突时以规格为准；本文记录「为什么这样改」。视觉与交互规格 [DESIGN.md](../DESIGN.md)、[docs/design-principles.md](./design-principles.md) 已于 2026-10-30 入库（v0.6）。下文仍写「待 Loom 产出」的表格行是当时的记录，不改写。
 
@@ -585,6 +585,16 @@ Wisdom 批准 Forge 的四条建议。Q10 不重开：标准档仍是 PP-DocLayo
 | D-E | 2026-10-31 先定云 OCR。11:14 续定：没有版面作业（版面关掉，含 `multimodal-only`）时，按区域识别的来源请求都为 0，不发整页：引擎 A 的识别（`parse`）、引擎 B（含面壁 API 与本机 SDK；SDK 内部会跑 PP-DocLayoutV3，跑它等于悄悄把版面加回来）、云 OCR（百度、GLM-OCR 及同类）。整页只走多模态，再用 PDF 文字层校正。识别列表含这三项之一且版面关着时，`route-config` 校验失败，原因码 `sources_require_layout`，不静默跳过。四个预设不改。`multimodal-only` 本来就不含引擎 A、引擎 B。关掉版面后没有 OCR 兜底，只剩多模态，再按裁图、占位框降级。云 OCR 仍不在任一预设里默认打开。`ocr-layout` 与 `ocr-layout-jev` 版面开着，但选中预设本身不发云 OCR。不另加「只能挂在 `ocr-*` 预设 id 上」的白名单：用户把云 OCR 加入任何版面开着的路线（含 `multimodal-layout` 与同等自定义组合）之后，仍按裁片请求。若要收成预设 id 白名单，需要另定 | ARCH §7.1、§7.2、§7.7、§7.12；PRD §3.5、AC-88、AC-93、AC-96；[backlog](./backlog.md) §8 |
 | W-4 | 拆成两截。过渡默认：新安装与恢复默认的预设 id 是 `multimodal-layout`，不是空，也不要求用户先选一条。正式全局默认仍等 M0 四路线对比（质量、速度、内存，同一批论文）之后由 Wisdom 定，现在不预填正式 id。来源优先级仍未决定，维持现行提议顺序（引擎 A → 引擎 B → 云 OCR → 多模态）作为临时实现，不新造另一种顺序 | ARCH §7.12；PRD §3.5、AC-86、AC-91、§9；[backlog](./backlog.md) §8 |
 
+### 6.14 M0 费用、M3 真值表与显示链确认（Wisdom 2026-10-31 13:14）
+
+不重开 Q3、Q5、D-D、D-E、W-4。
+
+| 项 | 决定 | 落点 |
+| --- | --- | --- |
+| M0 单篇费用与耗时 | 同一批论文上，四个预设各记单篇费用与单篇耗时，用来给占位预算上限定标（N-14）。跑在 Wisdom 自己的 8 GB 内存、无独显、只用 CPU 的机器上。`MODELBEST_API_KEY` 只经 Cursor Secrets，不进仓库。测完前「未核实」，不预填数字。不改 W-4：正式全局默认仍只看质量、速度、内存 | PRD §8 M0、§9；ARCH §7.8；本文 §7 |
+| M3 真值表 | ARCHITECTURE §7.13 一张表：评分开关 × 路线预设 × 四种评估状态 × 外发同意 × 预算模式。汇合 AC-85、AC-89、AC-97，不改它们的含义。新增 AC-102，M3 穷尽测试这张表 | ARCH §7.13、§16；PRD AC-102、§8 M3 |
+| 公式显示链 | 核对过现有文档：v2 没有矢量重绘。显示链维持 LaTeX → 裁图 → 占位框（ARCH §7.5 的五种显示决定；降级链是第 1–5 步的 LaTeX，然后 `source-crop`，然后 `page-placeholder`）。v1 审查 §4.7、差异清单 §5、README、AGENTS.md 已经写明不立项。本次不改这些句子的含义，只记下这次确认 | ARCH §7.5、§7.13；PRD AC-04、AC-89；[backlog](./backlog.md) §10 |
+
 ## 7. 未核实的说法
 
 | 说法 | 来源 | 状态 |
@@ -649,6 +659,7 @@ Wisdom 批准 Forge 的四条建议。Q10 不重开：标准档仍是 PP-DocLayo
 | 各服务商的预置模型清单与单价 | 各家官方文档 | **未核实**；实现时按当时文档填写并记 `verifiedAt`，单价未核实的按次数类上限管（ARCH §7.8、§7.9.8） |
 | Electron fuse `EnableEmbeddedAsarIntegrityValidation` 在各平台上的支持情况 | Electron `docs/tutorial/fuses.md`（2026-10-30 查阅 main 分支） | **未核实**，M1 按锁定版本复核（ARCH §9） |
 | CSP 草案能否不放宽就跑通 KaTeX 与 PDF.js；`oi-asset://` 是否必须注册为 `standard` | — | **待 M2 实测**；任何放宽都要 ADR（ARCH §9） |
+| 四个预设在同一批论文上的单篇费用与单篇耗时 | PRD §8 M0（Wisdom 2026-10-31 13:14） | **未核实**。测完前不预填。机器是 Wisdom 自己的 8 GB 内存、无独显、只用 CPU。Key 只经 Cursor Secrets |
 
 ## 8. 本文结论在规格中的落点
 
@@ -670,6 +681,7 @@ Wisdom 批准 Forge 的四条建议。Q10 不重开：标准档仍是 PP-DocLayo
 | 决策记录 Q1–Q12 | 本文 §6；PRD §9；ARCH §16 |
 | 版面两个部署设置、关掉版面时引擎 A 的识别、引擎 B、云 OCR 请求都为 0、过渡默认 `multimodal-layout`、PP-DocLayoutV3 的 8 GB CPU 实测仍未核实（Wisdom 2026-10-31；11:14 起门禁覆盖这三项，见下一行） | 本文 §0 第 16 条、§6.13、§7；ARCH §7.0、§7.7、§7.12、§16；PRD §3.5、AC-71、AC-86、AC-91、AC-96、§8 M0、§9；[backlog](./backlog.md) §8 |
 | D-E 续定：没有版面作业时引擎 A 的识别、引擎 B、云 OCR 请求都为 0；组合校验失败，不静默跳过（Wisdom 2026-10-31 11:14） | 本文 §6.13；ARCH §7.1、§7.2、§7.12、§16；PRD §3.5、AC-88、AC-93、AC-96；[backlog](./backlog.md) §8 |
+| M0 单篇费用与耗时、M3 真值表、显示链确认不引入矢量重绘（Wisdom 2026-10-31 13:14） | 本文 §6.14、§7；ARCH §7.5、§7.8、§7.13、§16；PRD §8 M0、M3、AC-102、§9；[backlog](./backlog.md) §10 |
 | Markdown 阅读方案（D1–D7）、译文按区块存 Markdown | 本文 §6.1；ARCH §4.5、§8.1.1；PRD S13、§3.2、US-23–US-28、AC-30–AC-56、QM-15–QM-17、§8.1；RULES N-18；方案原文 `docs/design/md-reader.md` |
 | Jev 的 API 服务商是面壁开放平台、设置「本地 / API」、`MODELBEST_API_KEY` 的保管、引擎 B 的面壁 API 来源（Wisdom 2026-10-30 18:37） | 本文 §2.3.1、§7；ARCH §1、§2.6、§4.2、§7.1、§7.3、§7.4「面壁 API」、§8.3、§10.1–§10.3、§16；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、QM-14、M6a、M6b、§9 |
 | API 优先：每个模型能力默认托管 API、「本地」是同一接口后的一等选项、硬件只标可行性、开发机 Windows 上不要求本地、M0 只要求 API 路径、开发密钥只以环境变量提供（Wisdom 2026-10-30 18:44） | 本文 §0 第 4 条、§2.3、§2.4.1、§6.3、§7；ARCH §1、§2.5、§2.6、§4.2、§7.0、§7.1、§7.4、§7.7、§8.3、§10.3、§12、§15.4、§16；PRD §2、S2、S3、S5、S8、S9、§3.3、US-19、US-30、US-31、AC-20、AC-60、AC-61、M0、M3–M7、§9；RULES §4、§5 第 14 项、N-05 |
