@@ -1,6 +1,6 @@
 # open-immerse v2 协作与编码规则（RULES）
 
-状态：v0.6，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。v0.4 按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修复（Wisdom 2026-10-30 19:57 批准）：§5 第 15、16 条（付费调用先预留额度、跨切片编排只在 `ingest`），§8 删除 G17、改由评审与交接说明检查。v0.5 按评审的 P1 项与 Wisdom 2026-10-30 19:45、19:46 的服务商适配层要求：§4 服务商适配层的契约测试，§5 第 17、18 条（服务商细节只在 `packages/providers`、外发检查与凭据），N-05 开发者本机的 Key。v0.6 按 Wisdom 2026-10-30 21:12 批准的 PR C：§1.3 domain 纯函数的行数，§1.5 与 N-19 禁止复制 BabelDOC 代码，§2 一个 PR 一个切片与解析规则集的例外，§3 热点收窄与 UI 事件登记，§5 第 19 条（解析规则集两侧一致）。同版起 DESIGN.md 与 docs/design-principles.md 已入库，正文仍由 Loom 维护（N-10）。同日 22:45 增加 N-20：禁止在 core 或某个积木里写死另一个积木（§5 第 20 条）。同日 23:55、23:56 增加 N-21、N-22：依赖方向只能是界面 → 接口 → core，M1 起由 CI 挡住反向依赖（dependency-cruiser，见 [backlog](./docs/backlog.md) E-P1-6）；M1 门禁落地前不建业务切片（§5 第 21 条）。Wisdom 2026-10-31 起：调试模式默认关；日志不记密钥、不记论文正文，只存本机（§4、§5 第 8 条、N-05）。调试日志最多保留 7 天，且总量上限 50 MB（先到先清）；用户可随时清空；关闭调试模式时询问是否删除（§4）。同日 09:15：agent 工作记录写在 PR 描述，不另建对话记录（§2）。同日文档 P1（Wisdom 已批）：增加 §9 Definition of Done，完成条件只指向已有规则，并与 PR 模板互引。同日：N-11 写明 Agent 不得改 `.cursor/environment.json` 与 `.cursor/install.sh`，改须 Wisdom 批准；#15 为一次性例外。日期：2026-10-31（Asia/Shanghai）。
+状态：v0.6，规格基线（唯一真相源之一）。Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策（Q6）与 UI–core 解耦执行规则（Q3，§8）；v0.3 加入 Markdown 阅读相关规则（Wisdom 2026-10-30 17:32 批准的 Loom 方案：§1.3、§5 第 13 条、N-10、N-18、§7），以及「API 优先」与开发密钥规则（Wisdom 2026-10-30 18:44：§4、§5 第 14 条、N-05）。v0.4 按[架构评审](./docs/reviews/2026-10-30-architecture-review.md)修复（Wisdom 2026-10-30 19:57 批准）：§5 第 15、16 条（付费调用先预留额度、跨切片编排只在 `ingest`），§8 删除 G17、改由评审与交接说明检查。v0.5 按评审的 P1 项与 Wisdom 2026-10-30 19:45、19:46 的服务商适配层要求：§4 服务商适配层的契约测试，§5 第 17、18 条（服务商细节只在 `packages/providers`、外发检查与凭据），N-05 开发者本机的 Key。v0.6 按 Wisdom 2026-10-30 21:12 批准的 PR C：§1.3 domain 纯函数的行数，§1.5 与 N-19 禁止复制 BabelDOC 代码，§2 一个 PR 一个切片与解析规则集的例外，§3 热点收窄与 UI 事件登记，§5 第 19 条（解析规则集两侧一致）。同版起 DESIGN.md 与 docs/design-principles.md 已入库，正文仍由 Loom 维护（N-10）。同日 22:45 增加 N-20：禁止在 core 或某个积木里写死另一个积木（§5 第 20 条）。同日 23:55、23:56 增加 N-21、N-22：依赖方向只能是界面 → 接口 → core，M1 起由 CI 挡住反向依赖（dependency-cruiser，见 [backlog](./docs/backlog.md) E-P1-6）；M1 门禁落地前不建业务切片（§5 第 21 条）。Wisdom 2026-10-31 起：调试模式默认关；日志不记密钥、不记论文正文，只存本机（§4、§5 第 8 条、N-05）。调试日志最多保留 7 天，且总量上限 50 MB（先到先清）；用户可随时清空；关闭调试模式时询问是否删除（§4）。同日 09:15：agent 工作记录写在 PR 描述，不另建对话记录（§2）。同日文档 P1（Wisdom 已批）：增加 §9 Definition of Done，完成条件只指向已有规则，并与 PR 模板互引。同日：N-11 写明 Agent 不得改 `.cursor/environment.json` 与 `.cursor/install.sh`，改须 Wisdom 批准；#15 为一次性例外。Wisdom 2026-10-31 14:27、14:32、14:43、15:35、15:55：阅读入口、角色与升级、§6 的机器兜底列、自审格式、执行计划，以及离开 Draft 之前须经 Forge 审查。N-01–N-22 的禁止条文不改。日期：2026-10-31（Asia/Shanghai）。
 适用对象：所有人类开发者与 AI Agent。
 同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，Loom 2026-10-30 已入库。结构、状态与「当 seam 返回 X 时显示 Y」按 DESIGN 实现；标「待审批」的颜色、间距、字号不当作定稿。DESIGN 文首若仍写「Loom 交付前 UI 只搭结构」，以本句为准，那一句留给 Loom 删（N-10，本文件不改 DESIGN 正文）。其他人或 Agent **不得**改正文（N-10）。
 
@@ -63,7 +63,7 @@
 - 分支命名：`feature/<简短描述>`（功能与文档）、`fix/<简短描述>`（修复）、`chore/<简短描述>`（工具与依赖）。小写、连字符。
 - 一个分支只做一件事；一个 PR 只动**一个切片**（ARCHITECTURE §3.1，G18）。同一切片的 UI 与 core 可以在一个 PR 里；UI 改动的 PR 不得改另一个切片的 core。契约（`packages/contracts`）改动单独成 PR，先合入，再开实现 PR；契约 PR 的非生成代码超过 200 行时，在 PR 描述写明不拆的理由（G12）。
 - 提交信息：Conventional Commits，类型 `feat|fix|docs|refactor|test|chore|build|ci`，范围用切片名，例如 `feat(translation): reject reordered placeholders`。描述可用中文。
-- PR 一律先开 **Draft**；自检（§4、§5 与 §9）全部完成后再转为 Ready。
+- PR 一律先开 **Draft**。自检（§4、§5 与 §9）全部完成，并且 Forge 审查通过之后，才可以离开 Draft（[docs/WORKFLOW.md](./docs/WORKFLOW.md)）。作者不自行把 Draft 标成 Ready。
 - PR 描述必须包含：
   1. 改了什么、为什么（关联 PRD 的 US / AC 编号）。
   2. 涉及的切片与热点文件（ARCHITECTURE G11）。
@@ -72,8 +72,11 @@
   5. 改动了 UI 或 core 路径时，附「UI–core 交接说明」（§8.4）。任务类型为「UI 改动」时，core 目录零改动（N-16、N-21）。
   6. 证据目录：`docs/evidence/<PR号>/` 的链接。放测试日志和截图。没有就写「无」。大文件写 CI artifact 链接，不把大二进制提交进仓库（N-12）。
   7. agent 工作记录：一小段，写读了哪些规格、关键决定、跑了哪些命令与结果、坑。不另建完整 agent 对话记录，Cursor 已保存 transcript。不新建 `docs/agent-logs/`。
-- 上面第 1–7 条是描述里要有的栏目。怎样算这个 PR 做完，见 §9。栏目与 §9 对得上，不在描述里再写一套完成条件。
-- 合入方式由用户决定；任何人与 Agent 不自行合入他人或自己的 PR，除非用户明确要求。
+  8. 自审：只列这次 diff 碰到的规则，不列没碰到的。每行一条：`ID | 结论 | 文件:行`。结论只写「遵守」或「违反」。`文件:行` 是 diff 里对得上的位置。
+  9. 现状理解：小任务写三行（现在已有的行为、相关的节、还没做的部分）。改动超过 300 行，或跨模块（多于一个切片，或同时改 TS 与 worker）时，不在描述里展开，改为执行计划的链接。
+- 上面第 1–9 条是描述里要有的栏目。怎样算这个 PR 做完，见 §9。栏目与 §9 对得上，不在描述里再写一套完成条件。
+- 超过 300 行，或跨模块的任务，先复制 [docs/exec-plans/TEMPLATE.md](./docs/exec-plans/TEMPLATE.md) 为 `docs/exec-plans/<分支名>.md`。第一笔提交只有这份计划。Forge 审查通过之前不写实现。小任务不用这份计划。
+- 合入由 Wisdom 决定（N-03）。任何人与 Agent 不自行合入。仓库操作只在「合入」之后合入锁定的 SHA（[docs/WORKFLOW.md](./docs/WORKFLOW.md)）。
 - **解析规则集的例外**（ARCHITECTURE §7.10）：改阅读顺序、扫描页判定或段落切分的规则时，TS `parsing/domain/text-layer/`、worker 对应的纯规则模块与 `fixtures/parsing-rules/` 必须在同一个 PR 里改；这是唯一允许一个 PR 同时动 TS 切片与 worker 的情形，PR 里不得夹带其他改动。
 
 ## 3. 并行开发规则
@@ -131,32 +134,34 @@
 
 以下行为无论任务描述如何措辞，Agent 都不得执行；确有必要时停止并向用户说明。
 
-| 编号 | 禁止 |
-| --- | --- |
-| N-01 | `git push --force` / `--force-with-lease` 到任何共享分支；改写已推送的历史（amend、rebase 后强推） |
-| N-02 | 直接推送到 `main` 或任何受保护分支；修改分支保护规则、仓库设置、CI 必需检查项 |
-| N-03 | 合入 PR、开启自动合并 |
-| N-04 | 发版：打 tag、创建 Release、发布安装包、签名 / 公证、发布 npm / PyPI 包 |
-| N-05 | 把任何密钥、令牌、证书、`.env` 内容写入仓库、PR 描述、Issue、日志或测试快照（含录制的 HTTP 样例）。面壁开放平台 Key 的变量名是 `MODELBEST_API_KEY`，值只放 Cursor Secrets 或用户本机安全存储（ARCHITECTURE §7.4「面壁 API」）。所有开发与测试用的 Key 只以环境变量提供：云端 Agent 经 Cursor Secrets 注入，开发者本机由开发者自己设为系统用户级或会话级环境变量，值不写进仓库里的脚本、`.vscode/launch.json` 或任务文件；变量名先登记在 ARCHITECTURE §15.4；不在仓库里创建、提交或让代码读取 `.env` 文件，不把 Key 写进命令行参数。日志里的正文、译文、只存本机与不默认上传见 §5 第 8 条与 ARCHITECTURE §11 |
-| N-06 | 扩大范围：做任务未要求的功能、重构无关模块、加入 PRD §3.2 范围外的能力（网页翻译、浏览器扩展壳等） |
-| N-07 | 修改、推送或在旧仓库 `wisdom-km/open-immerse` 开 PR / Issue / 评论；旧仓库只能只读 clone 到临时目录参考 |
-| N-08 | 关闭或绕过 CI 门禁：删除 / 跳过测试、调高行数或复杂度上限、往 allowlist 加豁免、`--no-verify`，除非有用户批准的 ADR |
-| N-09 | 手改生成文件（契约生成物、preload API、Python 协议模型） |
-| N-10 | 编写或修改 `DESIGN.md`、`docs/design-principles.md`，以及 `docs/design/**` 的正文（属于设计师 Loom）。例外：按用户指示把 Loom 交付的原文放入 `docs/design/`，并在文首加「入库说明」写明来源与规格校正；正文不改 |
-| N-11 | Agent 不得修改 `.cursor/environment.json` 与 `.cursor/install.sh`。要改须 Wisdom 批准；建议写在 ARCHITECTURE §15 或 PR 描述里。PR #15（Wisdom 2026-10-31 08:21）是一次性例外，只覆盖那次对 `install.sh` 的 sha256 校验，不作为以后的先例 |
-| N-12 | 在 CI 或自动测试中调用付费 API、下载模型权重、提交大体积二进制（PDF、权重、音频）进仓库 |
-| N-13 | 引入 GPL / AGPL 依赖（含 PyMuPDF，含经上游 extras 间接引入）；引入未经批准的 LGPL / 非商用 / 自定义许可证依赖 |
-| N-14 | 删除或改写用户数据迁移、已入库的规格历史，或把「待基准定标」的数值自行填成具体数字 |
-| N-15 | 以「模型说对」为依据把候选标为已核验；在代码或文档中编造上游模型能力、API 或测试结果 |
-| N-16 | 在 UI 任务中修改 core 文件；为迁就页面给 seam 加参数或改返回形状而不先停下说明（§8 规则 2、3） |
-| N-17 | 让识别结果在应当经过 Jev 时绕过评分进入已核验，或把没有 Jev 有效高分的公式标成已核验。当前已核验只有一条路（Wisdom 2026-10-31 01:14，修订 00:46 里「路线不含 Jev 时通过即可标已核验」）：Jev 有效高分，并且程序核对通过。Jev 应当运行时（评分开关为开，且路线的判定列表含 Jev），引擎 A、引擎 B、云 OCR、arXiv 对齐、多模态识别与补救都要经过评分，并且通过 ARCHITECTURE §7.5 第 1、2 步的四项（位置、字符集、编号、可渲染），才标已核验（Q1，Wisdom 2026-10-30 23:55）。arXiv 源码比对（第 4 步 `source-checked-latex`）算不算已核验由 [backlog](./docs/backlog.md) §8 W-5 决定，选定前不算，不在这里翻转 `source-check-standing`。路线不含 Jev 时不调用 Jev，记 `not-run/disabled`，不论开关开或关；第 5 步程序核对通过的显示决定是 `format-checked-latex`（徽标暂定「格式已核对」），不算已核验。核对步骤不改。把「格式已核对」或当前的「源码核对」标成已核验，同样禁止 |
-| N-18 | 在 v2 为 `.md` 实现写入、删除、重命名，或以「保存」「导出」等任何名义写入用户的笔记库文件夹；在 preload 暴露 `markdown.writeFile`、在装配根注入 `MdFileWriter`（Markdown 方案 D7，ARCHITECTURE §4.5.7） |
-| N-19 | 复制、改写、逐段翻译或摘录 BabelDOC（AGPL-3.0）的代码，把它或它依赖的 PyMuPDF 加为依赖，或对照它的源码写实现；只允许按 ARCHITECTURE §7.11 借用思路（§1.5） |
-| N-20 | 在 core 或某个积木的实现里写死另一个积木：点名它的具体实现，或按具体实现分支。处理路线只由声明式配置选出实现，core 只依赖该类积木的端口（ARCHITECTURE §7.12，Wisdom 2026-10-30 22:45） |
-| N-21 | 让核心业务依赖界面，或让界面直接访问 worker、存储、服务商。依赖方向只能是界面 → 接口 → core。禁止绕过 dependency-cruiser / eslint import 边界放行反向依赖（ARCHITECTURE §2.1、G13、G15，Wisdom 2026-10-30 23:56）。只改界面的 PR 不得修改 core 目录（domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`） |
-| N-22 | 在 M1 门禁 PR（ARCHITECTURE §13 的 G1–G18 脚本落地）合入之前，新建 `packages/features/**` 业务切片。在那之前允许的代码限于工具链、契约草稿与测试夹具。当前 CI 全绿只说明工具链能跑，不等于 §13 已生效 |
+| 编号 | 禁止 | 机器兜底/靠什么拦 |
+| --- | --- | --- |
+| N-01 | `git push --force` / `--force-with-lease` 到任何共享分支；改写已推送的历史（amend、rebase 后强推） | review |
+| N-02 | 直接推送到 `main` 或任何受保护分支；修改分支保护规则、仓库设置、CI 必需检查项 | review |
+| N-03 | 合入 PR、开启自动合并 | review |
+| N-04 | 发版：打 tag、创建 Release、发布安装包、签名 / 公证、发布 npm / PyPI 包 | review |
+| N-05 | 把任何密钥、令牌、证书、`.env` 内容写入仓库、PR 描述、Issue、日志或测试快照（含录制的 HTTP 样例）。面壁开放平台 Key 的变量名是 `MODELBEST_API_KEY`，值只放 Cursor Secrets 或用户本机安全存储（ARCHITECTURE §7.4「面壁 API」）。所有开发与测试用的 Key 只以环境变量提供：云端 Agent 经 Cursor Secrets 注入，开发者本机由开发者自己设为系统用户级或会话级环境变量，值不写进仓库里的脚本、`.vscode/launch.json` 或任务文件；变量名先登记在 ARCHITECTURE §15.4；不在仓库里创建、提交或让代码读取 `.env` 文件，不把 Key 写进命令行参数。日志里的正文、译文、只存本机与不默认上传见 §5 第 8 条与 ARCHITECTURE §11 | G9 |
+| N-06 | 扩大范围：做任务未要求的功能、重构无关模块、加入 PRD §3.2 范围外的能力（网页翻译、浏览器扩展壳等） | review |
+| N-07 | 修改、推送或在旧仓库 `wisdom-km/open-immerse` 开 PR / Issue / 评论；旧仓库只能只读 clone 到临时目录参考 | review |
+| N-08 | 关闭或绕过 CI 门禁：删除 / 跳过测试、调高行数或复杂度上限、往 allowlist 加豁免、`--no-verify`，除非有用户批准的 ADR | review |
+| N-09 | 手改生成文件（契约生成物、preload API、Python 协议模型） | G7 |
+| N-10 | 编写或修改 `DESIGN.md`、`docs/design-principles.md`，以及 `docs/design/**` 的正文（属于设计师 Loom）。例外：按用户指示把 Loom 交付的原文放入 `docs/design/`，并在文首加「入库说明」写明来源与规格校正；正文不改 | review |
+| N-11 | Agent 不得修改 `.cursor/environment.json` 与 `.cursor/install.sh`。要改须 Wisdom 批准；建议写在 ARCHITECTURE §15 或 PR 描述里。PR #15（Wisdom 2026-10-31 08:21）是一次性例外，只覆盖那次对 `install.sh` 的 sha256 校验，不作为以后的先例 | review |
+| N-12 | 在 CI 或自动测试中调用付费 API、下载模型权重、提交大体积二进制（PDF、权重、音频）进仓库 | review |
+| N-13 | 引入 GPL / AGPL 依赖（含 PyMuPDF，含经上游 extras 间接引入）；引入未经批准的 LGPL / 非商用 / 自定义许可证依赖 | G10 |
+| N-14 | 删除或改写用户数据迁移、已入库的规格历史，或把「待基准定标」的数值自行填成具体数字 | review |
+| N-15 | 以「模型说对」为依据把候选标为已核验；在代码或文档中编造上游模型能力、API 或测试结果 | review |
+| N-16 | 在 UI 任务中修改 core 文件；为迁就页面给 seam 加参数或改返回形状而不先停下说明（§8 规则 2、3） | review |
+| N-17 | 让识别结果在应当经过 Jev 时绕过评分进入已核验，或把没有 Jev 有效高分的公式标成已核验。当前已核验只有一条路（Wisdom 2026-10-31 01:14，修订 00:46 里「路线不含 Jev 时通过即可标已核验」）：Jev 有效高分，并且程序核对通过。Jev 应当运行时（评分开关为开，且路线的判定列表含 Jev），引擎 A、引擎 B、云 OCR、arXiv 对齐、多模态识别与补救都要经过评分，并且通过 ARCHITECTURE §7.5 第 1、2 步的四项（位置、字符集、编号、可渲染），才标已核验（Q1，Wisdom 2026-10-30 23:55）。arXiv 源码比对（第 4 步 `source-checked-latex`）算不算已核验由 [backlog](./docs/backlog.md) §8 W-5 决定，选定前不算，不在这里翻转 `source-check-standing`。路线不含 Jev 时不调用 Jev，记 `not-run/disabled`，不论开关开或关；第 5 步程序核对通过的显示决定是 `format-checked-latex`（徽标暂定「格式已核对」），不算已核验。核对步骤不改。把「格式已核对」或当前的「源码核对」标成已核验，同样禁止 | review |
+| N-18 | 在 v2 为 `.md` 实现写入、删除、重命名，或以「保存」「导出」等任何名义写入用户的笔记库文件夹；在 preload 暴露 `markdown.writeFile`、在装配根注入 `MdFileWriter`（Markdown 方案 D7，ARCHITECTURE §4.5.7） | review |
+| N-19 | 复制、改写、逐段翻译或摘录 BabelDOC（AGPL-3.0）的代码，把它或它依赖的 PyMuPDF 加为依赖，或对照它的源码写实现；只允许按 ARCHITECTURE §7.11 借用思路（§1.5） | review |
+| N-20 | 在 core 或某个积木的实现里写死另一个积木：点名它的具体实现，或按具体实现分支。处理路线只由声明式配置选出实现，core 只依赖该类积木的端口（ARCHITECTURE §7.12，Wisdom 2026-10-30 22:45） | review |
+| N-21 | 让核心业务依赖界面，或让界面直接访问 worker、存储、服务商。依赖方向只能是界面 → 接口 → core。禁止绕过 dependency-cruiser / eslint import 边界放行反向依赖（ARCHITECTURE §2.1、G13、G15，Wisdom 2026-10-30 23:56）。只改界面的 PR 不得修改 core 目录（domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`） | G13、G15 |
+| N-22 | 在 M1 门禁 PR（ARCHITECTURE §13 的 G1–G18 脚本落地）合入之前，新建 `packages/features/**` 业务切片。在那之前允许的代码限于工具链、契约草稿与测试夹具。当前 CI 全绿只说明工具链能跑，不等于 §13 已生效 | review |
 
 门禁失败时，在工具原有输出后面追加改正说明：编号、问题、改法、规格位置。全文表在 [docs/gate-remediation.md](./docs/gate-remediation.md)，数据只在 `tools/gate-remediation/catalog.json`。不要在各个脚本里再写一份（Wisdom 2026-10-31 14:27）。
+
+「机器兜底/靠什么拦」只引用 [tools/gate-remediation/catalog.json](./tools/gate-remediation/catalog.json) 里已有的门禁编号，或写 `review`。编号表示 catalog 里这一条已经有机器检查；`review` 表示 catalog 没有对应门禁，仍由评审拦。G18 拦的是一个 PR 多个切片（§2），不代替 N-16。这一列不缩小「禁止」单元格。
 
 ## 7. 文档规则
 
@@ -229,8 +234,10 @@ Wisdom 2026-10-30 23:56 在不改上面五条原文的前提下写死：核心�
 | 日志规则 | 这次若增加或修改日志：不记正文、译文、提示词、密钥、绝对路径；调试模式默认关；调试日志最多 7 天且总量上限 50 MB，只存本机。没改日志的 PR 在描述里写「未改日志」 | §4「调试模式」、§5 第 8 条、N-05；[ARCHITECTURE.md](./ARCHITECTURE.md) §11 |
 | 不动 N-10 / N-11 文件 | diff 里没有 `DESIGN.md`、`docs/design-principles.md`、`docs/design/**` 的正文，也没有 `.cursor/environment.json`、`.cursor/install.sh`。这两份环境文件 Agent 不得改；要改须 Wisdom 批准，并在描述里写明是哪一次。#15 是一次性例外 | N-10、N-11 |
 | 文档同步 | 改了规格的，同一 PR 改掉因此失真的其他规格句子和入口指针，并在规格变更记录里加一行。不把正文再抄进第二份文件 | §7；[docs/spec-changelog.md](./docs/spec-changelog.md) |
+| 自审 | 描述里用 §2 第 8 条的三列，只含这次碰到的规则 | §2 第 8 条 |
+| 现状理解 | 小任务有三行。超过 300 行或跨模块的，第一笔提交是执行计划，Forge 审查通过之前没有实现提交 | §2 第 9 条；[docs/exec-plans/TEMPLATE.md](./docs/exec-plans/TEMPLATE.md) |
 
-PR 仍先开 Draft（§2）。上表未齐就保持 Draft。合入由用户决定（N-03）。
+PR 仍先开 Draft（§2）。上表未齐就保持 Draft。Forge 审查通过之前不离开 Draft。合入由 Wisdom 决定（N-03）。
 
 只改文档、不动 UI 与 core 路径时，模板里的 UI–core 交接说明写「不适用」（§8.4 的适用条件）。交接模板本身仍在 §8.4，这里不重抄。
 
