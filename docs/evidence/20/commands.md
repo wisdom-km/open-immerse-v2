@@ -18,4 +18,17 @@
 
 ## Actions
 
-`ea23a85` 的 `CI / node`（run `41174753003`）在 `pnpm check` 的 `check:license:pip` 退出 1。该 runner 没有 `uv`，`spawnSync` 没有 stderr。`CI / python-worker` 通过，因为那个 job 先装了 uv。后续提交在 `node` job 安装锁定的 uv 和 worker Python，`check-pip.mjs` 改为 `uv run --frozen --extra dev`，并在找不到 `uv` 时打印错误。本机复跑 `node tools/check-license/check-pip.mjs` 退出码 0；`vitest run tools/check-license/reject.test.ts tools/check-license/models.test.ts` 为 2 个文件、3 个测试通过。
+`ea23a85` 的 `CI / node`（run `41174753003`）在 `pnpm check` 的 `check:license:pip` 退出 1。该 runner 没有 `uv`，`spawnSync` 没有 stderr。`CI / python-worker` 通过，因为那个 job 先装了 uv。后续提交在 `node` job 安装锁定的 uv 和 worker Python，`check-pip.mjs` 改为 `uv run --frozen --extra dev`，并在找不到 `uv` 时打印错误。本机复跑 `node tools/check-license/check-pip.mjs` 退出码 0；`vitest run tools/check-license/reject.test.ts tools/check-license/models.test.ts` 为 2 个文件、3 个测试通过。`b48755c` 的 PR check run `41175138165`：`CI / node` 与 `CI / python-worker` 都通过。
+
+## 2026-10-31 14:12 续
+
+合入 `origin/main` `6398fc9`。本机在续作提交前跑过：
+
+| 命令 | 退出码 | 结果 |
+| --- | --- | --- |
+| `node tools/check-deps/check.mjs` | 0 | 5 modules，3 dependencies，no violations |
+| `uv run lint-imports`（`workers/parser/`） | 0 | 6 kept |
+| `uv run pyright` | 0 | 0 errors |
+| `uv run pytest` | 0 | 3 passed |
+| `uv run ruff check .` 与 `ruff format --check .` | 0 | |
+| Vitest 真实树夹具（core→react、core 测试环境、PSF-2.0、`oitest_` / `ghp_`） | 0 | 检查器对违规为非 0，断言通过 |

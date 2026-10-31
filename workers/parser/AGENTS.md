@@ -19,6 +19,11 @@
 - `uv run ruff check .`
 - `uv run ruff format --check .`
 
+## pyright 与 import-linter
+
+- `uv run pyright`（RULES §1.2，strict）
+- `uv run lint-imports`（G6，ARCHITECTURE §10.3）
+
 ## pytest
 
 配置在 `pyproject.toml` 的 `[tool.pytest.ini_options]`，`testpaths = ["tests"]`。

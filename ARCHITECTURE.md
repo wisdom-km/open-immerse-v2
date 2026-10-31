@@ -1417,7 +1417,7 @@ TTS / ASR 的格式在 M7 选型时加入本表。
 #### 7.9.7 契约测试
 
 - `packages/providers/src/testing/` 按能力提供共享套件：`chat`、`vision`、`streaming`、`ocr`、`errors`、`auth`、`budget-egress`。每个格式适配器跑它支持的能力对应的套件；每条注册表记录至少跑 `auth` 与 `errors`。
-- 样例放在 `fixtures/providers/<vendor>/`：请求体与响应体（含流式分块与各类错误体），由官方文档的示例改写，**全部是合成数据**：假 Key 用固定的测试前缀（登记在 gitleaks allowlist），图片用合成图，不用真实论文页面。每个目录的 `README.md` 记来源文档链接与查阅日期。
+- 样例放在 `fixtures/providers/<vendor>/`：请求体与响应体（含流式分块与各类错误体），由官方文档的示例改写，**全部是合成数据**：假 Key 用固定的测试前缀 `oitest_`（登记在 gitleaks allowlist），图片用合成图，不用真实论文页面。每个目录的 `README.md` 记来源文档链接与查阅日期。
 - 必测项：
   - `vision: false` 时带图请求的请求数为 0；`streaming: false` 时退化为一个块；
   - 每类 HTTP 错误映射到正确的 `ProviderFailure`；

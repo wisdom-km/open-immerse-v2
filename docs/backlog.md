@@ -158,6 +158,9 @@ P0 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）�
 | E-P1-9 | 提示词目录与 Jev 模型卡 | 未处理。M4 / M6a |
 | E-P1-10 | Dependabot 与 gitleaks | gitleaks 8.30.1 已接入 CI（G9）。Dependabot 仍未加 |
 | E-P2-1–E-P2-10 | 并发取消、quarantine 目录、发版清单、崩溃只写本机、红队、`.env.example`、SECURITY.md、不用通用功能开关、Prettier、合入后是否删分支 | 未处理。按原报告的里程碑。E-P2-10 由管理员决定，Agent 不改仓库设置 |
+| M1-DEFER-G1 | G1 Prettier | 未处理。Wisdom 2026-10-31 14:12：M1 退出明确延后，仍按 E-P2。Python 格式继续用 ruff format |
+| M1-DEFER-G3 | G3 `tsc -b` | 未处理。Wisdom 2026-10-31 14:12：第一个包使用 project references 之前保持 `tsc --noEmit` |
+| M1-DEFER-G5 | G5 `ui-events-declared` | 未处理。Wisdom 2026-10-31 14:12：规格先定义怎样从代码认出发布和订阅，再写这条检查 |
 
 ## 8. M0 后决定（Wisdom 2026-10-31 01:08）
 
