@@ -14,3 +14,15 @@ Wisdom 批准 Forge 的四条建议，写入规格，作为这一组问题的唯
 - M0 必须在 8 GB 内存、无独显、只用 CPU 的机器上测 PP-DocLayoutV3 的冷启动时间、单页耗时、峰值内存、是否 OOM。状态保持「未核实」，不预填数字。标准档仍是 V3。plus-L 仍按 Q10、QM-13。
 
 只改规格。未改应用代码、`.cursor/install.sh`、`.cursor/environment.json`。
+
+## 2026-10-31 11:14 D-E 续定
+
+Wisdom 批准把 D-E 扩到所有按版面区域识别的来源。
+
+- 没有版面作业（含 `multimodal-only`）时，引擎 A 的识别（`parse`）、引擎 B、云 OCR 请求都为 0。整页只走多模态，再用文字层校正（AC-95）。
+- 引擎 A 只消费版面裁片。引擎 B 的 SDK 内部会跑 PP-DocLayoutV3，跑它等于悄悄把版面加回来，所以也不能在版面关掉时启动。
+- 识别列表含这三项之一且版面关着时，`route-config` 校验失败，原因码 `sources_require_layout`，不静默跳过。
+- 四个预设不改。关掉版面后没有 OCR 兜底，只剩多模态，再按裁图、占位框降级。
+- 云 OCR 是否只能挂在 `ocr-*` 预设 id 上，仍不另定。
+
+只改规格。未改应用代码、`.cursor/*`。
