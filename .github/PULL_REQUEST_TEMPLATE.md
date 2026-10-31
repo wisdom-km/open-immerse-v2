@@ -49,9 +49,9 @@
 
 ## 自审
 
-只列这次 diff 碰到的规则。没碰到的不写。`ID | verdict | file:line`。verdict 只写「遵守」或「违反」。见 RULES §2。
+只列这次 diff 碰到的规则。没碰到的不写。`ID | 结论 | 文件:行`。结论只写「遵守」或「违反」。见 RULES §2。
 
-| ID | verdict | file:line |
+| ID | 结论 | 文件:行 |
 | --- | --- | --- |
 |  |  |  |
 

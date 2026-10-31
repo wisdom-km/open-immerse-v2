@@ -29,7 +29,7 @@
 | 环境与 CI | [docs/ci-and-environment.md](docs/ci-and-environment.md)；本文「命令」；[ARCHITECTURE.md](ARCHITECTURE.md) §15。不改 `.cursor/environment.json`、`.cursor/install.sh`（N-11）。不改 CI 行为与分支保护（N-02） |
 | 移植 v1 规则 | [docs/v1-review.md](docs/v1-review.md) 文首钉住的旧仓库 `main@96f1dfe`（`96f1dfe263fd1138775cb84053e97dff707ae09a`）；[RULES.md](RULES.md) §1.4。只迁规则和测试意图，不迁代码（N-07） |
 
-交接句在 RULES §8.3。分支、Draft 与完成条件在 RULES §2、§9。空的 `AccountSession` 返回 `not_in_v2`，不要加登录、订阅或计费（AC-94）。三种版本号见 README「三种版本号」。决定只从 [docs/adr/README.md](docs/adr/README.md) 指到 Q1–Q12。事故复盘用 [docs/incidents/TEMPLATE.md](docs/incidents/TEMPLATE.md)。
+交接句在 RULES §8.3。分支、Draft 与完成条件在 RULES §2、§9。CI 全绿不等于 G1–G18 全部已有（[docs/ci-and-environment.md「门禁」](docs/ci-and-environment.md#门禁)）。空的 `AccountSession` 返回 `not_in_v2`，不要加登录、订阅或计费（AC-94）。三种版本号见 README「三种版本号」。决定只从 [docs/adr/README.md](docs/adr/README.md) 指到 Q1–Q12。事故复盘用 [docs/incidents/TEMPLATE.md](docs/incidents/TEMPLATE.md)。
 
 ## 命令
 

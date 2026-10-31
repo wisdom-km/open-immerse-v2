@@ -72,11 +72,11 @@
   5. 改动了 UI 或 core 路径时，附「UI–core 交接说明」（§8.4）。任务类型为「UI 改动」时，core 目录零改动（N-16、N-21）。
   6. 证据目录：`docs/evidence/<PR号>/` 的链接。放测试日志和截图。没有就写「无」。大文件写 CI artifact 链接，不把大二进制提交进仓库（N-12）。
   7. agent 工作记录：一小段，写读了哪些规格、关键决定、跑了哪些命令与结果、坑。不另建完整 agent 对话记录，Cursor 已保存 transcript。不新建 `docs/agent-logs/`。
-  8. 自审：只列这次 diff 碰到的规则，不列没碰到的。每行一条：`ID | verdict | file:line`。verdict 只写「遵守」或「违反」。`file:line` 是 diff 里对得上的位置。
+  8. 自审：只列这次 diff 碰到的规则，不列没碰到的。每行一条：`ID | 结论 | 文件:行`。结论只写「遵守」或「违反」。`文件:行` 是 diff 里对得上的位置。
   9. 现状理解：小任务写三行（现在已有的行为、相关的节、还没做的部分）。改动超过 300 行，或跨模块（多于一个切片，或同时改 TS 与 worker）时，不在描述里展开，改为执行计划的链接。
 - 上面第 1–9 条是描述里要有的栏目。怎样算这个 PR 做完，见 §9。栏目与 §9 对得上，不在描述里再写一套完成条件。
 - 超过 300 行，或跨模块的任务，先复制 [docs/exec-plans/TEMPLATE.md](./docs/exec-plans/TEMPLATE.md) 为 `docs/exec-plans/<分支名>.md`。第一笔提交只有这份计划。Forge 审查通过之前不写实现。小任务不用这份计划。
-- 合入由 Wisdom 决定（N-03）。实现不自行合入。仓库操作只在「合入」之后合入锁定的 SHA（[docs/WORKFLOW.md](./docs/WORKFLOW.md)）。
+- 合入由 Wisdom 决定（N-03）。任何人与 Agent 不自行合入。仓库操作只在「合入」之后合入锁定的 SHA（[docs/WORKFLOW.md](./docs/WORKFLOW.md)）。
 - **解析规则集的例外**（ARCHITECTURE §7.10）：改阅读顺序、扫描页判定或段落切分的规则时，TS `parsing/domain/text-layer/`、worker 对应的纯规则模块与 `fixtures/parsing-rules/` 必须在同一个 PR 里改；这是唯一允许一个 PR 同时动 TS 切片与 worker 的情形，PR 里不得夹带其他改动。
 
 ## 3. 并行开发规则
