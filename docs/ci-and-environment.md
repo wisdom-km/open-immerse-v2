@@ -27,7 +27,7 @@
 
 G12 的非生成改动超过 600 行（只改 `packages/contracts` 时是 200 行）时，提交说明或环境变量 `PR_BODY` 里要有一行以 `G12:` 开头。这是「写明理由」的机器标记；规格没有规定标记原文。不计入行数的只有 `pnpm-lock.yaml`、`workers/parser/uv.lock` 和 `dist/`。
 
-没有 `test:core` 脚本。core 测试是 Vitest 的 `core` 工程。没有 `packages/features/**` 时该工程 0 个用例。M1 门禁 PR 合入前仍不新建业务切片（RULES N-22）。不改分支保护。
+没有 `test:core` 脚本。core 测试文件是 `packages/features/*/test/core/**/*.ts`，和工具夹具一起由 Vitest 在 Node 环境收集。没有业务切片时这些文件是 0 个，工具夹具让 `pnpm test` 不是空跑。M1 门禁 PR 合入前仍不新建业务切片（RULES N-22）。不改分支保护。
 
 ### 版本
 

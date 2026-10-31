@@ -57,7 +57,7 @@ Cloud Agent 的 PATH 里 `/exec-daemon/node`（v22.23.4）排在 nvm 前面。�
 | lint | `corepack pnpm run lint` | 0 | `eslint . --max-warnings 0` |
 | typecheck | `corepack pnpm run typecheck` | 0 | 已有 `.ts`。`tsc --noEmit --project tsconfig.json`。类型错误会使命令失败 |
 | typecheck:core | `corepack pnpm run typecheck:core` | 0 | G14。`tsc -p tsconfig.core.json --noEmit`。`lib` 只有 ES2023，`types` 为空 |
-| test | `corepack pnpm test` | 0 | Vitest。`tools` 工程有门禁违规夹具；`core` 工程 include `packages/features/*/test/core/**`，目前没有切片所以 0 个用例且 `passWithNoTests`。没有 `test:core` 脚本 |
+| test | `corepack pnpm test` | 0 | Vitest，`environment: node`。include 含 `tools/**/*.test.ts` 与 `packages/features/*/test/core/**/*.ts`。没有 `test:core` 脚本 |
 | check | `corepack pnpm run check` | 0 | G2、G3、G4、G5、G7、G10、G11、G12、G13–G16、G18 与 Conventional Commits。G12 超过 600 行时提交说明或 `PR_BODY` 里要有一行 `G12:`。对比基线默认 `main`，CI 设 `GATE_BASE=origin/main` |
 | core 测试 | 不执行 | 脚本尚未提供 | `package.json` 没有 `test:core`。2026-10-31 试跑 `corepack pnpm test:core`，退出码 254（Command "test:core" not found）。M1 前 PR 里此项写不适用（脚本尚未提供）；M1 起以 package.json 实际脚本为准。不要加空脚本。`docs/design/md-reader.md` 的 MD-16 仍写着这个命令名，该文件归 Loom（N-10），本表不改它；M1 前不要跑 |
 | worker 安装 | `uv python install`，然后 `uv sync --frozen --extra dev` | 0，0 | Python 3.11.18 已在；uv 0.13.6 |
