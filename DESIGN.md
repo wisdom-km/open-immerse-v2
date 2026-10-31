@@ -13,7 +13,7 @@
 
 # Open Immerse v2 视觉与交互规格（DESIGN）
 
-状态：草案 v0.2（Loom，2026-10-30，Asia/Shanghai）。Wisdom 21:13 批准起草；21:26 对 §6 三项与若干空白作出决定，已并入本版。**所有视觉数值都是第一稿，标「待审批」**；结构与行为规则可以先按本文实现（RULES：Loom 交付前 UI 只搭结构、不定视觉）。
+状态：草案 v0.2（Loom，2026-10-30，Asia/Shanghai）。Wisdom 21:13 批准起草；21:26 对 §6 三项与若干空白作出决定，已并入本版。**所有视觉数值都是第一稿，标「待审批」**；结构与行为规则可以先按本文实现。
 依据：`feature/v2-specs`（读取时 tip `d22b3f8`，包含 `bc66ec5`）的 PRD.md、ARCHITECTURE.md、docs/design/md-reader.md；原则见 [docs/design-principles.md](./docs/design-principles.md)（以下简称「原则」）。v1 参考：`wisdom-km/open-immerse` 只读浅克隆，v1 审查稿 `/workspace/oi-qa/` 下 AUDIT、AI-MODELS-SPEC、DIAG-UI-SPEC、FORMULA-REF-SIZE、black-frame SPEC。
 面向读者：Cursor Cloud Agents 与开发者。机器可读约定：token 名用反引号；每条验收有 `DS-xx` 编号；「待审批」= 第一稿视觉值，「待定标」= 需实测的数值，「规格空白」= PRD/ARCHITECTURE 未写、本文暂定。
 
@@ -217,6 +217,26 @@ flowchart TD
 | `InlineNotice` | ui-kit | 降级提示条（能力不可用），左图标 + 文字 + 链接按钮 | — | — | — | — | — | 本身即错误/警示 | — |
 | `ListItem`（数据去向等） | ui-kit | 名称 + 状态徽标（文字） | 底 hover | — | — | — | 列表空态文案 | — | — |
 
+### 3.7 公式状态徽标（Wisdom 2026-10-31 07:45 指示起草；视觉值全部待审批）
+
+用途：用文字告诉读者这一处公式（或区域）的 LaTeX / 原图是否经过核验，以及经过哪种核对，不只靠颜色（原则 P2）。
+
+出现位置：阅读区内，公式（行内、行间）旁与对比视图里；正文与表格区域只出现「未评分」。组件只按 `getBlocks` 给出的标记选样式，不自己判断（DS-20）。
+
+| 状态 | 徽标文字（暂定，来自 PRD） | 何时出现（规格原文摘要） | 悬停 / 聚焦提示（tooltip，待审批） |
+| --- | --- | --- | --- |
+| 格式已核对 | 「格式已核对」 | `format-checked-latex`，标记 `format_checked`：评估记录为 `not-run/disabled`（评分开关关闭，或开着但路线不含 Jev），非 arXiv 候选的五项程序核对全过；不算已核验（D-A 01:14 修订；PRD AC-89 ②、§10） | 「程序核对通过（可渲染、字符集、编号、位置、与原文一致），未经质量评分，不算已核验」 |
+| 源码核对 | 「源码核对」 | `source-checked-latex`，标记 `source_checked`：记录为 `not-run/disabled` 时 arXiv 源码候选整篇覆盖率 ≥ 0.85 且逐公式核对全过；当前不算已核验（PRD AC-87） | 「与 arXiv 作者源码核对一致，未经质量评分，不算已核验」 |
+| 未评分 | 「未评分」 | 界面标记：评估记录 `not-run/disabled`，用于正文、表格与没通过程序核对的公式；不算已核验，不自动补救、不自动补评（PRD §10、§3.4） | 「质量评分未运行。可在本文菜单「为本文评分」」 |
+| 占位框 | 「图见原文第 N 页（点击查看）」（文字暂定） | `page-placeholder`：没有候选通过且裁图拿不到时（AC-89 ③）；它本身就是占位块，不再叠加徽标 | 无单独 tooltip；点击跳到左侧原文第 N 页并定位该区域 |
+
+- Token（只用 `--oi-reader-*`）：文字 `--oi-reader-muted`（浅 5.7 / 深 6.6，过 4.5:1）；描边 1px `--oi-reader-line-strong`；底色 `--oi-reader-surface`（不填强调色）；焦点环 `--oi-reader-focus`。占位框：1px 虚线 `--oi-reader-line-strong`，文字 `--oi-reader-link`（可点击）。
+- 形状 / 尺寸：胶囊式标签，字号 `--oi-reader-status-fs`（12），高 18，左右内边距 6，圆角 `--oi-radius-sm`（4）；行间公式放在公式右上，行内公式不内联插入，只在悬停 / 聚焦公式时显示；可点击目标仍 ≥ 24×24（DS-19，用外扩命中区）。占位框：块级，最小高 48，圆角 `--oi-radius-sm`。
+- 图标：无。四种状态只靠文字区分。
+- 状态：默认（文字 + 细描边）；悬停或键盘聚焦显示上表 tooltip（`--oi-motion-fast`，不遮挡公式）；徽标不可操作，无按下 / 禁用态。占位框悬停底色叠加 `--oi-reader-highlight`，按下 / Enter 执行跳转。
+- 无障碍：文字对比 ≥ 4.5:1；不只靠颜色（不同状态同色，靠文字区分，`forced-colors` 下描边改 `CanvasText`）；徽标 `aria-label` 为「公式状态：格式已核对，未核验」等完整句；占位框为 `role=link`，`aria-label`「图见原文第 N 页，点击查看」。
+- 浅色 / 深色 / 白：都用上述 token 的对应值，不另加颜色。
+
 ## 4 逐屏规格
 
 ### 4.1 阅读主屏
@@ -347,6 +367,10 @@ flowchart TD
 | DS-18 | 界面放大 200% 不丢内容 | 手动 |
 | DS-19 | 所有可点击目标 ≥ 24×24 | 自动（axe target-size） |
 | DS-20 | 组件里无业务条件判断（Q3 执行规则 1–3）：依赖方向与 core 测试由 CI G13–G16 检查，「改 UI 不改 core」由评审清单 RULES §5 第 11 条与 §8 交接说明检查（原 G17 已于 2026-10-30 19:57 删除，ARCHITECTURE §13） | CI + 评审 |
+| DS-28 | 「格式已核对」「源码核对」「未评分」徽标与占位框文字逐字等于 §3.7；组件只按 `format_checked` / `source_checked` / `not-run` 标记与 `page-placeholder` 选择，不自行判断 | 组件测试 |
+| DS-29 | 徽标与占位框只引用 `--oi-reader-*`；三套阅读主题下文字 ≥ 4.5:1；无图标、不同状态同色，色盲模拟与 `forced-colors` 下仍可靠文字区分 | 自动 + 手动 |
+| DS-30 | 徽标悬停与键盘聚焦都显示 §3.7 的 tooltip；每个徽标有完整 `aria-label`（含「未核验」） | axe + e2e |
+| DS-31 | 点击或回车占位框，左侧原文跳到第 N 页并定位该区域（AC-89 ③） | e2e |
 
 ## 6 需要 Wisdom 拍板的事 —— **已决定（Wisdom，2026-10-30 21:26 Asia/Shanghai，经 Forge 转达）**
 
