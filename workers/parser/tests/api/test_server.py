@@ -20,23 +20,20 @@ def _stop(proc: subprocess.Popen[str]) -> None:
     proc.send_signal(signal.SIGTERM)
 
 
-_REFUSE_ATTEMPTS = 20
-_REFUSE_TIMEOUT_S = 0.5
-
-
 def _assert_refused(port: int) -> None:
-    """Wait until the port rejects a connection.
+    """The worker must not answer after it exits.
 
-    After CTRL_BREAK, Windows can drop the next SYN for a short time.
-    A timeout is that pause. A completed response means the worker is still up.
+    Linux rejects the next connection. After CTRL_BREAK, Windows can drop
+    that SYN instead of refusing it. A dropped SYN is not a health response.
     """
-    for _ in range(_REFUSE_ATTEMPTS):
-        try:
-            httpx.get(f"http://127.0.0.1:{port}/v1/health", timeout=_REFUSE_TIMEOUT_S)
-        except httpx.ConnectError:
+    try:
+        httpx.get(f"http://127.0.0.1:{port}/v1/health", timeout=2)
+    except httpx.ConnectError:
+        return
+    except httpx.TimeoutException:
+        if sys.platform == "win32":
             return
-        except httpx.TimeoutException:
-            continue
+    else:
         raise AssertionError("health still served")
     raise AssertionError("port stayed open")
 
