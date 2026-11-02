@@ -68,3 +68,11 @@ export type { ProtocolHeader } from "./worker/protocol-header.js";
 export { protocolSchemas } from "./worker/schemas.js";
 export { readUnsupportedProtocol, unsupportedProtocolSchema } from "./worker/unsupported.js";
 export type { UnsupportedProtocol } from "./worker/unsupported.js";
+export { DIAG_EVENT_IDS, PIPELINE_RUN_FIELDS, readDiagEvent } from "./diag-events.js";
+export type {
+  DiagEvent,
+  DiagEventId,
+  DiagEventRejected,
+  DiagLogger,
+  PipelineRunFields,
+} from "./diag-events.js";

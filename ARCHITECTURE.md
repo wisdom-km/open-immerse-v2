@@ -345,7 +345,7 @@ packages/features/<name>/
 | `contracts/src/egress.ts` | `EgressCheck` 端口与 `EgressDecision`（`allow` / `ask` / `refused`）；外发同意载荷 `EgressConsentRequired`、`EgressSendKind`、数据去向 `EgressDestination`（§7.0 第 6 条，只有类型） |
 | `contracts/src/budget.ts` | `BudgetGate` 端口（`reserve` / `settle` / `release`）、`ReserveRequest`、`Reservation`、`UsageReport`、`BudgetRefusal`、worker 作业的额度信封 `BudgetEnvelope`（§7.8） |
 | `contracts/src/errors.ts` | 错误码枚举与 `{code, message, retryable}` 形状 |
-| `contracts/src/diag-events.ts` | 诊断事件名与字段白名单（§11）。拟议路径，M1 随契约包落地；仓库还没有 `packages/` 时不建这个文件 |
+| `contracts/src/diag-events.ts` | 诊断事件名与字段白名单（§11）。M1 随契约包落地 |
 | `contracts/src/ipc/<feature>.ts` | 一个切片一个文件：该切片的 IPC 命令与事件定义。`settings` 的外发同意命令与事件在 `contracts/src/ipc/settings.ts`（§7.0，只有类型） |
 | `contracts/src/worker/*.ts` | `oi-parse/1` 协议消息（§10） |
 | `kernel/src/result.ts` | `Result<T, E>` |
@@ -1967,7 +1967,7 @@ stateDiagram-v2
 
 ## 11. 可观测性
 
-Wisdom 2026-10-31 批准把产品诊断日志提前。与现有里程碑表一起看，切分是：本节规格算 M0；代码骨架（白名单枚举、`Logger`、流水线打点）在 M1，随契约包落地；一键导出、诊断页，以及产品诊断日志的保留天数与体积设置，仍在 M2（PRD US-14、AC-09、AC-10、AC-83）。调试日志的 7 天与 50 MB 已在本节写死，不属于这项未定设置。本仓库还没有 `packages/`。`contracts/src/diag-events.ts` 仍是拟议路径，本规格不建这个文件，也不建目录树。实现是 M1 的代码任务（规格已在本节；[backlog](./docs/backlog.md)）。
+Wisdom 2026-10-31 批准把产品诊断日志提前。与现有里程碑表一起看，切分是：本节规格算 M0；代码骨架（白名单枚举、`Logger`、流水线打点）在 M1，随契约包落地；一键导出、诊断页，以及产品诊断日志的保留天数与体积设置，仍在 M2（PRD US-14、AC-09、AC-10、AC-83）。调试日志的 7 天与 50 MB 已在本节写死，不属于这项未定设置。`packages/contracts/src/diag-events.ts` 是诊断事件白名单。`Logger` 与 `Clock` 在 `packages/kernel`。file-logger 仍在 `platform-node`，不在这份契约里。规格见本节；处理状态见 [backlog](./docs/backlog.md)。
 
 - **日志**：`kernel` 只定义 `Logger` 接口；`platform-node/src/logging/file-logger.ts` 输出 JSON 行。每条至少有 `ts`、`level`、`event`、`feature`。`event` 只能来自白名单。不记录正文、译文、提示词、密钥、绝对路径。Markdown 阅读只记 `FileId`、文件数、耗时与错误码，不记文件路径与内容。
 - **默认规则**（Wisdom 2026-10-31 09:15；同日再定调试日志上限）：日志不记密钥，不记论文正文。调试模式默认关；开启后调试日志最多保留 7 天，且总量上限 50 MB（先到先清）。日志一律只存本机，用户不主动选择导出或上传，就不上传。
@@ -2195,6 +2195,7 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | Jev 两条路线（Wisdom 2026-11-02 17:03 UTC+8） | 原文见 PRD §9 与差异清单 §6.15。只收窄同日 16:38 对 Jev 的说法。面壁 Jev 的托管 API 与本地部署在契约里都是一等。最小托管 API 客户端在 M1（`jev.route='api'`），M0 的单篇测量在该客户端落地之后再跑，M6a 接入完整流程（同日 17:21）。本地预留为同一 `QualityEvaluatorBackend` 上的 stub。键 `jev.route`（取值 `api` 或 `local`，默认 `api`），不是 `ing_route`，也不是版面部署。选 `'local'` 时对面壁 Jev 的请求为 0，不偷偷回退，外发不列 Jev。高级自建远程 worker 与自建 Jev Docker 也是 `'local'`，可以连用户自己的非面壁主机；调用为 0 只对面壁 HTTP。切换与日后换掉 stub 不由单元测试验收。「改动只落在 `quality/backends/local_engine`」只约束 `local_engine` 路径。自建 Jev Docker 用 `jev.route='local'`，但走 `jev_http`（§10.3）；该路径的改动只落在 `jev_http` 的主机配置，该路径之外的代码改动为 0。验收也可以是 import-linter（只有装配根按 `jev.route` 分支）（PRD AC-103 ⑤）。PP-DocLayout 与其余本机推理仍是第二路线 | §7.0、§7.4；PRD §2、§3.3、AC-103、§8 M1、M6a、§9；差异清单 §6.15；RULES §5 第 14 条 |
 | contracts 只以 type-only 依赖 kernel（Wisdom 2026-11-02 17:58 UTC+8） | 原文：「批准 contracts→kernel，收紧为 type-only，补规格和白名单」。`packages/contracts` 可以依赖 `kernel`，且只允许 type-only import。`packages/kernel/src/index.ts` 写入 kernel 文件白名单。独立 ADR 文件仍等 M1 建立 `docs/adr/` 时登记（本节末段）。`packages/kernel/src/index.ts` 写入白名单，由 Wisdom 2026-11-02 17:58 的业主批准代替 ADR（§4.1 写「新增文件需要 ADR」；这次批准代替该文件的 ADR，以后新增文件仍要 ADR）。机器检查由 #55 落地：`contracts-is-leaf` 不再包含 kernel，新增 G5 规则 `contracts-kernel-type-only`，拒绝 contracts→kernel 的非 type-only 依赖（含 re-export、动态 import、相对路径） | §3.1、§4.1、§5.1、§13 G5 |
 | Node 22 LTS（Wisdom 2026-11-02 21:44） | 原文：「批准先开小 PR 升 Node 22 LTS，pnpm 保持 10」。构建与测试用的 Node 从 20.19.2 改为 22.23.4。pnpm 仍是 10.34.9。不改 `.cursor/environment.json` 与 `.cursor/install.sh`（N-11）。这两份文件没有写死 Node 版本：`install.sh` 读 `.nvmrc` | §15.1；[docs/ci-and-environment.md](./docs/ci-and-environment.md) |
+| 诊断日志契约文件（Wisdom 2026-11-02 23:17） | `logger.ts` 与 `clock.ts` 已在 §4.1。这次指示代替这两个文件的 ADR，不另建 `docs/adr/` 页。以后表外新文件仍要 ADR | §4.1、§11 |
 
 - 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3、M6a、M6b 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
 - 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、架构评审新增的 `ingest` 切片及其九条出边、`budget` 切片与删除的 `repair → quality`，以及修复 B 新增的 `packages/providers` 包与 `providers-boundary` 规则、`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），以及 PR C 新增的 G18、`ui-events-declared`、`supervisor-state` 与解析规则集 `oi-rules/1`，在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。
