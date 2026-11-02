@@ -61,3 +61,13 @@ export type {
   SettingsEgressCommands,
   SettingsEgressEventPayload,
 } from "./ipc/settings.js";
+export {
+  healthResponseSchema,
+  protocolHeaderSchema,
+  protocolSchemas,
+  readHealthResponse,
+  readProtocolHeader,
+  readUnsupportedProtocol,
+  unsupportedProtocolSchema,
+} from "./worker-protocol.js";
+export type { HealthResponse, ProtocolHeader, UnsupportedProtocol } from "./worker-protocol.js";

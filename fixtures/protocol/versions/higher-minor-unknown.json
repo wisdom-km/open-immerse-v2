@@ -1,0 +1,16 @@
+{
+  "id": "ac-66-higher-minor-unknown",
+  "kind": "health",
+  "expect": "accept",
+  "document": {
+    "protocol": "1.9",
+    "workerVersion": "0.0.0",
+    "mode": "local",
+    "unspecified": true
+  },
+  "parsed": {
+    "protocol": "1.9",
+    "workerVersion": "0.0.0",
+    "mode": "local"
+  }
+}

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from oi_worker.api.package_version import package_version
 from oi_worker.api.protocol_version import IMPLEMENTED_PROTOCOL, gate_header
-from oi_worker.protocol.health import HealthResponse, dump_health, parse_health
+from oi_worker.protocol.health import HealthResponse
 
 HEALTH_METHOD = "GET"
 HEALTH_PATH = "/v1/health"
@@ -30,7 +30,7 @@ class HealthExchange:
 
 
 def health_response(mode: str) -> HealthResponse:
-    return parse_health(
+    return HealthResponse.model_validate(
         {
             "protocol": IMPLEMENTED_PROTOCOL,
             "workerVersion": package_version(),
@@ -46,3 +46,14 @@ def exchange_health(request: HealthRequest) -> HealthExchange:
     if rejected is not None:
         return HealthExchange(status=426, body=rejected)
     return HealthExchange(status=200, body=dump_health(health_response(request.mode)))
+
+
+def dump_health(document: HealthResponse) -> dict[str, str]:
+    raw = document.model_dump(mode="json", by_alias=True)
+    body: dict[str, str] = {}
+    for key in ("protocol", "workerVersion", "mode"):
+        value = raw.get(key)
+        if not isinstance(value, str):
+            raise ValueError("health.document")
+        body[key] = value
+    return body

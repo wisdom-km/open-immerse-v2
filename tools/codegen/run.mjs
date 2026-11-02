@@ -1,6 +1,10 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { copyGenerators } from "./copy.mjs";
+import { generateProtocol } from "./protocol.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -10,17 +14,24 @@ function option(name, fallback) {
 }
 
 const root = path.resolve(option("--root", process.cwd()));
-const manifestPath = path.resolve(
-  option("--manifest", path.join(scriptDir, "manifest.json")),
-);
+const manifestPath = path.resolve(option("--manifest", path.join(scriptDir, "manifest.json")));
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+const generators = manifest.generators ?? [];
+await copyGenerators(root, generators);
 
-for (const generator of manifest.generators ?? []) {
-  const inputPath = path.join(root, generator.input);
-  const outputPath = path.join(root, generator.output);
-  const source = await readFile(inputPath);
-  await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, source);
+const schemaFlag = process.argv.includes("--protocol-schema");
+const schemaPath = schemaFlag
+  ? path.resolve(option("--protocol-schema", ""))
+  : path.join(root, "packages/contracts/src/worker-protocol.ts");
+if (schemaFlag || existsSync(schemaPath)) {
+  await generateProtocol({
+    schemaPath,
+    outputDir: path.resolve(
+      option("--protocol-output", path.join(root, "workers/parser/oi_worker/protocol")),
+    ),
+    parserRoot: path.resolve(option("--parser-root", path.join(root, "workers/parser"))),
+    pinPath: path.join(scriptDir, "pin.json"),
+  });
 }
 
-console.log(`codegen: ${(manifest.generators ?? []).length} generators`);
+console.log(`codegen: ${generators.length} generators`);

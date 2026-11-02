@@ -1,10 +1,10 @@
 """GET /v1/health response."""
 
 import pytest
+from pydantic import ValidationError
 
-from oi_worker.api.health import HealthRequest, exchange_health, health_response
+from oi_worker.api.health import HealthRequest, dump_health, exchange_health, health_response
 from oi_worker.api.package_version import package_version
-from oi_worker.protocol.health import dump_health
 
 
 def _request(header: object, mode: str = "local") -> HealthRequest:
@@ -13,8 +13,7 @@ def _request(header: object, mode: str = "local") -> HealthRequest:
 
 def test_returns_protocol_worker_version_and_mode_when_the_header_major_is_supported() -> None:
     document = health_response("local")
-    body = dump_health(document)
-    assert body == {
+    assert dump_health(document) == {
         "protocol": "1.0",
         "workerVersion": package_version(),
         "mode": "local",
@@ -67,5 +66,5 @@ def test_rejects_the_exchange_when_the_method_or_path_does_not_match() -> None:
 
 
 def test_rejects_the_exchange_when_mode_is_not_a_deployment() -> None:
-    with pytest.raises(ValueError, match="^health.mode$"):
+    with pytest.raises(ValidationError):
         exchange_health(_request("1.0", mode="api"))
