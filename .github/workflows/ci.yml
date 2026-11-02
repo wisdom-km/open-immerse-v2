@@ -248,3 +248,11 @@ jobs:
         run: corepack pnpm --filter desktop e2e
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+      - name: Upload desktop e2e screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-e2e-windows-screenshots
+          path: apps/desktop/test-results/**/*.png
+          if-no-files-found: error

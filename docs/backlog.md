@@ -88,6 +88,12 @@
 | Linux 与 macOS 的 Playwright Electron 冒烟。外壳 PR 只在 `windows-latest` 跑。不加 xvfb，不改 `.cursor/install.sh` | 外壳开窗之后。不并进 #30（那是 M2 改 `.cursor/*`） | #66；PRD AC-67 ①；ARCH §9、§15.2 |
 | 由契约生成 preload，不手写 IPC。外壳 PR 只暴露空的 `window.oi` | 另立 PR。现有 codegen 只生成 worker 协议 | #67；ARCH §9；G7 |
 | 打包时按 ARCHITECTURE §9 设置 Electron Fuses。`EnableEmbeddedAsarIntegrityValidation` 各平台是否支持仍未核实 | M8。验收 AC-67 ③ | #68；ARCH §9 |
+| Python worker 把结构化 JSON 写到 stderr，supervisor 收集并加上 `source: worker`。字段服从诊断事件白名单和禁止项。落地时要把 `source: "worker"` 纳入允许字段，避免读入时丢掉 | M3（与 supervisor 一起） | #73；ARCH §11 |
+| 关闭调试模式前询问是否删除调试日志。M1 只把 `deleteFiles` 作为 `setDebugMode` 的参数，不画界面 | M2，交 Loom | #75；ARCH §11；PRD AC-101 ② |
+| oi-app 协议按扩展名设置 Content-Type（`static-file.ts:19` 固定 text/html），并加 `X-Content-Type-Options: nosniff` | M2（开始服务非 HTML 资源时） | #69；PR #65 Forge 审查 + Anvil 低风险 |
+| 打包后 renderer 路径 `dist/../../src/renderer` 失效 | M8 | #70；PR #65 Anvil 低风险 |
+| desktop e2e 覆盖权限 check handler（`navigator.permissions.query`，`smoke.spec.ts:27`）并把单个冒烟测试拆开 | M1 收尾 | #71；PR #65 Forge 审查 |
+| `app-protocol.ts:21-28` 的 `readUrl`/`readMethod` 透传可内联 | M1（下一个碰该文件的 PR） | #72；PR #65 Forge 审查 |
 
 ## 5. Jev 开关审查（2026-10-30 22:06）的处理
 
