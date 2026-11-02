@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "paths": {
+      "@oi/kernel": ["packages/kernel/src/index.ts"],
+      "@oi/contracts": ["packages/contracts/src/index.ts"]
+    }
+  },
+  "files": ["../../packages/kernel/src/index.ts", "../../packages/contracts/src/index.ts"]
+}
