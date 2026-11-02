@@ -9,7 +9,6 @@ import threading
 from pathlib import Path
 
 import httpx
-import pytest
 
 PARSER = Path(__file__).resolve().parents[2]
 
@@ -19,6 +18,27 @@ def _stop(proc: subprocess.Popen[str]) -> None:
         proc.send_signal(signal.CTRL_BREAK_EVENT)
         return
     proc.send_signal(signal.SIGTERM)
+
+
+_REFUSE_ATTEMPTS = 20
+_REFUSE_TIMEOUT_S = 0.5
+
+
+def _assert_refused(port: int) -> None:
+    """Wait until the port rejects a connection.
+
+    After CTRL_BREAK, Windows can drop the next SYN for a short time.
+    A timeout is that pause. A completed response means the worker is still up.
+    """
+    for _ in range(_REFUSE_ATTEMPTS):
+        try:
+            httpx.get(f"http://127.0.0.1:{port}/v1/health", timeout=_REFUSE_TIMEOUT_S)
+        except httpx.ConnectError:
+            return
+        except httpx.TimeoutException:
+            continue
+        raise AssertionError("health still served")
+    raise AssertionError("port stayed open")
 
 
 def _read_line(stream: object, timeout: float) -> str:
@@ -88,13 +108,13 @@ def test_ac_80_returns_200_without_paths_or_keys_when_the_worker_is_started() ->
         assert body["protocol"] == "1.0"
         _stop(proc)
         code = proc.wait(timeout=15)
+        drain.join(timeout=5)
+        assert "Traceback" not in stderr
         if sys.platform == "win32":
             assert code is not None
         else:
             assert code in {0, -signal.SIGTERM, 128 + signal.SIGTERM}
-        with pytest.raises(httpx.ConnectError):
-            httpx.get(f"http://127.0.0.1:{port}/v1/health", timeout=2)
-        assert "Traceback" not in stderr
+        _assert_refused(port)
     finally:
         drain.join(timeout=5)
         if proc.poll() is None:

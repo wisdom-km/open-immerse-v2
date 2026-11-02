@@ -25,3 +25,16 @@
 进程级用例 `tests/api/test_server.py` 在上面的 pytest 里：启动 `python -m oi_worker`，读 stdout 的端口，`GET /v1/health` 为 200，响应体没有路径或 `key`，SIGTERM 后进程退出且端口拒绝连接。Windows job 还没在本环境跑。
 
 对照 N-10 / N-11：diff 不含 `DESIGN.md`、`docs/design-principles.md`、`docs/design/**`、`.cursor/environment.json`、`.cursor/install.sh`。
+
+## Windows 健康检查失败后的重跑
+
+[run 41439906617](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41439906617) 的 `worker-health-windows` 通过（`tests/api/test_server.py` 1 passed）。紧接着的 [run 41439916299](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41439916299) 里，同一条测试在进程退出之后的探针上失败：`httpx.ConnectTimeout`，失败点是退出后的那一次 `GET`，不是启动后的 200。进程已经退出。Windows 上 `CTRL_BREAK` 之后，下一次 SYN 可能被丢掉，两秒内等不到拒绝。
+
+探针改为最多 20 次、每次 0.5 秒：`ConnectError` 通过，超时继续等，若收到响应则失败。只重跑这一条，没有重跑全量。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `node ../../tools/gate-remediation/run.mjs --id G2 -- uv run ruff check tests/api/test_server.py`（`workers/parser/`） | 0 | All checks passed |
+| `node ../../tools/gate-remediation/run.mjs --id G1 -- uv run ruff format --check tests/api/test_server.py`（`workers/parser/`） | 0 | 1 file already formatted |
+| `node ../../tools/gate-remediation/run.mjs --id G8 -- uv run pytest tests/api/test_server.py --tb=short -q`（`workers/parser/`） | 0 | 1 passed in 0.52s。Linux |
+| `node ../../tools/gate-remediation/run.mjs --id G3-pyright -- uv run pyright tests/api/test_server.py`（`workers/parser/`） | 0 | 0 errors |
