@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
-    "node": ">=20.19.2"
+    "node": ">=22.23.4"
   },
   "scripts": {
     "lint": "node tools/gate-remediation/run.mjs --id G2 -- eslint . --max-warnings 0",

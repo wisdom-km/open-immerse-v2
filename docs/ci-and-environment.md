@@ -35,8 +35,8 @@ G12 的非生成改动超过 600 行（只改 `packages/contracts` 时是 200 �
 
 | 工具 | 锁定位置 |
 | --- | --- |
-| Node.js | `.nvmrc`（`20.19.2`） |
-| pnpm | `package.json` 的 `packageManager`（`10.34.9`）。Node 20.19.2 自带 corepack 0.31.0：pnpm 11 起需要 Node 22.13，pnpm 12 的启动文件这个 corepack 也执行不了，所以锁在 10 的最新版 |
+| Node.js | `.nvmrc`（`22.23.4`）。`package.json` 的 `engines.node` 是 `>=22.23.4`。GitHub Actions 的 `actions/setup-node` 用 `node-version-file: .nvmrc`，工作流里没有另写 `node-version` |
+| pnpm | `package.json` 的 `packageManager`（`10.34.9`）。Wisdom 2026-11-02 21:44 批准这次只升 Node，pnpm 保持 10。Node 22.23.4 自带 corepack 0.36.0，能启动这个版本 |
 | JS 依赖 | `pnpm-lock.yaml`（`corepack pnpm install --frozen-lockfile`） |
 | Python | `workers/parser/.python-version`（当前 `3.11.18`） |
 | uv | `workers/parser/.uv-version`（当前 `0.13.6`），并与 `workers/parser/pyproject.toml` 的 `tool.uv.required-version` 相同 |
@@ -76,7 +76,7 @@ pytest 收集到 0 个用例时退出码是 5。CI 不再把 5 改成通过。�
 
 ### GitHub Actions
 
-工作流是 `.github/workflows/ci.yml`，在 `push` 和 `pull_request` 上运行。
+工作流是 `.github/workflows/ci.yml`，在 `push` 和 `pull_request` 上运行。`node`、`python-worker` 与 `worker-health` 矩阵里的 `actions/setup-node` 都读 `.nvmrc`（`22.23.4`），没有另写版本号。
 
 | Job | 步骤 | 缓存 |
 | --- | --- | --- |
