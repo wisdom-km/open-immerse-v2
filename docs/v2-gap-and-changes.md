@@ -324,7 +324,7 @@ Windows 本地（开发机）：Paddle 3.3 官方提供 Windows 的 pip 安装�
 | Q6 | worker 的 PDF 渲染与文字提取库？ | pypdfium2；MiniCPM SDK 以图片输入；根目录 `LICENSE` 改为 Apache-2.0；禁止 GPL / AGPL 依赖（含 PyMuPDF） | 已决定（Wisdom 2026-10-30） | `LICENSE`、`package.json`、`README.md`；RULES §1.5、N-13；ARCH §7.1、§10.3、G10 |
 | Q7 | 本机 worker 传输方式？ | 本机与远程同一协议 HTTP + SSE；不采用 stdio JSON-RPC | 已决定（Wisdom 2026-10-30） | ARCH §1、§10.1；PRD S11 |
 | Q8 | 是否做 v1 数据迁移器？ | 不做，v2 从零开始；删除迁移器相关里程碑与验收。取舍：省去导入器的格式解析、dry-run、冲突处理与测试，v2 数据模型不受 v1 约束；代价是 v1 的文献库、笔记、已存译文不进 v2 | 已决定（Wisdom 2026-10-30） | PRD §3.2；ARCH §4.2 `library`；v1 审查 §2、§4.14、§5 |
-| Q9 | Jev 部署在哪？ | 设置主选项「本地 / API」，默认「API」；两者走同一个 `evaluate` 作业接口。API 服务商是面壁开放平台托管 API（`MiniCPM-OCR-Jev`）；「本地」首选 llama.cpp CUDA 构建；硬件画像只给「本地」标可行性，用户随时可改；自建远程 worker 与 Jev Docker 在「高级」。Key 名 `MODELBEST_API_KEY`，只放 Cursor Secrets 或用户本机安全存储，绝不进仓库。引擎 B 同样默认用面壁 MiniCPM-OCR-1.0 文档解析 API（§2.3.1、§6.3）。开发机是 Windows（32 GB 内存 + RTX 4070 12 GB）：开发走 API 路径，本地 Jev「不要求 / 未核实」，M0 只要求 API 路径（实测已延后，§6.4） | 已决定（Wisdom 2026-10-30；开发机配置 17:56、面壁 API 18:37、API 优先 18:44 补充） | ARCH §1、§2.6、§4.2、§7.0、§7.1、§7.4、§8.3、§10.1–§10.3；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、M0、M6a、M6b |
+| Q9 | Jev 部署在哪？ | 设置主选项「本地 / API」，默认「API」；两者走同一个 `evaluate` 作业接口。API 服务商是面壁开放平台托管 API（`MiniCPM-OCR-Jev`）；「本地」首选 llama.cpp CUDA 构建；硬件画像只给「本地」标可行性，用户随时可改；自建远程 worker 与 Jev Docker 在「高级」。Key 名 `MODELBEST_API_KEY`，只放 Cursor Secrets 或用户本机安全存储，绝不进仓库。引擎 B 同样默认用面壁 MiniCPM-OCR-1.0 文档解析 API（§2.3.1、§6.3）。开发机是 Windows（32 GB 内存 + RTX 4070 12 GB）：开发走 API 路径，本地 Jev「不要求 / 未核实」，M0 只要求 API 路径（实测已延后，§6.4）。2026-11-02 17:03：Jev 的 API 与本地在契约里都是一等，键 `jev.route`，先做 API，选本地可以不用 API（§6.15，PRD AC-103） | 已决定（Wisdom 2026-10-30；开发机配置 17:56、面壁 API 18:37、API 优先 18:44 补充） | ARCH §1、§2.6、§4.2、§7.0、§7.1、§7.4、§8.3、§10.1–§10.3；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、AC-103、M0、M6a、M6b |
 | Q10 | 引擎 A 的版面模型？ | PP-DocLayoutV3 起步，PP-DocLayout_plus-L 对照；明显更好时作为「高质量档」供用户选择 | 已决定（Wisdom 2026-10-30） | ARCH §7.1；PRD S2、US-21、AC-28、QM-13 |
 | Q11 | 是否保留「未配置翻译时借用多模态服务翻译」？ | 保留，默认关闭，开启时提示会消耗多模态额度 | 已决定（Wisdom 2026-10-30） | ARCH §4.2 `settings`；PRD S3、US-22、AC-29 |
 | Q12 | Unlimited-OCR 是否接入？ | 不接入；上游支持坐标输出后再评估 | 已决定（Wisdom 2026-10-30） | 本文 §2.6；PRD §3.2 |
@@ -419,7 +419,7 @@ Loom 提交 Markdown 阅读方案（[docs/design/md-reader.md](./design/md-reade
 | 项 | 决定 | 落点 |
 | --- | --- | --- |
 | 默认来源 | 有托管 API 的能力默认 API；没有托管 API 的能力在 worker 上运行。文本问答与 TTS / ASR 同样依赖模型，一并适用 | ARCH §7.0；PRD §2、§3.3 |
-| 本地选项 | 同一端口或同一种 worker 作业；两个来源跑同一份契约测试；「本地」在设置主选项里，不放进「高级」。2026-11-02：M0/M1 不写 `docs/deploy/<能力>.md`，只留 stub（§6.15） | ARCH §7.0；PRD AC-61；RULES §4、§5 第 14 项 |
+| 本地选项 | 同一端口或同一种 worker 作业；两个来源跑同一份契约测试（M0/M1 本地侧跑 stub，§6.15）；「本地」在设置主选项里，不放进「高级」。2026-11-02：M0/M1 不写 `docs/deploy/<能力>.md`，只留 stub（§6.15） | ARCH §7.0；PRD AC-61；RULES §4、§5 第 14 项 |
 | 硬件推荐 | 硬件画像只给「本地」标可行性；只有没有托管 API 或用户拒绝外发时才用它决定推荐本地还是降级 | ARCH §2.6、§7.4 推荐规则；PRD AC-20 |
 | 降级 | 没有 Key、拒绝外发或 API 不可用时，不静默改用其他付费服务、也不静默改成本地，按能力降级并提示 | ARCH §7.0 表；PRD §3.3、AC-61 |
 | 各能力的 API 服务商 | Jev 与引擎 B：面壁开放平台；引擎 A 模型阶段：百度 AI Studio PaddleOCR 托管 API 为候选，**未核实**，M3 前核实，核实通过才进入选项；引擎 A 三条路径都保留，M3 前定最终选择（§2.4.1、§6.4）；多模态、翻译、问答：用户自带 Key，经服务商适配层接入，不预选，用户从全部服务商中选（§6.7）；TTS / ASR 在 M7 选型 | ARCH §7.0、§7.1、§7.9；PRD S2、§3.3 |
@@ -601,12 +601,17 @@ Wisdom 批准 Forge 的四条建议。Q10 不重开：标准档仍是 PP-DocLayo
 
 面壁开放平台 API 是模型推理的主路线。规格里已经写成面壁的能力（Jev 的 `MiniCPM-OCR-Jev`、引擎 B 的 MiniCPM-OCR-1.0 文档解析）继续走面壁 API。版面、解析、多模态里没有写成面壁的能力，不新造面壁接口。本地模型部署（含 PP-DocLayout 本机 CPU，以及任何本机推理）是第二路线：只保留提供者接口 / 契约和 stub，不实现、不下载本地模型，M0 与 M1 不设本地推理门禁。标为推迟，不删除。「本地 / API」设置项还在。M0 测量改为面壁 API 的单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。单篇费用保留。这些测量由带 `MODELBEST_API_KEY` 的 Cloud Agent 执行；Key 不在时标「未核实」，不预填数字。公式显示链仍是 LaTeX → 裁图 → 占位框，不引入矢量重绘。同日：业务切片的 M1 门禁前提由已经在 CI 运行的 G6（import-linter）、pyright 与 gitleaks 满足；G1、G3、G5 仍是 M1 交付（Issue #34），不挡住业务切片（RULES N-22）。不重开 Q3、Q5、Q9、Q10、D-D、D-E、W-4。
 
+同日 17:03 UTC+8，只收窄上面「任何本机推理」对 Jev 的说法。原文：「就是这个JEV的模型啊，我考虑本地部署或者是接入API，这个是要有的，但是先做的是接入API。然后本地部署的这个你也要给我预留出来，比如说我本地部署了之后，我可能不用API的这个。」
+
+面壁模型 `MiniCPM-OCR-Jev`：托管 API 与本地部署在契约里都是一等。先实现的是托管 API（M0/M1）；本地部署预留，现在是 stub，以后替换 stub 即接入。配置键 `jev.route`（`api` 或 `local`，默认 `api`），在 `settings/domain/backend-choice.ts`。不是 `ing_route`，也不是版面 `RouteConfig.layout`。其他值拒绝，不改写成 `api`。选 `local` 时可以不调用面壁 API：对 Jev HTTP 的调用为 0，不偷偷回退，除非用户自己改回 `api`；不要求 `MODELBEST_API_KEY`；外发同意不列 Jev（引擎 B 仍走面壁时照常询问）。切换路线不改 `quality/backends/local_engine` 以外的代码（PRD AC-103）。PP-DocLayout 与其余非 Jev 本机推理仍按上一段的第二路线。不重开 Q9。
+
 | 项 | 决定 | 落点 |
 | --- | --- | --- |
 | 主路线 | 已写成面壁的能力继续走面壁 API。不新造面壁版面接口 | PRD §2、§3.5、§9；ARCH §7.0、§7.4、§16 |
 | 第二路线 | 本地部署只留接口、契约和 stub。M0/M1 不实现、不下载模型、不设本地推理门禁。推迟，不删除 | PRD §3.5、§8 M0、M1；ARCH §7.0、§7.12、§12；RULES §4、§5 第 14 条 |
 | M0 测量 | 面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。单篇费用保留。Cloud Agent 加 `MODELBEST_API_KEY`；Key 不在时标「未核实」 | PRD §8 M0、§9；ARCH §7.8、§7.12；本文 §6.14、§7 |
 | N-22 与 #34 | G6、pyright、gitleaks 已在 CI，满足业务切片的门禁前提。G1、G3、G5 仍是 M1 交付，不挡住业务切片 | RULES N-22；README；docs/ci-and-environment.md；Issue #34 |
+| Jev 契约 | 托管 API 与本地部署都是一等。先实现 API（M0/M1）。键 `jev.route`。选 `local` 时面壁 Jev 请求为 0，无隐藏回退。stub 可被本机模块替换（AC-103） | PRD §3.3、AC-103、§9；ARCH §7.4、§16；RULES §5 第 14 条 |
 
 ## 7. 未核实的说法
 
