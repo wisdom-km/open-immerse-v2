@@ -1861,6 +1861,8 @@ type FormulaCropRef = Readonly<{
 - 远程 worker 的地址本身也是外发目的地：连接前经 `EgressCheck`（§7.0 第 6 条）。
 - 为什么不把桌面的 Key 发给远程 worker：Key 会离开本机，落到用户不一定完全控制的主机上，日志、内存转储、反向代理都可能留下它。改为服务器只用自己配置的后端后，Key 的管理与费用都归服务器的部署者，桌面不需要信任远程主机。
 
+本机进程只绑定 `127.0.0.1`。端口先取启动参数 `--port`，没有则取环境变量 `OI_WORKER_PORT`，都没有则用 `0`，由系统分配（上表的随机端口）。开始接受连接之后，向 stdout 写一行且只写一行 `{"port": <整数>}`。`SIGINT`、`SIGTERM`，以及 Windows 的 `SIGBREAK`，交给 uvicorn 的信号处理：先停听，再退出。`--port` 与 `OI_WORKER_PORT` 这两个名字是 Forge 提议，待业主确认；随机端口和 stdout 一行 JSON 已是上表的规则。`OI_WORKER_PORT` 不是密钥，不写入 §15.4。
+
 Q7 已决定：本机与远程同一协议 HTTP + SSE；stdio JSON-RPC 不采用（取舍见差异清单 §6）。
 
 ### 10.2 端点
@@ -1890,7 +1892,7 @@ workers/parser/
 ├─ pyproject.toml            # uv；重依赖放 optional extras：engine-a（Paddle）、engine-b（torch + minicpm-ocr，不含其 pdf extra）、jev-local（本机推理）；基础安装只含 FastAPI、pypdfium2 等轻依赖
 ├─ oi_worker/
 │  ├─ __main__.py            # 入口：读配置 → 装配 → 启动服务（≤150 行）
-│  ├─ api/                   # FastAPI 路由：一个资源一个文件（health / jobs / assets / artifacts / auth / sse / protocol_version）
+│  ├─ api/                   # FastAPI 路由：一个资源一个文件（health / jobs / assets / artifacts / auth / sse / protocol_version）。health.py 是交换，不打开套接字；HTTP 适配、端口和退出分文件
 │  ├─ protocol/              # 生成的 pydantic 模型，禁止手改
 │  ├─ jobs/                  # 任务注册、取消令牌、工作目录生命周期
 │  ├─ preprocess/            # 打开 PDF、文字层、页面渲染、坐标帧：一个职责一个文件；只用 pypdfium2（Q6，禁止 PyMuPDF）；scan_detect.py 是纯规则（§7.11）
@@ -1925,7 +1927,8 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 - **桌面的判定。** 桌面声明自己支持的主版本范围（常量在 `worker-client/src/supervisor-protocol.ts`）。连接后先调 `/v1/health`：主版本不在范围内时，不提交任何作业，界面提示「worker 版本过旧」或「桌面版本过旧」，相关能力记「不可用（版本不兼容）」，按 §7.0 表最后一列降级。本机 worker 随桌面一起发布，版本总是匹配。
 - **按次版本开功能。** 依赖新端点或新字段的功能，按 worker 报出的次版本决定是否启用，不靠试探请求。
 - **worker 的判定。** 请求的主版本 worker 不支持时返回 `426`，响应体 `{ "supported": ["1.0"] }` 列出它支持的版本。
-- **测试。** `fixtures/protocol/versions/`：主版本不符时作业数为 0；次版本更高的响应带未知字段时照常解析；`426` 响应体可解析。验收 PRD AC-66 ②。
+- **缺头或坏头（Forge 提议，待业主确认）。** 上面只写了主版本不支持时返回 `426`。请求头 `OI-Protocol` 缺失，或值不是 `<主版本>.<次版本>` 时，`parse_protocol_header` 仍抛出 `ValueError("protocol.version")`。HTTP 适配层把这个异常映射为 `400`，响应体是 `{"error":"protocol.version"}`。不创建作业。响应体里没有路径，也没有密钥。业主确认前，测试按这个响应断言。
+- **测试。** `fixtures/protocol/versions/`：主版本不符时作业数为 0；次版本更高的响应带未知字段时照常解析；`426` 响应体可解析。验收 PRD AC-66 ②。缺头或坏头的 `400` 另按上一条断言。
 - 与 §8.4 合为一个 ADR（§16）。
 
 ### 10.5 本机 worker 的监管状态机（架构评审 P2-6）
