@@ -9,6 +9,7 @@ import threading
 from pathlib import Path
 
 import httpx
+import pytest
 
 PARSER = Path(__file__).resolve().parents[2]
 TOKEN = "oitest_launchhealth"
@@ -77,6 +78,23 @@ def _start() -> subprocess.Popen[str]:
     proc.stdin.write(TOKEN + "\n")
     proc.stdin.close()
     return proc
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows stop signal is SIGBREAK")
+def test_sigint_ends_the_process_outside_the_uvicorn_hold() -> None:
+    proc = _start()
+    assert proc.stdout is not None
+    assert proc.stderr is not None
+    proc.send_signal(signal.SIGINT)
+    try:
+        code = proc.wait(timeout=5)
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait(timeout=5)
+        proc.stdout.read()
+        proc.stderr.read()
+    assert code is not None
 
 
 def test_exits_nonzero_when_stdin_has_no_token() -> None:
