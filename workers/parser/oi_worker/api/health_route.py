@@ -4,7 +4,8 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from oi_worker.api.health import HEALTH_METHOD, HEALTH_PATH, HealthRequest, exchange_health
-from oi_worker.api.protocol_http import protocol_error_response
+from oi_worker.api.protocol_error import ProtocolVersionError
+from oi_worker.api.protocol_http import protocol_version_response
 
 HEADER_NAME = "OI-Protocol"
 
@@ -19,9 +20,6 @@ def respond_health(request: Request, mode: str) -> JSONResponse:
                 mode=mode,
             )
         )
-    except ValueError as exc:
-        response = protocol_error_response(exc)
-        if response is None:
-            raise
-        return response
+    except ProtocolVersionError:
+        return protocol_version_response()
     return JSONResponse(status_code=exchange.status, content=exchange.body)

@@ -11,6 +11,7 @@ from pathlib import Path
 import httpx
 
 PARSER = Path(__file__).resolve().parents[2]
+TOKEN = "oitest_launchhealth"
 
 
 def _stop(proc: subprocess.Popen[str]) -> None:
@@ -20,21 +21,15 @@ def _stop(proc: subprocess.Popen[str]) -> None:
     proc.send_signal(signal.SIGTERM)
 
 
-def _assert_refused(port: int) -> None:
-    """The worker must not answer after it exits.
-
-    Linux rejects the next connection. After CTRL_BREAK, Windows can drop
-    that SYN instead of refusing it. A dropped SYN is not a health response.
-    """
+def _assert_linux_refused(port: int) -> None:
     try:
-        httpx.get(f"http://127.0.0.1:{port}/v1/health", timeout=2)
+        httpx.get(
+            f"http://127.0.0.1:{port}/v1/health",
+            headers={"Authorization": f"Bearer {TOKEN}"},
+            timeout=2,
+        )
     except httpx.ConnectError:
         return
-    except httpx.TimeoutException:
-        if sys.platform == "win32":
-            return
-    else:
-        raise AssertionError("health still served")
     raise AssertionError("port stayed open")
 
 
@@ -47,29 +42,58 @@ def _read_line(stream: object, timeout: float) -> str:
     thread = threading.Thread(target=_read)
     thread.start()
     thread.join(timeout)
-    if thread.is_alive() or not holder:
-        raise AssertionError("port line")
+    if thread.is_alive() or not holder or holder[0] == "":
+        raise AssertionError("stdout line")
     return holder[0]
 
 
-def test_ac_80_returns_200_without_paths_or_keys_when_the_worker_is_started() -> None:
+def _spawn(stdin: int | None) -> subprocess.Popen[str]:
     env = dict(os.environ)
     env.pop("OI_WORKER_PORT", None)
     env["PYTHONUNBUFFERED"] = "1"
+    assert all(TOKEN not in value for value in env.values())
     kwargs: dict[str, object] = {}
     if sys.platform == "win32":
         kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
     else:
         kwargs["start_new_session"] = True
-    proc = subprocess.Popen(
-        [sys.executable, "-m", "oi_worker"],
+    command = [sys.executable, "-m", "oi_worker"]
+    assert TOKEN not in command
+    return subprocess.Popen(
+        command,
         cwd=PARSER,
         env=env,
+        stdin=stdin,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
         **kwargs,  # type: ignore[arg-type]
     )
+
+
+def _start() -> subprocess.Popen[str]:
+    proc = _spawn(subprocess.PIPE)
+    assert proc.stdin is not None
+    proc.stdin.write(TOKEN + "\n")
+    proc.stdin.close()
+    return proc
+
+
+def test_exits_nonzero_when_stdin_has_no_token() -> None:
+    proc = _spawn(subprocess.DEVNULL)
+    assert proc.stdout is not None
+    assert proc.stderr is not None
+    code = proc.wait(timeout=15)
+    stdout = proc.stdout.read()
+    stderr = proc.stderr.read()
+    assert code not in {0, None}
+    assert stdout == ""
+    assert TOKEN not in stderr
+    assert "Traceback" not in stderr
+
+
+def test_ac_80_returns_200_without_paths_or_keys_when_the_worker_is_started() -> None:
+    proc = _start()
     stderr = ""
     assert proc.stderr is not None
     assert proc.stdout is not None
@@ -87,15 +111,17 @@ def test_ac_80_returns_200_without_paths_or_keys_when_the_worker_is_started() ->
         assert set(reported) == {"port"}
         port = reported["port"]
         assert isinstance(port, int)
+        assert TOKEN not in line
         assert "/" not in line
         assert "\\" not in line
         response = httpx.get(
             f"http://127.0.0.1:{port}/v1/health",
-            headers={"OI-Protocol": "1.0"},
+            headers={"OI-Protocol": "1.0", "Authorization": f"Bearer {TOKEN}"},
             timeout=5,
         )
         assert response.status_code == 200
         text = response.text
+        assert TOKEN not in text
         assert "/" not in text
         assert "\\" not in text
         assert "key" not in text.lower()
@@ -103,15 +129,24 @@ def test_ac_80_returns_200_without_paths_or_keys_when_the_worker_is_started() ->
         assert set(body) == {"protocol", "workerVersion", "mode"}
         assert body["mode"] == "local"
         assert body["protocol"] == "1.0"
+        denied = httpx.get(
+            f"http://127.0.0.1:{port}/v1/health",
+            headers={"OI-Protocol": "1.0"},
+            timeout=5,
+        )
+        assert denied.status_code == 401
+        assert TOKEN not in denied.text
         _stop(proc)
+        marker = _read_line(proc.stdout, 15)
+        assert json.loads(marker) == {"event": "exited"}
+        assert TOKEN not in marker
         code = proc.wait(timeout=15)
         drain.join(timeout=5)
+        assert code == 0
+        assert TOKEN not in stderr
         assert "Traceback" not in stderr
-        if sys.platform == "win32":
-            assert code is not None
-        else:
-            assert code in {0, -signal.SIGTERM, 128 + signal.SIGTERM}
-        _assert_refused(port)
+        if sys.platform != "win32":
+            _assert_linux_refused(port)
     finally:
         drain.join(timeout=5)
         if proc.poll() is None:

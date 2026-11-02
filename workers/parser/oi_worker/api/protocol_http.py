@@ -1,20 +1,18 @@
-"""Map ValueError("protocol.version") to HTTP. ARCHITECTURE §10.4.
+"""Map a missing or malformed OI-Protocol header to HTTP 400.
 
-The exchange still raises. The spec states 426 for an unsupported major and
-does not state a status for a missing or malformed OI-Protocol header. The
-400 body below is Forge-proposed, pending owner confirmation.
+Wisdom 2026-11-02 20:07 approved this status and the code body. Verbatim:
+「都按你的建议：400、--port/OI_WORKER_PORT、Windows 设必需；另开小 PR 加 macOS 健康检查并设必需」
 """
 
 from fastapi.responses import JSONResponse
 
-PROTOCOL_VERSION_ERROR = "protocol.version"
+from oi_worker.api.protocol_error import ProtocolVersionError
+
 MALFORMED_PROTOCOL_STATUS = 400
 
 
-def protocol_error_response(exc: ValueError) -> JSONResponse | None:
-    if str(exc) != PROTOCOL_VERSION_ERROR:
-        return None
+def protocol_version_response() -> JSONResponse:
     return JSONResponse(
         status_code=MALFORMED_PROTOCOL_STATUS,
-        content={"error": PROTOCOL_VERSION_ERROR},
+        content={"code": ProtocolVersionError.code},
     )
