@@ -1,6 +1,6 @@
 # 待办与架构评审处理状态
 
-状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-02（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。
+状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-02（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。同日 Electron 外壳延期三条：#66、#67、#68。
 用途：逐条记录[架构评审](./reviews/2026-10-30-architecture-review.md)的每个发现由哪个规格 PR 处理、落在规格哪里，以及还没处理、留给哪个里程碑的事。决定的理由见[差异清单](./v2-gap-and-changes.md) §6.6–§6.13；本文只记状态，不重述规格。§5 记 Jev 开关审查（2026-10-30 22:06）各项的处理状态。§8 收录还要等 M0 的项，也记下已经拍板的项（2026-10-31 01:08 建表；同日 D-D、D-E 与 W-4 的过渡默认已决定）。未决的行不代选。
 
 三个规格 PR：
@@ -85,6 +85,9 @@
 | PR #55 / #56 审查 P2：`ids` 构造校验、迁移测试不完全封闭、codegen 按 basename 命名、`read*` 运行时校验的归属、health 响应体改成判别联合、`workerVersion` 字符集与长度、主版本不符时作业数为 0 | M1。前几条随下一个触碰 codegen 或 contracts 的 PR；作业数为 0 随 jobs API | #61 |
 | macOS 上的 worker 健康检查；jobs 落地时把 `server.py`、`loopback.py`、`listen_port.py` 从 `api/` 移到 `oi_worker/runtime/` | M1。健康检查 job 在本 PR。移动文件留到 jobs PR，这次不搬 | #62；ARCH §10.3 |
 | 把 `CI / worker-health-windows` 与 `CI / worker-health-macos` 设为必需检查 | M1。仓库管理员做。Agent 不改分支保护（N-02） | #33 |
+| Linux 与 macOS 的 Playwright Electron 冒烟。外壳 PR 只在 `windows-latest` 跑。不加 xvfb，不改 `.cursor/install.sh` | 外壳开窗之后。不并进 #30（那是 M2 改 `.cursor/*`） | #66；PRD AC-67 ①；ARCH §9、§15.2 |
+| 由契约生成 preload，不手写 IPC。外壳 PR 只暴露空的 `window.oi` | 另立 PR。现有 codegen 只生成 worker 协议 | #67；ARCH §9；G7 |
+| 打包时按 ARCHITECTURE §9 设置 Electron Fuses。`EnableEmbeddedAsarIntegrityValidation` 各平台是否支持仍未核实 | M8。验收 AC-67 ③ | #68；ARCH §9 |
 
 ## 5. Jev 开关审查（2026-10-30 22:06）的处理
 
