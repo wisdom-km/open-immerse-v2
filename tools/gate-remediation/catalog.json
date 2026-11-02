@@ -37,7 +37,7 @@
     },
     {
       "id": "G5",
-      "problem": "dependency-cruiser 报告依赖方向违规，例如循环、层方向、跨切片内部、切片矩阵、renderer 隔离、Electron 范围、contracts 叶子或 providers 边界。",
+      "problem": "dependency-cruiser 报告依赖方向违规，例如循环、层方向、跨切片内部、切片矩阵、renderer 隔离、Electron 范围、contracts 叶子或 providers 边界。contracts→kernel 只可 type-only。",
       "fix": "删掉这条 import，或改成 ARCHITECTURE §4.3 与 §5 允许的方向。任何切片都不要 import ingest 或 budget。ui-events-declared 仍是 M1-DEFER-G5，不要在这次里手写一份事件名单。",
       "spec": "ARCHITECTURE §4.3、§5、§13 G5、PRD §8 (M1 deferrals); docs/backlog.md M1-DEFER-G5",
       "match": [
