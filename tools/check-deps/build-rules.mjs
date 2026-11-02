@@ -129,11 +129,21 @@ function boundaryRules() {
       { pathNot: "^apps/desktop/" },
       { path: pkg("electron") },
     ),
+    // Kernel stays out of this ban (ARCH §4.1). The only legal edge is type-only.
     rule(
       "contracts-is-leaf",
       { path: "^packages/contracts/" },
       {
-        path: "^packages/(features|kernel|platform-node|providers|worker-client|ui-kit)/|^apps/",
+        path: "^packages/(features|platform-node|providers|worker-client|ui-kit)/|^apps/",
+      },
+    ),
+    // Wisdom 2026-11-02: contracts may import kernel only via import type / export type.
+    rule(
+      "contracts-kernel-type-only",
+      { path: "^packages/contracts/" },
+      {
+        path: `(?:^|/)packages/kernel/|${pkg("@oi/kernel")}`,
+        dependencyTypesNot: ["type-only"],
       },
     ),
     rule(
