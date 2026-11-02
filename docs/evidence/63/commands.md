@@ -17,4 +17,12 @@
 
 对照 N-10 / N-11：diff 不含 `DESIGN.md`、`docs/design-principles.md`、`docs/design/**`、`.cursor/environment.json`、`.cursor/install.sh`。
 
+## `373bf53648696d2ec73a42e418d6035dbdc58790`
+
+这一笔只加本文件和规格变更记录里的 PR 链接。`pnpm check` 在这一笔的干净树上再跑一次。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `GATE_BASE=origin/main corepack pnpm run check` | 0 | 53 行非生成 diff。codegen 之后工作树干净 |
+
 macOS 与 Windows 的 job 结果记在 PR 描述，以 GitHub Actions 为准。
