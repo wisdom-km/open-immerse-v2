@@ -4,7 +4,11 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["tools/**/*.test.ts", "packages/features/*/test/core/**/*.ts"],
+    include: [
+      "tools/**/*.test.ts",
+      "packages/features/*/test/core/**/*.ts",
+      "packages/contracts/**/*.test.ts",
+    ],
     exclude: ["tools/gate-fixtures/**", "node_modules/**"],
     passWithNoTests: false,
   },
