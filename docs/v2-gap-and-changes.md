@@ -324,7 +324,7 @@ Windows 本地（开发机）：Paddle 3.3 官方提供 Windows 的 pip 安装�
 | Q6 | worker 的 PDF 渲染与文字提取库？ | pypdfium2；MiniCPM SDK 以图片输入；根目录 `LICENSE` 改为 Apache-2.0；禁止 GPL / AGPL 依赖（含 PyMuPDF） | 已决定（Wisdom 2026-10-30） | `LICENSE`、`package.json`、`README.md`；RULES §1.5、N-13；ARCH §7.1、§10.3、G10 |
 | Q7 | 本机 worker 传输方式？ | 本机与远程同一协议 HTTP + SSE；不采用 stdio JSON-RPC | 已决定（Wisdom 2026-10-30） | ARCH §1、§10.1；PRD S11 |
 | Q8 | 是否做 v1 数据迁移器？ | 不做，v2 从零开始；删除迁移器相关里程碑与验收。取舍：省去导入器的格式解析、dry-run、冲突处理与测试，v2 数据模型不受 v1 约束；代价是 v1 的文献库、笔记、已存译文不进 v2 | 已决定（Wisdom 2026-10-30） | PRD §3.2；ARCH §4.2 `library`；v1 审查 §2、§4.14、§5 |
-| Q9 | Jev 部署在哪？ | 设置主选项「本地 / API」，默认「API」；两者走同一个 `evaluate` 作业接口。API 服务商是面壁开放平台托管 API（`MiniCPM-OCR-Jev`）；「本地」首选 llama.cpp CUDA 构建；硬件画像只给「本地」标可行性，用户随时可改；自建远程 worker 与 Jev Docker 在「高级」。Key 名 `MODELBEST_API_KEY`，只放 Cursor Secrets 或用户本机安全存储，绝不进仓库。引擎 B 同样默认用面壁 MiniCPM-OCR-1.0 文档解析 API（§2.3.1、§6.3）。开发机是 Windows（32 GB 内存 + RTX 4070 12 GB）：开发走 API 路径，本地 Jev「不要求 / 未核实」，M0 只要求 API 路径（实测已延后，§6.4）。2026-11-02 17:03：Jev 的 API 与本地在契约里都是一等，键 `jev.route`，先做 API，选本地可以不用 API（§6.15，PRD AC-103） | 已决定（Wisdom 2026-10-30；开发机配置 17:56、面壁 API 18:37、API 优先 18:44 补充） | ARCH §1、§2.6、§4.2、§7.0、§7.1、§7.4、§8.3、§10.1–§10.3；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、AC-103、M0、M6a、M6b |
+| Q9 | Jev 部署在哪？ | 设置主选项「本地 / API」，默认「API」；两者走同一个 `evaluate` 作业接口。API 服务商是面壁开放平台托管 API（`MiniCPM-OCR-Jev`）；「本地」首选 llama.cpp CUDA 构建；硬件画像只给「本地」标可行性，用户随时可改；自建远程 worker 与 Jev Docker 在「高级」。Key 名 `MODELBEST_API_KEY`，只放 Cursor Secrets 或用户本机安全存储，绝不进仓库。引擎 B 同样默认用面壁 MiniCPM-OCR-1.0 文档解析 API（§2.3.1、§6.3）。开发机是 Windows（32 GB 内存 + RTX 4070 12 GB）：开发走 API 路径，本地 Jev「不要求 / 未核实」，M0 只要求 API 路径（实测已延后，§6.4）。2026-11-02 17:03：Jev 的 API 与本地在契约里都是一等，键 `jev.route`，选本地可以不用 API。同日 17:21：最小托管 API 客户端在 M1，M6a 接入完整流程（§6.15，PRD AC-103） | 已决定（Wisdom 2026-10-30；开发机配置 17:56、面壁 API 18:37、API 优先 18:44 补充） | ARCH §1、§2.6、§4.2、§7.0、§7.1、§7.4、§8.3、§10.1–§10.3；PRD §2、S2、S5、§3.3、US-19、US-29、US-30、AC-19、AC-20、AC-59、AC-60、AC-103、M0、M6a、M6b |
 | Q10 | 引擎 A 的版面模型？ | PP-DocLayoutV3 起步，PP-DocLayout_plus-L 对照；明显更好时作为「高质量档」供用户选择 | 已决定（Wisdom 2026-10-30） | ARCH §7.1；PRD S2、US-21、AC-28、QM-13 |
 | Q11 | 是否保留「未配置翻译时借用多模态服务翻译」？ | 保留，默认关闭，开启时提示会消耗多模态额度 | 已决定（Wisdom 2026-10-30） | ARCH §4.2 `settings`；PRD S3、US-22、AC-29 |
 | Q12 | Unlimited-OCR 是否接入？ | 不接入；上游支持坐标输出后再评估 | 已决定（Wisdom 2026-10-30） | 本文 §2.6；PRD §3.2 |
@@ -603,15 +603,17 @@ Wisdom 批准 Forge 的四条建议。Q10 不重开：标准档仍是 PP-DocLayo
 
 同日 17:03 UTC+8，只收窄上面「任何本机推理」对 Jev 的说法。原文：「就是这个JEV的模型啊，我考虑本地部署或者是接入API，这个是要有的，但是先做的是接入API。然后本地部署的这个你也要给我预留出来，比如说我本地部署了之后，我可能不用API的这个。」
 
-面壁模型 `MiniCPM-OCR-Jev`：托管 API 与本地部署在契约里都是一等。先实现的是托管 API（M0/M1）；本地部署预留，现在是 stub，以后替换 stub 即接入。配置键 `jev.route`（`api` 或 `local`，默认 `api`），在 `settings/domain/backend-choice.ts`。不是 `ing_route`，也不是版面 `RouteConfig.layout`。其他值拒绝，不改写成 `api`。选 `local` 时可以不调用面壁 API：对 Jev HTTP 的调用为 0，不偷偷回退，除非用户自己改回 `api`；不要求 `MODELBEST_API_KEY`；外发同意不列 Jev（引擎 B 仍走面壁时照常询问）。切换路线不改 `quality/backends/local_engine` 以外的代码（PRD AC-103）。PP-DocLayout 与其余非 Jev 本机推理仍按上一段的第二路线。不重开 Q9。
+面壁模型 `MiniCPM-OCR-Jev`：托管 API 与本地部署在契约里都是一等。最小托管 API 客户端在 M1（`jev.route` 为 `api`），M0 的单篇测量用它，M6a 把它接进完整评分流程；本地部署预留，现在是 stub，以后替换 stub 即接入。配置键 `jev.route`（`api` 或 `local`，默认 `api`），在 `settings/domain/backend-choice.ts`。不是 `ing_route`，也不是版面 `RouteConfig.layout`。其他值拒绝，不改写成 `api`。选 `local` 时可以不调用面壁 API：对 Jev HTTP 的调用为 0，不偷偷回退，除非用户自己改回 `api`；不要求 `MODELBEST_API_KEY`；外发同意不列 Jev（引擎 B 仍走面壁时照常询问）。切换路线与换掉 stub 不由单元测试验收：CI 的 diff 路径检查（改动落在 `quality/backends/local_engine`），或 import-linter 契约（只有装配根按 `jev.route` 分支）（PRD AC-103 ⑤）。PP-DocLayout 与其余非 Jev 本机推理仍按上一段的第二路线。不重开 Q9。
+
+同日 17:21 UTC+8。原文：「Jev API 客户端提前到 M1，M6a 接进完整流程」。最小的面壁 Jev 托管 API 客户端走提供者契约，`jev.route` 为 `api`，是 M1 交付，M0 的单篇测量也用它。M6a 把它接进完整评分流程。本地部署仍是 stub。上一段里原先的「先实现 API（M0/M1）」与「真实调用按 M6a」按本条理解。主选项「API」只走面壁托管 HTTP。主选项「本地」、高级自建远程 worker、高级自建 Jev Docker 都是 `jev.route` 为 `local`，可以连接用户自己的非面壁主机；调用为 0 只对面壁 HTTP。AC-20 的「不启用」只表示本地结果不当作有效分数，stub 或自检失败记 `unavailable`，不回退到 `api`。
 
 | 项 | 决定 | 落点 |
 | --- | --- | --- |
 | 主路线 | 已写成面壁的能力继续走面壁 API。不新造面壁版面接口 | PRD §2、§3.5、§9；ARCH §7.0、§7.4、§16 |
 | 第二路线 | 本地部署只留接口、契约和 stub。M0/M1 不实现、不下载模型、不设本地推理门禁。推迟，不删除 | PRD §3.5、§8 M0、M1；ARCH §7.0、§7.12、§12；RULES §4、§5 第 14 条 |
-| M0 测量 | 面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。单篇费用保留。Cloud Agent 加 `MODELBEST_API_KEY`；Key 不在时标「未核实」 | PRD §8 M0、§9；ARCH §7.8、§7.12；本文 §6.14、§7 |
+| M0 测量 | 面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。单篇费用保留。程序用 M1 的最小 Jev 托管 API 客户端（`jev.route` 为 `api`）。Cloud Agent 加 `MODELBEST_API_KEY`；Key 不在时标「未核实」 | PRD §8 M0、§9；ARCH §7.8、§7.12；本文 §6.14、§7 |
 | N-22 与 #34 | G6、pyright、gitleaks 已在 CI，满足业务切片的门禁前提。G1、G3、G5 仍是 M1 交付，不挡住业务切片 | RULES N-22；README；docs/ci-and-environment.md；Issue #34 |
-| Jev 契约 | 托管 API 与本地部署都是一等。先实现 API（M0/M1）。键 `jev.route`。选 `local` 时面壁 Jev 请求为 0，无隐藏回退。stub 可被本机模块替换（AC-103） | PRD §3.3、AC-103、§9；ARCH §7.4、§16；RULES §5 第 14 条 |
+| Jev 契约 | 托管 API 与本地部署都是一等。最小托管 API 客户端在 M1，M6a 接入完整流程。键 `jev.route`。选 `local` 时面壁 Jev 请求为 0，无隐藏回退。stub 可被本机模块替换。⑤ 用 CI diff 路径检查或 import-linter，不是单元测试（AC-103） | PRD §3.3、AC-103、§8 M1、M6a、§9；ARCH §7.4、§16；RULES §5 第 14 条 |
 
 ## 7. 未核实的说法
 
@@ -647,7 +649,7 @@ Wisdom 批准 Forge 的四条建议。Q10 不重开：标准档仍是 PP-DocLayo
 | RTX 4070 12 GB 满足 Jev 官方显存要求 | 官方下限按后端：llama.cpp / Ollama ≥ 8 GB，vLLM / Docker ≥ 12 GB，SGLang ≥ 16 GB（ARCH §7.4「开发机」） | llama.cpp / Ollama：按文档满足；vLLM / Docker：名义上恰好等于下限，扣除桌面显示等占用后可用显存是否 ≥ 12 GB **未核实**，文档也没说「GB」指 GB 还是 GiB；SGLang：不满足。显存够不等于能在 Windows 上部署（见上一行）。M0 不跑这条本地实测（§6.15） |
 | 开发机上本地跑通 Jev（启动自检 + 参考样例三项 ≤ 0.02） | 官方 CUDA 路线只在 Linux + NVIDIA 上写明；llama.cpp CUDA 构建与 Ollama Windows 版运行 Jev 的说明都没有，文档未提 WSL2 | **不要求 / 未核实**。2026-11-02 起 M0/M1 不跑本地 Jev，只留接口和 stub（§6.15） |
 | 开发机上 Jev 的峰值显存与单批（64 项）耗时 | — | **不是 M0 项**（2026-11-02）。不记本地峰值显存、冷启动或是否 OOM。M0 的内存指标是客户端内存（不含本地模型）；Key 不在时标「未核实」（§6.15） |
-| M0 的面壁 Jev API 实测（参考样例单项与批量、三项分数与参考值的差值、耗时、`usage`、国内站 base URL） | ARCH §7.4「开发机」、PRD §8 M0 | **待执行**（Wisdom 2026-10-30 19:11 决定延后，现在不跑，不阻塞规格文档）；执行前需在 Cursor Secrets 中添加 `MODELBEST_API_KEY` |
+| M0 的面壁 Jev API 实测（参考样例单项与批量、三项分数与参考值的差值、耗时、`usage`、国内站 base URL） | ARCH §7.4「开发机」、PRD §8 M0 | **待执行**（Wisdom 2026-10-30 19:11 决定延后，现在不跑，不阻塞规格文档）；执行前需在 Cursor Secrets 中添加 `MODELBEST_API_KEY`。程序用 M1 的最小 Jev 托管 API 客户端（§6.15，2026-11-02 17:21） |
 | MiniCPM-OCR 1.0 SDK（引擎 B 本地）在 Windows 上运行 | 上游两个验证环境是 Linux vLLM（RTX 5090 32 GB）与 macOS ARM64 llama.cpp（§2.2） | **未核实**；按 API 优先，开发机上的本地引擎 B **不要求**，引擎 B 默认走面壁文档解析 API |
 | PaddleOCR / PaddleX 版面与公式流水线在 Windows + RTX 4070 上运行 | Paddle 3.3 有 Windows GPU 包（CUDA 11.8 / 12.6 / 12.9，计算能力 > 7.5，§2.4.1）；整条流水线无 Windows 实测记录 | **未实测**；按 API 优先在开发机上不要求，引擎 A 的三条路径都保留，开发用哪条随 M3 前的最终选择定（§2.4.1、§6.4） |
 | 百度 AI Studio PaddleOCR 托管 API 能否作为引擎 A 模型阶段的来源：区域框与类别、公式 LaTeX、单张页面图输入、模型版本锁定、对应 Q10 的哪一档、价格与每日页数配额 | [异步 API 使用文档](https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5)（2026-02-04）示例只取 Markdown，未写区域框与版本 | **未核实**，M3 开工前核实；核实通过才出现在选项里，是否作为默认随 M3 前的最终选择定（ARCH §7.0、§6.4） |

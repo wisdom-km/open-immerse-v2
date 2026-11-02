@@ -28,9 +28,9 @@
 | Q6 | PDF 库与项目许可证 | 差异清单 §6 的 Q6 行；ARCHITECTURE §16 的 Q6 行 |
 | Q7 | 本机 worker 用什么传输 | 差异清单 §6 的 Q7 行；ARCHITECTURE §16 的 Q7 行 |
 | Q8 | 是否做 v1 数据迁移器 | 差异清单 §6 的 Q8 行；ARCHITECTURE §16 的 Q8 行 |
-| Q9 | Jev 部署在本地还是 API | 差异清单 §6 的 Q9 行；ARCHITECTURE §16 的 Q9 行。2026-11-02 16:38 起非 Jev 的本地是第二路线；同日 17:03 起 Jev 的两条路线在契约里都是一等。见差异清单 §6.15 与 ARCHITECTURE §16 同日两行。本索引不抄原文 |
+| Q9 | Jev 部署在本地还是 API | 差异清单 §6 的 Q9 行；ARCHITECTURE §16 的 Q9 行。2026-11-02 16:38 起非 Jev 的本地是第二路线；同日 17:03 起 Jev 的两条路线在契约里都是一等；同日 17:21 起最小 Jev 托管 API 客户端在 M1，M6a 接入完整流程。见差异清单 §6.15 与 ARCHITECTURE §16。本索引不抄原文 |
 | Q10 | 引擎 A 的版面模型从哪一档起步 | 差异清单 §6 的 Q10 行；ARCHITECTURE §16 的 Q10 行 |
 | Q11 | 未配置翻译时能否借用多模态 | 差异清单 §6 的 Q11 行；ARCHITECTURE §16 的 Q11 行 |
 | Q12 | Unlimited-OCR 是否接入 | 差异清单 §6 的 Q12 行；ARCHITECTURE §16 的 Q12 行 |
 
-Q1–Q12 之后的决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，2026-10-31 的 D-D、D-E、W-4，以及 2026-11-02 的面壁 API 主路线与同日 Jev 契约）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.15。本索引不抄那些段落。
+Q1–Q12 之后的决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，2026-10-31 的 D-D、D-E、W-4，以及 2026-11-02 的面壁 API 主路线、同日 Jev 契约与 Jev API 客户端里程碑）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.15。本索引不抄那些段落。
