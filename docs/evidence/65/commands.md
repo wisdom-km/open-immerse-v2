@@ -39,7 +39,16 @@ default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' oi-asset
 
 ## Windows e2e
 
-job：`desktop-e2e-windows`，`runs-on: windows-latest`。本文件写入时 CI 还没有这个提交的日志。日志回来之后补在这里。
+job：`desktop-e2e-windows`，`runs-on: windows-latest`。提交 `02e18e2fb15d5d8c8d0432de8b9fa73dbb30f9ec` 的 `push` 与 `pull_request` 两组都是 pass。下面是 PR 那组（run `41464136233`，job `125340455936`，49s）里 Playwright 步骤的结果：
+
+```
+Running 1 test using 1 worker
+[1/1] e2e\smoke.spec.ts:11:1 › opens one oi-app window under the security baseline
+Downloading Electron binary...
+  1 passed (8.1s)
+```
+
+同一提交的 `push` 那组（run `41464125596`，job `125340421360`）也是 pass。冒烟断言因此在 Windows 上读到了响应头里的 CSP，并确认标题非空、`location.protocol` 为 `oi-app:`、`file://` 为 0、外链 / `window.open` / `<webview>` / 通知权限被拒绝、`webPreferences` 三项为真且 `webSecurity` 不是 false。
 
 ## Electron 安全清单
 
