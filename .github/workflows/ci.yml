@@ -139,9 +139,13 @@ jobs:
             exit 1
           fi
 
-  worker-health-windows:
-    name: worker-health-windows
-    runs-on: windows-latest
+  worker-health:
+    name: worker-health-${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows, macos]
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

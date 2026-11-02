@@ -16,6 +16,10 @@ Wisdom 是合入、发版、花钱和 `.cursor/*` 的唯一决定人。
 
 PR 可以离开 Draft，仅在 Forge 审查通过之后（RULES §2）。自检做完不够。作者不自行标成 Ready。合入仍只由 Wisdom 决定（N-03）。
 
+## 延期
+
+审查或 QA 里延期、这次不修的每一项，在延期它的那个 PR 里记下：先查重，没有就开一条 GitHub Issue，再在 [backlog.md](backlog.md) 加一行，链到这条 Issue。同一件事不重复开 Issue。来源：Wisdom 2026-11-02 20:37 的常设规则。
+
 ## 执行计划
 
 超过 300 行，或跨模块，用 [exec-plans/TEMPLATE.md](exec-plans/TEMPLATE.md)。跨模块指多于一个切片，或同时改 TS 与 worker。第一笔提交只有计划。Forge 审查通过之前不写实现。解析规则集仍可在同一个 PR（RULES §2），但要先有这份计划。小任务不建计划，在 PR 描述写三行现状理解。
