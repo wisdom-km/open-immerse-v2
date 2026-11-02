@@ -2057,7 +2057,7 @@ type EvalRecord = Readonly<{
 | G16 core 测试只调 seam、不渲染 UI | Vitest 工程 `core` + dependency-cruiser 规则 `core-test-through-seam` | `core` 工程：`environment: 'node'`，include `packages/features/*/test/core/**`；文件内出现 `@vitest-environment` 注释即失败。`core-test-through-seam`：from `^packages/features/([^/]+)/test/core/`，to `^packages/features/$1/src/` 且 pathNot `^packages/features/$1/src/((index\|pure)\.ts\|testing/)` → 失败；to `react`、`@testing-library/*`、`jsdom`、`happy-dom`、`@oi/ui-kit`、`src/ui/` → 失败。每个切片 `README.md` 登记的 core 规则必须至少有一个 core 测试（脚本核对测试名中的规则编号） |
 | G18 一个 PR 一个切片 | 脚本 | PR 改动的 `packages/features/*/src/**` 只属于一个切片（RULES §2）；例外：解析规则集 PR（`parsing` + worker 对应规则 + `fixtures/parsing-rules/`，§7.10）与带 ADR 编号的 PR。由此「UI 改动的 PR 又改了另一个切片的 core」必然失败（架构评审 P1-11）；同一切片的 UI 与 core 在一个 PR 里不失败 |
 
-**运行环境**（架构评审 P2-5）：Linux 跑 G1–G16、G18 全部；另有一条 Windows 任务，只跑不带模型的 worker 健康检查、`fixtures/protocol/` 与 `fixtures/parsing-rules/` 的两侧测试；两条都是必需检查。macOS 签名与公证留到 M8，由人执行。
+**运行环境**（架构评审 P2-5）：Linux 跑 G1–G16、G18 全部；Windows 与 macOS 各有一条任务，只跑不带模型的 worker 健康检查、`fixtures/protocol/` 与 `fixtures/parsing-rules/` 的两侧测试，步骤相同。Linux 全部门禁与 Windows 健康检查仍是 AC-80 ⑤ 的两条必需检查。macOS 健康检查由 Wisdom 2026-11-02 20:07 批准，与 Windows 健康检查一起由仓库管理员设为必需（Issue #33，RULES N-02）。macOS 签名与公证留到 M8，由人执行。
 
 原 G17（同一 PR 同时改 UI 路径与 core 路径即失败）已按架构评审删除（Wisdom 2026-10-30 19:57 批准）：一个垂直切片的功能本来就同时包含 core 与 UI，按层强制拆 PR 与 §0「改一个功能只动一个切片」相反。Q3 的执行规则 2、3 仍然有效，由评审清单与 UI–core 交接说明检查（RULES §5 第 11 条、§8）；依赖方向与 core 测试由 G13–G16 机器检查。
 

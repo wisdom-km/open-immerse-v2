@@ -1,6 +1,6 @@
 # 待办与架构评审处理状态
 
-状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-02（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。
+状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-02（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。
 用途：逐条记录[架构评审](./reviews/2026-10-30-architecture-review.md)的每个发现由哪个规格 PR 处理、落在规格哪里，以及还没处理、留给哪个里程碑的事。决定的理由见[差异清单](./v2-gap-and-changes.md) §6.6–§6.13；本文只记状态，不重述规格。§5 记 Jev 开关审查（2026-10-30 22:06）各项的处理状态。§8 收录还要等 M0 的项，也记下已经拍板的项（2026-10-31 01:08 建表；同日 D-D、D-E 与 W-4 的过渡默认已决定）。未决的行不代选。
 
 三个规格 PR：
@@ -80,7 +80,11 @@
 | 评分开关、三选一提示、「未评分」「源码核对」「格式已核对」徽标与「为本文评分」入口的布局与文案 | 待 Loom；M6a 实现。规格只暂定「格式已核对」这几个字，不写颜色、位置或图标 | PRD §3.4、AC-85、AC-87、AC-89 |
 | 「明确不确定证据」作为补救入口的证据清单与验收 | 未定义，定义前不作为入口；需要时另开规格 PR | ARCH §7.1「低分再补」；差异清单 §6.9 第 8 条 |
 | 协议代码生成与其后的 worker 切片 | M1 前提。Forge 排序（2026-11-02，不是业主决定）：契约（#55）→ 代码生成与 worker 健康检查（#56）→ FastAPI、`__main__` 与 Windows 健康检查（#58）。代码生成必须先于任何使用协议模型的 worker 切片。`run.mjs` 生成 `workers/parser/oi_worker/protocol/`，datamodel-code-generator 钉 0.87.0（`tools/codegen/pin.json`） | PRD §8 M1；ARCH §10.1、§10.2、§10.4、§13 G7、F-11 |
-| 把 `LaunchBearerMiddleware` 从 `BaseHTTPMiddleware` 换成纯 ASGI 中间件 | SSE 之前。`BaseHTTPMiddleware` 会缓冲请求体，不适合 `GET /v1/jobs/{id}/events` | ARCH §10.2；#58 |
+| 把 `LaunchBearerMiddleware` 从 `BaseHTTPMiddleware` 换成纯 ASGI 中间件 | SSE 之前。`BaseHTTPMiddleware` 会缓冲请求体，不适合 `GET /v1/jobs/{id}/events` | ARCH §10.2；#58、#60 |
+| 接管前收到 SIGINT / SIGTERM 时 worker 退出码非 0（130 带 `KeyboardInterrupt` 回溯，SIGTERM 为 143）。退出码 0 依赖 uvicorn 0.38.0 恢复信号处理再重新抛出 | M3（supervisor 实现 PR）一起改。桌面端不要把 130 / 143 当成崩溃 | #59；ARCH §10.1、§10.5 |
+| PR #55 / #56 审查 P2：`ids` 构造校验、迁移测试不完全封闭、codegen 按 basename 命名、`read*` 运行时校验的归属、health 响应体改成判别联合、`workerVersion` 字符集与长度、主版本不符时作业数为 0 | M1。前几条随下一个触碰 codegen 或 contracts 的 PR；作业数为 0 随 jobs API | #61 |
+| macOS 上的 worker 健康检查；jobs 落地时把 `server.py`、`loopback.py`、`listen_port.py` 从 `api/` 移到 `oi_worker/runtime/` | M1。健康检查 job 在本 PR。移动文件留到 jobs PR，这次不搬 | #62；ARCH §10.3 |
+| 把 `CI / worker-health-windows` 与 `CI / worker-health-macos` 设为必需检查 | M1。仓库管理员做。Agent 不改分支保护（N-02） | #33 |
 
 ## 5. Jev 开关审查（2026-10-30 22:06）的处理
 
