@@ -24,20 +24,20 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。预计超过 300 行，先停 |  |  |
-| 2 | 延期登记。worker stderr 的 Issue 已开，见文末 #73。批准后、写契约之前，只在 `docs/backlog.md` §4 为 #73 加一行。询问弹窗的 Issue 仍按文末第 2 条，批准后再开，并加一行。这两笔都不改已有行，也不写入 #69–#72 |  |  |
-| 3 | `packages/contracts/src/diag-events.ts`。六个事件 id 做成封闭常量，顺序与 §11 一致：`egress.ask`、`budget.refused`、`upstream.server_error`、`scoring.unavailable`、`pipeline.run`、`ipc.oversize`。不加第七个。每条记录都有 `ts`、`level`、`event`、`feature`。`pipeline.run` 的流水线字段只有 `run_id`、`route`、`step`、`status`、`error_class`、`duration_ms`。`upstream.server_error` 另有必填 `requestId`（§11 写的是 camelCase，不是 `request_id`）。`ipc.oversize` 另有 `channel` 与 `bytes`（规格只写了通道名与字节数）。`requestId` 在其他事件上可选，可以和 `run_id` 同时出现。不把 `source` 加进本 PR |  |  |
-| 4 | 不新造枚举。`step`、`status`、`level` 都是 `string`。§11 没有给这三项的封闭取值；解析、OCR、翻译只作为测试夹具里的三种 `step`。成功时 `error_class` 为 `""`，字段仍在。失败时 `error_class` 为字符串，不含上游原文。`duration_ms` 为有限数且不小于 0。`bytes` 为不小于 0 的整数。`ts` 为非空字符串，不规定必须是 `Date.toISOString()` |  |  |
-| 5 | `readDiagEvent(unknown)` 返回 kernel 的 `Result`，失败为 `{ code: "diag_event_rejected" }`。未知 `event`、缺必填、类型不对，则拒绝。白名单以外的键丢弃，不因为多了键就把整条判失败，也不扫描字段值去找正文或密钥。不在 `route`、`run_id`、`requestId`、`channel`、`feature` 上加绝对路径正则。不用 `additionalProperties: false` 把额外键变成拒绝。函数拆开，每个不超过 80 行，圈复杂度不超过 15。从 `@oi/kernel` 只做 type-only import。`DiagLogger = Logger<DiagEvent>` |  |  |
-| 6 | `packages/kernel/src/logger.ts` 只有接口和常量，无实现，不 import `node:`，不 import contracts。`Logger<TRecord>` 有 `log`、`setDebugMode`、`clearDebugLogs`。`DEBUG_MODE_DEFAULT = false`。`DebugModeChange` 为 `{ enabled: true }` 或 `{ enabled: false; deleteFiles: boolean }`：询问界面在 M2，决定由调用方传入。`DEBUG_LOG_MAX_AGE_MS` 为 7 天，`DEBUG_LOG_MAX_BYTES` 为 50 MB。目录名常量 `diagnostics` 与 `debug`。不在这里删除文件 |  |  |
-| 7 | `packages/kernel/src/clock.ts` 只有 `Clock.nowMs(): number`。不导出 `systemClock`，不规定时间字符串的格式。不 import `node:`。不建 `id.ts`。`run_id` 的生成留到实现 PR |  |  |
-| 8 | 两个包的 `index.ts` 只再导出上述公开类型、常量与 `readDiagEvent`。不改 `result.ts` |  |  |
-| 9 | 单测在 `packages/contracts/test/diag-events.test.ts` 与 `packages/kernel/test/`。用例名 `<结果> when <条件>`，对得上的加 AC-101。未知事件用 `// @ts-expect-error` 并写原因。不读源码文本做断言。不用真实 Key；需要假密钥形态时用 `oitest_` 前缀。不断言 `package.json` 里没有 langsmith：本 PR 不落盘，依赖清单不变 |  |  |
-| 10 | 改掉已经不成立的规格句子，不追加「后来改为」。ARCHITECTURE §11 开头删去「本仓库还没有 `packages/`」和「本规格不建这个文件」。§4.1 `diag-events.ts` 那一行删去「拟议路径」和「不建这个文件」。§16 加一句：`logger.ts` 与 `clock.ts` 已在 §4.1，Wisdom 2026-11-02 23:17 的指示代替这两个文件的 ADR，不另建 `docs/adr/` 页。`docs/spec-changelog.md` 记本 PR。`docs/backlog.md` §4 已有行不改，包括「诊断日志代码」那一行 |  |  |
-| 11 | 附带 commit A，只加行。在 `docs/backlog.md` §4 表末加下面四行，不改已有行。Issue 已存在，不开新的：#69 oi-app 按扩展名设置 Content-Type 并加 `nosniff`，M2；#70 打包后 renderer 路径 `dist/../../src/renderer` 失效，M8；#71 desktop e2e 覆盖权限 check handler 并拆开冒烟，M1 收尾；#72 `app-protocol.ts` 的 `readUrl` / `readMethod` 可内联，M1 下一个碰该文件的 PR。文案用交接 §7 附带项 A 的表 |  |  |
-| 12 | 附带 commit B。`apps/desktop/playwright.config.ts` 用 Playwright 自带的 `screenshot: "on"`，不手写截图控件，不改 `e2e/smoke.spec.ts` 的断言（拆分属 #71）。`.github/workflows/ci.yml` 的 `desktop-e2e-windows` 在冒烟步骤之后加 `actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9`（v7.0.2，2026-10-07 的 tag；实现当天再对一下 tag 是否仍指向这个 SHA）。`if: always()`。artifact 名 `desktop-e2e-windows-screenshots`。路径 `apps/desktop/test-results/**/*.png`，没有文件则该步失败。不加 xvfb，不改 `.cursor/install.sh` 与 `.cursor/environment.json`，不改分支保护。`docs/ci-and-environment.md` 的该 job 一行补上上传截图。`docs/spec-changelog.md` 加一行 |  |  |
-| 13 | `docs/evidence/<PR号>/commands.md`。命令、SHA、通过 / 失败 / 跳过。写明本环境是 Linux，不跑 Electron，截图以 Windows job 的 artifact 为准，并链接该 artifact。合成的一条 `pipeline.run` JSON（成功，`error_class` 为 `""`）放在同一目录，不放正文、译文、提示词、密钥、绝对路径 |  |  |
-| 14 | 门禁在实现提交的 tip 上各跑一次：`corepack pnpm test`、`corepack pnpm run check`（`GATE_BASE=origin/main`）。PATH 先放 Node 22.23.4。不新增运行时依赖。不改 DESIGN、`docs/design-principles.md`、`docs/design/**`。不改 worker。不改 G5 规则：contracts 对 kernel 保持 type-only |  |  |
+| 1 | 本文件。预计超过 300 行，先停 | Forge 对 `c098b10` 给了 PASS | 本文件 |
+| 2 | 延期登记。worker stderr 的 Issue 已开，见文末 #73。批准后、写契约之前，只在 `docs/backlog.md` §4 为 #73 加一行。询问弹窗的 Issue 仍按文末第 2 条，批准后再开，并加一行。这两笔都不改已有行，也不写入 #69–#72 | #73 的 backlog 行是 `b8def18`。询问弹窗开了 #75，backlog 行是 `1705248`。没有改已有行 | `docs/backlog.md` |
+| 3 | `packages/contracts/src/diag-events.ts`。六个事件 id 做成封闭常量，顺序与 §11 一致：`egress.ask`、`budget.refused`、`upstream.server_error`、`scoring.unavailable`、`pipeline.run`、`ipc.oversize`。不加第七个。每条记录都有 `ts`、`level`、`event`、`feature`。`pipeline.run` 的流水线字段只有 `run_id`、`route`、`step`、`status`、`error_class`、`duration_ms`。`upstream.server_error` 另有必填 `requestId`（§11 写的是 camelCase，不是 `request_id`）。`ipc.oversize` 另有 `channel` 与 `bytes`（规格只写了通道名与字节数）。`requestId` 在其他事件上可选，可以和 `run_id` 同时出现。不把 `source` 加进本 PR | `e1c3095` 的 `diag-events.ts` | `docs/evidence/74/commands.md` |
+| 4 | 不新造枚举。`step`、`status`、`level` 都是 `string`。§11 没有给这三项的封闭取值；解析、OCR、翻译只作为测试夹具里的三种 `step`。成功时 `error_class` 为 `""`，字段仍在。失败时 `error_class` 为字符串，不含上游原文。`duration_ms` 为有限数且不小于 0。`bytes` 为不小于 0 的整数。`ts` 为非空字符串，不规定必须是 `Date.toISOString()` | 同上。测试夹具用 `parse`、`ocr`、`translate` 三种 `step`，类型仍是 `string` | 同上 |
+| 5 | `readDiagEvent(unknown)` 返回 kernel 的 `Result`，失败为 `{ code: "diag_event_rejected" }`。未知 `event`、缺必填、类型不对，则拒绝。白名单以外的键丢弃，不因为多了键就把整条判失败，也不扫描字段值去找正文或密钥。不在 `route`、`run_id`、`requestId`、`channel`、`feature` 上加绝对路径正则。不用 `additionalProperties: false` 把额外键变成拒绝。函数拆开，每个不超过 80 行，圈复杂度不超过 15。从 `@oi/kernel` 只做 type-only import。`DiagLogger = Logger<DiagEvent>` | 同上。`readDiagEvent` 回拷白名单字段 | 同上 |
+| 6 | `packages/kernel/src/logger.ts` 只有接口和常量，无实现，不 import `node:`，不 import contracts。`Logger<TRecord>` 有 `log`、`setDebugMode`、`clearDebugLogs`。`DEBUG_MODE_DEFAULT = false`。`DebugModeChange` 为 `{ enabled: true }` 或 `{ enabled: false; deleteFiles: boolean }`：询问界面在 M2，决定由调用方传入。`DEBUG_LOG_MAX_AGE_MS` 为 7 天，`DEBUG_LOG_MAX_BYTES` 为 50 MB。目录名常量 `diagnostics` 与 `debug`。不在这里删除文件 | 同上。`logger.ts` 没有文件实现 | 同上 |
+| 7 | `packages/kernel/src/clock.ts` 只有 `Clock.nowMs(): number`。不导出 `systemClock`，不规定时间字符串的格式。不 import `node:`。不建 `id.ts`。`run_id` 的生成留到实现 PR | 同上。`clock.ts` 只有 `nowMs` | 同上 |
+| 8 | 两个包的 `index.ts` 只再导出上述公开类型、常量与 `readDiagEvent`。不改 `result.ts` | 同上。两处 `index.ts` 再导出 | 同上 |
+| 9 | 单测在 `packages/contracts/test/diag-events.test.ts` 与 `packages/kernel/test/`。用例名 `<结果> when <条件>`，对得上的加 AC-101。未知事件用 `// @ts-expect-error` 并写原因。不读源码文本做断言。不用真实 Key；需要假密钥形态时用 `oitest_` 前缀。不断言 `package.json` 里没有 langsmith：本 PR 不落盘，依赖清单不变 | 同上。单测 10 条，含一条 `@ts-expect-error` | 同上 |
+| 10 | 改掉已经不成立的规格句子，不追加「后来改为」。ARCHITECTURE §11 开头删去「本仓库还没有 `packages/`」和「本规格不建这个文件」。§4.1 `diag-events.ts` 那一行删去「拟议路径」和「不建这个文件」。§16 加一句：`logger.ts` 与 `clock.ts` 已在 §4.1，Wisdom 2026-11-02 23:17 的指示代替这两个文件的 ADR，不另建 `docs/adr/` 页。`docs/spec-changelog.md` 记本 PR。`docs/backlog.md` §4 已有行不改，包括「诊断日志代码」那一行 | 同上。改了 §11 开头、§4.1 那一行和 §16 一行。changelog 记了本 PR | 同上 |
+| 11 | 附带 commit A，只加行。在 `docs/backlog.md` §4 表末加下面四行，不改已有行。Issue 已存在，不开新的：#69 oi-app 按扩展名设置 Content-Type 并加 `nosniff`，M2；#70 打包后 renderer 路径 `dist/../../src/renderer` 失效，M8；#71 desktop e2e 覆盖权限 check handler 并拆开冒烟，M1 收尾；#72 `app-protocol.ts` 的 `readUrl` / `readMethod` 可内联，M1 下一个碰该文件的 PR。文案用交接 §7 附带项 A 的表 | `20944ca`。只加了这四行 | `docs/backlog.md` |
+| 12 | 附带 commit B。`apps/desktop/playwright.config.ts` 用 Playwright 自带的 `screenshot: "on"`，不手写截图控件，不改 `e2e/smoke.spec.ts` 的断言（拆分属 #71）。`.github/workflows/ci.yml` 的 `desktop-e2e-windows` 在冒烟步骤之后加 `actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9`（v7.0.2，2026-10-07 的 tag；实现当天再对一下 tag 是否仍指向这个 SHA）。`if: always()`。artifact 名 `desktop-e2e-windows-screenshots`。路径 `apps/desktop/test-results/**/*.png`，没有文件则该步失败。不加 xvfb，不改 `.cursor/install.sh` 与 `.cursor/environment.json`，不改分支保护。`docs/ci-and-environment.md` 的该 job 一行补上上传截图。`docs/spec-changelog.md` 加一行 | `bae7c7b`。2026-11-02 核对 tag `v7.0.2` 仍指向 `cf430e030ddbb5b0abf93d22962f4752f3646cd9`。没有改 `smoke.spec.ts` | `docs/evidence/74/commands.md` |
+| 13 | `docs/evidence/<PR号>/commands.md`。命令、SHA、通过 / 失败 / 跳过。写明本环境是 Linux，不跑 Electron，截图以 Windows job 的 artifact 为准，并链接该 artifact。合成的一条 `pipeline.run` JSON（成功，`error_class` 为 `""`）放在同一目录，不放正文、译文、提示词、密钥、绝对路径 | 写在 `docs/evidence/74/`。截图链接 pull request run `41474597703` 的 artifact | 同目录 |
+| 14 | 门禁在实现提交的 tip 上各跑一次：`corepack pnpm test`、`corepack pnpm run check`（`GATE_BASE=origin/main`）。PATH 先放 Node 22.23.4。不新增运行时依赖。不改 DESIGN、`docs/design-principles.md`、`docs/design/**`。不改 worker。不改 G5 规则：contracts 对 kernel 保持 type-only | 在 `bae7c7b` 各跑一次。`check` 退出码 0。测试 114 通过、2 跳过、0 失败。非生成 diff 当时 610 行，提交说明里有 `G12:` | `docs/evidence/74/commands.md` |
 
 预计行数（开工前，含空行与测试）：
 
@@ -76,11 +76,11 @@ G12 按整个 PR 对 `main` 的非生成 diff。本 PR 同时改 kernel、文档
 - #48 是红队样本（密钥进日志）。不是 worker 的 stderr 管道。
 - #60 是 `BaseHTTPMiddleware`。与日志无关。
 
-1. Python worker 把结构化 JSON 写到 stderr，supervisor 收集并加上 `source: worker`（ARCHITECTURE §11）。已开 [#73](https://github.com/wisdom-km/open-immerse-v2/issues/73)，里程碑 M3。批准后只在 backlog §4 加一行，不再开同题 Issue。现有读入会丢掉白名单外的键，所以落地时要把 `source: "worker"` 纳入允许字段。本 PR 不写 Python。
-2. 关闭调试模式前询问是否删除调试日志。里程碑 M2，交 Loom。M1 不画这个界面（Wisdom 2026-11-02 23:17）。批准后再开 Issue 并加 backlog 行。这一笔之前不开。
+1. Python worker 把结构化 JSON 写到 stderr，supervisor 收集并加上 `source: worker`（ARCHITECTURE §11）。已开 [#73](https://github.com/wisdom-km/open-immerse-v2/issues/73)，里程碑 M3。backlog 行已加，不再开同题 Issue。现有读入会丢掉白名单外的键，所以落地时要把 `source: "worker"` 纳入允许字段。本 PR 不写 Python。
+2. 关闭调试模式前询问是否删除调试日志。已开 [#75](https://github.com/wisdom-km/open-immerse-v2/issues/75)，里程碑 M2，交 Loom。M1 不画这个界面（Wisdom 2026-11-02 23:17）。backlog 行已加。
 
 #69、#70、#71、#72 已经开着，只补 backlog 行。
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：实现提交之后再写。本文件这一笔没有证据目录，也没有截图 artifact。
+- `docs/evidence/74/commands.md`：命令、退出码、截图 artifact。合成样例在 `docs/evidence/74/pipeline-run.json`。

@@ -1,0 +1,13 @@
+{
+  "ts": "2026-11-02T00:00:00.000Z",
+  "level": "info",
+  "event": "pipeline.run",
+  "feature": "pipeline",
+  "run_id": "run-1",
+  "route": "multimodal-layout",
+  "step": "parse",
+  "status": "done",
+  "error_class": "",
+  "duration_ms": 12,
+  "requestId": "req-1"
+}
