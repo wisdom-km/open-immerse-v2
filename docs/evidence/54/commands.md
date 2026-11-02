@@ -17,3 +17,5 @@ Node：`v20.19.2`（PATH 前置 `/home/ubuntu/.nvm/versions/node/v20.19.2/bin`�
 `test:core`：不适用（脚本尚未提供）。没有执行。
 
 对照 N-10 / N-11：diff 不含 `DESIGN.md`、`docs/design-principles.md`、`docs/design/**`、`.cursor/environment.json`、`.cursor/install.sh`。
+
+证据提交 `94bd642ced1c3804dcdc784ee8986ac411bf5e74` 上再跑 `corepack pnpm run check`，退出码 0。`check-pr-size`：402 行非生成 diff，未到 600 行。`git diff --check` 相对 `origin/main` 退出码 0。

@@ -118,50 +118,52 @@
 | S102 | `test:core`：不适用（脚本尚未提供）。没有执行。 | docs/evidence/54/commands.md:17 |
 | S103 |  | docs/evidence/54/commands.md:18 |
 | S104 | 对照 N-10 / N-11：diff 不含 `DESIGN.md`、`docs/design-principles.md`、`docs/des | docs/evidence/54/commands.md:19 |
-| S105 | ／ 2026-11-02 ／ [#54](https://github.com/wisdom-km/open-immerse-v2/pull/5 | docs/spec-changelog.md:11 |
-| S106 | 状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.m | docs/v2-gap-and-changes.md:3 |
-| S107 | 4. **Jev 不适合在 8 GB 目标设备本机运行**：官方最低要求是 NVIDIA ≥ 8–12 GB 显存或 Apple M 系列 ≥  | docs/v2-gap-and-changes.md:14 |
-| S108 | 16. **处理路线**（Wisdom 2026-10-30 22:41、22:44、22:45，以 22:45 为准；23:55 续定）：四类 | docs/v2-gap-and-changes.md:26 |
-| S109 | - **阅读顺序的输出（2026-10-30 复查 PaddleOCR `main@dab3fe3`，只读文档，没有运行模型）**：同一文件第  | docs/v2-gap-and-changes.md:116 |
-| S110 | ／ Q9 ／ Jev 部署在哪？ ／ 设置主选项「本地 / API」，默认「API」；两者走同一个 `evaluate` 作业接口。API 服务 | docs/v2-gap-and-changes.md:327 |
-| S111 | 原话要点：开发与最终用户一视同仁，每个由模型提供的能力（Jev 评分、引擎 B / MiniCPM-OCR、版面、多模态、OCR、翻译）有托管  | docs/v2-gap-and-changes.md:417 |
-| S112 | ／ 本地选项 ／ 同一端口或同一种 worker 作业；两个来源跑同一份契约测试（M0/M1 本地侧跑 stub，§6.15）；「本地」在设置主 | docs/v2-gap-and-changes.md:422 |
-| S113 | ／ M0 退出条件 ／ API 路径：经 Cursor Secrets 注入 `MODELBEST_API_KEY` 后对面壁 Jev API  | docs/v2-gap-and-changes.md:427 |
-| S114 | ／ 版面部署 ／ 本地与自建远程 worker，同一 HTTP + SSE。没有已确认的托管版面 API，不编造服务商。与引擎 A 识别的「本地 | docs/v2-gap-and-changes.md:540 |
-| S115 | Wisdom 批准 Forge 的四条建议。Q10 不重开：标准档仍是 PP-DocLayoutV3。plus-L 仍按 QM-13，不在本机  | docs/v2-gap-and-changes.md:579 |
-| S116 | ／ 8 GB CPU 实测 ／ 2026-10-31 写成 M0 必测。2026-11-02 取代：不再在 8 GB 无独显 CPU 上测 PP | docs/v2-gap-and-changes.md:583 |
-| S117 | ／ W-4 ／ 拆成两截。过渡默认：新安装与恢复默认的预设 id 是 `multimodal-layout`，不是空，也不要求用户先选一条。正式 | docs/v2-gap-and-changes.md:586 |
-| S118 | ／ M0 单篇费用与耗时 ／ 同一批论文上，四个预设各记面壁 API 的单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。单篇费 | docs/v2-gap-and-changes.md:594 |
-| S119 | ### 6.15 面壁 API 为主路线、本地部署为第二路线（Wisdom 2026-11-02 16:38 UTC+8） | docs/v2-gap-and-changes.md:598 |
-| S120 |  | docs/v2-gap-and-changes.md:599 |
-| S121 | 原文：「面壁 API 是主路线对，然后本地部署是第二路线吧，就可能说只留有接口啥的，因为我不考虑本地部署了，那个我电脑带不动。」 | docs/v2-gap-and-changes.md:600 |
-| S122 |  | docs/v2-gap-and-changes.md:601 |
-| S123 | 面壁开放平台 API 是模型推理的主路线。规格里已经写成面壁的能力（Jev 的 `MiniCPM-OCR-Jev`、引擎 B 的 MiniCPM | docs/v2-gap-and-changes.md:602 |
-| S124 |  | docs/v2-gap-and-changes.md:603 |
-| S125 | 同日 17:03 UTC+8，只收窄上面「任何本机推理」对 Jev 的说法。原文：「就是这个JEV的模型啊，我考虑本地部署或者是接入API，这个 | docs/v2-gap-and-changes.md:604 |
-| S126 |  | docs/v2-gap-and-changes.md:605 |
-| S127 | 面壁模型 `MiniCPM-OCR-Jev`：托管 API 与本地部署在契约里都是一等。最小托管 API 客户端在 M1（`jev.route` | docs/v2-gap-and-changes.md:606 |
-| S128 |  | docs/v2-gap-and-changes.md:607 |
-| S129 | 同日 17:21 UTC+8。原文：「Jev API 客户端提前到 M1，M6a 接进完整流程」。最小的面壁 Jev 托管 API 客户端走提供 | docs/v2-gap-and-changes.md:608 |
-| S130 |  | docs/v2-gap-and-changes.md:609 |
-| S131 | ／ 项 ／ 决定 ／ 落点 ／ | docs/v2-gap-and-changes.md:610 |
-| S132 | ／ 主路线 ／ 已写成面壁的能力继续走面壁 API。不新造面壁版面接口 ／ PRD §2、§3.5、§9；ARCH §7.0、§7.4、§16  | docs/v2-gap-and-changes.md:612 |
-| S133 | ／ 第二路线 ／ 本地部署只留接口、契约和 stub。M0/M1 不实现、不下载模型、不设本地推理门禁。推迟，不删除 ／ PRD §3.5、§8 | docs/v2-gap-and-changes.md:613 |
-| S134 | ／ M0 测量 ／ 面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。单篇费用保留。程序用 M1 的最小 Jev  | docs/v2-gap-and-changes.md:614 |
-| S135 | ／ N-22 与 #34 ／ G6、pyright、gitleaks 已在 CI，满足业务切片的门禁前提。G1、G3、G5 仍是 M1 交付，不 | docs/v2-gap-and-changes.md:615 |
-| S136 | ／ Jev 契约 ／ 托管 API 与本地部署都是一等。最小托管 API 客户端在 M1，M6a 接入完整流程。键 `jev.route`。选  | docs/v2-gap-and-changes.md:616 |
-| S137 |  | docs/v2-gap-and-changes.md:617 |
-| S138 | ／ PP-DocLayoutV3 在 8 GB 内存、无独显、只用 CPU 的机器上的冷启动时间、单页耗时、峰值内存、是否 OOM ／ Wisd | docs/v2-gap-and-changes.md:635 |
-| S139 | ／ PP-DocLayoutV2 开源输出的 `boxes` 按阅读顺序排列 ／ `layout_analysis.en.md` 第 25、18 | docs/v2-gap-and-changes.md:637 |
-| S140 | ／ PP-DocLayoutV3 开源输出带阅读顺序 ／ 模型卡；MiniCPM-OCR SDK 取它的顺序（§2.2）；开源模块文档没写 ／  | docs/v2-gap-and-changes.md:638 |
-| S141 | ／ Jev 在 Windows 上本机运行（官方部署文档只覆盖 Linux + NVIDIA 与 macOS） ／ MiniCPM-OCR `1 | docs/v2-gap-and-changes.md:646 |
-| S142 | ／ 开发机配置 ／ Wisdom 2026-10-30 17:56 告知：32 GB 内存 + NVIDIA RTX 4070 12 GB 独显 | docs/v2-gap-and-changes.md:648 |
-| S143 | ／ RTX 4070 12 GB 满足 Jev 官方显存要求 ／ 官方下限按后端：llama.cpp / Ollama ≥ 8 GB，vLLM  | docs/v2-gap-and-changes.md:649 |
-| S144 | ／ 开发机上本地跑通 Jev（启动自检 + 参考样例三项 ≤ 0.02） ／ 官方 CUDA 路线只在 Linux + NVIDIA 上写明；l | docs/v2-gap-and-changes.md:650 |
-| S145 | ／ 开发机上 Jev 的峰值显存与单批（64 项）耗时 ／ — ／ **不是 M0 项**（2026-11-02）。不记本地峰值显存、冷启动或是 | docs/v2-gap-and-changes.md:651 |
-| S146 | ／ M0 的面壁 Jev API 实测（参考样例单项与批量、三项分数与参考值的差值、耗时、`usage`、国内站 base URL） ／ ARC | docs/v2-gap-and-changes.md:652 |
-| S147 | ／ 四个预设在同一批论文上的面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型） ／ PRD §8 M0（2026-1 | docs/v2-gap-and-changes.md:682 |
-| S148 | ／ 版面两个部署设置、关掉版面时引擎 A 的识别、引擎 B、云 OCR 请求都为 0、过渡默认 `multimodal-layout`。本机版面 | docs/v2-gap-and-changes.md:702 |
-| S149 | ／ M0 单篇费用与耗时、M3 真值表、显示链确认不引入矢量重绘（Wisdom 2026-10-31 13:14；机器与本机模型指标由 §6.1 | docs/v2-gap-and-changes.md:704 |
-| S150 | ／ 面壁 API 为主路线、本地部署为第二路线（Wisdom 2026-11-02 16:38 UTC+8） ／ 本文 §6.15；PRD §2 | docs/v2-gap-and-changes.md:705 |
-| S151 | ／ API 优先：每个模型能力默认托管 API、本地留在「本地 / API」、硬件只标可行性、开发机 Windows 上不要求本地、开发密钥只以 | docs/v2-gap-and-changes.md:708 |
+| S105 |  | docs/evidence/54/commands.md:20 |
+| S106 | 证据提交 `94bd642ced1c3804dcdc784ee8986ac411bf5e74` 上再跑 `corepack pnpm run c | docs/evidence/54/commands.md:21 |
+| S107 | ／ 2026-11-02 ／ [#54](https://github.com/wisdom-km/open-immerse-v2/pull/5 | docs/spec-changelog.md:11 |
+| S108 | 状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.m | docs/v2-gap-and-changes.md:3 |
+| S109 | 4. **Jev 不适合在 8 GB 目标设备本机运行**：官方最低要求是 NVIDIA ≥ 8–12 GB 显存或 Apple M 系列 ≥  | docs/v2-gap-and-changes.md:14 |
+| S110 | 16. **处理路线**（Wisdom 2026-10-30 22:41、22:44、22:45，以 22:45 为准；23:55 续定）：四类 | docs/v2-gap-and-changes.md:26 |
+| S111 | - **阅读顺序的输出（2026-10-30 复查 PaddleOCR `main@dab3fe3`，只读文档，没有运行模型）**：同一文件第  | docs/v2-gap-and-changes.md:116 |
+| S112 | ／ Q9 ／ Jev 部署在哪？ ／ 设置主选项「本地 / API」，默认「API」；两者走同一个 `evaluate` 作业接口。API 服务 | docs/v2-gap-and-changes.md:327 |
+| S113 | 原话要点：开发与最终用户一视同仁，每个由模型提供的能力（Jev 评分、引擎 B / MiniCPM-OCR、版面、多模态、OCR、翻译）有托管  | docs/v2-gap-and-changes.md:417 |
+| S114 | ／ 本地选项 ／ 同一端口或同一种 worker 作业；两个来源跑同一份契约测试（M0/M1 本地侧跑 stub，§6.15）；「本地」在设置主 | docs/v2-gap-and-changes.md:422 |
+| S115 | ／ M0 退出条件 ／ API 路径：经 Cursor Secrets 注入 `MODELBEST_API_KEY` 后对面壁 Jev API  | docs/v2-gap-and-changes.md:427 |
+| S116 | ／ 版面部署 ／ 本地与自建远程 worker，同一 HTTP + SSE。没有已确认的托管版面 API，不编造服务商。与引擎 A 识别的「本地 | docs/v2-gap-and-changes.md:540 |
+| S117 | Wisdom 批准 Forge 的四条建议。Q10 不重开：标准档仍是 PP-DocLayoutV3。plus-L 仍按 QM-13，不在本机  | docs/v2-gap-and-changes.md:579 |
+| S118 | ／ 8 GB CPU 实测 ／ 2026-10-31 写成 M0 必测。2026-11-02 取代：不再在 8 GB 无独显 CPU 上测 PP | docs/v2-gap-and-changes.md:583 |
+| S119 | ／ W-4 ／ 拆成两截。过渡默认：新安装与恢复默认的预设 id 是 `multimodal-layout`，不是空，也不要求用户先选一条。正式 | docs/v2-gap-and-changes.md:586 |
+| S120 | ／ M0 单篇费用与耗时 ／ 同一批论文上，四个预设各记面壁 API 的单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。单篇费 | docs/v2-gap-and-changes.md:594 |
+| S121 | ### 6.15 面壁 API 为主路线、本地部署为第二路线（Wisdom 2026-11-02 16:38 UTC+8） | docs/v2-gap-and-changes.md:598 |
+| S122 |  | docs/v2-gap-and-changes.md:599 |
+| S123 | 原文：「面壁 API 是主路线对，然后本地部署是第二路线吧，就可能说只留有接口啥的，因为我不考虑本地部署了，那个我电脑带不动。」 | docs/v2-gap-and-changes.md:600 |
+| S124 |  | docs/v2-gap-and-changes.md:601 |
+| S125 | 面壁开放平台 API 是模型推理的主路线。规格里已经写成面壁的能力（Jev 的 `MiniCPM-OCR-Jev`、引擎 B 的 MiniCPM | docs/v2-gap-and-changes.md:602 |
+| S126 |  | docs/v2-gap-and-changes.md:603 |
+| S127 | 同日 17:03 UTC+8，只收窄上面「任何本机推理」对 Jev 的说法。原文：「就是这个JEV的模型啊，我考虑本地部署或者是接入API，这个 | docs/v2-gap-and-changes.md:604 |
+| S128 |  | docs/v2-gap-and-changes.md:605 |
+| S129 | 面壁模型 `MiniCPM-OCR-Jev`：托管 API 与本地部署在契约里都是一等。最小托管 API 客户端在 M1（`jev.route` | docs/v2-gap-and-changes.md:606 |
+| S130 |  | docs/v2-gap-and-changes.md:607 |
+| S131 | 同日 17:21 UTC+8。原文：「Jev API 客户端提前到 M1，M6a 接进完整流程」。最小的面壁 Jev 托管 API 客户端走提供 | docs/v2-gap-and-changes.md:608 |
+| S132 |  | docs/v2-gap-and-changes.md:609 |
+| S133 | ／ 项 ／ 决定 ／ 落点 ／ | docs/v2-gap-and-changes.md:610 |
+| S134 | ／ 主路线 ／ 已写成面壁的能力继续走面壁 API。不新造面壁版面接口 ／ PRD §2、§3.5、§9；ARCH §7.0、§7.4、§16  | docs/v2-gap-and-changes.md:612 |
+| S135 | ／ 第二路线 ／ 本地部署只留接口、契约和 stub。M0/M1 不实现、不下载模型、不设本地推理门禁。推迟，不删除 ／ PRD §3.5、§8 | docs/v2-gap-and-changes.md:613 |
+| S136 | ／ M0 测量 ／ 面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。单篇费用保留。程序用 M1 的最小 Jev  | docs/v2-gap-and-changes.md:614 |
+| S137 | ／ N-22 与 #34 ／ G6、pyright、gitleaks 已在 CI，满足业务切片的门禁前提。G1、G3、G5 仍是 M1 交付，不 | docs/v2-gap-and-changes.md:615 |
+| S138 | ／ Jev 契约 ／ 托管 API 与本地部署都是一等。最小托管 API 客户端在 M1，M6a 接入完整流程。键 `jev.route`。选  | docs/v2-gap-and-changes.md:616 |
+| S139 |  | docs/v2-gap-and-changes.md:617 |
+| S140 | ／ PP-DocLayoutV3 在 8 GB 内存、无独显、只用 CPU 的机器上的冷启动时间、单页耗时、峰值内存、是否 OOM ／ Wisd | docs/v2-gap-and-changes.md:635 |
+| S141 | ／ PP-DocLayoutV2 开源输出的 `boxes` 按阅读顺序排列 ／ `layout_analysis.en.md` 第 25、18 | docs/v2-gap-and-changes.md:637 |
+| S142 | ／ PP-DocLayoutV3 开源输出带阅读顺序 ／ 模型卡；MiniCPM-OCR SDK 取它的顺序（§2.2）；开源模块文档没写 ／  | docs/v2-gap-and-changes.md:638 |
+| S143 | ／ Jev 在 Windows 上本机运行（官方部署文档只覆盖 Linux + NVIDIA 与 macOS） ／ MiniCPM-OCR `1 | docs/v2-gap-and-changes.md:646 |
+| S144 | ／ 开发机配置 ／ Wisdom 2026-10-30 17:56 告知：32 GB 内存 + NVIDIA RTX 4070 12 GB 独显 | docs/v2-gap-and-changes.md:648 |
+| S145 | ／ RTX 4070 12 GB 满足 Jev 官方显存要求 ／ 官方下限按后端：llama.cpp / Ollama ≥ 8 GB，vLLM  | docs/v2-gap-and-changes.md:649 |
+| S146 | ／ 开发机上本地跑通 Jev（启动自检 + 参考样例三项 ≤ 0.02） ／ 官方 CUDA 路线只在 Linux + NVIDIA 上写明；l | docs/v2-gap-and-changes.md:650 |
+| S147 | ／ 开发机上 Jev 的峰值显存与单批（64 项）耗时 ／ — ／ **不是 M0 项**（2026-11-02）。不记本地峰值显存、冷启动或是 | docs/v2-gap-and-changes.md:651 |
+| S148 | ／ M0 的面壁 Jev API 实测（参考样例单项与批量、三项分数与参考值的差值、耗时、`usage`、国内站 base URL） ／ ARC | docs/v2-gap-and-changes.md:652 |
+| S149 | ／ 四个预设在同一批论文上的面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型） ／ PRD §8 M0（2026-1 | docs/v2-gap-and-changes.md:682 |
+| S150 | ／ 版面两个部署设置、关掉版面时引擎 A 的识别、引擎 B、云 OCR 请求都为 0、过渡默认 `multimodal-layout`。本机版面 | docs/v2-gap-and-changes.md:702 |
+| S151 | ／ M0 单篇费用与耗时、M3 真值表、显示链确认不引入矢量重绘（Wisdom 2026-10-31 13:14；机器与本机模型指标由 §6.1 | docs/v2-gap-and-changes.md:704 |
+| S152 | ／ 面壁 API 为主路线、本地部署为第二路线（Wisdom 2026-11-02 16:38 UTC+8） ／ 本文 §6.15；PRD §2 | docs/v2-gap-and-changes.md:705 |
+| S153 | ／ API 优先：每个模型能力默认托管 API、本地留在「本地 / API」、硬件只标可行性、开发机 Windows 上不要求本地、开发密钥只以 | docs/v2-gap-and-changes.md:708 |
