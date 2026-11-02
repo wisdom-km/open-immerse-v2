@@ -67,4 +67,6 @@ Windows 上的关闭证明改为退出码 0，加上 stdout 的 `{"event":"exite
 | `node ../../tools/gate-remediation/run.mjs --id G3-pyright -- uv run pyright`（`workers/parser/`） | 0 | 0 errors。提示 1.1.414 可用，未升级 |
 | `node ../../tools/gate-remediation/run.mjs --id G6 -- uv run lint-imports`（`workers/parser/`） | 0 | 6 kept，0 broken。55 files，55 dependencies |
 
-`test_sigint_ends_the_process_outside_the_uvicorn_hold` 在 Windows 上跳过（停止信号是 `SIGBREAK`）。优雅关闭仍由已有用例断言退出标记和退出码 0。本环境没有跑这一笔的 Windows job。
+`test_sigint_ends_the_process_outside_the_uvicorn_hold` 在 Windows 上跳过（停止信号是 `SIGBREAK`）。优雅关闭仍由已有用例断言退出标记和退出码 0。
+
+GitHub 上 `5c01793`（本文件的上一笔）已跑过。push [run 41445111427](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41445111427) 与 pull_request [run 41445120329](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41445120329) 的 `node`、`python-worker`、`worker-health-windows` 都通过。Windows 健康检查从 stdin 传入令牌，断言 200、退出标记与退出码 0。
