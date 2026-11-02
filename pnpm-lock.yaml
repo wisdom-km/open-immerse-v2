@@ -30,6 +30,14 @@ importers:
         specifier: 5.0.5
         version: 5.0.5(@types/node@22.20.5)(vite@8.3.5(@types/node@22.20.5))
 
+  packages/contracts:
+    dependencies:
+      '@oi/kernel':
+        specifier: workspace:*
+        version: link:../kernel
+
+  packages/kernel: {}
+
 packages:
 
   '@cacheable/memory@2.2.0':

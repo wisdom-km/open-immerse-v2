@@ -129,11 +129,12 @@ function boundaryRules() {
       { pathNot: "^apps/desktop/" },
       { path: pkg("electron") },
     ),
+    // Result is defined in kernel and re-exported by contracts (ARCH §4.1, §3.1).
     rule(
       "contracts-is-leaf",
       { path: "^packages/contracts/" },
       {
-        path: "^packages/(features|kernel|platform-node|providers|worker-client|ui-kit)/|^apps/",
+        path: "^packages/(features|platform-node|providers|worker-client|ui-kit)/|^apps/",
       },
     ),
     rule(

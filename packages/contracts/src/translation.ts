@@ -19,14 +19,21 @@ export type StoredTranslationBlock = Readonly<{
   updatedAt: string;
 }>;
 
-export type FormulaCropRef = Readonly<{
-  fragmentId: string;
-  at: number;
-  display: "inline" | "block";
-  kind: "crop" | "page_link";
-  assetId: AssetId | null;
-  page: number | null;
-}>;
+export type FormulaCropRef =
+  | Readonly<{
+      fragmentId: string;
+      at: number;
+      display: "inline" | "block";
+      kind: "crop";
+      assetId: AssetId;
+    }>
+  | Readonly<{
+      fragmentId: string;
+      at: number;
+      display: "inline" | "block";
+      kind: "page_link";
+      page: number;
+    }>;
 
 export type TranslationBlockChanged = Readonly<{
   documentId: DocumentId;

@@ -77,36 +77,3 @@ export interface ProviderAuthorizer {
     req: Readonly<{ vendorId: string; host: string; slot: string }>,
   ): Promise<Result<Readonly<Record<string, string>>, "host_not_allowed" | "secret_missing">>;
 }
-
-export type JevRoute = "api" | "local";
-
-export type DefaultJevRoute = "api";
-
-export type ModelbestJevConfig = Readonly<{
-  vendorId: "modelbest";
-  jev: Readonly<{ route: JevRoute }>;
-}>;
-
-export type ModelbestApiCallCount<R extends JevRoute> = R extends "local"
-  ? 0
-  : R extends "api"
-    ? number
-    : never;
-
-export interface JevScoringProvider<R extends JevRoute> {
-  readonly route: R;
-  readonly modelbestApiCalls: ModelbestApiCallCount<R>;
-}
-
-export type JevApiProvider = JevScoringProvider<"api">;
-
-export type JevLocalProvider = JevScoringProvider<"local"> &
-  Readonly<{
-    readonly implementation: "stub";
-  }>;
-
-export type JevProviderFor<R extends JevRoute> = R extends "local"
-  ? JevLocalProvider
-  : R extends "api"
-    ? JevApiProvider
-    : never;

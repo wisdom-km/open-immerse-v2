@@ -30,3 +30,12 @@ export type SettingsEgressChannel =
   | "settings.onEgressConsentRequired";
 
 export type SettingsEgressEventPayload = EgressConsentRequired;
+
+/** ARCHITECTURE §7.4, PRD AC-103. Not a vendor type. Default is api. */
+export type JevRoute = "api" | "local";
+
+export type DefaultJevRoute = "api";
+
+export type JevRouteSetting = Readonly<{
+  route: JevRoute;
+}>;
