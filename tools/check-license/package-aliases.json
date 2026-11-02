@@ -23,6 +23,18 @@
       "reported": "BSD License",
       "spdx": "BSD-2-Clause",
       "reason": "pip-licenses 报 BSD License。LICENSE 是两条条件的 BSD，对应 BSD-2-Clause。pyright 的传递依赖，不随应用发布。"
+    },
+    {
+      "name": "Jinja2",
+      "reported": "BSD License",
+      "spdx": "BSD-3-Clause",
+      "reason": "pip-licenses 报 BSD License。发行包 LICENSE.txt 是三条条件的 BSD，对应 BSD-3-Clause。datamodel-code-generator 的传递依赖，只在开发环境。"
+    },
+    {
+      "name": "pathspec",
+      "reported": "Mozilla Public License 2.0 (MPL 2.0)",
+      "spdx": "MPL-2.0",
+      "reason": "pip-licenses 不报 SPDX。LICENSE 是 MPL-2.0。datamodel-code-generator 的传递依赖，只在开发环境，作为独立文件。"
     }
   ]
 }

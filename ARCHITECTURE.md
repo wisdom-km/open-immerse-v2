@@ -291,7 +291,7 @@ open-immerse-v2/
 └─ tools/
    ├─ check-file-size/                # 行数门禁
    ├─ check-hotspots/                 # 热点文件登记校验
-   └─ codegen/                        # 契约 → JSON Schema → Python 模型（M1 前提；当前 run.mjs 是占位，§10.2）
+   └─ codegen/                        # run.mjs 生成 workers/parser/oi_worker/protocol/，datamodel-code-generator 钉 0.87.0（tools/codegen/pin.json）
 ```
 
 ### 3.1 每个功能切片的内部结构（统一模板）
@@ -1877,7 +1877,7 @@ Q7 已决定：本机与远程同一协议 HTTP + SSE；stdio JSON-RPC 不采用
 | `GET /v1/artifacts/{id}` | 取候选页 JSON、裁图等产物 |
 
 - 请求头 `OI-Protocol: <主版本>.<次版本>`（第一版 `1.0`）；兼容规则、桌面的判定与 `426` 的响应体见 §10.4。
-- 所有消息 schema 来自 `contracts`（TypeBox 定义 → JSON Schema → `datamodel-code-generator` 生成 pydantic 模型），写入 `workers/parser/oi_worker/protocol/`，禁止手改（§10.3）。CI 用 G7 与 F-11 校验生成物无漂移；`fixtures/protocol/` 的合法 / 非法样例在 TS 与 Python 两侧都跑。产物的 JSON Schema 带主版本 `$id`，worker 发出前、桌面收到后各校验一次（§7.11）。这条链是 M1 的前提交付，必须先于任何使用协议模型的 worker 切片落地。现在的 `tools/codegen/run.mjs` 只是占位（PRD §8 M1）。顺序标为 Forge 排序，非业主决定（docs/backlog.md）：契约（#55）→ 代码生成与 worker 健康检查（#56 重做）→ FastAPI、`__main__` 与 Windows CI。
+- 所有消息 schema 来自 `contracts`（TypeBox 定义 → JSON Schema → `datamodel-code-generator` 生成 pydantic 模型），写入 `workers/parser/oi_worker/protocol/`，禁止手改（§10.3）。CI 用 G7 与 F-11 校验生成物无漂移；`fixtures/protocol/` 的合法 / 非法样例在 TS 与 Python 两侧都跑。产物的 JSON Schema 带主版本 `$id`，worker 发出前、桌面收到后各校验一次（§7.11）。这条链是 M1 的前提交付，必须先于任何使用协议模型的 worker 切片落地。`run.mjs` 生成 `workers/parser/oi_worker/protocol/`，datamodel-code-generator 钉 0.87.0（`tools/codegen/pin.json`）。顺序标为 Forge 排序，非业主决定（docs/backlog.md）：契约（#55）→ 代码生成与 worker 健康检查（#56 重做）→ FastAPI、`__main__` 与 Windows CI。
 - worker 只在自己的工作目录写临时文件，任务结束按 TTL 清理；不访问桌面数据目录。
 - 额度信封：worker 对上游的每次请求（含拆批与重试）都从信封里扣一次，扣完即停，剩下的项记 `unavailable`（原因码 `budget`）；每次上游调用的用量（`usage`、页数）随 SSE 事件与产物返回，供桌面结算（§7.8）。没有信封的作业不得调用付费上游。
 - 第三方服务凭据（如 `MODELBEST_API_KEY` 的值）只在 `local` 模式下经请求头 `OI-Provider-Authorization` 随作业传入（`server` 模式收到即拒绝，§10.1），不进作业 JSON、`idempotencyKey`、配置摘要、SSE 事件、产物与日志；作业结束即丢弃。`GET /v1/jobs/{id}` 的错误只报 `auth` / `quota` 等类别，不回显凭据（§7.4「面壁 API」，PRD AC-59）。

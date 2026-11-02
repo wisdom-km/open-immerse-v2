@@ -1,0 +1,10 @@
+{
+  "id": "ac-66-major-mismatch",
+  "kind": "exchange",
+  "header": "2.0",
+  "expectStatus": 426,
+  "jobsSubmitted": 0,
+  "body": {
+    "supported": ["1.0"]
+  }
+}

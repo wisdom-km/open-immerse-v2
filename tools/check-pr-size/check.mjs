@@ -4,6 +4,15 @@ import { writeRemediation } from "../gate-remediation/format.mjs";
 
 const limit = 600;
 const generated = ["pnpm-lock.yaml", "workers/parser/uv.lock"];
+const generatedPrefixes = ["workers/parser/oi_worker/protocol/"];
+
+function isGenerated(file) {
+  return (
+    generated.includes(file) ||
+    file.startsWith("dist/") ||
+    generatedPrefixes.some((prefix) => file.startsWith(prefix))
+  );
+}
 
 function option(name, fallback) {
   const index = process.argv.indexOf(name);
@@ -27,7 +36,7 @@ function countedLines(base) {
   let total = 0;
   for (const row of rows) {
     const [added, deleted, file] = row.split("\t");
-    if (!file || generated.includes(file) || file.startsWith("dist/")) {
+    if (!file || isGenerated(file)) {
       continue;
     }
     const add = added === "-" ? 0 : Number(added);
@@ -49,7 +58,7 @@ function hasReason() {
 function contractsOnly(base) {
   const files = git(["diff", "--name-only", `${base}...HEAD`])
     .split("\n")
-    .filter((file) => file.length > 0 && !generated.includes(file) && !file.startsWith("dist/"));
+    .filter((file) => file.length > 0 && !isGenerated(file));
   return files.length > 0 && files.every((file) => file.startsWith("packages/contracts/"));
 }
 

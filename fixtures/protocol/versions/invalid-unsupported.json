@@ -1,0 +1,8 @@
+{
+  "id": "ac-66-invalid-unsupported",
+  "kind": "unsupported",
+  "expect": "reject",
+  "document": {
+    "supported": []
+  }
+}

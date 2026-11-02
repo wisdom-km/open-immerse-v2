@@ -1,0 +1,12 @@
+{
+  "id": "ac-66-upgrade-required",
+  "kind": "unsupported",
+  "expect": "accept",
+  "document": {
+    "supported": ["1.0"],
+    "detail": "ignored"
+  },
+  "parsed": {
+    "supported": ["1.0"]
+  }
+}

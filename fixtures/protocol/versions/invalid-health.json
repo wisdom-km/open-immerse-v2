@@ -1,0 +1,10 @@
+{
+  "id": "ac-66-invalid-health",
+  "kind": "health",
+  "expect": "reject",
+  "document": {
+    "protocol": "1",
+    "workerVersion": "0.0.0",
+    "mode": "local"
+  }
+}
