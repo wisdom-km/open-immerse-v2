@@ -27,7 +27,7 @@ Open Immerse v2：把英文学术 PDF 做成可对照、可追溯、公式不走
 
 Node 依赖用 pnpm（`corepack pnpm`）。检查命令、GitHub Actions 与云端 Agent 的 Node / Python 安装见 [docs/ci-and-environment.md](docs/ci-and-environment.md)。
 
-CI 跑已经接上的 ARCHITECTURE §13 门禁。哪些门禁在跑、哪些还没接、为什么不接，见 [docs/ci-and-environment.md](docs/ci-and-environment.md)「门禁」。工作流全绿不等于 G1–G18 全部已有。M1 门禁 PR 合入前不新建 `packages/features/**` 业务切片（RULES N-22）。不改分支保护。
+CI 跑已经接上的 ARCHITECTURE §13 门禁。哪些门禁在跑、哪些还没接、为什么不接，见 [docs/ci-and-environment.md](docs/ci-and-environment.md)「门禁」。工作流全绿不等于 G1–G18 全部已有。新建 `packages/features/**` 业务切片的 M1 门禁前提，由已经在 CI 运行的 G6（import-linter）、pyright 与 gitleaks 满足（RULES N-22，2026-11-02）。G1、G3、G5 仍是 M1 交付（Issue #34），不挡住业务切片。不改分支保护。
 
 ## 三种版本号
 

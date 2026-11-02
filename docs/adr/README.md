@@ -1,6 +1,6 @@
 # 架构决定索引
 
-状态：索引。日期：2026-10-31（Asia/Shanghai）。
+状态：索引。日期：2026-11-02（Asia/Shanghai）。
 
 这里只指向已经写在规格里的决定，不重写决定，也不另写一份规格。Q1–Q12 的问题、取舍和结论在 [差异清单](../v2-gap-and-changes.md) §6，落点在 [ARCHITECTURE.md](../../ARCHITECTURE.md) §16。
 
@@ -28,9 +28,9 @@
 | Q6 | PDF 库与项目许可证 | 差异清单 §6 的 Q6 行；ARCHITECTURE §16 的 Q6 行 |
 | Q7 | 本机 worker 用什么传输 | 差异清单 §6 的 Q7 行；ARCHITECTURE §16 的 Q7 行 |
 | Q8 | 是否做 v1 数据迁移器 | 差异清单 §6 的 Q8 行；ARCHITECTURE §16 的 Q8 行 |
-| Q9 | Jev 部署在本地还是 API | 差异清单 §6 的 Q9 行；ARCHITECTURE §16 的 Q9 行 |
+| Q9 | Jev 部署在本地还是 API | 差异清单 §6 的 Q9 行；ARCHITECTURE §16 的 Q9 行。2026-11-02 起本地是第二路线，见差异清单 §6.15 与 ARCHITECTURE §16 同日一行。本索引不抄原文 |
 | Q10 | 引擎 A 的版面模型从哪一档起步 | 差异清单 §6 的 Q10 行；ARCHITECTURE §16 的 Q10 行 |
 | Q11 | 未配置翻译时能否借用多模态 | 差异清单 §6 的 Q11 行；ARCHITECTURE §16 的 Q11 行 |
 | Q12 | Unlimited-OCR 是否接入 | 差异清单 §6 的 Q12 行；ARCHITECTURE §16 的 Q12 行 |
 
-Q1–Q12 之后的决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，以及 2026-10-31 的 D-D、D-E、W-4）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.13。本索引不抄那些段落。
+Q1–Q12 之后的决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，2026-10-31 的 D-D、D-E、W-4，以及 2026-11-02 的面壁 API 主路线）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.15。本索引不抄那些段落。

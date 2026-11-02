@@ -1,6 +1,6 @@
 # open-immerse v2 架构规格（ARCHITECTURE）
 
-状态：v0.6，规格基线（唯一真相源之一）。当前版本仍是 v0.6，本文件不升这个号。变更指针：[docs/spec-changelog.md](./docs/spec-changelog.md)。决定的历史句子在 §16，并指向[差异清单](./docs/v2-gap-and-changes.md) §6。日期：2026-10-31（Asia/Shanghai）。
+状态：v0.6，规格基线（唯一真相源之一）。当前版本仍是 v0.6，本文件不升这个号。变更指针：[docs/spec-changelog.md](./docs/spec-changelog.md)。决定的历史句子在 §16，并指向[差异清单](./docs/v2-gap-and-changes.md) §6。日期：2026-11-02（Asia/Shanghai）。
 同级规格：[PRD.md](./PRD.md)（做什么）、[RULES.md](./RULES.md)（怎么协作）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，Loom 2026-10-30 已入库（正文不改，校正在文首入库说明）。本文只规定 UI 代码放在哪、依赖谁，不规定长什么样。
 本文与 `docs/architecture/0x_*_草案.md` 冲突时以本文为准，差异逐条列在 [docs/v2-gap-and-changes.md](./docs/v2-gap-and-changes.md)。本文中的目录、接口、协议均为**拟议设计**，M1 起按本文落地；落地前不代表已存在。
 
@@ -26,7 +26,7 @@ flowchart LR
     M["Main 进程<br/>装配根 · 窗口 · IPC 校验<br/>safeStorage · 对话框 · shell · oi-asset://<br/>本机 worker 拉起与关闭"]
     U["Utility 进程（M3 起按实测启用）<br/>用例 · SQLite · 出站 HTTP · worker-client<br/>（启用前同样的代码在 main 内运行）"]
   end
-  W1["Python worker（本机）<br/>预处理 / 引擎 A / 引擎 B / Jev<br/>默认转发托管 API；选「本地」时本机推理<br/>只监听 127.0.0.1"]
+  W1["Python worker（本机）<br/>预处理 / 引擎 A / 引擎 B / Jev<br/>默认转发托管 API；选「本地」时本机推理（M0/M1 为 stub）<br/>只监听 127.0.0.1"]
   W2["Python worker（远程，自建，高级）<br/>同一代码、同一协议<br/>只用服务器上配置的推理或托管后端<br/>不接收桌面的服务商 Key"]
   QE["面壁开放平台（默认）<br/>Jev 托管 API · MiniCPM-OCR-1.0 文档解析（引擎 B）<br/>高级：用户自建 Jev Docker"]
   PB["百度 AI Studio PaddleOCR 托管 API<br/>引擎 A 的模型阶段（候选，未核实，§7.0）"]
@@ -63,7 +63,7 @@ flowchart LR
 | 窗口、preload、IPC 校验、`SecretStore`（`safeStorage`）、对话框、`shell`、`oi-asset://` 处理器、`worker-supervisor` | main | main（不搬） |
 | 用例（全部切片的 domain + application）、SQLite 仓储、服务商适配层（`packages/providers`）、`worker-client`、文件资产、`.md` 读取 / 扫描 / 监视 | main | utility |
 - **Python worker**：无状态计算服务。不写用户文献库、不决定采用版本、不持久化用户的第三方 API 密钥（本机 worker 由 main 拉起、只监听 127.0.0.1；它转发托管 API 时，面壁 API Key 等凭据由 main 按次授权，随作业请求头经回环地址传入，worker 只在内存中使用，不落盘、不进日志、不进产物。远程 worker 一律不接收桌面的服务商 Key，只用服务器上自己配置的后端，§10.1）。本机与远程运行同一份代码、同一协议（Q7）。
-- **API 优先**（Wisdom 2026-10-30 18:44，§7.0）：每个由模型提供的能力，有托管 API 时默认用托管 API；「本地」是同一接口后面的一等选项，用户在设置里按能力选「本地 / API」。
+- **API 优先**（Wisdom 2026-10-30 18:44，§7.0；2026-11-02 本地改为第二路线）：每个由模型提供的能力，有托管 API 时默认用托管 API。面壁已经写明的能力走面壁 API。「本地」仍在设置里，与 API 同一个接口，但只留端口与 stub，M0/M1 不实现、不下载模型。
 - **外发检查**（架构评审 P1-2，§7.0 第 6 条）：任何连接发出前，由 `contracts` 的 `EgressCheck` 端口按「服务商 + 能力 + 目的主机」判定能否发送。回环地址之外的主机一律算外发，包括标为「本地」但不在回环地址上的服务，以及远程 worker 本身。
 - **质量评估一律经 worker**（Q9）：桌面端只通过 `oi-parse/1` 的 `evaluate` 作业请求评分，无论 Jev 在本机推理、在远程 worker 所在服务器推理，还是由 worker 转发给面壁 API / 用户 Docker 服务。桌面端没有第二条评分通路（§7.4）。
 
@@ -393,7 +393,7 @@ packages/features/<name>/
 | `notes` | 笔记、锚点、重锚定、导入导出 | `domain/anchor-match.ts`（重锚定打分）· `domain/note.ts` · `domain/markdown-export.ts` · `application/use-cases/create-note.ts` · `application/use-cases/reanchor-notes.ts` · `application/use-cases/get-notes-by-ids.ts`（按 ID 批量只读，写作预留，§4.4） · `adapters/sqlite-notes-repository.ts` · `ui/notes-panel.tsx`（正文用 ui-kit `MarkdownView`） |
 | `qa` | 论文问答、上下文选取、引用 | `domain/context-selection.ts`（按 `ChatCapabilities.acceptsImages` 决定上下文只含文本，还是文本加区域裁图，§7.3）· `domain/citation.ts` · `application/use-cases/ask.ts`（流式回答经 `markdown` 的 seam 切分为已闭合块与未闭合尾部）· `application/ports/chat-provider.ts`（多模态模型与纯文本 LLM 共用一个端口，Wisdom 2026-10-30 19:11）· `adapters/llm-chat-provider.ts`（经 `@oi/providers` 的 `ChatTransport`；API 与本机 OpenAI 兼容服务共用，`acceptsImages` 取自模型的 `vision` 标记）· `ui/ask-panel.tsx`（回答用 ui-kit `MarkdownView`） |
 | `voice` | TTS 朗读 / 讲解、ASR 语音笔记 | `domain/speech-script.ts` · `domain/audio-segment.ts` · `application/ports/tts-port.ts` · `application/ports/asr-port.ts` · `application/use-cases/generate-narration.ts` · `application/use-cases/transcribe-note.ts` |
-| `settings` | 非密钥设置、provider 配置、密钥引用绑定（预算上限的规则与存储在 `budget`，设置页只经 `window.oi.budget.*` 读写） | `domain/provider-config-validate.ts` · `domain/translation-fallback.ts`（只判定开关与权限；借用的绑定由装配根完成，§4.3）（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/backend-choice.ts`（每个模型能力的「本地 / API」选择：有托管 API 时默认「API」，本地是同一接口后的一等选项，高级自建选项与推荐值的关系；覆盖 Jev、引擎 A 的识别阶段、引擎 B、多模态、翻译、问答、TTS / ASR；版面部署不在这个文件里，只读 `RouteConfig.layout`（§7.12，D-D，Wisdom 2026-10-31）；API 优先，§7.0；Q9，§7.4）· `domain/egress-consent.ts`（按服务商记录数据外发同意：每个服务商一条记录，含已告知并同意的能力集合与时间；判断要不要弹对话框、对话框列哪些能力（首次列出全部、之后只列新增）；「外发前询问」开关（默认开，只能由用户在设置里关闭）；生成「数据去向」列表；开关为开且未同意时，该能力对该服务商的请求为 0；未作答不记已拒绝、下次再问；`withdrawEgressConsent` 只清已同意、不改记已拒绝；Wisdom 2026-10-30 19:11、19:30、21:26，§7.0 第 6 条）· `domain/egress-destination.ts`（目的主机分类：回环地址与用户标为「本机可信」的主机不算外发，其余都算；服务商身份按（`vendorId`, 主机）判定，主机不在该服务商的 `allowedHosts` 里就按新服务商处理；架构评审 P1-2）· `application/use-cases/check-egress.ts`（`EgressCheck` 的实现，由装配根注入到业务切片、`providers` 与 `worker-client`）· `application/use-cases/answer-egress-consent.ts` · `application/use-cases/withdraw-egress-consent.ts` · `application/use-cases/set-egress-prompt.ts` · `application/use-cases/list-egress-destinations.ts`· `application/use-cases/list-provider-presets.ts` · `application/ports/provider-catalog.ts` · `adapters/providers-catalog.ts`（经 `@oi/providers` 列出注册表里的服务商与模型）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
+| `settings` | 非密钥设置、provider 配置、密钥引用绑定（预算上限的规则与存储在 `budget`，设置页只经 `window.oi.budget.*` 读写） | `domain/provider-config-validate.ts` · `domain/translation-fallback.ts`（只判定开关与权限；借用的绑定由装配根完成，§4.3）（未配置翻译时借用多模态服务翻译：默认关，开启须确认「会消耗多模态额度」，费用计入多模态预算；Q11）· `domain/backend-choice.ts`（每个模型能力的「本地 / API」选择：有托管 API 时默认「API」，本地是同一接口后的第二路线，M0/M1 只留 stub（Wisdom 2026-11-02），高级自建选项与推荐值的关系；覆盖 Jev、引擎 A 的识别阶段、引擎 B、多模态、翻译、问答、TTS / ASR；版面部署不在这个文件里，只读 `RouteConfig.layout`（§7.12，D-D，Wisdom 2026-10-31）；API 优先，§7.0；Q9，§7.4）· `domain/egress-consent.ts`（按服务商记录数据外发同意：每个服务商一条记录，含已告知并同意的能力集合与时间；判断要不要弹对话框、对话框列哪些能力（首次列出全部、之后只列新增）；「外发前询问」开关（默认开，只能由用户在设置里关闭）；生成「数据去向」列表；开关为开且未同意时，该能力对该服务商的请求为 0；未作答不记已拒绝、下次再问；`withdrawEgressConsent` 只清已同意、不改记已拒绝；Wisdom 2026-10-30 19:11、19:30、21:26，§7.0 第 6 条）· `domain/egress-destination.ts`（目的主机分类：回环地址与用户标为「本机可信」的主机不算外发，其余都算；服务商身份按（`vendorId`, 主机）判定，主机不在该服务商的 `allowedHosts` 里就按新服务商处理；架构评审 P1-2）· `application/use-cases/check-egress.ts`（`EgressCheck` 的实现，由装配根注入到业务切片、`providers` 与 `worker-client`）· `application/use-cases/answer-egress-consent.ts` · `application/use-cases/withdraw-egress-consent.ts` · `application/use-cases/set-egress-prompt.ts` · `application/use-cases/list-egress-destinations.ts`· `application/use-cases/list-provider-presets.ts` · `application/ports/provider-catalog.ts` · `adapters/providers-catalog.ts`（经 `@oi/providers` 列出注册表里的服务商与模型）· `application/use-cases/save-provider.ts` · `application/use-cases/test-connection.ts` · `application/ports/secret-store.ts` · `ui/settings-pages/*.tsx`（一页一个文件） |
 | `diagnostics` | 诊断事件记录（M1 骨架，§11）、诊断包导出与脱敏（导出页在 M2） | `domain/redaction-rules.ts`（自 v1 移植）· `domain/retention.ts`（保留天数与体积上限）· `application/use-cases/export-bundle.ts` · `ui/diagnostics-page.tsx` |
 
 ### 4.3 切片之间的依赖（允许的方向）
@@ -740,12 +740,12 @@ flowchart TB
 
 ### 7.0 模型能力的默认来源：API 优先（Wisdom 2026-10-30 18:44）
 
-决定：开发与最终用户一视同仁，凡是由模型提供的能力（Jev 评分、引擎 B / MiniCPM-OCR、版面、多模态、OCR、翻译，以及同样依赖模型的文本问答与 TTS / ASR），有托管 API 时默认用托管 API，把对用户硬件的要求降到最低。本地部署仍是一等选项：有部署文档、用户可在设置中选（「本地 / API」）、与 API 走同一个接口，想自建的用户可以自建。这些能力在流水线里是可替换的积木，一条处理路线是它们的声明式组合（§7.12）。版面积木在有已核实的托管版面 API 之前，默认部署暂定本地，远程只写自建 worker；托管 API 核实通过后可以作为另一种实现，默认是否改回 API 等 M0 实测后由 Wisdom 定。版面的「本地 / API」与引擎 A 识别阶段的「本地 / API」是两个设置，不是一个共享开关（D-D，Wisdom 2026-10-31）：版面部署只读 `RouteConfig.layout`；引擎 A 的设置只覆盖 `parse`。界面可以提供一键路线预设，底下仍是这两个旋钮。托管版面 API 核实之前，版面 `deployment: 'api'` 不发请求。依赖本地版面的生产说法之前，须在 8 GB 内存、无独显、只用 CPU 的机器上测量 PP-DocLayoutV3，至少记下冷启动时间、单页耗时、峰值内存、是否 OOM；测完前状态为「未核实」，不预填数字。标准档仍是 PP-DocLayoutV3。PP-DocLayout_plus-L 只在同一台机器的对照明显更好时作为高质量档（Q10、QM-13）。
+决定：开发与最终用户一视同仁，凡是由模型提供的能力（Jev 评分、引擎 B / MiniCPM-OCR、版面、多模态、OCR、翻译，以及同样依赖模型的文本问答与 TTS / ASR），有托管 API 时默认用托管 API，把对用户硬件的要求降到最低。本地模型部署是第二路线（Wisdom 2026-11-02，原文见 §16）：设置里仍可选「本地 / API」，与 API 走同一个接口，但本地只留端口、契约和 stub，不在 M0/M1 实现，不下载模型，不设本地推理门禁，标为推迟，不删除。这些能力在流水线里是可替换的积木，一条处理路线是它们的声明式组合（§7.12）。版面积木在有已核实的托管版面 API 之前不默认本机：本机 `LayoutEngine` 只留 stub；远程只写自建 worker 的接口。托管 API 核实通过后可以作为另一种实现。版面的「本地 / API」与引擎 A 识别阶段的「本地 / API」是两个设置，不是一个共享开关（D-D，Wisdom 2026-10-31）：版面部署只读 `RouteConfig.layout`；引擎 A 的设置只覆盖 `parse`。界面可以提供一键路线预设，底下仍是这两个旋钮。托管版面 API 核实之前，版面 `deployment: 'api'` 不发请求。不把未核实的托管版面接口写成面壁已有的能力。M0 不在 8 GB 本机上测 PP-DocLayoutV3 的冷启动、单页耗时、峰值内存或是否 OOM。要测的是面壁 API 的单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）；`MODELBEST_API_KEY` 不在时标「未核实」（PRD §8）。标准档仍是 PP-DocLayoutV3。PP-DocLayout_plus-L 仍按 Q10、QM-13，不在本机 CPU 上作为 M0 测量。
 
 规则：
 
-1. **默认 API。** 每个模型能力在设置里有一个「本地 / API」选择（`settings/domain/backend-choice.ts`）。该能力有可用的托管 API 时，默认值与推荐值都是「API」；没有托管 API 时，默认在 worker 上运行（本机或用户的远程 worker）。版面不走这个文件：它的部署在 `RouteConfig.layout`，与引擎 A 的识别阶段分开（D-D，见上一段与 §7.12）。
-2. **本地是一等选项。** 两种来源实现同一个端口或同一种 worker 作业，都有契约测试与部署文档（`docs/deploy/<能力>.md`，随该能力的实现里程碑交付）。切换只影响之后的请求；结果记录来源（`ParseRun` 的后端、`evaluatorVersion`、provider id）。「高级」只放用户自建的远程服务，「本地」不放进「高级」，也不隐藏。
+1. **默认 API。** 每个模型能力在设置里有一个「本地 / API」选择（`settings/domain/backend-choice.ts`）。该能力有可用的托管 API 时，默认值与推荐值都是「API」。没有已核实的托管 API 时，不默认改跑本机模型（Wisdom 2026-11-02）：本机实现只留端口与 stub。版面不走这个文件：它的部署在 `RouteConfig.layout`，与引擎 A 的识别阶段分开（D-D，见上一段与 §7.12）。
+2. **本地是第二路线。** 两种来源仍是同一个端口或同一种 worker 作业。本地实现在 M0/M1 只留 stub，不写 `docs/deploy/<能力>.md`、不下载模型、不设本地推理门禁；标为推迟，不删除。这段时间的契约测试对本地侧跑 stub，不要求真机推理。切换只影响之后的请求；结果记录来源（`ParseRun` 的后端、`evaluatorVersion`、provider id）。「高级」只放用户自建的远程服务，「本地」不放进「高级」，也不从设置里删掉。
 3. **按硬件推荐。** 硬件画像只做两件事：给「本地」标可行性（达到官方要求 / 不在官方要求内 / 官方文档未覆盖该平台），以及在没有托管 API 或用户拒绝数据外发时，决定推荐本地还是降级。规则是纯函数，Jev 的规则见 §7.4，其他能力随各自里程碑补齐；补齐前「本地」标「硬件要求未评估」。
 4. **没有 Key、拒绝外发或 API 不可用时**，不静默改用另一个付费服务，也不静默改成本地，按下表最后一列降级，界面提示去填 Key 或改选本地。
 5. **密钥。** 最终用户的 Key 只存本机安全存储（§8.3）。开发与测试用的 Key 只以环境变量提供：云端 Agent 经 Cursor Secrets 注入，开发者本机由开发者自己设置（§15.4）；变量名先登记在 §15.4 再使用；仓库不放、也不读取 `.env` 文件。CI 不调用付费 API（§12）。
@@ -765,7 +765,7 @@ flowchart TB
 | --- | --- | --- | --- | --- |
 | Jev 质量评分 | 面壁开放平台 `MiniCPM-OCR-Jev`（§7.4「面壁 API」） | worker `local_engine`：llama.cpp CUDA 构建首选，Ollama 备选，macOS 走 Metal | **不要求 / 未核实**：官方部署文档只覆盖 Linux + NVIDIA 与 macOS（§7.4「开发机」） | 记 `unavailable`，标「待评分」，不触发补救（PRD AC-05）；开关保持开，界面让用户三选一：填 Key、改用本地、关闭评分（§7.4「评分开关」）。用户关闭评分时记 `not-run/disabled`，标「未评分」 |
 | 引擎 B（MiniCPM-OCR 1.0） | 面壁开放平台文档解析 `MiniCPM-OCR-1.0`（§7.1） | worker 内 SDK（`ppdoclayout3_torch`） | **不要求 / 未核实**：上游只写了 Linux vLLM（RTX 5090 32 GB）与 macOS ARM64 llama.cpp 两个验证环境 | 不运行引擎 B，只用引擎 A 或文字层基础档 |
-| 版面（`layout` 作业；与下一行是两个设置，D-D，Wisdom 2026-10-31） | 没有已核实的托管版面 API。百度 AI Studio 能否返回版面区域仍未核实（下一行的候选，不因此把版面部署并进引擎 A）。核实通过之前不登记为版面服务商。`RouteConfig.layout.deployment` 为 `'api'` 时请求为 0 | 本机或自建远程 worker，同一个 `LayoutEngine`，HTTP + SSE。默认部署暂定本地 | 8 GB 内存、无独显、只用 CPU：**未核实**。M0 在这样的机器上测 PP-DocLayoutV3，至少记下冷启动时间、单页耗时、峰值内存、是否 OOM。测完之前不把本地版面写成生产可用。标准档仍是 V3；plus-L 只在同一台机器的对照明显更好时作为高质量档（Q10、QM-13）。本行不写数字 | 不提交 `layout` 作业。没有版面作业时，引擎 A 的识别、引擎 B、云 OCR 请求都为 0；整页只走多模态（§7.12，D-E） |
+| 版面（`layout` 作业；与下一行是两个设置，D-D，Wisdom 2026-10-31） | 没有已核实的托管版面 API。百度 AI Studio 能否返回版面区域仍未核实（下一行的候选，不因此把版面部署并进引擎 A）。核实通过之前不登记为版面服务商。`RouteConfig.layout.deployment` 为 `'api'` 时请求为 0 | 同一个 `LayoutEngine` 端口，HTTP + SSE。本机实现只留 stub，推迟，不默认本机（Wisdom 2026-11-02） | 不在 M0 测量本机推理。标准档仍是 V3；plus-L 仍按 Q10、QM-13，不在本机 CPU 上测。本行不写数字 | 不提交 `layout` 作业。没有版面作业时，引擎 A 的识别、引擎 B、云 OCR 请求都为 0；整页只走多模态（§7.12，D-E） |
 | 引擎 A 的识别阶段（公式识别、OCR 兜底、表格；不含版面部署） | 这一行的选择只覆盖 `parse`，不写入 `RouteConfig.layout`，也不改版面作业发往哪里（D-D）。三条路径都保留、都可在设置中选（Wisdom 2026-10-30 19:11）：托管 API（核实通过后）、本地部署、租用的 Linux 远程 worker（「高级」里的远程 worker，跑同一份 worker 代码与 `paddle_local` 后端）；M3 开工前由 Wisdom 定最终选择（默认值与开发用的路径）。托管 API 的**候选**是百度 AI Studio 的 PaddleOCR 托管 API（异步任务，PP-StructureV3 / PaddleOCR-VL-1.5 / PP-OCRv5，Bearer access token）；核实通过之前，worker 里不建它的后端文件，核实失败就从三条路径中删掉托管 API，不留空文件（架构评审 P1-12）。异步文档的示例只取每页的 Markdown，没有写区域框字段；能否返回我们需要的区域框与公式 LaTeX、版本能否锁定、托管 API 返回的版面模型对应已决定的哪一档（标准档 V3 / 高质量档 plus-L；Q10 已决定，不在这里重开）、价格与每日页数配额都**未核实**（差异清单 §2.4.1）；M3 开工前核实，不合用就不出现在选项里。托管结果若带阅读顺序，按 §7.10 当作模型顺序校验；不带时走 XY-cut 兜底；文字层对齐由我们自己的代码完成 | worker 内 PaddleOCR / PaddleX（`engine-a` extra） | **不要求 / 未实测**：Paddle 3.3 有官方 Windows GPU 包（CUDA 11.8 / 12.6 / 12.9，要求 GPU 计算能力高于 7.5），PaddleOCR 整条流水线在 Windows 上未实测。开发用哪条路径（托管 API / 开发机本地 / 租用的 Linux 远程 worker）随 M3 前的最终选择一起定 | 文字层基础档（Q2） |
 | 多模态补救 | 用户自带 Key 的多模态服务（经服务商适配层，§7.9：OpenAI 兼容、Anthropic、Gemini、千帆、智谱等；不预选，用户在设置里从全部服务商中选） | 本机 OpenAI 兼容服务（例如 Ollama、llama.cpp server 加用户自选的视觉模型） | 不要求 | 不补救，未核验公式保留原图（PRD AC-04、AC-05） |
 | 云 OCR（额外识别来源，§7.7；只识别区域裁片的文字，不提供阅读顺序与版面，§7.10） | 百度 OCR、智谱 GLM-OCR（用户自带 Key，经服务商适配层，§7.9） | 本身就是 API；对应的本地能力是引擎 A 的 OCR 兜底 | — | 不请求（PRD AC-18） |
@@ -932,7 +932,7 @@ flowchart TD
   - `EngineId` 仍是 `e2e-b`；`ParseRun` 记录后端（`sdk-local` / `modelbest-api`）与返回的模型名。Jev 应当运行时（评分开关为开，且路线的判定列表含 Jev）候选送评。开关关闭时记 `not-run/disabled`，标「未评分」。开关开着但路线不含 Jev 时也记 `not-run/disabled`，不送评；公式按 §7.5 第 4、5 步，通过标「格式已核对」或「源码核对」，不算已核验（§7.4，Wisdom 2026-10-31 01:14）。
   - 平台显示限时免费；长期价格**未核实**。计价不写死：按平台返回的用量记账，单价来自用户配置，否则记「未知」（PRD QM-10）。
   - 托管 API 背后的版本与流水线是否与锁定的 SDK（`1269e4f`，版面用 PP-DocLayoutV3）一致**未核实**，对比视图按「版面可能同源」标注。文档页自己声明「描述的是已实现的契约，不证明生产部署或线上连通」，真实可用性在 M6b 冒烟时确认（PRD §8 M6b）。
-- **引擎 A 的版面档位（Q10）**：标准档 = PP-DocLayoutV3，M3 起步即用；基准集另跑 PP-DocLayout_plus-L 对照。plus-L 若在阅读顺序与版面指标上「明显更好」（判据待基准定标，PRD QM-13），作为「高质量档」在设置中供用户选择；否则不开放。档位是配置值，记入 `ParseRun`，切换只影响新的解析，不改已采用版本。8 GB 内存、无独显、只用 CPU 上的冷启动、单页耗时、峰值内存与是否 OOM 在 M0 实测前为「未核实」，不改变本条已经决定的档位（§7.12）。
+- **引擎 A 的版面档位（Q10）**：标准档 = PP-DocLayoutV3，M3 起步即用；基准集另跑 PP-DocLayout_plus-L 对照。plus-L 若在阅读顺序与版面指标上「明显更好」（判据待基准定标，PRD QM-13），作为「高质量档」在设置中供用户选择；否则不开放。档位是配置值，记入 `ParseRun`，切换只影响新的解析，不改已采用版本。本机 CPU 上的冷启动、单页耗时、峰值内存与是否 OOM 不是 M0 项（Wisdom 2026-11-02），不改变本条已经决定的档位（§7.12）。
 - **版面同源**：B 的 SDK 固定使用 PP-DocLayoutV3，阅读顺序也来自它，而不是来自 OCR 模型。A 用标准档（V3）时，A/B 的版面判断同源，采用模型顺序时顺序也同源：对比视图必须标注「版面同源」，A/B 一致不能作为互相印证的证据。A 用高质量档（plus-L）时版面不同源；plus-L 不输出阅读顺序，这一档的顺序由 §7.10 的 XY-cut 兜底给出（来源记 `xy_cut`）。
 - **页面图（Q6）**：预处理统一用 pypdfium2 渲染页面图并生成 `CoordinateFrame`；所有识别来源使用同一张图。B 以图片输入 SDK，不安装其 `pdf` extra（该 extra 依赖 PyMuPDF）。PyMuPDF 禁止引入（AGPL，与本项目 Apache-2.0 许可证政策冲突，RULES §1.5）。
 - **全路径评估记录（Q1；Wisdom 2026-10-30 22:15 收窄为「都必须有评估记录」，23:55 再改口径）**：所有产出识别结果的路径——引擎 A 的识别阶段、引擎 B、云 OCR（百度、智谱等）、arXiv 源码对齐、多模态（识别与补救）、手动重新识别——产出的候选都必须有评估记录，写入候选的 `EvaluationResult`。多模态是普通识别来源：路线的识别列表含它就运行，评分开、关都一样。Jev 开启时（评分开关为开，且当前路线的判定列表含 Jev），这些候选都经过评分；有效高分并且程序核对通过，才标已核验，来源之间没有例外（§7.5 第 2 步）。评分开关为关时（即使路线含 Jev）不调用 Jev，一律记 `not-run/disabled`。正文与表格标「未评分」。公式由程序核对把关：通过标「格式已核对」，不算已核验。开关开着但路线不含 Jev 时也不调用 Jev，同样记 `not-run/disabled`；公式走 §7.5 第 4、5 步，第 5 步通过标「格式已核对」，第 4 步通过标「源码核对」，都不算已核验（Wisdom 2026-10-31 01:14），正文与表格仍标「未评分」。`quality/domain/scoring-coverage.ts` 是唯一判定处：没有评估记录的识别候选不能进入采用版本（RULES N-17）。文字层基础档的文字直接取自 PDF 文字层，不是识别结果，不在此列；但其公式区域不产生 LaTeX 候选，只显示原页裁图。
@@ -1058,7 +1058,7 @@ interface BudgetGate {                         // contracts/src/budget.ts；budg
 
 ### 7.4 质量评估的部署（Q9）
 
-决定（Q9，Wisdom 2026-10-30）：设置主选项是「本地 / API」，默认「API」，Jev 的 API 服务商是面壁开放平台（模型 `MiniCPM-OCR-Jev`，见下文「面壁 API」）。「本地」是同一个 `evaluate` 作业接口后的一等选项，llama.cpp CUDA 构建首选；自建远程 worker 与自建 Jev Docker 在「高级」里。硬件画像只用来给「本地」标可行性，不决定默认值；用户随时可改。开发机是 Windows + 32 GB 内存 + RTX 4070 12 GB，开发走 API 路径；开发机上的本地 Jev 标「不要求 / 未核实」（见本节末「开发机」）。
+决定（Q9，Wisdom 2026-10-30）：设置主选项是「本地 / API」，默认「API」，Jev 的 API 服务商是面壁开放平台（模型 `MiniCPM-OCR-Jev`，见下文「面壁 API」）。「本地」与 API 走同一个 `evaluate` 作业接口；llama.cpp CUDA 构建是以后实现时的首选，自建远程 worker 与自建 Jev Docker 在「高级」里。2026-11-02：本地 Jev 是第二路线，M0/M1 只留这个接口和 stub，不下载模型，不设本地推理门禁，标为推迟，不删除（§16）。硬件画像只用来给「本地」标可行性，不决定默认值；用户随时可改。开发机是 Windows + 32 GB 内存 + RTX 4070 12 GB，开发走 API 路径；开发机上的本地 Jev 标「不要求 / 未核实」（见本节末「开发机」）。
 
 **worker 接口对两种部署一致。** 桌面端只有一个适配器 `quality/adapters/worker-quality-evaluator.ts`：经 `worker-client` 向 worker 提交 `POST /v1/jobs`（`kind: "evaluate"`），请求与产物使用同一份 schema（`contracts/src/worker/evaluate.ts`）。本机与远程的差别只在 worker 地址、鉴权与能否接收桌面的服务商 Key（§10.1），与解析作业完全相同。worker 内部由 `quality/backends/` 选择后端，两种后端实现同一个 `QualityEvaluatorBackend`（§7.2）：
 
@@ -1246,7 +1246,7 @@ API 优先之后，Jev 与引擎 B 是默认就会出网的路径，单价又都
 1. **范围。** 每个发往外部服务商的模型调用，发出前都经 `BudgetGate.reserve`，预留成功才发：Jev 首评与每次重试、引擎 B 文档解析、引擎 A 的托管 API（核实通过后）、云 OCR、多模态识别与多模态补救、翻译（含 Q11 借用多模态）、问答、TTS、ASR。版面走付费 API 时同样预留；自建远程 worker 上的本地推理不记金额，但目的主机不是回环时仍经外发同意（§7.12）。不在范围内的只有两类：目的主机是本机回环地址的「本地」服务（不花钱），以及 arXiv 源码下载（免费，由 `formula-source/domain/fetch-policy.ts` 限流）。用户关闭质量评分期间 Jev 不发请求，Jev 科目也就没有预留；其他科目不受影响（§7.4「评分开关」）。按区块识别时一页会有多次预留，一次一块（§7.12「代价」）。
 2. **科目。** 账本按「服务商 + 能力」记用量。Q11 借用多模态翻译记在多模态科目（PRD AC-29）。
 3. **两种上限口径。** 单价已知时按金额：某科目或总额的「已预留 + 已结算」达到上限即拒绝。单价未知时按用户设置的请求数、页数或 token 上限；界面上的金额仍显示「未知」，不显示 0，未知金额也不加进金额合计，所以金额上限管不到这些调用，由次数类上限管。
-4. **未设上限。** 受限预算模式下，单价未知、又没有为该科目设次数类上限时，`reserve` 返回 `budget_cap_unset`，请求为 0，界面提示去填单价或上限。「不设金额上限」模式下预留照常记录（用于显示用量），不因金额拒绝。**默认值（Wisdom 2026-10-30 20:57）：** 新安装与恢复默认时是受限预算模式；每个付费科目带一个保守的占位次数类上限（按该科目的计费单位取请求数、页数或 token），所以开箱既不会出现 `budget_cap_unset`，也不会不设上限地发出付费请求。占位值只在 `budget/domain/default-caps.ts` 一处，界面标「占位」；具体数字随 M1 的 `budget` 实现 PR 提出、经 Wisdom 批准后合入，M0 实测后定标，实现者不自行定数字（RULES N-14）。定标用的测量在 PRD §8 M0：同一批论文上，四个预设各记单篇费用与单篇耗时，跑在 Wisdom 自己的 8 GB 内存、无独显、只用 CPU 的机器上；`MODELBEST_API_KEY` 只经 Cursor Secrets，不写入仓库。测完前这些数保持「未核实」，不预填。这一项不改 W-4 的正式默认判据。占位上限的计量单位必须覆盖「每页区块请求」：按区块识别时，一页里的每一次外部调用都计入，不能只按「每篇」或「每页一次」计。硬顶的具体 N 留到 M0 之后、经 Wisdom 批准再写入；批准前实现不得自选一个 N 当作已定标。升级不改用户已选的模式与上限。自动补救同样先预留，超预算即停（PRD AC-98）。
+4. **未设上限。** 受限预算模式下，单价未知、又没有为该科目设次数类上限时，`reserve` 返回 `budget_cap_unset`，请求为 0，界面提示去填单价或上限。「不设金额上限」模式下预留照常记录（用于显示用量），不因金额拒绝。**默认值（Wisdom 2026-10-30 20:57）：** 新安装与恢复默认时是受限预算模式；每个付费科目带一个保守的占位次数类上限（按该科目的计费单位取请求数、页数或 token），所以开箱既不会出现 `budget_cap_unset`，也不会不设上限地发出付费请求。占位值只在 `budget/domain/default-caps.ts` 一处，界面标「占位」；具体数字随 M1 的 `budget` 实现 PR 提出、经 Wisdom 批准后合入，M0 实测后定标，实现者不自行定数字（RULES N-14）。定标用的测量在 PRD §8 M0：同一批论文上，四个预设各记面壁 API 的单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。单篇费用保留。由带 `MODELBEST_API_KEY` 的 Cloud Agent 跑；Key 只经 Cursor Secrets，不写入仓库。Key 不在或测完前这些数保持「未核实」，不预填。不在 8 GB 本机上测本地模型。这一项不改 W-4「正式默认等 M0」；速度与内存改用上述单篇耗时与客户端内存。占位上限的计量单位必须覆盖「每页区块请求」：按区块识别时，一页里的每一次外部调用都计入，不能只按「每篇」或「每页一次」计。硬顶的具体 N 留到 M0 之后、经 Wisdom 批准再写入；批准前实现不得自选一个 N 当作已定标。升级不改用户已选的模式与上限。自动补救同样先预留，超预算即停（PRD AC-98）。
 5. **被拒之后。** 各能力的结果：
    - Jev：`unavailable`（原因码 `budget`），标「待评分」，不触发补救（PRD AC-05），不改用别的服务商；预算恢复后由 `ingest` 的 `resume-ingest` 补评。
    - 引擎 B、引擎 A 托管 API、云 OCR、多模态识别：该来源在被拒的这些区域不产生候选，记原因码 `budget`；其他来源照常。
@@ -1554,12 +1554,12 @@ type ReadingOrderResult = Readonly<{
 
 | id | 名称 | 版面 | 识别 | 判定 | 说明 |
 | --- | --- | --- | --- | --- | --- |
-| `multimodal-layout` | 多模态+版面 | PP-DocLayout，部署暂定本地（只属于版面，不是引擎 A 的开关） | 多模态（按区块） | 程序核对；不含 Jev | 22:41 里「A 路线」要采用的组合。新安装与恢复默认的过渡预设是这一行（W-4，Wisdom 2026-10-31）。正式全局默认仍等 M0。不论开关，第 5 步通过标「格式已核对」，第 4 步通过标「源码核对」，都不标已核验 |
+| `multimodal-layout` | 多模态+版面 | PP-DocLayout，部署不默认本机（本机只留 stub；Wisdom 2026-11-02；只属于版面，不是引擎 A 的开关） | 多模态（按区块） | 程序核对；不含 Jev | 22:41 里「A 路线」要采用的组合。新安装与恢复默认的过渡预设是这一行（W-4，Wisdom 2026-10-31）。正式全局默认仍等 M0。不论开关，第 5 步通过标「格式已核对」，第 4 步通过标「源码核对」，都不标已核验 |
 | `multimodal-only` | 仅多模态 | 关 | 多模态（整页，坐标见下） | 程序核对；不含 Jev | 版面关掉。位置核对用校正后的框，不用版面公式区域。显示标签与上一行相同，不标已核验 |
-| `ocr-layout` | OCR+版面 | PP-DocLayout，部署暂定本地 | 引擎 A 的识别阶段；引擎 B 作对比 | 程序核对；不含 Jev | 识别列表含引擎 B。引擎 B 请求不为 0 只在这一行和下一行。显示标签与「多模态+版面」相同，不标已核验 |
+| `ocr-layout` | OCR+版面 | PP-DocLayout，部署不默认本机（本机只留 stub） | 引擎 A 的识别阶段；引擎 B 作对比 | 程序核对；不含 Jev | 识别列表含引擎 B。引擎 B 请求不为 0 只在这一行和下一行。显示标签与「多模态+版面」相同，不标已核验 |
 | `ocr-layout-jev` | OCR+版面+Jev | 同上 | 同上 | 判定列表含 Jev；没有分数时仍用程序核对与源码核对 | 现有方案的一种预设。是否送评还看评分开关（§7.4） |
 
-云 OCR 不在任何一个预设里默认打开（它是额外的付费来源，用户配好后加入识别列表）。四个预设的识别列表不改：`multimodal-only` 本来就不含引擎 A、引擎 B、云 OCR，校验通过。版面关掉的自定义组合若把这三项写入识别列表，`route-config` 校验失败，原因码 `sources_require_layout`，不写入 `ing_route`，也不改成静默跳过（D-E，Wisdom 2026-10-31 11:14）。已存路线读出来仍是这种组合时，`open-document` 不提交作业，返回同一原因。四个预设都含 arXiv 源码。arXiv 不是按版面裁片识别的来源，版面关掉时仍可留在列表里。**正式全局默认仍待定**（Wisdom 2026-10-30 23:55；2026-10-31 只定过渡默认，W-4）：等 M0 在同一批论文上对比这四个预设的质量、速度、内存之后，由 Wisdom 决定写进 `route-presets.ts` 的正式 `defaultPresetId`。在那之前，新安装与恢复默认的过渡预设 id 是 `multimodal-layout`，不是空，也不要求用户先选一条。`open-document` 按这份已选预设提交版面、识别或评分作业。升级保留用户已选的路线，不把已有选择改写成过渡默认。`ing_route` 缺失、读不出一份路线时不提交作业。选预设只改 `ing_route`，不改评分开关。拨评分开关不改路线，也不把路线记成自定义（§7.4，PRD AC-97）。来源优先级的默认顺序仍是现行提议，W-4 里该项未决，本节不改顺序。
+云 OCR 不在任何一个预设里默认打开（它是额外的付费来源，用户配好后加入识别列表）。四个预设的识别列表不改：`multimodal-only` 本来就不含引擎 A、引擎 B、云 OCR，校验通过。版面关掉的自定义组合若把这三项写入识别列表，`route-config` 校验失败，原因码 `sources_require_layout`，不写入 `ing_route`，也不改成静默跳过（D-E，Wisdom 2026-10-31 11:14）。已存路线读出来仍是这种组合时，`open-document` 不提交作业，返回同一原因。四个预设都含 arXiv 源码。arXiv 不是按版面裁片识别的来源，版面关掉时仍可留在列表里。**正式全局默认仍待定**（Wisdom 2026-10-30 23:55；2026-10-31 只定过渡默认，W-4）：等 M0 在同一批论文上对比这四个预设的质量、面壁 API 单篇耗时、客户端内存（不含本地模型）之后，由 Wisdom 决定写进 `route-presets.ts` 的正式 `defaultPresetId`。在那之前，新安装与恢复默认的过渡预设 id 是 `multimodal-layout`，不是空，也不要求用户先选一条。`open-document` 按这份已选预设提交版面、识别或评分作业。升级保留用户已选的路线，不把已有选择改写成过渡默认。`ing_route` 缺失、读不出一份路线时不提交作业。选预设只改 `ing_route`，不改评分开关。拨评分开关不改路线，也不把路线记成自定义（§7.4，PRD AC-97）。来源优先级的默认顺序仍是现行提议，W-4 里该项未决，本节不改顺序。
 
 **`RouteConfig`（拟议，`contracts/src/route.ts`）。** 换预设不迁移文档模型。`ing_route` 只有一行，列是 `schema_version` 与配置 JSON。
 
@@ -1594,7 +1594,7 @@ type WholePageBlock = Readonly<{
 
 校正在 `document/domain/bbox-align.ts`：`bbox` 为 `null` 的区块不进入精确区域，文字仍保留，只做页级显示。有文字层且 `bbox` 不是 `null` 时，把区块里的文字与该页文字层字形比对，对得上的把框收到字形的外接框；这个校正后的框才是仅多模态路线上程序核对与 arXiv 对齐所用的位置（§7.5 第 5 步、§7.6，Wisdom 2026-10-31 00:46），不读校正前的大致坐标，也不读版面模型。对不上的区块只做页级显示（挂在这一页上，不当成有精确区域的块），位置核对不过；页级显示也做不到时，退到整页裁图，再退到占位框「图见原文第 N 页（点击查看）」。没有文字层时无法校正，这些区块都按对不上处理。对得上的区块之后仍走 §7.5 的降级链（区块裁图，再占位框）。点击页级显示或整页裁图时，左侧原文跳到第 N 页，不声称能定位到一个区域（PRD AC-95）。
 
-**部署（D-D，Wisdom 2026-10-31）。** 版面的「本地 / API」和引擎 A 识别阶段的「本地 / API」是两个设置。版面只读 `RouteConfig.layout`。引擎 A 的设置只覆盖识别阶段的 `parse` 作业，不改 `layout`。界面可以提供一键路线预设，选中预设只写入这份配置，不把两个旋钮合成一个。每个积木仍可单独选本地、第三方 API 或自建远程。版面的远程在托管 API 核实之前只有自建远程 worker；`deployment: 'api'` 在核实之前不发请求。PP-DocLayoutV3 在 8 GB 内存、无独显、只用 CPU 的机器上，冷启动时间、单页耗时、峰值内存、是否 OOM 都**未核实**。依赖本地版面的生产说法之前，M0 必须测这四项（PRD §8）。测不到这样的机器就保持「未核实」，不写成已验证，也不预填数字。标准档仍是 PP-DocLayoutV3。PP-DocLayout_plus-L 只在同一台机器的对照明显更好时作为高质量档（Q10、QM-13）。
+**部署（D-D，Wisdom 2026-10-31）。** 版面的「本地 / API」和引擎 A 识别阶段的「本地 / API」是两个设置。版面只读 `RouteConfig.layout`。引擎 A 的设置只覆盖识别阶段的 `parse` 作业，不改 `layout`。界面可以提供一键路线预设，选中预设只写入这份配置，不把两个旋钮合成一个。每个积木仍可单独选本地、第三方 API 或自建远程。版面的远程在托管 API 核实之前只有自建远程 worker；`deployment: 'api'` 在核实之前不发请求。本机 PP-DocLayout 是第二路线（Wisdom 2026-11-02）：M0/M1 只留 `LayoutEngine` 端口、契约和 stub，不实现、不下载模型，不测冷启动、单页耗时、峰值内存或是否 OOM。这些本地项标为推迟，不删除。M0 要测的是面壁 API 的单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）；Key 不在时标「未核实」，不预填数字（PRD §8）。标准档仍是 PP-DocLayoutV3。PP-DocLayout_plus-L 仍按 Q10、QM-13，不在本机 CPU 上作为 M0 测量。
 
 **代价。** 版面开着且按区块识别时，一页的外部调用从「一页一次」变成「一个区块一次」，常见是几次到十几次（按该页区块数，不是固定次数）。每一次都经预算闸门与外发同意（§7.8、§7.0 第 6 条）。版面切错会让后面的识别和翻译跟着错：`reading_order` 负责校验和兜底（§7.10）；校验不过的区域按兜底链退到该区块的裁图，再退到占位框。关掉版面时没有 OCR 兜底：引擎 A 的识别、引擎 B、云 OCR 都不运行。整页只走多模态，再按裁图、占位框降级（D-E，Wisdom 2026-10-31 11:14）。
 
@@ -1904,7 +1904,7 @@ workers/parser/
 └─ tests/                    # pytest；与包结构镜像
 ```
 
-**开发机上的本机 worker。** 开发机是 Windows + 32 GB 内存 + NVIDIA RTX 4070 12 GB（§7.0 第 7 条、§7.4「开发机」）。按 API 优先，开发机上的 worker 默认只装基础依赖，Jev、引擎 B 都走托管 API 后端；引擎 A 模型阶段在开发时走哪条路径（托管 API、开发机本地、租用的 Linux 远程 worker）M3 前定（§7.0）；`jev-local`、`engine-a`、`engine-b` 这些本地 extra 在开发机上**不要求**，能否在 Windows 上装好并跑通**未核实**，有意愿时按 §7.4 的可选步骤试。`runtime/` 的设备探测照常报出驱动与 CUDA 版本、可用显存，供「本地」的可行性标注使用。
+**开发机上的本机 worker。** 开发机是 Windows + 32 GB 内存 + NVIDIA RTX 4070 12 GB（§7.0 第 7 条、§7.4「开发机」）。按 API 优先，开发机上的 worker 默认只装基础依赖，Jev、引擎 B 都走托管 API 后端；引擎 A 模型阶段在开发时走哪条路径（托管 API、开发机本地、租用的 Linux 远程 worker）M3 前定（§7.0）；`jev-local`、`engine-a`、`engine-b` 这些本地 extra 在开发机上**不要求**，能否在 Windows 上装好并跑通**未核实**。2026-11-02 起这些本地 extra 在 M0/M1 不安装、不试跑（第二路线，只留接口和 stub）。`runtime/` 的设备探测照常报出驱动与 CUDA 版本、可用显存，供「本地」的可行性标注使用。
 
 Python 分层用 `import-linter` 强制：`api → jobs → engines | quality → preprocess → protocol`，不允许反向；`engines/layout`、`engines/modular_a` 与 `engines/e2e_b` 两两互不 import；`quality/backends/local_engine` 与 `jev_http` 互不 import。`engines/e2e_b/backends/sdk_local` 与 `modelbest_api` 互不 import，`engines/modular_a/backends/` 下的各个后端互不 import。Python 侧的 core（`engines/reading_order/`、`engines/modular_a/paragraphs.py`、`preprocess/scan_detect.py`、`engines/e2e_b/mapping.py`、`quality/batching.py`、`quality/http_errors.py`）另加 forbidden 契约：不得 import `fastapi`、`starlette`、`httpx`、`torch`、`paddle`、`pypdfium2` 等 IO 与推理依赖（§2.3）。不同引擎的重依赖可以拆成独立 venv / 容器，由 `runtime` 按引擎分别启动。
 
@@ -1994,7 +1994,7 @@ Wisdom 2026-10-31 批准把产品诊断日志提前。与现有里程碑表一�
 - **夹具只用合成数据**（架构评审 P2-8）：`fixtures/protocol/`、`fixtures/providers/`、`fixtures/parsing-rules/` 与录制样例只用合成图、合成文字与假令牌，不放真实论文页面的图片、裁图或正文。需要真实页面的基准走不入库的语料流程，仓库只存清单与 sha256（`fixtures/corpus/`）。
 - 测试只断言行为，不读取源码文本（F-08）。
 - CI 不调用付费 API、不下载模型权重；需要真实模型的测试标记为 `@model`，只在手动或夜间任务运行。
-- 每个模型能力的「本地」与「API」两个来源跑同一份契约测试（假后端或去掉凭据与图片内容的录制样例），这是「本地是一等选项」的完成标准（§7.0）。调用真实托管 API 的冒烟测试标记 `@live`（按 RULES §4 的 `@paid` 对待，有调用次数上限），只在对应 Key 已由 Cursor Secrets 注入时运行，否则跳过；不是 CI 门禁。
+- 每个模型能力的「本地」与「API」两个来源跑同一份契约测试（假后端或去掉凭据与图片内容的录制样例）。M0/M1 里「本地」来源跑的是 stub，不跑真实本机推理；接口与契约仍和 API 来源同一份（§7.0，Wisdom 2026-11-02）。调用真实托管 API 的冒烟测试标记 `@live`（按 RULES §4 的 `@paid` 对待，有调用次数上限），只在对应 Key 已由 Cursor Secrets 注入时运行，否则跳过；不是 CI 门禁。
 - 运行纪律（每个提交 tip 全量只跑一次、失败只重跑失败项）见 RULES.md §4。
 - **core 测试不依赖界面（Wisdom 2026-10-30 23:56）。** core 测试在没有安装或编译界面包的情况下能跑完：不启动 Electron，不加载 renderer，不 import `src/ui/**`。只改界面（`src/ui/**`、`apps/desktop/src/renderer/**`、`ui-kit`）时，core 测试的期望与结果都不变（PRD AC-100）。M1 前此项写不适用（脚本尚未提供）；M1 起以 package.json 实际脚本为准。不新增空脚本顶替。
 
@@ -2147,8 +2147,8 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | 编号 | 决定（摘要） | 本文落点 |
 | --- | --- | --- |
 | Q1 | MiniCPM-OCR 1.0 与 Jev 照用、锁版本、M6a / M6b 前复核；所有识别路径的候选都必须有评估记录。23:55：Jev 开启时所有结果都经过评分，并且程序核对通过才标已核验；关闭时一律标「未评分」，由程序核对把关。01:14 修订下一行 D-A：路线不含 Jev 时，程序核对通过标「格式已核对」，不算已核验。评分开关优先于路线，关闭不改写路线。arXiv「源码核对」显示 LaTeX、不算已核验（是否改算已核验待 Wisdom 定，唯一决定点 `source-check-standing.ts`） | §2.5、§4.1、§4.2、§7.0、§7.1、§7.3、§7.4「评分开关」、§7.5、§7.7、§7.8、§7.12、§8.1.1；差异清单 §6.9、§6.11 |
-| 处理路线（2026-10-30 22:41、22:44、22:45；23:55 续定） | 四类积木加声明式组合，不写死 A/B/C。预设四个。正式全局默认仍等 M0，过渡默认见 W-4 行。版面与引擎 A 分两次作业。仅多模态的坐标来自多模态再用文字层校正。8 GB 无独显 CPU 上的 PP-DocLayoutV3 未核实，测量项见下一组。自动补救默认开。Jev 锁 `1269e4f`，更换须先对比。订阅与计费不进 v2 | §7.0、§7.2、§7.9.5、§7.12、§10.2；PRD §3.5、AC-91–AC-99；RULES N-20；差异清单 §6.11 |
-| 版面本地实测（2026-10-31） | 不是新的产品选型。依赖本地版面的生产说法之前，M0 必须在 8 GB 内存、无独显、只用 CPU 的机器上测 PP-DocLayoutV3：冷启动时间、单页耗时、峰值内存、是否 OOM。测完前「未核实」，不预填数字。标准档仍是 V3。plus-L 仍只在同一台机器对照明显更好时作为高质量档（Q10、QM-13，不重开） | §7.0、§7.1「版面档位」、§7.12「部署」；PRD §8 M0、QM-13；差异清单 §7 |
+| 处理路线（2026-10-30 22:41、22:44、22:45；23:55 续定） | 四类积木加声明式组合，不写死 A/B/C。预设四个。正式全局默认仍等 M0，过渡默认见 W-4 行。版面与引擎 A 分两次作业。仅多模态的坐标来自多模态再用文字层校正。本机版面的冷启动等四项不再是 M0 测量，由 2026-11-02 一行取代。自动补救默认开。Jev 锁 `1269e4f`，更换须先对比。订阅与计费不进 v2 | §7.0、§7.2、§7.9.5、§7.12、§10.2；PRD §3.5、AC-91–AC-99；RULES N-20；差异清单 §6.11 |
+| 版面本地实测（2026-10-31；测量要求由 2026-11-02 取代） | 当时写的是：依赖本地版面的生产说法之前，M0 必须在 8 GB 无独显 CPU 上测 PP-DocLayoutV3 的冷启动、单页耗时、峰值内存、是否 OOM。2026-11-02 把这项从 M0 拿掉：本机只留端口和 stub，标为推迟，不删除。标准档仍是 V3。plus-L 仍按 Q10、QM-13，不在本机 CPU 上作为 M0 测量 | §7.0、§7.1「版面档位」、§7.12「部署」；PRD §8 M0、QM-13；差异清单 §7、§6.15 |
 | D-D（2026-10-31） | 版面「本地 / API」与引擎 A 识别「本地 / API」是两个设置。版面只读 `RouteConfig.layout`。引擎 A 的设置只覆盖 `parse`。一键预设不把两个旋钮合成一个。托管版面 API 核实之前，版面 `deployment: 'api'` 不发请求 | §4.2 `backend-choice.ts`、§7.0、§7.12；PRD §3.5、AC-96；差异清单 §6.13；[backlog](./docs/backlog.md) §8 |
 | D-E（2026-10-31；11:14 续定） | 没有版面作业时，凡是按版面区域识别的来源请求都为 0：引擎 A 的识别（`parse`）、引擎 B（含其 SDK 内部的 PP-DocLayoutV3）、云 OCR。整页只走多模态，再用文字层校正。识别列表含这三项之一且版面关着时，`route-config` 校验失败，原因码 `sources_require_layout`，不静默跳过。四个预设不改。关掉版面后没有 OCR 兜底 | §7.1、§7.2、§7.7、§7.10、§7.12；PRD AC-88、AC-93、AC-96、§3.5；差异清单 §6.13 |
 | W-4（2026-10-31，部分决定） | 过渡默认预设 id 是 `multimodal-layout`：新安装与恢复默认选中它，不是空。正式全局默认仍等 M0 四路线对比后由 Wisdom 定。来源优先级的默认顺序仍是现行提议，未决定，不新造顺序 | §7.1、§7.4「评分开关」、§7.12；PRD §3.5、AC-86、AC-91、§9；差异清单 §6.13 |
@@ -2161,7 +2161,7 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | Q7 | 本机与远程同一协议 HTTP + SSE | §1、§10.1 |
 | Q8 | 不做 v1 迁移，v2 从零开始 | §4.2 `library`（无导入器） |
 | Q9 | 设置主选项「本地 / API」，默认「API」，Jev 的 API 服务商是面壁开放平台；「本地」与 API 走同一个 `evaluate` 作业接口；自建远程 worker 与 Jev Docker 在「高级」；硬件画像只给「本地」标可行性；用户随时可改（Wisdom 2026-10-30） | §1、§2.6 示例、§4.2 `settings`、§7.0、§7.4「面壁 API」、§10.1、§10.2、§10.3 |
-| API 优先（2026-10-30 18:44） | 每个模型能力有托管 API 时默认 API，本地是同一接口后的一等选项（设置「本地 / API」）；开发机 Windows + 32 GB + RTX 4070 12 GB 上部署不了的模型不要求本地，标「不要求 / 未核实」；开发与测试 Key 只以环境变量提供（云端 Agent 经 Cursor Secrets，开发者本机见 §15.4） | §1、§2.6、§4.2 `settings/domain/backend-choice.ts`、§7.0、§7.1、§7.4、§7.7、§8.3、§10.3、§12、§15.4 |
+| API 优先（2026-10-30 18:44） | 每个模型能力有托管 API 时默认 API，本地留在设置「本地 / API」里、与 API 同一接口。当时写的「一等选项」由 2026-11-02 一行改为第二路线、只留 stub。开发机 Windows + 32 GB + RTX 4070 12 GB 上部署不了的模型不要求本地，标「不要求 / 未核实」；开发与测试 Key 只以环境变量提供（云端 Agent 经 Cursor Secrets，开发者本机见 §15.4） | §1、§2.6、§4.2 `settings/domain/backend-choice.ts`、§7.0、§7.1、§7.4、§7.7、§8.3、§10.3、§12、§15.4 |
 | Q10 | PP-DocLayoutV3 起步，plus-L 对照，明显更好时作为高质量档 | §7.1「版面档位」、`parsing/domain/layout-profile.ts` |
 | Q11 | 未配置翻译时借用多模态：保留、默认关、开启时提示消耗多模态额度 | §4.2 `settings/domain/translation-fallback.ts` |
 | Q12 | 不接 Unlimited-OCR，上游支持坐标输出后再评估 | 不进本文；记录在差异清单 §2.6 |
@@ -2174,7 +2174,8 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | 架构评审修复 B 与服务商适配层（Wisdom 2026-10-30 19:45、19:46、19:57） | P1-1 同意规则措辞统一：拒绝只让该服务商对列出能力的请求为 0，其他服务商上已同意的能力照常；采纳「重新打开开关后照常询问」；P1-2 外发检查端口 `EgressCheck` 与目的主机分类；P1-3 远程 worker 不接收桌面的服务商 Key，本机 worker 只经回环地址接收；P1-4 删除已被取代的旧表述；P1-8 `ProviderFailure`；P1-9 存储与协议的版本升级规则；P1-10 Electron 加固；新增服务商适配层 `packages/providers`：按 API 格式写适配器、按服务商写注册表、能力标记、每个适配器的契约测试。20:57 按建议定下：各能力列出全部服务商、不预选；Gemini 默认原生格式，OpenAI 兼容端点为备选；百度 OCR 现在用 access_token；开发者本机的 Key 现在用环境变量；保留「本机可信」选项（默认没有）与「重新打开开关后照常询问」（§7.9.8、§15.4） | §1、§2、§2.5、§3、§4.1–§4.3、§5.1、§5.2 F-18、§7.0、§7.3、§7.4、§7.7、§7.9、§8.3、§8.4、§9、§10.1–§10.4、§12、§13、§15.4；差异清单 §6.7 |
 | PR C（Wisdom 2026-10-30 21:12） | 阅读顺序以版面模型为主、`reading_order/` 校验与兜底、规则集两侧对拍，百度云通用 OCR 不作主路线；M6 拆为 M6a–M6d，M3 加评分状态机与假评估器；BabelDOC 只借六项思路；P1-6、P1-7、P1-11 后半、P2-1–P2-8 | §3、§4.1–§4.3、§4.5.3、§4.5.4、§5.3、§6、§7.0、§7.1、§7.2、§7.7、§7.9.7、§7.10、§7.11、§8.1.1、§10.1–§10.3、§10.5、§11、§12、§13、§14.4；差异清单 §6.8；[backlog](./docs/backlog.md) |
 | 诊断日志（Wisdom 2026-10-31；09:15 补充默认规则与不做项；同日写死调试日志上限） | 产品诊断日志的规格在 M0，代码骨架在 M1，导出 UI 仍在 M2。流水线 run 字段为 `run_id`、`route`、`step`、`status`、`error_class`、`duration_ms`。调试模式默认关。开启后调试日志最多保留 7 天，且总量上限 50 MB（先到先清）；用户可随时清空；关闭调试模式时询问是否删除。不记密钥、不记论文正文；只存本机，用户不主动选择就不上传。产品诊断日志的保留天数与体积仍等 M2 实测。M0/M1 不接 LangSmith 等云端追踪，不默认对外上报，不把文档全文写入日志。PR 证据在 `docs/evidence/<PR号>/`；agent 工作记录在 PR 描述，不另建对话记录 | §11；PRD S10、US-14、AC-101、§8；RULES §2、§4、§5 第 8 条、N-05 |
-| M0 费用与 M3 真值表（Wisdom 2026-10-31 13:14） | M0 增加单篇费用与单篇耗时：同一批论文、四个预设，给占位预算上限定标（N-14），测完前「未核实」。M3 用 §7.13 一张表汇合评分开关、路线、四种评估状态、外发同意与预算模式，不改 AC-85、AC-89、AC-97 的含义；穷尽测试是 PRD AC-102。公式不引入矢量重绘，显示链仍是 LaTeX → 裁图 → 占位框。`auth/account-token.ts` 写入 §7.9.2 的目录树 | §7.5、§7.8、§7.9.2、§7.12、§7.13；PRD §8 M0、M3、AC-102、§9；差异清单 §6.14 |
+| M0 费用与 M3 真值表（Wisdom 2026-10-31 13:14） | M0 增加单篇费用与单篇耗时：同一批论文、四个预设，给占位预算上限定标（N-14），测完前「未核实」。机器与本机模型指标由下一行取代。M3 用 §7.13 一张表汇合评分开关、路线、四种评估状态、外发同意与预算模式，不改 AC-85、AC-89、AC-97 的含义；穷尽测试是 PRD AC-102。公式不引入矢量重绘，显示链仍是 LaTeX → 裁图 → 占位框。`auth/account-token.ts` 写入 §7.9.2 的目录树 | §7.5、§7.8、§7.9.2、§7.12、§7.13；PRD §8 M0、M3、AC-102、§9；差异清单 §6.14 |
+| 面壁 API 为主路线（Wisdom 2026-11-02 16:38 UTC+8） | 原文见 PRD §9 与差异清单 §6.15。面壁 API 是规格里已经写成面壁的能力的主路线，不新造面壁版面接口。本地部署是第二路线：只留接口和 stub，M0/M1 不实现、不下载模型、不设本地推理门禁，标为推迟，不删除。M0 测量改为面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）；Key 不在时标「未核实」。公式链仍是 LaTeX → 裁图 → 占位框 | §1、§7.0、§7.1、§7.4、§7.8、§7.12、§12、§16；PRD §2、§3.5、§8、§9；差异清单 §6.15；RULES N-22 |
 
 - 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3、M6a、M6b 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
 - 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、架构评审新增的 `ingest` 切片及其九条出边、`budget` 切片与删除的 `repair → quality`，以及修复 B 新增的 `packages/providers` 包与 `providers-boundary` 规则、`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），以及 PR C 新增的 G18、`ui-events-declared`、`supervisor-state` 与解析规则集 `oi-rules/1`，在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。
