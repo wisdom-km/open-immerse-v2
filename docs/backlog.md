@@ -89,6 +89,7 @@
 | 由契约生成 preload，不手写 IPC。外壳 PR 只暴露空的 `window.oi` | 另立 PR。现有 codegen 只生成 worker 协议 | #67；ARCH §9；G7 |
 | 打包时按 ARCHITECTURE §9 设置 Electron Fuses。`EnableEmbeddedAsarIntegrityValidation` 各平台是否支持仍未核实 | M8。验收 AC-67 ③ | #68；ARCH §9 |
 | Python worker 把结构化 JSON 写到 stderr，supervisor 收集并加上 `source: worker`。字段服从诊断事件白名单和禁止项。落地时要把 `source: "worker"` 纳入允许字段，避免读入时丢掉 | M3（与 supervisor 一起） | #73；ARCH §11 |
+| 关闭调试模式前询问是否删除调试日志。M1 只把 `deleteFiles` 作为 `setDebugMode` 的参数，不画界面 | M2，交 Loom | #75；ARCH §11；PRD AC-101 ② |
 
 ## 5. Jev 开关审查（2026-10-30 22:06）的处理
 
