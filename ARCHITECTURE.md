@@ -1861,7 +1861,11 @@ type FormulaCropRef = Readonly<{
 - 远程 worker 的地址本身也是外发目的地：连接前经 `EgressCheck`（§7.0 第 6 条）。
 - 为什么不把桌面的 Key 发给远程 worker：Key 会离开本机，落到用户不一定完全控制的主机上，日志、内存转储、反向代理都可能留下它。改为服务器只用自己配置的后端后，Key 的管理与费用都归服务器的部署者，桌面不需要信任远程主机。
 
-本机进程只绑定 `127.0.0.1`。端口先取启动参数 `--port`，没有则取环境变量 `OI_WORKER_PORT`，都没有则用 `0`，由系统分配（上表的随机端口）。开始接受连接之后，向 stdout 写一行且只写一行 `{"port": <整数>}`。`SIGINT`、`SIGTERM`，以及 Windows 的 `SIGBREAK`，交给 uvicorn 的信号处理：先停听，再退出。`--port` 与 `OI_WORKER_PORT` 这两个名字是 Forge 提议，待业主确认；随机端口和 stdout 一行 JSON 已是上表的规则。`OI_WORKER_PORT` 不是密钥，不写入 §15.4。
+本机进程只绑定 `127.0.0.1`。端口先取启动参数 `--port`，没有则取环境变量 `OI_WORKER_PORT`，都没有则用 `0`，由系统分配（上表的随机端口）。`--port` 与 `OI_WORKER_PORT` 这两个名字经 Wisdom 2026-11-02 20:07 批准。原文：「都按你的建议：400、--port/OI_WORKER_PORT、Windows 设必需；另开小 PR 加 macOS 健康检查并设必需」。它们只给开发时指定端口。main 的 `worker-supervisor`（§10.5）不传 `--port`，也不设置 `OI_WORKER_PORT`。`OI_WORKER_PORT` 不是密钥，不写入 §15.4。
+
+启动时从 stdin 读一行一次性令牌（上表的 Bearer，不进命令行参数）。空行或 EOF 拒绝启动，退出码非 0，不把令牌写入 stdout、stderr 或日志。包括 `GET /v1/health` 在内的每个请求都要带 `Authorization: Bearer <令牌>`，用恒定时间比较；缺失或错误返回 `401`，响应体 `{"code":"auth.bearer"}`。健康检查不豁免。
+
+开始接受连接之后，向 stdout 写一行 `{"port": <整数>}`。`SIGINT`、`SIGTERM`，以及 Windows 的 `SIGBREAK`，交给 uvicorn 的信号处理，先停听。服务任务返回后，再向 stdout 写一行 `{"event":"exited"}`，进程以状态码 0 退出。这两行都不含令牌。
 
 Q7 已决定：本机与远程同一协议 HTTP + SSE；stdio JSON-RPC 不采用（取舍见差异清单 §6）。
 
@@ -1927,7 +1931,7 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 - **桌面的判定。** 桌面声明自己支持的主版本范围（常量在 `worker-client/src/supervisor-protocol.ts`）。连接后先调 `/v1/health`：主版本不在范围内时，不提交任何作业，界面提示「worker 版本过旧」或「桌面版本过旧」，相关能力记「不可用（版本不兼容）」，按 §7.0 表最后一列降级。本机 worker 随桌面一起发布，版本总是匹配。
 - **按次版本开功能。** 依赖新端点或新字段的功能，按 worker 报出的次版本决定是否启用，不靠试探请求。
 - **worker 的判定。** 请求的主版本 worker 不支持时返回 `426`，响应体 `{ "supported": ["1.0"] }` 列出它支持的版本。
-- **缺头或坏头（Forge 提议，待业主确认）。** 上面只写了主版本不支持时返回 `426`。请求头 `OI-Protocol` 缺失，或值不是 `<主版本>.<次版本>` 时，`parse_protocol_header` 仍抛出 `ValueError("protocol.version")`。HTTP 适配层把这个异常映射为 `400`，响应体是 `{"error":"protocol.version"}`。不创建作业。响应体里没有路径，也没有密钥。业主确认前，测试按这个响应断言。
+- **缺头或坏头（Wisdom 2026-11-02 20:07 批准）。** 原文：「都按你的建议：400、--port/OI_WORKER_PORT、Windows 设必需；另开小 PR 加 macOS 健康检查并设必需」。上面只写了主版本不支持时返回 `426`。请求头 `OI-Protocol` 缺失，或值不是 `<主版本>.<次版本>` 时，`parse_protocol_header` 抛出 `ProtocolVersionError`。HTTP 适配层按这个异常的类型映射为 `400`，响应体是 `{"code":"protocol.version"}`。不创建作业。响应体里没有路径，也没有密钥。
 - **测试。** `fixtures/protocol/versions/`：主版本不符时作业数为 0；次版本更高的响应带未知字段时照常解析；`426` 响应体可解析。验收 PRD AC-66 ②。缺头或坏头的 `400` 另按上一条断言。
 - 与 §8.4 合为一个 ADR（§16）。
 
@@ -1954,7 +1958,8 @@ stateDiagram-v2
 ```
 
 - **单实例。** 应用用单实例锁，一个应用实例最多一个本机 worker。pid 与启动时间写在应用数据目录的 `runtime/worker.pid`；启动时发现上次遗留、且可执行路径属于本应用 worker 的进程，先结束它再拉起。
-- **令牌。** 每次进入 `starting` 都生成新的一次性令牌（§10.1），旧令牌立即作废。
+- **令牌。** 每次进入 `starting` 都生成新的一次性令牌（§10.1），经 stdin 传给本次进程，旧令牌立即作废。
+- **端口。** `worker-supervisor` 不传 `--port`，也不设置 `OI_WORKER_PORT`。这两个名字只给开发时指定端口（§10.1）。监管进程使用端口 `0`，从 stdout 读取分配到的端口。
 - **崩溃与在途作业。** 进入 `crashed` 时，在途作业记为中断，由 `ingest` 从已落库的事实续跑（§4.2）；已发出的付费请求按 §7.8 结算，不自动重发不幂等的请求（PRD AC-07）。
 - **退避与上限。** 重启间隔指数退避；时间窗内的重启上限与各超时是配置值，默认值随 M3 的 supervisor 实现 PR 提出。
 - **降级。** `degraded` 与 `incompatible` 时，依赖本机 worker 的能力记「不可用」（原因 `worker_stopped` / `worker_incompatible`），阅读回落到文字层基础档（Q2，PRD AC-11）；界面给出「重新启动」入口。

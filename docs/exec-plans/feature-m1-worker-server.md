@@ -16,7 +16,7 @@
 | --- | --- | --- | --- |
 | 1 | 交换函数保持不动。`api/` 里用生成的协议模型做薄适配，不手写协议模型 | `health.py` 未改语义。路由在 `health_route.py`，装配在 `app.py` | `tests/api/test_health.py` 仍通过 |
 | 2 | `python -m oi_worker` 只绑定 `127.0.0.1`。端口来自 `--port`，否则 `OI_WORKER_PORT`，否则 `0`。stdout 一行 `{"port": n}`。停止时走 uvicorn 的信号处理 | `__main__.py` 只做装配。`loopback.py` 绑定，`server.py` 调用 uvicorn | `tests/api/test_server.py`、`tests/api/test_loopback.py` |
-| 3 | 缺头或坏头映射为 400，响应体 `{"error":"protocol.version"}`。写入 ARCH §10.4，标为 Forge 提议，待业主确认 | 已映射，规格写明待确认 | `tests/api/test_app.py`；ARCHITECTURE §10.4 |
+| 3 | 缺头或坏头映射为 400，响应体 `{"code":"protocol.version"}`。Wisdom 2026-11-02 20:07 批准 | 按异常类型映射，不再比对异常字符串 | `tests/api/test_app.py`；ARCHITECTURE §10.4 |
 | 4 | 测试覆盖 HTTP 200 / 426 / 400、未知字段、AC-09 响应体扫描，以及进程启动后的健康检查 | pytest 90 passed，含上述用例 | `docs/evidence/58/commands.md` |
 | 5 | Windows CI：启动 worker，请求健康检查，断言 200 且响应体没有路径或 key；并跑已有的 `fixtures/protocol/` 两侧测试 | job 已写入 `.github/workflows/ci.yml`。本环境不是 Windows，没有在这里跑这个 job | 同上 |
 | 6 | 依赖只经 `pyproject.toml` 与 `uv.lock`。许可证门禁通过。不改 `.cursor/environment.json`、`.cursor/install.sh`、DESIGN | pip 许可证检查退出码 0。这三处无 diff | `docs/evidence/58/commands.md` |
