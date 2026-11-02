@@ -1,0 +1,48 @@
+import { protocol } from "electron";
+
+import { schemeResponse } from "./scheme-response.js";
+import { CONTENT_SECURITY_POLICY } from "./security/csp.js";
+import { bodyForMethod, resolveStaticFile } from "./static-file.js";
+
+const SCHEME = "oi-app";
+
+export function registerAppScheme(): void {
+  protocol.registerSchemesAsPrivileged([
+    { scheme: SCHEME, privileges: { standard: true, secure: true } },
+  ]);
+}
+
+export function handleAppProtocol(rendererRoot: string): void {
+  protocol.handle(SCHEME, (request) =>
+    respond(rendererRoot, readUrl(request), readMethod(request)),
+  );
+}
+
+function readUrl(request: { url: string }): string {
+  return request.url;
+}
+
+function readMethod(request: { method: string }): string {
+  return request.method;
+}
+
+function respond(root: string, requestUrl: string, method: string): Response {
+  const resolved = resolveStaticFile(root, requestUrl, method);
+  if (resolved.kind === "method") {
+    return schemeResponse(null, { status: 405, headers: headers("text/plain; charset=utf-8") }) as Response;
+  }
+  if (resolved.kind === "missing") {
+    return schemeResponse(null, { status: 404, headers: headers("text/plain; charset=utf-8") }) as Response;
+  }
+  return schemeResponse(bodyForMethod(method, resolved.body), {
+    status: 200,
+    headers: headers(resolved.contentType),
+  }) as Response;
+}
+
+function headers(contentType: string): Record<string, string> {
+  return {
+    "Content-Type": contentType,
+    "Content-Security-Policy": CONTENT_SECURITY_POLICY,
+  };
+}

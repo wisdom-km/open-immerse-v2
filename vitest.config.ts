@@ -9,6 +9,7 @@ export default defineConfig({
       "packages/features/*/test/core/**/*.ts",
       "packages/contracts/**/*.test.ts",
       "packages/kernel/**/*.test.ts",
+      "apps/desktop/test/**/*.test.ts",
     ],
     typecheck: {
       enabled: true,

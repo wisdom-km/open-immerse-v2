@@ -36,6 +36,8 @@ jobs:
 
       - name: Install dependencies
         run: corepack pnpm install --frozen-lockfile
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Fetch main
         run: git fetch origin main
@@ -195,6 +197,8 @@ jobs:
 
       - name: Install dependencies
         run: corepack pnpm install --frozen-lockfile
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: TypeScript protocol fixtures
         run: corepack pnpm exec vitest run tools/codegen/versions.test.ts packages/contracts/test/worker-protocol.test.ts
@@ -207,3 +211,40 @@ jobs:
             exit 1
           }
           Write-Output "fixtures/parsing-rules is absent; nothing to run on either side"
+
+  desktop-e2e-windows:
+    name: desktop-e2e-windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(corepack pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+      - name: Playwright Electron smoke
+        run: corepack pnpm --filter desktop e2e
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"

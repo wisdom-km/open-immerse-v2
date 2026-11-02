@@ -1,3 +1,4 @@
 packages:
   - packages/contracts
   - packages/kernel
+  - apps/desktop
