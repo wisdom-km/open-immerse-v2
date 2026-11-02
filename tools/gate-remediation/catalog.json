@@ -48,6 +48,7 @@
         "renderer-isolation",
         "electron-only-in-desktop",
         "contracts-is-leaf",
+        "contracts-kernel-type-only",
         "providers-boundary"
       ]
     },
