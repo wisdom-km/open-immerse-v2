@@ -53,3 +53,18 @@ stdin 一次性令牌、`401`、`ProtocolVersionError`、退出标记和退出�
 | `node ../../tools/gate-remediation/run.mjs --id G6 -- uv run lint-imports`（`workers/parser/`） | 0 | 6 kept，0 broken。55 files，53 dependencies |
 
 Windows 上的关闭证明改为退出码 0，加上 stdout 的 `{"event":"exited"}`。Linux 的端口探针仍只接受拒绝。本环境没有跑 Windows job。
+
+## `d953920`
+
+启动时拒绝 strip 之后为空、或含空白字符的令牌（退出码 1，不回显）。空的信号处理只包住 `uvicorn.serve`：uvicorn 接手之前、以及 serve 返回之后，`SIGINT` / `SIGTERM` 不再被吞掉。退出码 0 依赖 uvicorn 0.38.0 恢复处理函数再重新抛出；升级 uvicorn 时要重跑 Windows 健康检查。`BaseHTTPMiddleware` 换成纯 ASGI 记在 backlog，这次没改。`pnpm run check` 与下面的 worker 门禁都跑在这一笔的干净树上。没有对同一 tip 再跑第二遍全量。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `GATE_BASE=origin/main corepack pnpm run check` | 0 | 116 个源文件。`check-pr-size` 1026 行非生成 diff，历史提交里已有 `G12:`。codegen 1 个生成器，其后工作树干净 |
+| `node ../../tools/gate-remediation/run.mjs --id G1 -- uv run ruff format --check .`（`workers/parser/`） | 0 | 54 files already formatted |
+| `node ../../tools/gate-remediation/run.mjs --id G2 -- uv run ruff check .`（`workers/parser/`） | 0 | All checks passed |
+| `node ../../tools/gate-remediation/run.mjs --id G8 -- uv run pytest`（`workers/parser/`） | 0 | 103 passed，1.21s。1 条 Starlette/anyio 弃用警告。含空白令牌拒绝，以及 Windows 以外立刻 `SIGINT` 时进程结束 |
+| `node ../../tools/gate-remediation/run.mjs --id G3-pyright -- uv run pyright`（`workers/parser/`） | 0 | 0 errors。提示 1.1.414 可用，未升级 |
+| `node ../../tools/gate-remediation/run.mjs --id G6 -- uv run lint-imports`（`workers/parser/`） | 0 | 6 kept，0 broken。55 files，55 dependencies |
+
+`test_sigint_ends_the_process_outside_the_uvicorn_hold` 在 Windows 上跳过（停止信号是 `SIGBREAK`）。优雅关闭仍由已有用例断言退出标记和退出码 0。本环境没有跑这一笔的 Windows job。
