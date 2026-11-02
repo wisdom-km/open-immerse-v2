@@ -5,4 +5,7 @@ export default defineConfig({
   workers: 1,
   timeout: 120_000,
   reporter: "line",
+  use: {
+    screenshot: "on",
+  },
 });
