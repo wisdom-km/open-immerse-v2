@@ -22,7 +22,7 @@ await copyGenerators(root, generators);
 const schemaFlag = process.argv.includes("--protocol-schema");
 const schemaPath = schemaFlag
   ? path.resolve(option("--protocol-schema", ""))
-  : path.join(root, "packages/contracts/src/worker-protocol.ts");
+  : path.join(root, "packages/contracts/src/worker/schemas.ts");
 if (schemaFlag || existsSync(schemaPath)) {
   await generateProtocol({
     schemaPath,

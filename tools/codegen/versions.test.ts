@@ -6,7 +6,7 @@ import {
   readHealthResponse,
   readProtocolHeader,
   readUnsupportedProtocol,
-} from "../../packages/contracts/src/worker-protocol.js";
+} from "../../packages/contracts/src/index.js";
 
 const directory = path.resolve("fixtures/protocol/versions");
 

@@ -19,7 +19,7 @@
 | G9 | gitleaks 在仓库里发现疑似密钥。 | 把密钥从该提交去掉，改用 ARCHITECTURE §15.4 登记的环境变量。契约测试的假 Key 用前缀 oitest_，已在 .gitleaks.toml 放行。不要把真 Key 写进 allowlist。 | ARCHITECTURE §13 G9、§7.9.7、§15.4、RULES N-05 |
 | G10 | 依赖或模型权重的许可证不能与 Apache-2.0 并存，或 PDF 锁文件不是 pypdfium2。 | 换掉 GPL、AGPL（含 PyMuPDF 与 fitz）以及未经批准的 LGPL、非商用和自定义许可证。白名单是 MIT、Apache-2.0、BSD-2-Clause、BSD-3-Clause、ISC，以及只作为独立文件的 MPL-2.0。PSF-2.0 只允许 dev-only.json 里的包。uv.lock 必须含 pypdfium2，且不能含 pymupdf。 | RULES §1.5、ARCHITECTURE §13 G10 |
 | G11 | 单个具名热点文件的 diff 超过 30 行。机器检查目前只数 composition-root.ts 和 slots.ts。 | 把这个 PR 里该文件的增删减到 30 行以内。被多个切片 import 的契约热点等有了 packages/contracts 再按 import 图计算，不要手写名单。 | ARCHITECTURE §13 G11、RULES §3 |
-| G12 | 非生成改动超过 600 行，只改 packages/contracts 时超过 200 行，并且提交说明和 PR_BODY 里没有以 G12: 开头的理由。 | 拆开这个 PR，或在提交说明、或环境变量 PR_BODY 里写一行以 G12: 开头的不拆理由。pnpm-lock.yaml、workers/parser/uv.lock 和 dist/ 不计入行数。 | ARCHITECTURE §13 G12、RULES §2 |
+| G12 | 非生成改动超过 600 行，只改 packages/contracts 时超过 200 行，并且提交说明和 PR_BODY 里没有以 G12: 开头的理由。 | 拆开这个 PR，或在提交说明、或环境变量 PR_BODY 里写一行以 G12: 开头的不拆理由。pnpm-lock.yaml、workers/parser/uv.lock、dist/ 和 workers/parser/oi_worker/protocol/ 不计入行数。 | ARCHITECTURE §13 G12、RULES §2 |
 | G13 | core、契约或路线代码依赖了界面，包括 type-only 的 react。 | 去掉这条依赖。这些路径不能依赖 react、路由、样式、electron、pdfjs-dist、ui-kit、切片的 src/ui，或 desktop 的 renderer 与 preload。 | ARCHITECTURE §2.1、§13 G13、RULES N-21 |
 | G14 | core 的编译环境里出现了 DOM 或 Node 全局。 | 去掉 window、document、HTMLElement、KeyboardEvent、process 等用法。core 的 tsconfig 只有 lib ES2023，types 为空。 | ARCHITECTURE §13 G14、RULES §1.3 |
 | G15 | 界面绕过 seam，直接碰到 domain、application、adapters、worker、存储或服务商。 | 界面只导入本切片的 pure.ts 和 contracts，或经 window.oi 调用。renderer、src/ui 和 pure.ts 不能到达 markdown 的解析实现。 | ARCHITECTURE §2.1、§13 G15、RULES N-21 |

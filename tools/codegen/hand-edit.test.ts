@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import type { Dirent } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
@@ -7,7 +8,7 @@ import { expect, it } from "vitest";
 import { commandOutput, remediationBlock } from "../gate-remediation/block.js";
 
 const repo = path.resolve(".");
-const schema = path.resolve("packages/contracts/src/worker-protocol.ts");
+const schema = path.resolve("packages/contracts/src/worker/schemas.ts");
 const parser = path.resolve("workers/parser");
 const codegen = path.resolve("tools/codegen/run.mjs");
 
@@ -51,7 +52,31 @@ function prepare(root: string): string {
   expect(snapshot(left)).toEqual(snapshot(right));
   const output = path.join(root, "protocol");
   generate(root, output);
+  assertNoSchemaLoaderInContracts();
   return output;
+}
+
+function assertNoSchemaLoaderInContracts(): void {
+  const pending = [path.resolve("packages/contracts")];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (current === undefined) {
+      return;
+    }
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      visitContractsEntry(pending, current, entry);
+    }
+  }
+}
+
+function visitContractsEntry(pending: string[], current: string, entry: Dirent): void {
+  if (entry.isDirectory()) {
+    if (entry.name !== "node_modules") {
+      pending.push(path.join(current, entry.name));
+    }
+    return;
+  }
+  expect(entry.name.endsWith(".codegen.mjs")).toBe(false);
 }
 
 it(
