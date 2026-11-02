@@ -12,6 +12,8 @@ Node：`v20.19.2`（PATH 前置 `/home/ubuntu/.nvm/versions/node/v20.19.2/bin`�
 | --- | --- | --- |
 | `GATE_BASE=origin/main corepack pnpm run check`（`018d161`） | 0 | lint、typecheck、typecheck:core、size、deps、core-tests、licenses、one-slice、commits、hotspots、pr-size、codegen、G7。`check-pr-size`：42 行非生成 diff |
 | `GATE_BASE=origin/main corepack pnpm run check`（`8e37a1b`） | 0 | 同上。`check-pr-size`：59 行非生成 diff |
+| `GATE_BASE=origin/main corepack pnpm run check`（`c08486f`） | 0 | 同上。`check-pr-size`：60 行非生成 diff |
+| `GATE_BASE=origin/main corepack pnpm run check`（`3aeddcf`） | 0 | 同上。`check-pr-size`：64 行非生成 diff。另跑 `vitest run tools/gate-remediation/catalog.test.ts`：4 通过，退出码 0 |
 
 `test:core`：不适用（脚本尚未提供）。没有执行。
 
