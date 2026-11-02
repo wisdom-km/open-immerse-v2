@@ -2,11 +2,11 @@
 
 ## 怎么用
 
-仓库还没有业务代码。这一节只说明怎么把 Node 与 Python worker 的工具链跑起来。项目许可证是 Apache-2.0。PDF 依赖锁定为 `pypdfium2`（Apache-2.0 OR BSD-3-Clause，当前 `5.14.0`）。禁止 PyMuPDF / `fitz`（AGPL-3.0）。CI 不调用付费 API，不读取密钥。
+这一节说明怎么把 Node 与 Python worker 的工具链跑起来。项目许可证是 Apache-2.0。PDF 依赖锁定为 `pypdfium2`（Apache-2.0 OR BSD-3-Clause，当前 `5.14.0`）。禁止 PyMuPDF / `fitz`（AGPL-3.0）。CI 不调用付费 API，不读取密钥。
 
 ### 门禁
 
-工作流是 `.github/workflows/ci.yml`。`node` job 跑 `pnpm check`、`pnpm test` 和 gitleaks。`pnpm check` 里的 pip 许可证（G10）要调用 `uv run`，所以这个 job 也安装锁定版本的 uv 和 worker Python。`python-worker` job 跑 ruff、pyright、import-linter、pytest、`tools/check-license/check-pip.mjs`，并核对 `uv.lock` 里的 PDF 依赖。pytest 收集到 0 个用例（退出码 5）时 CI 失败。两个 job 的 `setup-uv` 都把 `version` 设成 `pyproject.toml` 的 `required-version`（`0.13.6`）。
+工作流是 `.github/workflows/ci.yml`。`node` job 跑 `pnpm check`、`pnpm test` 和 gitleaks。`pnpm check` 里的 pip 许可证（G10）要调用 `uv run`，所以这个 job 也安装锁定版本的 uv 和 worker Python。`python-worker` job 跑 ruff、pyright、import-linter、pytest、`tools/check-license/check-pip.mjs`，并核对 `uv.lock` 里的 PDF 依赖。pytest 收集到 0 个用例（退出码 5）时 CI 失败。`worker-health-windows` job 在 Windows 上从 stdin 传入一次性令牌、启动本机 worker、带 Bearer 请求 `GET /v1/health`，并跑 `fixtures/protocol/` 的两侧测试；`fixtures/parsing-rules/` 目录还不在仓库里，目录出现而 job 没有跑它时该步失败。三个 job 里安装 uv 的都把 `version` 设成 `pyproject.toml` 的 `required-version`（`0.13.6`）。
 
 `pnpm check` 包含：ESLint（G2）、`tsc`（G3）、`tsconfig.core.json`（G14）、`tools/check-file-size`（G4）、dependency-cruiser（G5、G13、G15、G16）、core 测试里的 `@vitest-environment`（G16）、npm / pip / 模型清单许可证（G10）、一个切片（G18）、Conventional Commits、热点文件行数（G11 的具名文件）、PR 体量（G12）、`pnpm codegen && git diff --exit-code`（G7）。
 
@@ -82,8 +82,9 @@ pytest 收集到 0 个用例时退出码是 5。CI 不再把 5 改成通过。�
 | --- | --- | --- |
 | `node` | `corepack pnpm install --frozen-lockfile`、锁定的 uv 与 `uv python install`（G10 的 `pip-licenses`）、gitleaks 8.30.1（校验 sha256；失败时追加 G9 说明）、`GATE_BASE=origin/main` 下的 `corepack pnpm run check`、`corepack pnpm test` | `actions/cache` 缓存 pnpm store，键来自 `pnpm-lock.yaml`。`setup-uv` 缓存 `workers/parser/uv.lock` 与该 Python |
 | `python-worker` | 安装 uv `0.13.6` 与 Python、`uv sync --frozen --extra dev`、`ruff check`（G2）、`ruff format --check`（G1）、pytest（G8，退出码 5 失败）、`pyright`（G3-pyright）、`lint-imports`（G6）、`node tools/check-license/check-pip.mjs`、确认锁文件含 `pypdfium2` 且不含 PyMuPDF（失败时追加 G10 说明） | `astral-sh/setup-uv` 缓存 `workers/parser/uv.lock`，并缓存该 Python 解释器 |
+| `worker-health-windows` | Windows。安装 uv `0.13.6` 与 Python、`uv sync --frozen --extra dev`（不装引擎 extra，不下载模型）。`pytest tests/api/test_server.py` 从 stdin 传入一次性令牌并启动 `python -m oi_worker`，带 `Authorization: Bearer` 请求 `GET /v1/health`，断言 200，响应体没有路径或 `key`，退出码为 0，且 stdout 有退出标记。Python 跑 `tests/protocol`。Node 跑 `fixtures/protocol/` 的 Vitest。`fixtures/parsing-rules/` 还不在仓库里；目录一旦出现而这一步没有跑它，该步失败 | `astral-sh/setup-uv` 缓存 `workers/parser/uv.lock`，并缓存该 Python。pnpm store 按 `pnpm-lock.yaml` 缓存 |
 
-建议在保护分支上把这两个 check 设为必需：`CI / node`、`CI / python-worker`。是否启用由仓库管理员决定；Agent 不修改分支保护。
+Wisdom 2026-11-02 20:07 批准把 `CI / worker-health-windows` 设为保护分支的必需检查。原文：「都按你的建议：400、--port/OI_WORKER_PORT、Windows 设必需；另开小 PR 加 macOS 健康检查并设必需」。macOS 健康检查不在本 PR。Agent 不修改分支保护（RULES N-02）；仓库管理员启用这项必需检查。`CI / node` 与 `CI / python-worker` 仍是建议中的必需检查。
 
 同一分支的一次推送会同时触发 `push` 与（如果已开 PR）`pull_request`。保护分支看的是 PR 上的那一组 check。
 

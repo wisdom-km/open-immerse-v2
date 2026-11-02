@@ -4,6 +4,7 @@ from typing import cast
 
 from pydantic import ValidationError
 
+from oi_worker.api.protocol_error import ProtocolVersionError
 from oi_worker.protocol.protocol_header import ProtocolHeader
 from oi_worker.protocol.unsupported import UnsupportedProtocol
 
@@ -20,11 +21,11 @@ def gate_header(header: object) -> dict[str, list[str]] | None:
 
 def parse_protocol_header(value: object) -> str:
     if not isinstance(value, str):
-        raise ValueError("protocol.version")
+        raise ProtocolVersionError
     try:
         document = ProtocolHeader.model_validate({"header": value})
     except ValidationError:
-        raise ValueError("protocol.version") from None
+        raise ProtocolVersionError from None
     return document.header
 
 

@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from oi_worker.api.health import HealthRequest, dump_health, exchange_health, health_response
 from oi_worker.api.package_version import package_version
+from oi_worker.api.protocol_error import ProtocolVersionError
 
 
 def _request(header: object, mode: str = "local") -> HealthRequest:
@@ -52,7 +53,7 @@ def test_ac_66_returns_health_when_the_client_minor_is_newer() -> None:
 
 
 def test_rejects_the_exchange_when_the_header_is_not_a_version() -> None:
-    with pytest.raises(ValueError, match="^protocol.version$"):
+    with pytest.raises(ProtocolVersionError):
         exchange_health(_request(None))
 
 

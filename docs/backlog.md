@@ -79,7 +79,8 @@
 | 订阅、按账号计费、账号系统、自有托管服务端 | 不进 v2。只预留 `AccountSession` 与 `account-token` 鉴权方案 | PRD §3.2、AC-94；ARCH §7.9.5 |
 | 评分开关、三选一提示、「未评分」「源码核对」「格式已核对」徽标与「为本文评分」入口的布局与文案 | 待 Loom；M6a 实现。规格只暂定「格式已核对」这几个字，不写颜色、位置或图标 | PRD §3.4、AC-85、AC-87、AC-89 |
 | 「明确不确定证据」作为补救入口的证据清单与验收 | 未定义，定义前不作为入口；需要时另开规格 PR | ARCH §7.1「低分再补」；差异清单 §6.9 第 8 条 |
-| 协议代码生成与其后的 worker 切片 | M1 前提。Forge 排序（2026-11-02，不是业主决定）：契约（#55）→ 代码生成与 worker 健康检查（#56 重做）→ FastAPI、`__main__` 与 Windows CI。代码生成必须先于任何使用协议模型的 worker 切片。`run.mjs` 生成 `workers/parser/oi_worker/protocol/`，datamodel-code-generator 钉 0.87.0（`tools/codegen/pin.json`） | PRD §8 M1；ARCH §10.2、§13 G7、F-11 |
+| 协议代码生成与其后的 worker 切片 | M1 前提。Forge 排序（2026-11-02，不是业主决定）：契约（#55）→ 代码生成与 worker 健康检查（#56）→ FastAPI、`__main__` 与 Windows 健康检查（#58）。代码生成必须先于任何使用协议模型的 worker 切片。`run.mjs` 生成 `workers/parser/oi_worker/protocol/`，datamodel-code-generator 钉 0.87.0（`tools/codegen/pin.json`） | PRD §8 M1；ARCH §10.1、§10.2、§10.4、§13 G7、F-11 |
+| 把 `LaunchBearerMiddleware` 从 `BaseHTTPMiddleware` 换成纯 ASGI 中间件 | SSE 之前。`BaseHTTPMiddleware` 会缓冲请求体，不适合 `GET /v1/jobs/{id}/events` | ARCH §10.2；#58 |
 
 ## 5. Jev 开关审查（2026-10-30 22:06）的处理
 
