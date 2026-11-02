@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "useUnknownInCatchVariables": true,
+    "verbatimModuleSyntax": false,
+    "noEmit": false,
+    "module": "commonjs",
+    "moduleResolution": "bundler",
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "types": [],
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "sourceMap": false
+  },
+  "include": ["src/preload/**/*.ts"]
+}

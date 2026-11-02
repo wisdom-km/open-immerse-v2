@@ -98,3 +98,28 @@ it("allows a matrix edge and rejects the other four M1 examples", () => {
     expect(coreTest.output).toContain(remediationBlock("G16"));
   });
 }, 30_000);
+
+it("rejects electron outside the desktop app and node builtins in the renderer", () => {
+  withRoot((root) => {
+    write(
+      root,
+      "node_modules/electron/package.json",
+      '{"name":"electron","version":"0.0.0","main":"index.js"}\n',
+    );
+    write(root, "node_modules/electron/index.js", "module.exports = {};\n");
+    write(root, "packages/kernel/src/index.ts", 'import "electron";\nexport const id = 1;\n');
+    const outside = cruise(root);
+    expect(outside.status).not.toBe(0);
+    expect(outside.output).toContain("electron-only-in-desktop");
+  });
+  withRoot((root) => {
+    write(
+      root,
+      "apps/desktop/src/renderer/pane.ts",
+      'import "node:fs";\nexport const id = 1;\n',
+    );
+    const renderer = cruise(root);
+    expect(renderer.status).not.toBe(0);
+    expect(renderer.output).toContain("renderer-isolation");
+  });
+}, 30_000);
