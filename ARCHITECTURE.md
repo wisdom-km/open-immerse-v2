@@ -319,6 +319,8 @@ packages/features/<name>/
 
 切片之间只通过 `index.ts` 交互；UI 之间不互相 import，由应用外壳通过「插槽」组合（§5.3）。
 
+`packages/contracts` 可以依赖 `kernel`，且只允许 type-only import（G5 `contracts-is-leaf`，§4.1、§5.1；Wisdom 2026-11-02 17:58）。
+
 ## 4. 模块清单与单文件职责
 
 下表规定每个切片**应有哪些文件、每个文件只负责什么**。实现时可以增加文件，但新增文件同样只能有一个职责；不得把表中两个职责合进一个文件。
@@ -350,6 +352,7 @@ packages/features/<name>/
 | `kernel/src/app-error.ts` | 错误基类与类型守卫 |
 | `kernel/src/logger.ts` | `Logger` 接口（无实现）。调试模式默认关（§11） |
 | `kernel/src/clock.ts`、`id.ts` | 可注入的时间与 ID 生成 |
+| `kernel/src/index.ts` | `kernel` 的公开入口，只再导出本表白名单内的类型与函数。仓库路径是 `packages/kernel/src/index.ts` |
 | `platform-node/src/sqlite/connection.ts` | 打开数据库、WAL、单写者 |
 | `platform-node/src/sqlite/migrate.ts` | 汇总各切片 `migrations/` 并按（切片, 版本）执行 |
 | `platform-node/src/assets/file-asset-store.ts` | 暂存 → 校验摘要 → 提交引用 |
@@ -371,7 +374,7 @@ packages/features/<name>/
 | `ui-kit/src/markdown/math.tsx` | `MathInline` / `MathBlock`：用 `contracts` 的 `KATEX_SAFE_OPTIONS` 调 KaTeX；抛错时显示原始 LaTeX + 错误标记；只挂载 KaTeX 生成的 DOM |
 | `ui-kit/src/markdown/code-block.tsx`、`md-image.tsx`、`md-link.tsx`、`blocked-html.tsx`、`md-table.tsx` | 各渲染一种节点；`md-link` 只把 `ResolvedLink` 回调给宿主，不自己导航 |
 
-`kernel` 有文件白名单；新增文件需要 ADR。**不存在** `utils`、`helpers`、`common`、`shared/state` 这类目录。
+`kernel` 有文件白名单，含 `packages/kernel/src/index.ts`；新增文件需要 ADR。`packages/contracts` 可以依赖 `kernel`，且只允许 type-only import（G5，Wisdom 2026-11-02 17:58）。**不存在** `utils`、`helpers`、`common`、`shared/state` 这类目录。
 
 ### 4.2 功能切片
 
@@ -682,9 +685,10 @@ flowchart TB
   PV --> K
   ADP -. "HTTP（oi-parse/1）" .-> PY
   PY -. "生成的协议模型" .-> C
+  C -- "仅 type-only" --> K
 ```
 
-只允许箭头方向。反方向（例如 domain → application、application → adapters、ui → application、platform-node → features、providers → features）一律禁止。ui 到 domain 的箭头只能经过本切片的 `src/pure.ts`（§2.4），不得 import domain 内部文件。
+只允许箭头方向。`contracts` 到 `kernel` 只允许 type-only import（Wisdom 2026-11-02 17:58）。反方向（例如 domain → application、application → adapters、ui → application、platform-node → features、providers → features）一律禁止。ui 到 domain 的箭头只能经过本切片的 `src/pure.ts`（§2.4），不得 import domain 内部文件。
 
 ### 5.2 禁止事项（CI 强制或评审一票否决）
 
@@ -1058,9 +1062,9 @@ interface BudgetGate {                         // contracts/src/budget.ts；budg
 
 ### 7.4 质量评估的部署（Q9）
 
-决定（Q9，Wisdom 2026-10-30）：设置主选项是「本地 / API」，默认「API」，Jev 的 API 服务商是面壁开放平台（模型 `MiniCPM-OCR-Jev`，见下文「面壁 API」）。「本地」与 API 走同一个 `evaluate` 作业接口；llama.cpp CUDA 构建是以后实现时的首选，自建远程 worker 与自建 Jev Docker 在「高级」里。2026-11-02 17:03：Jev 的托管 API 与本地部署在契约里都是一等。同日 17:21：最小托管 API 客户端在 M1（`jev.route='api'`），M0 的单篇测量用它，M6a 把它接进完整评分流程；本地实现仍是 stub，M0/M1 不下载模型，不设本地推理门禁（§16，PRD AC-103）。这不把 PP-DocLayout 或其他本机推理升成一等。硬件画像只用来给「本地」标可行性，不决定默认值；用户随时可改。开发机是 Windows + 32 GB 内存 + RTX 4070 12 GB，开发走 API 路径；开发机上的本地 Jev 标「不要求 / 未核实」（见本节末「开发机」）。
+决定（Q9，Wisdom 2026-10-30）：设置主选项是「本地 / API」，默认「API」，Jev 的 API 服务商是面壁开放平台（模型 `MiniCPM-OCR-Jev`，见下文「面壁 API」）。「本地」与 API 走同一个 `evaluate` 作业接口；llama.cpp CUDA 构建是以后实现时的首选，自建远程 worker 与自建 Jev Docker 在「高级」里。2026-11-02 17:03：Jev 的托管 API 与本地部署在契约里都是一等。同日 17:21：最小托管 API 客户端在 M1（`jev.route='api'`），M0 的单篇测量在该客户端落地之后再跑，M6a 把它接进完整评分流程；本地实现仍是 stub，M0/M1 不下载模型，不设本地推理门禁（§16，PRD AC-103）。这不把 PP-DocLayout 或其他本机推理升成一等。硬件画像只用来给「本地」标可行性，不决定默认值；用户随时可改。开发机是 Windows + 32 GB 内存 + RTX 4070 12 GB，开发走 API 路径；开发机上的本地 Jev 标「不要求 / 未核实」（见本节末「开发机」）。
 
-**`jev.route`（Wisdom 2026-11-02 17:03）。** 键在 `settings/domain/backend-choice.ts`，类型 `'api' | 'local'`，默认 `'api'`。不是 `ing_route`，也不是 `RouteConfig.layout`（D-D）。校验拒绝其他值，不改写成 `'api'`。`'local'` 不要求 `MODELBEST_API_KEY`。选 `'local'` 时：对任何面壁 Jev HTTP 端点的调用为 0；不得因 stub 失败、自检失败或没有 Key 自动改回 `'api'`，除非用户自己改配置。此时 Jev 不列入面壁的外发能力；引擎 B 若仍选面壁 API，对话框只列引擎 B。stub 实现同一个 `QualityEvaluatorBackend`，不得自己去调面壁 API；失败记 `unavailable`，不记低分，不触发补救（§7.3，PRD AC-05）。以后的本机推理只替换 `quality/backends/local_engine` 里的 stub。切换 `jev.route` 以及换掉 stub，不由单元测试验收：CI 的 diff 路径检查要求改动落在这个目录，或 import-linter 契约要求只有装配根按 `jev.route` 分支（PRD AC-103 ⑤）。
+**`jev.route`（Wisdom 2026-11-02 17:03）。** 键在 `settings/domain/backend-choice.ts`，类型 `'api' | 'local'`，默认 `'api'`。不是 `ing_route`，也不是 `RouteConfig.layout`（D-D）。校验拒绝其他值，不改写成 `'api'`。`'local'` 不要求 `MODELBEST_API_KEY`。选 `'local'` 时：对任何面壁 Jev HTTP 端点的调用为 0；不得因 stub 失败、自检失败或没有 Key 自动改回 `'api'`，除非用户自己改配置。此时 Jev 不列入面壁的外发能力；引擎 B 若仍选面壁 API，对话框只列引擎 B。stub 实现同一个 `QualityEvaluatorBackend`，不得自己去调面壁 API；失败记 `unavailable`，不记低分，不触发补救（§7.3，PRD AC-05）。以后的本机推理只替换 `quality/backends/local_engine` 里的 stub。「改动只落在 `local_engine`」只约束这条 `local_engine` 路径。切换 `jev.route` 以及换掉 stub，不由单元测试验收：`local_engine` 路径的 CI diff 路径检查要求改动落在这个目录。自建 Jev Docker 的同类约束在下一段。两条路径都可用 import-linter 契约：只有装配根按 `jev.route` 分支（PRD AC-103 ⑤）。
 
 **worker 接口对两种部署一致。** 桌面端只有一个适配器 `quality/adapters/worker-quality-evaluator.ts`：经 `worker-client` 向 worker 提交 `POST /v1/jobs`（`kind: "evaluate"`），请求与产物使用同一份 schema（`contracts/src/worker/evaluate.ts`）。本机与远程的差别只在 worker 地址、鉴权与能否接收桌面的服务商 Key（§10.1），与解析作业完全相同。worker 内部由 `quality/backends/` 选择后端，两种后端实现同一个 `QualityEvaluatorBackend`（§7.2）：
 
@@ -1071,7 +1075,7 @@ interface BudgetGate {                         // contracts/src/budget.ts；budg
 | 高级：自建远程 worker | 远程 worker | `local_engine`（在服务器上推理，可用 vLLM / SGLang） | 同「本地」，按服务器环境单独定标 | vLLM ≥ 12 GB、SGLang ≥ 16 GB、llama.cpp / Ollama ≥ 8 GB 显存 |
 | 高级：自建 Docker 服务 | 本机或远程 worker | `jev_http`（图片**不带**前缀） | 与面壁 API 一致 | Linux + NVIDIA ≥ 12 GB、驱动 ≥ 535 |
 
-主选项「API」是 `jev.route='api'`，只走面壁托管 HTTP。主选项「本地」、高级自建远程 worker、高级自建 Jev Docker 都是 `jev.route='local'`。`'local'` 可以连接非面壁的自建主机（本机 worker、用户自己的远程 worker，或用户自己的 Jev Docker）。「调用为 0」只对面壁 Jev HTTP（`api.modelbest.ai`、`api.modelbest.cn` 以及面壁托管端点），不禁止连用户自己的主机。
+主选项「API」是 `jev.route='api'`，只走面壁托管 HTTP。主选项「本地」、高级自建远程 worker、高级自建 Jev Docker 都是 `jev.route='local'`。`'local'` 可以连接非面壁的自建主机（本机 worker、用户自己的远程 worker，或用户自己的 Jev Docker）。「调用为 0」只对面壁 Jev HTTP（`api.modelbest.ai`、`api.modelbest.cn` 以及面壁托管端点），不禁止连用户自己的主机。自建 Jev Docker 用 `jev.route='local'`，请求走 `quality/backends/jev_http`（§10.3），不走 `local_engine`。上一段「只替换 `local_engine`」只约束本机推理路径。Docker 路径的同类约束：改动只落在 `jev_http` 的主机配置，该路径之外的代码改动为 0。
 
 - 本机 worker 只做转发时不加载任何模型，只装基础依赖；基础安装体积**未实测**，M1 统计。
 - `jev_http` 统一处理面壁 API 与 Docker 两种请求形态（图片前缀、端点），由契约测试覆盖两种形态。面壁 API Key 只由 main 按次授权，经回环地址随本机 worker 的作业请求头传入（§10.1）。远程 worker 不接收桌面的 Key；它若在服务器上配置了面壁 API 等托管后端，Key 由服务器自己管理，`GET /v1/capabilities` 报出该后端的服务商与主机，桌面把它列入「数据去向」并按 §7.0 第 6 条询问（架构评审 P1-3）。
@@ -1873,7 +1877,7 @@ Q7 已决定：本机与远程同一协议 HTTP + SSE；stdio JSON-RPC 不采用
 | `GET /v1/artifacts/{id}` | 取候选页 JSON、裁图等产物 |
 
 - 请求头 `OI-Protocol: <主版本>.<次版本>`（第一版 `1.0`）；兼容规则、桌面的判定与 `426` 的响应体见 §10.4。
-- 所有消息 schema 来自 `contracts`（TypeBox 定义 → JSON Schema → `datamodel-code-generator` 生成 pydantic 模型），写入 `workers/parser/oi_worker/protocol/`，禁止手改（§10.3）。CI 用 G7 与 F-11 校验生成物无漂移；`fixtures/protocol/` 的合法 / 非法样例在 TS 与 Python 两侧都跑。产物的 JSON Schema 带主版本 `$id`，worker 发出前、桌面收到后各校验一次（§7.11）。这条链是 M1 的前提交付，必须先于任何使用协议模型的 worker 切片落地。现在的 `tools/codegen/run.mjs` 只是占位（PRD §8 M1）。
+- 所有消息 schema 来自 `contracts`（TypeBox 定义 → JSON Schema → `datamodel-code-generator` 生成 pydantic 模型），写入 `workers/parser/oi_worker/protocol/`，禁止手改（§10.3）。CI 用 G7 与 F-11 校验生成物无漂移；`fixtures/protocol/` 的合法 / 非法样例在 TS 与 Python 两侧都跑。产物的 JSON Schema 带主版本 `$id`，worker 发出前、桌面收到后各校验一次（§7.11）。这条链是 M1 的前提交付，必须先于任何使用协议模型的 worker 切片落地。现在的 `tools/codegen/run.mjs` 只是占位（PRD §8 M1）。顺序标为 Forge 排序，非业主决定（docs/backlog.md）：契约（#55）→ 代码生成与 worker 健康检查（#56 重做）→ FastAPI、`__main__` 与 Windows CI。
 - worker 只在自己的工作目录写临时文件，任务结束按 TTL 清理；不访问桌面数据目录。
 - 额度信封：worker 对上游的每次请求（含拆批与重试）都从信封里扣一次，扣完即停，剩下的项记 `unavailable`（原因码 `budget`）；每次上游调用的用量（`usage`、页数）随 SSE 事件与产物返回，供桌面结算（§7.8）。没有信封的作业不得调用付费上游。
 - 第三方服务凭据（如 `MODELBEST_API_KEY` 的值）只在 `local` 模式下经请求头 `OI-Provider-Authorization` 随作业传入（`server` 模式收到即拒绝，§10.1），不进作业 JSON、`idempotencyKey`、配置摘要、SSE 事件、产物与日志；作业结束即丢弃。`GET /v1/jobs/{id}` 的错误只报 `auth` / `quota` 等类别，不回显凭据（§7.4「面壁 API」，PRD AC-59）。
@@ -2031,7 +2035,7 @@ type EvalRecord = Readonly<{
 | G2 Lint | ESLint（typescript-eslint strict-type-checked）、ruff | 含 F-06、F-08、F-12、`max-lines-per-function`、`complexity`、`no-restricted-imports`；Markdown 相关（§4.5）：renderer 全局 `react/no-danger` 为 error；`katex` 只能在 `ui-kit/src/markdown/math.tsx` 与 `formula/adapters/katex-renderer.ts` 导入；Markdown 解析库只能在 `features/markdown/src/domain/parse/` 导入；`features/markdown/src/adapters/**` 禁止导入 `fs` 的写入类 API；切片代码（`packages/features/**`）中出现注册表登记的服务商主机名即失败（F-18） |
 | G3 类型检查 | `tsc -b`（strict）、mypy `--strict` 或 pyright strict | 0 错误 |
 | G4 行数 | `tools/check-file-size` | §6 的硬上限；allowlist 必须有 ADR 与到期里程碑 |
-| G5 依赖方向 | dependency-cruiser | `no-circular`、`layer-direction`、`no-cross-feature-internals`、`feature-dependency-matrix`（§4.3；含 `ingest` 的九条出边，任何切片 import `ingest` 或 `budget` 即失败）、`renderer-isolation`、`electron-only-in-desktop`、`contracts-is-leaf`、`ui-events-declared`（只有在 `contracts/src/ui-events.ts` 登记的切片能发布或订阅该事件，§5.3）、`providers-boundary`（`packages/providers` 只被 `features/*/src/adapters/` 与 `apps/desktop/src/main/` 导入，只经 `@oi/providers` 入口；它自己不导入任何切片、Electron 与 UI，§7.9.2）；Q3 相关规则单列为 G13、G15、G16 |
+| G5 依赖方向 | dependency-cruiser | `no-circular`、`layer-direction`、`no-cross-feature-internals`、`feature-dependency-matrix`（§4.3；含 `ingest` 的九条出边，任何切片 import `ingest` 或 `budget` 即失败）、`renderer-isolation`、`electron-only-in-desktop`、`contracts-is-leaf`（`packages/contracts` 可以依赖 `kernel`，且只允许 type-only import，Wisdom 2026-11-02 17:58；其余包依赖仍禁止）、`ui-events-declared`（只有在 `contracts/src/ui-events.ts` 登记的切片能发布或订阅该事件，§5.3）、`providers-boundary`（`packages/providers` 只被 `features/*/src/adapters/` 与 `apps/desktop/src/main/` 导入，只经 `@oi/providers` 入口；它自己不导入任何切片、Electron 与 UI，§7.9.2）；Q3 相关规则单列为 G13、G15、G16 |
 | G6 Python 分层 | import-linter | §10.3 的层次契约，含 Python core 的 forbidden 契约 |
 | G7 生成物无漂移 | `pnpm codegen && git diff --exit-code` | 契约、preload、pydantic 模型 |
 | G8 单元与契约测试 | Vitest、pytest | 按 RULES.md §4 的运行纪律 |
@@ -2180,7 +2184,8 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | 诊断日志（Wisdom 2026-10-31；09:15 补充默认规则与不做项；同日写死调试日志上限） | 产品诊断日志的规格在 M0，代码骨架在 M1，导出 UI 仍在 M2。流水线 run 字段为 `run_id`、`route`、`step`、`status`、`error_class`、`duration_ms`。调试模式默认关。开启后调试日志最多保留 7 天，且总量上限 50 MB（先到先清）；用户可随时清空；关闭调试模式时询问是否删除。不记密钥、不记论文正文；只存本机，用户不主动选择就不上传。产品诊断日志的保留天数与体积仍等 M2 实测。M0/M1 不接 LangSmith 等云端追踪，不默认对外上报，不把文档全文写入日志。PR 证据在 `docs/evidence/<PR号>/`；agent 工作记录在 PR 描述，不另建对话记录 | §11；PRD S10、US-14、AC-101、§8；RULES §2、§4、§5 第 8 条、N-05 |
 | M0 费用与 M3 真值表（Wisdom 2026-10-31 13:14） | M0 增加单篇费用与单篇耗时：同一批论文、四个预设，给占位预算上限定标（N-14），测完前「未核实」。机器与本机模型指标由下一行取代。M3 用 §7.13 一张表汇合评分开关、路线、四种评估状态、外发同意与预算模式，不改 AC-85、AC-89、AC-97 的含义；穷尽测试是 PRD AC-102。公式不引入矢量重绘，显示链仍是 LaTeX → 裁图 → 占位框。`auth/account-token.ts` 写入 §7.9.2 的目录树 | §7.5、§7.8、§7.9.2、§7.12、§7.13；PRD §8 M0、M3、AC-102、§9；差异清单 §6.14 |
 | 面壁 API 为主路线（Wisdom 2026-11-02 16:38 UTC+8） | 原文见 PRD §9 与差异清单 §6.15。面壁 API 是规格里已经写成面壁的能力的主路线，不新造面壁版面接口。本地部署是第二路线：只留接口和 stub，M0/M1 不实现、不下载模型、不设本地推理门禁，标为推迟，不删除。M0 测量改为面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）；Key 不在时标「未核实」。公式链仍是 LaTeX → 裁图 → 占位框。对 Jev 的收窄见下一行 | §1、§7.0、§7.1、§7.4、§7.8、§7.12、§12、§16；PRD §2、§3.5、§8、§9；差异清单 §6.15；RULES N-22 |
-| Jev 两条路线（Wisdom 2026-11-02 17:03 UTC+8） | 原文见 PRD §9 与差异清单 §6.15。只收窄同日 16:38 对 Jev 的说法。面壁 Jev 的托管 API 与本地部署在契约里都是一等。最小托管 API 客户端在 M1（`jev.route='api'`），M0 的单篇测量用它，M6a 接入完整流程（同日 17:21）。本地预留为同一 `QualityEvaluatorBackend` 上的 stub。键 `jev.route`（取值 `api` 或 `local`，默认 `api`），不是 `ing_route`，也不是版面部署。选 `'local'` 时对面壁 Jev 的请求为 0，不偷偷回退，外发不列 Jev。高级自建远程 worker 与自建 Jev Docker 也是 `'local'`，可以连用户自己的非面壁主机；调用为 0 只对面壁 HTTP。切换与日后换掉 stub 不由单元测试验收：CI diff 路径检查（改动落在 `quality/backends/local_engine`），或 import-linter（只有装配根按 `jev.route` 分支）（PRD AC-103 ⑤）。PP-DocLayout 与其余本机推理仍是第二路线 | §7.0、§7.4；PRD §2、§3.3、AC-103、§8 M1、M6a、§9；差异清单 §6.15；RULES §5 第 14 条 |
+| Jev 两条路线（Wisdom 2026-11-02 17:03 UTC+8） | 原文见 PRD §9 与差异清单 §6.15。只收窄同日 16:38 对 Jev 的说法。面壁 Jev 的托管 API 与本地部署在契约里都是一等。最小托管 API 客户端在 M1（`jev.route='api'`），M0 的单篇测量在该客户端落地之后再跑，M6a 接入完整流程（同日 17:21）。本地预留为同一 `QualityEvaluatorBackend` 上的 stub。键 `jev.route`（取值 `api` 或 `local`，默认 `api`），不是 `ing_route`，也不是版面部署。选 `'local'` 时对面壁 Jev 的请求为 0，不偷偷回退，外发不列 Jev。高级自建远程 worker 与自建 Jev Docker 也是 `'local'`，可以连用户自己的非面壁主机；调用为 0 只对面壁 HTTP。切换与日后换掉 stub 不由单元测试验收。「改动只落在 `quality/backends/local_engine`」只约束 `local_engine` 路径。自建 Jev Docker 用 `jev.route='local'`，但走 `jev_http`（§10.3）；该路径的改动只落在 `jev_http` 的主机配置，该路径之外的代码改动为 0。验收也可以是 import-linter（只有装配根按 `jev.route` 分支）（PRD AC-103 ⑤）。PP-DocLayout 与其余本机推理仍是第二路线 | §7.0、§7.4；PRD §2、§3.3、AC-103、§8 M1、M6a、§9；差异清单 §6.15；RULES §5 第 14 条 |
+| contracts 只以 type-only 依赖 kernel（Wisdom 2026-11-02 17:58 UTC+8） | 原文：「批准 contracts→kernel，收紧为 type-only，补规格和白名单」。`packages/contracts` 可以依赖 `kernel`，且只允许 type-only import。`packages/kernel/src/index.ts` 写入 kernel 文件白名单。独立 ADR 文件仍等 M1 建立 `docs/adr/` 时登记（本节末段）。本条只补规格与白名单；`tools/check-deps` 的 `contracts-is-leaf` 仍禁止这条边，机器放行另开代码改动 | §3.1、§4.1、§5.1、§13 G5 |
 
 - 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3、M6a、M6b 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
 - 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、架构评审新增的 `ingest` 切片及其九条出边、`budget` 切片与删除的 `repair → quality`，以及修复 B 新增的 `packages/providers` 包与 `providers-boundary` 规则、`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），以及 PR C 新增的 G18、`ui-events-declared`、`supervisor-state` 与解析规则集 `oi-rules/1`，在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。

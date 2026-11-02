@@ -603,15 +603,15 @@ Wisdom 批准 Forge 的四条建议。Q10 不重开：标准档仍是 PP-DocLayo
 
 同日 17:03 UTC+8，只收窄上面「任何本机推理」对 Jev 的说法。原文：「就是这个JEV的模型啊，我考虑本地部署或者是接入API，这个是要有的，但是先做的是接入API。然后本地部署的这个你也要给我预留出来，比如说我本地部署了之后，我可能不用API的这个。」
 
-面壁模型 `MiniCPM-OCR-Jev`：托管 API 与本地部署在契约里都是一等。最小托管 API 客户端在 M1（`jev.route` 为 `api`），M0 的单篇测量用它，M6a 把它接进完整评分流程；本地部署预留，现在是 stub，以后替换 stub 即接入。配置键 `jev.route`（`api` 或 `local`，默认 `api`），在 `settings/domain/backend-choice.ts`。不是 `ing_route`，也不是版面 `RouteConfig.layout`。其他值拒绝，不改写成 `api`。选 `local` 时可以不调用面壁 API：对 Jev HTTP 的调用为 0，不偷偷回退，除非用户自己改回 `api`；不要求 `MODELBEST_API_KEY`；外发同意不列 Jev（引擎 B 仍走面壁时照常询问）。切换路线与换掉 stub 不由单元测试验收：CI 的 diff 路径检查（改动落在 `quality/backends/local_engine`），或 import-linter 契约（只有装配根按 `jev.route` 分支）（PRD AC-103 ⑤）。PP-DocLayout 与其余非 Jev 本机推理仍按上一段的第二路线。不重开 Q9。
+面壁模型 `MiniCPM-OCR-Jev`：托管 API 与本地部署在契约里都是一等。最小托管 API 客户端在 M1（`jev.route` 为 `api`），M0 的单篇测量在该客户端落地之后再跑，M6a 把它接进完整评分流程；本地部署预留，现在是 stub，以后替换 stub 即接入。配置键 `jev.route`（`api` 或 `local`，默认 `api`），在 `settings/domain/backend-choice.ts`。不是 `ing_route`，也不是版面 `RouteConfig.layout`。其他值拒绝，不改写成 `api`。选 `local` 时可以不调用面壁 API：对 Jev HTTP 的调用为 0，不偷偷回退，除非用户自己改回 `api`；不要求 `MODELBEST_API_KEY`；外发同意不列 Jev（引擎 B 仍走面壁时照常询问）。切换路线与换掉 stub 不由单元测试验收。「改动只落在 `quality/backends/local_engine`」只约束 `local_engine` 路径。自建 Jev Docker 用 `jev.route` 为 `local`，但走 `quality/backends/jev_http`；该路径的改动只落在 `jev_http` 的主机配置，该路径之外的代码改动为 0。验收也可以是 import-linter 契约（只有装配根按 `jev.route` 分支）（PRD AC-103 ⑤）。PP-DocLayout 与其余非 Jev 本机推理仍按上一段的第二路线。不重开 Q9。
 
-同日 17:21 UTC+8。原文：「Jev API 客户端提前到 M1，M6a 接进完整流程」。最小的面壁 Jev 托管 API 客户端走提供者契约，`jev.route` 为 `api`，是 M1 交付，M0 的单篇测量也用它。M6a 把它接进完整评分流程。本地部署仍是 stub。上一段里原先的「先实现 API（M0/M1）」与「真实调用按 M6a」按本条理解。主选项「API」只走面壁托管 HTTP。主选项「本地」、高级自建远程 worker、高级自建 Jev Docker 都是 `jev.route` 为 `local`，可以连接用户自己的非面壁主机；调用为 0 只对面壁 HTTP。AC-20 的「不启用」只表示本地结果不当作有效分数，stub 或自检失败记 `unavailable`，不回退到 `api`。
+同日 17:21 UTC+8。原文：「Jev API 客户端提前到 M1，M6a 接进完整流程」。最小的面壁 Jev 托管 API 客户端走提供者契约，`jev.route` 为 `api`，是 M1 交付。M0 的面壁 API 单篇测量在该客户端落地之后再跑，程序用这个客户端。M6a 把它接进完整评分流程。本地部署仍是 stub。上一段里原先的「先实现 API（M0/M1）」与「真实调用按 M6a」按本条理解。主选项「API」只走面壁托管 HTTP。主选项「本地」、高级自建远程 worker、高级自建 Jev Docker 都是 `jev.route` 为 `local`，可以连接用户自己的非面壁主机；调用为 0 只对面壁 HTTP。AC-20 的「不启用」只表示本地结果不当作有效分数，stub 或自检失败记 `unavailable`，不回退到 `api`。
 
 | 项 | 决定 | 落点 |
 | --- | --- | --- |
 | 主路线 | 已写成面壁的能力继续走面壁 API。不新造面壁版面接口 | PRD §2、§3.5、§9；ARCH §7.0、§7.4、§16 |
 | 第二路线 | 本地部署只留接口、契约和 stub。M0/M1 不实现、不下载模型、不设本地推理门禁。推迟，不删除 | PRD §3.5、§8 M0、M1；ARCH §7.0、§7.12、§12；RULES §4、§5 第 14 条 |
-| M0 测量 | 面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。单篇费用保留。程序用 M1 的最小 Jev 托管 API 客户端（`jev.route` 为 `api`）。Cloud Agent 加 `MODELBEST_API_KEY`；Key 不在时标「未核实」 | PRD §8 M0、§9；ARCH §7.8、§7.12；本文 §6.14、§7 |
+| M0 测量 | 面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。单篇费用保留。程序用 M1 的最小 Jev 托管 API 客户端（`jev.route` 为 `api`），测量在该客户端落地之后再跑。Cloud Agent 加 `MODELBEST_API_KEY`；Key 不在时标「未核实」 | PRD §8 M0、§9；ARCH §7.8、§7.12；本文 §6.14、§7 |
 | N-22 与 #34 | G6、pyright、gitleaks 已在 CI，满足业务切片的门禁前提。G1、G3、G5 仍是 M1 交付，不挡住业务切片 | RULES N-22；README；docs/ci-and-environment.md；Issue #34 |
 | Jev 契约 | 托管 API 与本地部署都是一等。最小托管 API 客户端在 M1，M6a 接入完整流程。键 `jev.route`。选 `local` 时面壁 Jev 请求为 0，无隐藏回退。stub 可被本机模块替换。⑤ 用 CI diff 路径检查或 import-linter，不是单元测试（AC-103） | PRD §3.3、AC-103、§8 M1、M6a、§9；ARCH §7.4、§16；RULES §5 第 14 条 |
 
