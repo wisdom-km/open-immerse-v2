@@ -33,15 +33,15 @@
 
 ## 命令
 
-下列命令于 2026-10-31 在 Cloud Agent 环境跑过。Node 以 `.nvmrc` 的 20.19.2 为准。哪些门禁在跑见 [docs/ci-and-environment.md](docs/ci-and-environment.md)「门禁」。worker 命令的工作目录是 `workers/parser/`。
+Node 以 `.nvmrc` 的 22.23.4 为准（Wisdom 2026-11-02 21:44）。哪些门禁在跑见 [docs/ci-and-environment.md](docs/ci-and-environment.md)「门禁」。worker 命令的工作目录是 `workers/parser/`。
 
-Cloud Agent 的 PATH 里 `/exec-daemon/node`（v22.23.4）排在 nvm 前面。不把 nvm 的 bin 放在 PATH 前面时，`node -v` 仍是 v22.23.4。下表是把 `/home/ubuntu/.nvm/versions/node/v20.19.2/bin` 放在 PATH 前面之后的退出码。先放这个目录，再跑 `corepack pnpm`。
+Cloud Agent 的 PATH 里 `/exec-daemon/node` 排在 nvm 前面。2026-11-02 这个二进制也是 v22.23.4。仍先把 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin` 放在 PATH 前面，再跑 `corepack pnpm`，让 `node` 与 `corepack` 来自钉住的那一版。下表「安装 Node」「启用 pnpm」「安装 JS 依赖」三行是 2026-11-02 在这支 Node 上的退出码。其余各行是 2026-10-31 在 Node 20.19.2 上的记录，不改写成这次的测量。`check` 与 `test` 在 22.23.4 上的重跑记在该 PR 的 `docs/evidence/<PR号>/commands.md`。
 
 | 步骤 | 命令 | 退出码 | 验证备注 |
 | --- | --- | --- | --- |
-| 安装 Node | `nvm install`，然后 `nvm use` | 0，0 | 已有 20.19.2，打印 Now using node v20.19.2 |
-| 启用 pnpm | `corepack enable` | 0 | `packageManager` 为 pnpm@10.34.9 |
-| 安装 JS 依赖 | `corepack pnpm install --frozen-lockfile` | 0 | Lockfile is up to date，Already up to date |
+| 安装 Node | `nvm install`，然后 `nvm use` | 0，0 | 已有 22.23.4，打印 Now using node v22.23.4（npm v10.9.9）。corepack 0.36.0 |
+| 启用 pnpm | `corepack enable` | 0 | `packageManager` 为 pnpm@10.34.9。`corepack pnpm --version` 打印 10.34.9 |
+| 安装 JS 依赖 | `corepack pnpm install --frozen-lockfile` | 0 | Lockfile is up to date，Already up to date。`pnpm-lock.yaml` 没有改动。`@types/node` 仍是 22.20.5（2026-11-02 时 npm 上 22 线的最新版） |
 | lint | `corepack pnpm run lint` | 0 | `eslint . --max-warnings 0` |
 | typecheck | `corepack pnpm run typecheck` | 0 | 已有 `.ts`。`tsc --noEmit --project tsconfig.json`。类型错误会使命令失败 |
 | typecheck:core | `corepack pnpm run typecheck:core` | 0 | G14。`tsc -p tsconfig.core.json --noEmit`。`lib` 只有 ES2023，`types` 为空 |
