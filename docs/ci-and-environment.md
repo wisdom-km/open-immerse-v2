@@ -12,6 +12,8 @@
 
 失败时在原输出后面追加改正说明。文案只在 `tools/gate-remediation/catalog.json`，对照表在 [gate-remediation.md](gate-remediation.md)。`tsc -b` 仍不是必需检查（M1-DEFER-G3）。G3 的违例样例在 `tools/gate-fixtures/g3/`，不在主 `tsconfig` 的编译范围内。
 
+业务切片的 M1 门禁前提（RULES N-22，Wisdom 2026-11-02）由已经在 CI 运行的 G6（import-linter）、pyright 与 gitleaks 满足。G1、G3 `tsc -b`、G5 仍是 M1 交付（Issue #34），不挡住业务切片。工作流全绿仍不等于 G1–G18 全部已有。本段不改 CI 行为。
+
 还没接上，规格怎么写就怎么留着，不另造行为：
 
 | 门禁 | 原因 |
