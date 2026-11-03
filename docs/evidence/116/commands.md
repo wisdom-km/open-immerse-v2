@@ -48,6 +48,14 @@ GATE_BASE=origin/main corepack pnpm run check
 
 退出码 0。`check-pr-size: 783 non-generated lines`。其余步骤与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-adr.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
 
+DESIGN 的 R14、UIX-69 与决策日志顺序在 `ad299d51734de425f6eb0aed18c138787cf5c482`。ADR 0001 正文批准范围改成 02:04–03:54 在 `f29e1f5f6da6f1928a69e320b2e4e1abc13214f3`。changelog 同一范围在 `5b3d40ba037d70ff5cd4d4904b71a0c3b8ed7ae3`。在该提交上再跑：
+
+```bash
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+退出码 0。`check-pr-size: 793 non-generated lines`。其余步骤与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-range.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
+
 ## 链接
 
 对 `637f9af` 改过的 `PRD.md`、`ARCHITECTURE.md`、`DESIGN.md`、`docs/design-principles.md` 抽出仓库内 Markdown 链接，标题锚点按 GitHub 的算法（小写，去掉标点，空格改成 `-`）核对。73 条能打开。唯一对不上文件的是 AC-38 表格里的例句 `[x](x.md)`，那是验收条文里的链接写法，不是仓库链接，未改。这四份文件在 `637f9af` 的新增行里没有新的 Markdown 链接。没有断链要修。
