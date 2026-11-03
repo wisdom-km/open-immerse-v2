@@ -679,6 +679,7 @@ flowchart TB
   DOM --> K
   APP --> K
   PN --> K
+  PN --> C
   WC --> C
   PV --> PN
   PV --> C
@@ -688,7 +689,7 @@ flowchart TB
   C -- "仅 type-only" --> K
 ```
 
-只允许箭头方向。`contracts` 到 `kernel` 只允许 type-only import（Wisdom 2026-11-02 17:58）。反方向（例如 domain → application、application → adapters、ui → application、platform-node → features、providers → features）一律禁止。ui 到 domain 的箭头只能经过本切片的 `src/pure.ts`（§2.4），不得 import domain 内部文件。
+只允许箭头方向。`contracts` 到 `kernel` 只允许 type-only import（Wisdom 2026-11-02 17:58）。反方向（例如 domain → application、application → adapters、ui → application、platform-node → features、providers → features）一律禁止。ui 到 domain 的箭头只能经过本切片的 `src/pure.ts`（§2.4），不得 import domain 内部文件。`platform-node` 可以值导入 `contracts`（Wisdom 2026-11-03 10:40）。`contracts` 仍是叶子（G5 `contracts-is-leaf` 不变），`contracts` → `kernel` 仍只允许 type-only import。
 
 ### 5.2 禁止事项（CI 强制或评审一票否决）
 
@@ -2196,6 +2197,7 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | contracts 只以 type-only 依赖 kernel（Wisdom 2026-11-02 17:58 UTC+8） | 原文：「批准 contracts→kernel，收紧为 type-only，补规格和白名单」。`packages/contracts` 可以依赖 `kernel`，且只允许 type-only import。`packages/kernel/src/index.ts` 写入 kernel 文件白名单。独立 ADR 文件仍等 M1 建立 `docs/adr/` 时登记（本节末段）。`packages/kernel/src/index.ts` 写入白名单，由 Wisdom 2026-11-02 17:58 的业主批准代替 ADR（§4.1 写「新增文件需要 ADR」；这次批准代替该文件的 ADR，以后新增文件仍要 ADR）。机器检查由 #55 落地：`contracts-is-leaf` 不再包含 kernel，新增 G5 规则 `contracts-kernel-type-only`，拒绝 contracts→kernel 的非 type-only 依赖（含 re-export、动态 import、相对路径） | §3.1、§4.1、§5.1、§13 G5 |
 | Node 22 LTS（Wisdom 2026-11-02 21:44） | 原文：「批准先开小 PR 升 Node 22 LTS，pnpm 保持 10」。构建与测试用的 Node 从 20.19.2 改为 22.23.4。pnpm 仍是 10.34.9。不改 `.cursor/environment.json` 与 `.cursor/install.sh`（N-11）。这两份文件没有写死 Node 版本：`install.sh` 读 `.nvmrc` | §15.1；[docs/ci-and-environment.md](./docs/ci-and-environment.md) |
 | 诊断日志契约文件（Wisdom 2026-11-02 23:17） | `logger.ts` 与 `clock.ts` 已在 §4.1。这次指示代替这两个文件的 ADR，不另建 `docs/adr/` 页。以后表外新文件仍要 ADR | §4.1、§11 |
+| platform-node 值导入 contracts（Wisdom 2026-11-03 10:40） | 批准 `platform-node` → `contracts` 的值导入，供诊断日志落盘读取 `readDiagEvent`。§5.1 增加 `PN --> C`。`contracts` 仍是叶子（`contracts-is-leaf` 不变）。`contracts` → `kernel` 仍只允许 type-only import。这次批准代替该边的 ADR，不另建 `docs/adr/` 页。dependency-cruiser 与其余门禁不在本 PR 改，规则落地属 PR #77 | §5.1、§13 G5 |
 
 - 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3、M6a、M6b 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
-- 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、架构评审新增的 `ingest` 切片及其九条出边、`budget` 切片与删除的 `repair → quality`，以及修复 B 新增的 `packages/providers` 包与 `providers-boundary` 规则、`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），以及 PR C 新增的 G18、`ui-events-declared`、`supervisor-state` 与解析规则集 `oi-rules/1`，在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。
+- 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、架构评审新增的 `ingest` 切片及其九条出边、`budget` 切片与删除的 `repair → quality`，以及修复 B 新增的 `packages/providers` 包与 `providers-boundary` 规则、`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），以及 PR C 新增的 G18、`ui-events-declared`、`supervisor-state` 与解析规则集 `oi-rules/1`，在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。2026-11-03 10:40 批准的 `platform-node` → `contracts` 值导入同样等到那时登记；门禁配置不在批准它的文档 PR 里改。
