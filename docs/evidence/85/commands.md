@@ -44,3 +44,13 @@ tests/quality/test_select_backend.py ...
 | `node ../../tools/gate-remediation/run.mjs --id G8 -- uv run pytest tests/quality -q` | 0 | 工作目录 `workers/parser/`。57 passed |
 | `node ../../tools/gate-remediation/run.mjs --id G6 -- uv run lint-imports` | 0 | 7 kept，0 broken |
 | `GATE_BASE=origin/main corepack pnpm run check` | 0 | 在 `d31124b`。`check-pr-size` 1667 行非生成 diff。工作树干净 |
+
+## Anvil（`3eca4fc`）
+
+`JevHttpSettings.credential` 使用 `field(repr=False)`。`repr` 与 `str` 里假 key 出现 0 次。修复提交 `3a50e7737e727ebff2c8f2d991ecdd46ea7ba768`。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `node ../../tools/gate-remediation/run.mjs --id G8 -- uv run pytest tests/quality -q` | 0 | 工作目录 `workers/parser/`。58 passed |
+| `node ../../tools/gate-remediation/run.mjs --id G6 -- uv run lint-imports` | 0 | 7 kept，0 broken |
+| `GATE_BASE=origin/main corepack pnpm run check` | 0 | 在 `3a50e77`。`check-pr-size` 1684 行非生成 diff。工作树干净 |
