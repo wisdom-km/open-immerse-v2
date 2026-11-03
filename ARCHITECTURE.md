@@ -374,6 +374,8 @@ packages/features/<name>/
 | `ui-kit/src/markdown/math.tsx` | `MathInline` / `MathBlock`：用 `contracts` 的 `KATEX_SAFE_OPTIONS` 调 KaTeX；抛错时显示原始 LaTeX + 错误标记；只挂载 KaTeX 生成的 DOM |
 | `ui-kit/src/markdown/code-block.tsx`、`md-image.tsx`、`md-link.tsx`、`blocked-html.tsx`、`md-table.tsx` | 各渲染一种节点；`md-link` 只把 `ResolvedLink` 回调给宿主，不自己导航 |
 
+`packages/contracts/src/worker/` 的 `readHealthResponse`、`readProtocolHeader`、`readUnsupportedProtocol` 是 oi-parse/1 报文的运行时校验，与 schema 放在一起，属于接受的例外（Wisdom 2026-11-04 05:26 批准 #61 第 4 条方案 A）。
+
 `kernel` 有文件白名单，含 `packages/kernel/src/index.ts`；新增文件需要 ADR。`packages/contracts` 可以依赖 `kernel`，且只允许 type-only import（G5，Wisdom 2026-11-02 17:58）。**不存在** `utils`、`helpers`、`common`、`shared/state` 这类目录。
 
 ### 4.2 功能切片
