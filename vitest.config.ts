@@ -1,7 +1,19 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { defineConfig } from "vitest/config";
+
+const root = path.dirname(fileURLToPath(import.meta.url));
 
 /** G8、G16。core 用例与工具夹具都在 Node 环境。没有 core 文件时工具夹具仍让套件非空。 */
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@oi/kernel": path.join(root, "packages/kernel/src/index.ts"),
+      "@oi/contracts": path.join(root, "packages/contracts/src/index.ts"),
+      "@oi/platform-node": path.join(root, "packages/platform-node/src/index.ts"),
+    },
+  },
   test: {
     environment: "node",
     include: [

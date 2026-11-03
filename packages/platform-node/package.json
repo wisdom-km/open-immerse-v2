@@ -4,7 +4,10 @@
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.js"
+    ".": {
+      "types": "./src/index.js",
+      "default": "./dist/index.js"
+    }
   },
   "dependencies": {
     "@oi/contracts": "workspace:*",

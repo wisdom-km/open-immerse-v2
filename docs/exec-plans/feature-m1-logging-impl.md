@@ -25,6 +25,7 @@ Forge 对 `a8a97de` 有条件通过。下面各项覆盖同题的草案。
 - 证据目录包含 AC-101 ②③⑤ 与 #76 的测试输出摘录。截图链接 `desktop-e2e-windows-screenshots`，写上 run ID 与 tip SHA，并且是接入 logger 之后那个 tip 的运行结果。
 - 四个查询参数的打码暂放在 `value-guard`。M4 建 `http/redact.ts` 时与这里对齐。
 - M1 的调试开关只活在 logger 实例里。没有设置界面，应用代码也不调用 `setDebugMode`。用户在 M1 无法开启调试模式。
+- Electron 读的是编译后的 JS。`@oi/kernel`、`@oi/contracts`、`@oi/platform-node` 的 `exports.types` 仍是 `./src/index.js`（tsc 对到旁边的 `.ts`），`exports.default` 是 `./dist/index.js`。`apps/desktop` 的 `build` 先编译 kernel，再 contracts，再 platform-node，然后编译 main 与 preload。`dist/` 不入库。Vitest 把这三个包名指到各自的 `src/index.ts`，单测不依赖 `dist`。三个包的源码行为不改。不改 ARCHITECTURE，不改 G5。
 
 ## 计划 / 实际
 
