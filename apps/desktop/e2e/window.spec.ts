@@ -10,7 +10,9 @@ test("loads the app start url when the window opens", ({ desktop }) => {
   expect(desktop.page.url()).toBe(appStartUrl);
 });
 
-test("uses the oi-app protocol when the page location is read", async ({ desktop }) => {
+test("uses the oi-app protocol when the page location is read", async ({
+  desktop,
+}) => {
   expect(await evaluate(desktop.page, "location.protocol")).toBe("oi-app:");
 });
 

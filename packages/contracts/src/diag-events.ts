@@ -38,7 +38,10 @@ type Envelope = {
 
 export type DiagEvent = Envelope &
   (
-    | (PipelineRunFields & { readonly event: "pipeline.run"; readonly requestId?: string })
+    | (PipelineRunFields & {
+        readonly event: "pipeline.run";
+        readonly requestId?: string;
+      })
     | { readonly event: "upstream.server_error"; readonly requestId: string }
     | {
         readonly event: "ipc.oversize";
@@ -56,9 +59,13 @@ export type DiagEventRejected = { readonly code: "diag_event_rejected" };
 
 export type DiagLogger = Logger<DiagEvent>;
 
-type TakenString = { readonly present: false } | { readonly present: true; readonly value: string };
+type TakenString =
+  | { readonly present: false }
+  | { readonly present: true; readonly value: string };
 
-export function readDiagEvent(value: unknown): Result<DiagEvent, DiagEventRejected> {
+export function readDiagEvent(
+  value: unknown,
+): Result<DiagEvent, DiagEventRejected> {
   const record = asRecord(value);
   if (record === undefined) {
     return rejected();
@@ -187,7 +194,13 @@ function readOversize(
   if (channel === undefined || bytes === undefined || requestId === undefined) {
     return undefined;
   }
-  return { ...envelope, event: "ipc.oversize", channel, bytes, ...requestIdField(requestId) };
+  return {
+    ...envelope,
+    event: "ipc.oversize",
+    channel,
+    bytes,
+    ...requestIdField(requestId),
+  };
 }
 
 function readNamed(
@@ -202,7 +215,10 @@ function readNamed(
   return { ...envelope, event, ...requestIdField(requestId) };
 }
 
-function requiredString(record: Record<string, unknown>, key: string): string | undefined {
+function requiredString(
+  record: Record<string, unknown>,
+  key: string,
+): string | undefined {
   const value = record[key];
   if (typeof value !== "string") {
     return undefined;
@@ -210,7 +226,10 @@ function requiredString(record: Record<string, unknown>, key: string): string | 
   return value;
 }
 
-function requiredNonEmpty(record: Record<string, unknown>, key: string): string | undefined {
+function requiredNonEmpty(
+  record: Record<string, unknown>,
+  key: string,
+): string | undefined {
   const value = requiredString(record, key);
   if (value === undefined || value.length === 0) {
     return undefined;
@@ -218,7 +237,10 @@ function requiredNonEmpty(record: Record<string, unknown>, key: string): string 
   return value;
 }
 
-function requiredDuration(record: Record<string, unknown>, key: string): number | undefined {
+function requiredDuration(
+  record: Record<string, unknown>,
+  key: string,
+): number | undefined {
   const value = record[key];
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
     return undefined;
@@ -226,7 +248,10 @@ function requiredDuration(record: Record<string, unknown>, key: string): number 
   return value;
 }
 
-function requiredBytes(record: Record<string, unknown>, key: string): number | undefined {
+function requiredBytes(
+  record: Record<string, unknown>,
+  key: string,
+): number | undefined {
   const value = record[key];
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
     return undefined;
@@ -234,7 +259,10 @@ function requiredBytes(record: Record<string, unknown>, key: string): number | u
   return value;
 }
 
-function takeOptionalString(record: Record<string, unknown>, key: string): TakenString | undefined {
+function takeOptionalString(
+  record: Record<string, unknown>,
+  key: string,
+): TakenString | undefined {
   if (!Object.hasOwn(record, key)) {
     return { present: false };
   }
@@ -245,7 +273,9 @@ function takeOptionalString(record: Record<string, unknown>, key: string): Taken
   return { present: true, value };
 }
 
-function requestIdField(taken: TakenString): { readonly requestId: string } | Record<string, never> {
+function requestIdField(
+  taken: TakenString,
+): { readonly requestId: string } | Record<string, never> {
   if (!taken.present) {
     return {};
   }

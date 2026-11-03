@@ -8,7 +8,10 @@ import {
   type Page,
 } from "@playwright/test";
 
-const desktopRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const desktopRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
 
 type Desktop = {
   app: ElectronApplication;

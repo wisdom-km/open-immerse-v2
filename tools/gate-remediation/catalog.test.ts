@@ -14,7 +14,7 @@ const skipNames = new Set([
 ]);
 
 const explicitCallers: Record<string, readonly string[]> = {
-  G1: [".github/workflows/ci.yml"],
+  G1: [".github/workflows/ci.yml", "package.json"],
   G2: ["package.json", ".github/workflows/ci.yml"],
   G3: ["tools/typecheck.mjs"],
   "G3-pyright": [".github/workflows/ci.yml"],
@@ -42,7 +42,11 @@ function readOne(value: unknown): { id: string; match: string[] } {
   if (typeof value !== "object" || value === null) {
     throw new Error("catalog gate is not an object");
   }
-  if (!("id" in value) || typeof value.id !== "string" || value.id.length === 0) {
+  if (
+    !("id" in value) ||
+    typeof value.id !== "string" ||
+    value.id.length === 0
+  ) {
     throw new Error("catalog gate is missing id");
   }
   const id = value.id;
@@ -60,7 +64,9 @@ function readOne(value: unknown): { id: string; match: string[] } {
 }
 
 function readCatalog(): Array<{ id: string; match: string[] }> {
-  const parsed: unknown = JSON.parse(readFileSync("tools/gate-remediation/catalog.json", "utf8"));
+  const parsed: unknown = JSON.parse(
+    readFileSync("tools/gate-remediation/catalog.json", "utf8"),
+  );
   if (typeof parsed !== "object" || parsed === null || !("gates" in parsed)) {
     throw new Error("catalog.json has no gates");
   }
@@ -75,7 +81,12 @@ function tableRows(table: string): string[][] {
     .trim()
     .split("\n")
     .slice(2)
-    .map((line) => line.split("|").slice(1, -1).map((cell) => cell.trim()));
+    .map((line) =>
+      line
+        .split("|")
+        .slice(1, -1)
+        .map((cell) => cell.trim()),
+    );
 }
 
 function mentions(source: string, id: string): boolean {
@@ -99,25 +110,36 @@ function collect(dir: string, found: string[]): void {
       collect(full, found);
       continue;
     }
-    if (entry.isFile() && /\.(mjs|cjs|js|ts|tsx|py|yml|md|json)$/.test(entry.name)) {
+    if (
+      entry.isFile() &&
+      /\.(mjs|cjs|js|ts|tsx|py|yml|md|json)$/.test(entry.name)
+    ) {
       found.push(full);
     }
   }
 }
 
 it("keeps the remediation table equal to catalog.json", () => {
-  const rendered = execFileSync("node", ["tools/gate-remediation/format.mjs", "--table"], {
-    encoding: "utf8",
-  }).trim();
+  const rendered = execFileSync(
+    "node",
+    ["tools/gate-remediation/format.mjs", "--table"],
+    {
+      encoding: "utf8",
+    },
+  ).trim();
   const docs = readFileSync("docs/gate-remediation.md", "utf8");
   const start = docs.indexOf("<!-- gate-remediation-table:start -->");
   const end = docs.indexOf("<!-- gate-remediation-table:end -->");
   expect(start).toBeGreaterThan(-1);
   expect(end).toBeGreaterThan(start);
-  const slice = docs.slice(start + "<!-- gate-remediation-table:start -->".length, end).trim();
+  const slice = docs
+    .slice(start + "<!-- gate-remediation-table:start -->".length, end)
+    .trim();
   expect(slice).toBe(rendered);
   const rows = tableRows(rendered);
-  expect(rows.map((row) => row[0])).toEqual(readCatalog().map((gate) => gate.id));
+  expect(rows.map((row) => row[0])).toEqual(
+    readCatalog().map((gate) => gate.id),
+  );
   for (const row of rows) {
     expect(row).toHaveLength(4);
     expect(row.every((cell) => cell.length > 0)).toBe(true);
@@ -126,7 +148,9 @@ it("keeps the remediation table equal to catalog.json", () => {
 
 it("does not copy remediation sentences into scripts", () => {
   const rows = tableRows(
-    execFileSync("node", ["tools/gate-remediation/format.mjs", "--table"], { encoding: "utf8" }),
+    execFileSync("node", ["tools/gate-remediation/format.mjs", "--table"], {
+      encoding: "utf8",
+    }),
   );
   const allowed = new Set([
     path.resolve("tools/gate-remediation/catalog.json"),
@@ -154,7 +178,9 @@ it("does not copy remediation sentences into scripts", () => {
 it("points every gate id at a script or a dependency-cruiser rule", () => {
   const rules = readFileSync("tools/check-deps/build-rules.mjs", "utf8");
   const gates = readCatalog();
-  expect(readFileSync("tools/check-deps/check.mjs", "utf8")).toContain("matchedIds");
+  expect(readFileSync("tools/check-deps/check.mjs", "utf8")).toContain(
+    "matchedIds",
+  );
   for (const gate of gates) {
     for (const needle of gate.match) {
       expect(rules, needle).toContain(`"${needle}"`);
@@ -165,11 +191,17 @@ it("points every gate id at a script or a dependency-cruiser rule", () => {
       continue;
     }
     for (const file of callers) {
-      expect(mentions(readFileSync(file, "utf8"), gate.id), `${gate.id} in ${file}`).toBe(true);
+      expect(
+        mentions(readFileSync(file, "utf8"), gate.id),
+        `${gate.id} in ${file}`,
+      ).toBe(true);
     }
   }
   for (const id of Object.keys(explicitCallers)) {
-    expect(gates.some((gate) => gate.id === id), id).toBe(true);
+    expect(
+      gates.some((gate) => gate.id === id),
+      id,
+    ).toBe(true);
   }
 });
 
@@ -192,7 +224,9 @@ function readSpec(gate: unknown): string {
 }
 
 function readSpecs(): string[] {
-  const parsed: unknown = JSON.parse(readFileSync("tools/gate-remediation/catalog.json", "utf8"));
+  const parsed: unknown = JSON.parse(
+    readFileSync("tools/gate-remediation/catalog.json", "utf8"),
+  );
   if (typeof parsed !== "object" || parsed === null || !("gates" in parsed)) {
     throw new Error("catalog.json has no gates");
   }
@@ -254,5 +288,9 @@ it("finds every cited id in the file named beside it", () => {
       }
     }
   }
-  expect([...deferrals].sort()).toEqual(["M1-DEFER-G1", "M1-DEFER-G3", "M1-DEFER-G5"]);
+  expect([...deferrals].sort()).toEqual([
+    "M1-DEFER-G1",
+    "M1-DEFER-G3",
+    "M1-DEFER-G5",
+  ]);
 });

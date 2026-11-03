@@ -34,7 +34,15 @@ function pipReport(argv) {
   }
   const result = spawnSync(
     "uv",
-    ["run", "--frozen", "--extra", "dev", "pip-licenses", "--with-system", "--format=json"],
+    [
+      "run",
+      "--frozen",
+      "--extra",
+      "dev",
+      "pip-licenses",
+      "--with-system",
+      "--format=json",
+    ],
     { cwd: "workers/parser", encoding: "utf8" },
   );
   if (result.error) {
@@ -48,7 +56,8 @@ function pipReport(argv) {
   return JSON.parse(result.stdout);
 }
 
-const skipLock = process.argv.includes("--from-json") && !process.argv.includes("--lockfile");
+const skipLock =
+  process.argv.includes("--from-json") && !process.argv.includes("--lockfile");
 if (!skipLock) {
   assertPdfPin();
 }

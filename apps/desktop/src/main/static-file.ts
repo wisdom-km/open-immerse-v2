@@ -4,11 +4,19 @@ import path from "node:path";
 const HTML = "text/html; charset=utf-8";
 
 export type StaticResult =
-  | { readonly kind: "file"; readonly body: Uint8Array; readonly contentType: string }
+  | {
+      readonly kind: "file";
+      readonly body: Uint8Array;
+      readonly contentType: string;
+    }
   | { readonly kind: "missing" }
   | { readonly kind: "method" };
 
-export function resolveStaticFile(root: string, requestUrl: string, method: string): StaticResult {
+export function resolveStaticFile(
+  root: string,
+  requestUrl: string,
+  method: string,
+): StaticResult {
   if (method !== "GET" && method !== "HEAD") {
     return { kind: "method" };
   }
@@ -19,14 +27,20 @@ export function resolveStaticFile(root: string, requestUrl: string, method: stri
   return { kind: "file", body: readBytes(filePath), contentType: HTML };
 }
 
-export function bodyForMethod(method: string, body: Uint8Array): Uint8Array | null {
+export function bodyForMethod(
+  method: string,
+  body: Uint8Array,
+): Uint8Array | null {
   if (method === "HEAD") {
     return null;
   }
   return body;
 }
 
-export function resolveInsideRoot(root: string, requestUrl: string): string | null {
+export function resolveInsideRoot(
+  root: string,
+  requestUrl: string,
+): string | null {
   const url = parseAppUrl(requestUrl);
   if (url === null || !acceptedOrigin(url)) {
     return null;
@@ -66,7 +80,11 @@ function relativePath(pathname: string): string | null {
     return null;
   }
   const segments = stripped.split(/[/\\]/);
-  if (segments.some((segment) => segment === "" || segment === "." || segment === "..")) {
+  if (
+    segments.some(
+      (segment) => segment === "" || segment === "." || segment === "..",
+    )
+  ) {
     return null;
   }
   return segments.join(path.sep);
@@ -90,7 +108,11 @@ function realInside(root: string, relative: string): string | null {
     return null;
   }
   const fromRoot = path.relative(rootReal, fileReal);
-  if (fromRoot.startsWith(`..${path.sep}`) || fromRoot === ".." || path.isAbsolute(fromRoot)) {
+  if (
+    fromRoot.startsWith(`..${path.sep}`) ||
+    fromRoot === ".." ||
+    path.isAbsolute(fromRoot)
+  ) {
     return null;
   }
   return fileReal;

@@ -7,7 +7,7 @@
 <!-- gate-remediation-table:start -->
 | 编号 | 问题 | 怎么改 | 规格 |
 | --- | --- | --- | --- |
-| G1 | ruff format 报告 worker 源码与当前格式不一致。 | 在 workers/parser 执行 uv run ruff format . 后重新提交。G1 的 Prettier 仍按 PRD §8 延后，不要为了这条去接 Prettier。 | ARCHITECTURE §13 G1、PRD §8 (M1 deferrals); docs/backlog.md M1-DEFER-G1 |
+| G1 | Prettier 或 ruff format 报告源码与仓库格式不一致。 | JS 与 TS 在仓库根执行 pnpm exec prettier --write，范围只限 *.ts、*.tsx、*.mjs、*.js、*.cjs。worker 在 workers/parser 执行 uv run ruff format . 后重新提交。不要用这次格式化去改 Markdown 或 .github 下的文件。 | ARCHITECTURE §13 G1、RULES §1.3; docs/backlog.md M1-DEFER-G1 |
 | G2 | ESLint 或 ruff 报错，常见是函数超过 80 行、圈复杂度超过 15、顶层 let、受限 import，或 ruff 的 E/F/I/UP/B/C901/PLR0915。 | 按工具点名的规则改。domain 纯函数与 Python core 不受 80 行限制，但仍受圈复杂度和文件上限约束。不要放宽规则或加行内禁用，除非有用户批准的 ADR。 | ARCHITECTURE §6、§13 G2、RULES §1.1、§1.2、§1.3 |
 | G3 | tsc 报告类型错误。当前必需的是 tsc --noEmit，不是 tsc -b。 | 按 tsc 指出的文件和行列改正类型，直到 tsc --noEmit 退出码为 0。不要改成 tsc -b，也不要打开 composite。那一项的编号在 docs/backlog.md，是 M1-DEFER-G3。tools/gate-fixtures/g3 只给测试证明文案，不进入必需检查。 | ARCHITECTURE §13 G3、RULES §1.1、PRD §8 (M1 deferrals); docs/backlog.md M1-DEFER-G3 |
 | G3-pyright | pyright strict 报告 Python 类型错误。 | 按 pyright 点名的那一行补类型或改正。检查器锁定 pyright 1.1.407。不要改回 mypy，也不要降低 strict。 | RULES §1.2、ARCHITECTURE §13 G3 |

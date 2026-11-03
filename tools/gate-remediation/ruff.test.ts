@@ -51,7 +51,13 @@ it("prints G1 remediation when ruff format finds a diff", () => {
   const source = path.join(root, "compact.py");
   try {
     writeFileSync(source, "def label(count:int)->int:\n    return count+1\n");
-    const result = ruff("G1", ["format", "--check", "--config", "pyproject.toml", source]);
+    const result = ruff("G1", [
+      "format",
+      "--check",
+      "--config",
+      "pyproject.toml",
+      source,
+    ]);
     expect(result.status).not.toBe(0);
     expect(commandOutput(result)).toContain(remediationBlock("G1"));
   } finally {

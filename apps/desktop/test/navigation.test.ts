@@ -14,11 +14,21 @@ it("denies navigation, new windows, and webviews", () => {
 });
 
 it("blocks every decision except an explicit allow", () => {
-  const blocked = { prevented: false, preventDefault: () => { blocked.prevented = true; } };
+  const blocked = {
+    prevented: false,
+    preventDefault: () => {
+      blocked.prevented = true;
+    },
+  };
   blockUnlessAllowed(decideNavigation(), blocked);
   expect(blocked.prevented).toBe(true);
 
-  const allowed = { prevented: false, preventDefault: () => { allowed.prevented = true; } };
+  const allowed = {
+    prevented: false,
+    preventDefault: () => {
+      allowed.prevented = true;
+    },
+  };
   blockUnlessAllowed("allow", allowed);
   expect(allowed.prevented).toBe(false);
 });

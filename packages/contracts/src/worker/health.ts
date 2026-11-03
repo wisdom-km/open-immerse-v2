@@ -19,7 +19,9 @@ export const healthResponseSchema = Type.Object(
 
 export type HealthResponse = Static<typeof healthResponseSchema>;
 
-export function readHealthResponse(document: unknown): HealthResponse | undefined {
+export function readHealthResponse(
+  document: unknown,
+): HealthResponse | undefined {
   if (!Value.Check(healthResponseSchema, document)) {
     return undefined;
   }

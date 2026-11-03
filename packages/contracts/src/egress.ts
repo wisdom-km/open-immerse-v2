@@ -58,6 +58,8 @@ export type AnswerEgressConsentError = Readonly<{ code: "unknown_request" }>;
 
 export type WithdrawEgressConsentInput = Readonly<{ vendorId: string }>;
 
-export type WithdrawEgressConsentError = Readonly<{ code: "consent_not_granted" }>;
+export type WithdrawEgressConsentError = Readonly<{
+  code: "consent_not_granted";
+}>;
 
 export type SetEgressPromptEnabledInput = Readonly<{ enabled: boolean }>;

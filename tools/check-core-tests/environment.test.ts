@@ -7,14 +7,21 @@ import { expect, it } from "vitest";
 import { commandOutput, remediationBlock } from "../gate-remediation/block.js";
 
 function scan(root: string) {
-  return spawnSync("node", [path.resolve("tools/check-core-tests/check.mjs"), "--root", root], {
-    encoding: "utf8",
-  });
+  return spawnSync(
+    "node",
+    [path.resolve("tools/check-core-tests/check.mjs"), "--root", root],
+    {
+      encoding: "utf8",
+    },
+  );
 }
 
 it("rejects a vitest environment directive in a core test (G16)", () => {
   const root = mkdtempSync(path.join(tmpdir(), "oi-core-"));
-  const file = path.join(root, "packages/features/document/test/core/renders.ts");
+  const file = path.join(
+    root,
+    "packages/features/document/test/core/renders.ts",
+  );
   try {
     mkdirSync(path.dirname(file), { recursive: true });
     const marker = ["@", "vitest-environment"].join("");

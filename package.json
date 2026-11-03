@@ -7,6 +7,7 @@
     "node": ">=22.23.4"
   },
   "scripts": {
+    "check:format": "node tools/gate-remediation/run.mjs --id G1 -- node tools/check-format/check.mjs",
     "lint": "node tools/gate-remediation/run.mjs --id G2 -- eslint . --max-warnings 0",
     "typecheck": "node tools/typecheck.mjs",
     "typecheck:core": "node tools/gate-remediation/run.mjs --id G14 -- tsc -p tsconfig.core.json --noEmit --pretty false",
@@ -22,13 +23,14 @@
     "check:commits": "node tools/check-commits/check.mjs",
     "check:hotspots": "node tools/check-hotspots/check.mjs",
     "check:pr-size": "node tools/check-pr-size/check.mjs",
-    "check": "pnpm run lint && pnpm run typecheck && pnpm run typecheck:core && pnpm run check:size && pnpm run check:deps && pnpm run check:core-tests && pnpm run check:license:npm && pnpm run check:license:pip && pnpm run check:license:models && pnpm run check:one-slice && pnpm run check:commits && pnpm run check:hotspots && pnpm run check:pr-size && pnpm run codegen && node tools/gate-remediation/run.mjs --id G7 -- git diff --exit-code"
+    "check": "pnpm run check:format && pnpm run lint && pnpm run typecheck && pnpm run typecheck:core && pnpm run check:size && pnpm run check:deps && pnpm run check:core-tests && pnpm run check:license:npm && pnpm run check:license:pip && pnpm run check:license:models && pnpm run check:one-slice && pnpm run check:commits && pnpm run check:hotspots && pnpm run check:pr-size && pnpm run codegen && node tools/gate-remediation/run.mjs --id G7 -- git diff --exit-code"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "22.20.5",
     "dependency-cruiser": "17.4.3",
     "eslint": "10.13.0",
+    "prettier": "3.6.2",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
     "vitest": "5.0.5"

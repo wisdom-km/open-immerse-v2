@@ -16,7 +16,9 @@ function git(cwd: string, args: string[]) {
 function binary(context: { skip: (note: string) => void }): string {
   const fromEnv = process.env.GITLEAKS_BIN;
   if (fromEnv === undefined || fromEnv.length === 0) {
-    context.skip("GITLEAKS_BIN is unset. Point it at the gitleaks binary to run G9.");
+    context.skip(
+      "GITLEAKS_BIN is unset. Point it at the gitleaks binary to run G9.",
+    );
     return "";
   }
   return fromEnv;
@@ -25,7 +27,20 @@ function binary(context: { skip: (note: string) => void }): string {
 function detect(bin: string, root: string) {
   return spawnSync(
     "node",
-    [runner, "--id", "G9", "--", bin, "detect", "--source", root, "--config", config, "--no-banner", "--redact"],
+    [
+      runner,
+      "--id",
+      "G9",
+      "--",
+      bin,
+      "detect",
+      "--source",
+      root,
+      "--config",
+      config,
+      "--no-banner",
+      "--redact",
+    ],
     { encoding: "utf8" },
   );
 }
@@ -37,7 +52,13 @@ it("rejects a committed access key that lacks the oitest_ prefix (G9)", (context
     git(root, ["init"]);
     git(root, ["config", "user.email", "gate@example.com"]);
     git(root, ["config", "user.name", "gate"]);
-    const suffix = ["1WqE2rT3", "yU4iO5pA", "6sD7fG8h", "J9kL0zXc", "VbNm"].join("");
+    const suffix = [
+      "1WqE2rT3",
+      "yU4iO5pA",
+      "6sD7fG8h",
+      "J9kL0zXc",
+      "VbNm",
+    ].join("");
     const key = ["ghp_", suffix].join("");
     writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
     git(root, ["add", "secret.txt"]);
@@ -57,7 +78,13 @@ it("allows a synthetic key that uses the oitest_ prefix (G9)", (context) => {
     git(root, ["init"]);
     git(root, ["config", "user.email", "gate@example.com"]);
     git(root, ["config", "user.name", "gate"]);
-    const suffix = ["1WqE2rT3", "yU4iO5pA", "6sD7fG8h", "J9kL0zXc", "VbNm"].join("");
+    const suffix = [
+      "1WqE2rT3",
+      "yU4iO5pA",
+      "6sD7fG8h",
+      "J9kL0zXc",
+      "VbNm",
+    ].join("");
     const key = ["oitest_", suffix].join("");
     writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
     git(root, ["add", "secret.txt"]);
@@ -77,7 +104,13 @@ it("rejects the same suffix when the prefix is nottest_ (G9)", (context) => {
     git(root, ["init"]);
     git(root, ["config", "user.email", "gate@example.com"]);
     git(root, ["config", "user.name", "gate"]);
-    const suffix = ["1WqE2rT3", "yU4iO5pA", "6sD7fG8h", "J9kL0zXc", "VbNm"].join("");
+    const suffix = [
+      "1WqE2rT3",
+      "yU4iO5pA",
+      "6sD7fG8h",
+      "J9kL0zXc",
+      "VbNm",
+    ].join("");
     const key = ["nottest_", suffix].join("");
     writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
     git(root, ["add", "secret.txt"]);

@@ -4,7 +4,13 @@ export type StoredTranslationBlock = Readonly<{
   documentId: DocumentId;
   revisionId: PageRevisionId;
   sourceBlockId: BlockId;
-  blockKind: "paragraph" | "heading" | "caption" | "footnote" | "list_item" | "quote";
+  blockKind:
+    | "paragraph"
+    | "heading"
+    | "caption"
+    | "footnote"
+    | "list_item"
+    | "quote";
   version: number;
   status: "success" | "failed" | "retranslating";
   failureKind: "check_failed" | "network" | "model_error" | null;
@@ -15,7 +21,10 @@ export type StoredTranslationBlock = Readonly<{
   targetLang: "zh-CN";
   cacheKey: string;
   formulaDigest: string;
-  check: Readonly<{ result: "passed" | "failed" | "not_run"; codes: readonly string[] }>;
+  check: Readonly<{
+    result: "passed" | "failed" | "not_run";
+    codes: readonly string[];
+  }>;
   updatedAt: string;
 }>;
 

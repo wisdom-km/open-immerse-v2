@@ -20,7 +20,17 @@ function typecheck(root: string, fileName: string) {
   );
   return spawnSync(
     "node",
-    [runner, "--id", "G14", "--", tsc, "-p", path.join(root, "tsconfig.json"), "--pretty", "false"],
+    [
+      runner,
+      "--id",
+      "G14",
+      "--",
+      tsc,
+      "-p",
+      path.join(root, "tsconfig.json"),
+      "--pretty",
+      "false",
+    ],
     { encoding: "utf8" },
   );
 }

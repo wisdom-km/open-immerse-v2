@@ -1,5 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
@@ -17,8 +24,14 @@ it("rejects the jobs domain module when it imports react (G13)", () => {
       path.join(reactDir, "package.json"),
       '{"name":"react","version":"0.0.0","main":"index.js","types":"index.d.ts"}\n',
     );
-    writeFileSync(path.join(reactDir, "index.js"), "export function createElement() { return null; }\n");
-    writeFileSync(path.join(reactDir, "index.d.ts"), "export type FC = () => void;\n");
+    writeFileSync(
+      path.join(reactDir, "index.js"),
+      "export function createElement() { return null; }\n",
+    );
+    writeFileSync(
+      path.join(reactDir, "index.d.ts"),
+      "export type FC = () => void;\n",
+    );
     const target = path.join(root, source, "src/domain/job-id.ts");
     const original = readFileSync(target, "utf8");
     const next = `${original}import type { FC } from "react";\nexport type Bad = FC;\n`;

@@ -11,7 +11,10 @@ export default defineConfig({
     alias: {
       "@oi/kernel": path.join(root, "packages/kernel/src/index.ts"),
       "@oi/contracts": path.join(root, "packages/contracts/src/index.ts"),
-      "@oi/platform-node": path.join(root, "packages/platform-node/src/index.ts"),
+      "@oi/platform-node": path.join(
+        root,
+        "packages/platform-node/src/index.ts",
+      ),
     },
   },
   test: {
@@ -27,10 +30,17 @@ export default defineConfig({
     typecheck: {
       enabled: true,
       checker: "tsc",
-      include: ["packages/contracts/**/*.test.ts", "packages/kernel/**/*.test.ts"],
+      include: [
+        "packages/contracts/**/*.test.ts",
+        "packages/kernel/**/*.test.ts",
+      ],
       tsconfig: "./tsconfig.core.json",
     },
-    exclude: ["tools/gate-fixtures/**", "node_modules/**", "**/node_modules/**"],
+    exclude: [
+      "tools/gate-fixtures/**",
+      "node_modules/**",
+      "**/node_modules/**",
+    ],
     passWithNoTests: false,
   },
 });

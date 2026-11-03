@@ -6,8 +6,14 @@ import { fileURLToPath } from "node:url";
 import { handleAppProtocol, registerAppScheme } from "./app-protocol.js";
 import { startMainLogger } from "./composition-root.js";
 import { runWhenReady } from "./run-when-ready.js";
-import { blockUnlessAllowed, decideWebViewAttach } from "./security/navigation.js";
-import { decidePermissionCheck, decidePermissionRequest } from "./security/permissions.js";
+import {
+  blockUnlessAllowed,
+  decideWebViewAttach,
+} from "./security/navigation.js";
+import {
+  decidePermissionCheck,
+  decidePermissionRequest,
+} from "./security/permissions.js";
 import { createMainWindow } from "./window.js";
 
 registerAppScheme();
@@ -32,7 +38,8 @@ function startDesktop(): void {
 }
 
 function reportReadyFailure(error: unknown): void {
-  const text = error instanceof Error ? (error.stack ?? error.message) : String(error);
+  const text =
+    error instanceof Error ? (error.stack ?? error.message) : String(error);
   stderr.write(`${text}\n`);
 }
 
@@ -41,8 +48,12 @@ function rendererRoot(mainFile: string): string {
 }
 
 function denyPermissions(): void {
-  session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => {
-    callback(decidePermissionRequest());
-  });
-  session.defaultSession.setPermissionCheckHandler(() => decidePermissionCheck());
+  session.defaultSession.setPermissionRequestHandler(
+    (_contents, _permission, callback) => {
+      callback(decidePermissionRequest());
+    },
+  );
+  session.defaultSession.setPermissionCheckHandler(() =>
+    decidePermissionCheck(),
+  );
 }

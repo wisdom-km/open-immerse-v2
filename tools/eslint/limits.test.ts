@@ -10,9 +10,13 @@ const eslint = path.resolve("node_modules/.bin/eslint");
 const runner = path.resolve("tools/gate-remediation/run.mjs");
 
 function lint(rel: string) {
-  return spawnSync("node", [runner, "--id", "G2", "--", eslint, "--no-ignore", rel], {
-    encoding: "utf8",
-  });
+  return spawnSync(
+    "node",
+    [runner, "--id", "G2", "--", eslint, "--no-ignore", rel],
+    {
+      encoding: "utf8",
+    },
+  );
 }
 
 function branchy(name: string) {
@@ -38,18 +42,27 @@ it("rejects complexity over 15 and functions over 80 lines (G2)", () => {
       const label = String(index);
       return `  const n${label} = 1;`;
     }).join("\n");
-    writeFileSync(path.join(scratch, "long.mjs"), `export function tooLong() {\n${body}\n}\n`);
+    writeFileSync(
+      path.join(scratch, "long.mjs"),
+      `export function tooLong() {\n${body}\n}\n`,
+    );
     const longFile = lint("tools/.gate-scratch/long.mjs");
     expect(longFile.status).not.toBe(0);
     expect(commandOutput(longFile)).toContain("max-lines-per-function");
     expect(commandOutput(longFile)).toContain(remediationBlock("G2"));
 
-    writeFileSync(path.join(scratch, "let.mjs"), "let value = 1;\nexport const n = value;\n");
+    writeFileSync(
+      path.join(scratch, "let.mjs"),
+      "let value = 1;\nexport const n = value;\n",
+    );
     const letFile = lint("tools/.gate-scratch/let.mjs");
     expect(commandOutput(letFile)).toContain("F-06");
     expect(commandOutput(letFile)).toContain(remediationBlock("G2"));
 
-    writeFileSync(path.join(scratch, "katex.mjs"), 'import katex from "katex";\nexport const used = katex;\n');
+    writeFileSync(
+      path.join(scratch, "katex.mjs"),
+      'import katex from "katex";\nexport const used = katex;\n',
+    );
     const katexFile = lint("tools/.gate-scratch/katex.mjs");
     expect(commandOutput(katexFile)).toContain("katex");
     expect(commandOutput(katexFile)).toContain(remediationBlock("G2"));

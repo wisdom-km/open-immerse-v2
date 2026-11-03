@@ -55,14 +55,26 @@ it("brands the string when the value is a string", () => {
     expect(parse(`id-${kind}`)).toEqual({ ok: true, value: `id-${kind}` });
   }
   expect(parseDocumentId("")).toEqual({ ok: true, value: "" });
-  type ParsedDocument = Extract<ReturnType<typeof parseDocumentId>, { ok: true }>["value"];
+  type ParsedDocument = Extract<
+    ReturnType<typeof parseDocumentId>,
+    { ok: true }
+  >["value"];
   expectTypeOf<ParsedDocument>().toEqualTypeOf<DocumentId>();
 });
 
 it("returns id_invalid when the value is not a string", () => {
   for (const { kind, parse } of cases) {
-    expect(parse(1)).toEqual({ ok: false, error: { code: "id_invalid", kind } });
-    expect(parse(null)).toEqual({ ok: false, error: { code: "id_invalid", kind } });
-    expect(parse(undefined)).toEqual({ ok: false, error: { code: "id_invalid", kind } });
+    expect(parse(1)).toEqual({
+      ok: false,
+      error: { code: "id_invalid", kind },
+    });
+    expect(parse(null)).toEqual({
+      ok: false,
+      error: { code: "id_invalid", kind },
+    });
+    expect(parse(undefined)).toEqual({
+      ok: false,
+      error: { code: "id_invalid", kind },
+    });
   }
 });

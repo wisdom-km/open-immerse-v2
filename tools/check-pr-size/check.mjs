@@ -32,7 +32,9 @@ function git(args) {
 }
 
 function countedLines(base) {
-  const rows = git(["diff", "--numstat", `${base}...HEAD`]).split("\n").filter(Boolean);
+  const rows = git(["diff", "--numstat", `${base}...HEAD`])
+    .split("\n")
+    .filter(Boolean);
   let total = 0;
   for (const row of rows) {
     const [added, deleted, file] = row.split("\t");
@@ -59,7 +61,10 @@ function contractsOnly(base) {
   const files = git(["diff", "--name-only", `${base}...HEAD`])
     .split("\n")
     .filter((file) => file.length > 0 && !isGenerated(file));
-  return files.length > 0 && files.every((file) => file.startsWith("packages/contracts/"));
+  return (
+    files.length > 0 &&
+    files.every((file) => file.startsWith("packages/contracts/"))
+  );
 }
 
 const base = option("--base", "main");

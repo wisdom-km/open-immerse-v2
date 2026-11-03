@@ -1,15 +1,29 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
 
-import { bodyForMethod, resolveInsideRoot, resolveStaticFile } from "../src/main/static-file.js";
+import {
+  bodyForMethod,
+  resolveInsideRoot,
+  resolveStaticFile,
+} from "../src/main/static-file.js";
 
 function withRoot(run: (root: string) => void): void {
   const root = mkdtempSync(path.join(tmpdir(), "oi-app-"));
   const outside = mkdtempSync(path.join(tmpdir(), "oi-outside-"));
   try {
-    writeFileSync(path.join(root, "index.html"), "<title>Open Immerse</title>\n");
+    writeFileSync(
+      path.join(root, "index.html"),
+      "<title>Open Immerse</title>\n",
+    );
     writeFileSync(path.join(outside, "secret.html"), "secret");
     symlinkSync(outside, path.join(root, "linked"), "junction");
     run(root);
@@ -23,11 +37,19 @@ it("serves html inside the renderer root and rejects escapes", () => {
   withRoot((root) => {
     const index = realpathSync(path.join(root, "index.html"));
     expect(resolveInsideRoot(root, "oi-app://app/index.html")).toBe(index);
-    expect(resolveInsideRoot(root, "oi-app://app/%2e%2e%2fsecret.html")).toBeNull();
-    expect(resolveInsideRoot(root, "oi-app://app/index.html%00.html")).toBeNull();
-    expect(resolveInsideRoot(root, "oi-app://app/%5C..%5Csecret.html")).toBeNull();
+    expect(
+      resolveInsideRoot(root, "oi-app://app/%2e%2e%2fsecret.html"),
+    ).toBeNull();
+    expect(
+      resolveInsideRoot(root, "oi-app://app/index.html%00.html"),
+    ).toBeNull();
+    expect(
+      resolveInsideRoot(root, "oi-app://app/%5C..%5Csecret.html"),
+    ).toBeNull();
     expect(resolveInsideRoot(root, "oi-app://evil/index.html")).toBeNull();
-    expect(resolveInsideRoot(root, "oi-app://app/linked/secret.html")).toBeNull();
+    expect(
+      resolveInsideRoot(root, "oi-app://app/linked/secret.html"),
+    ).toBeNull();
     expect(resolveInsideRoot(root, "file:///etc/passwd")).toBeNull();
 
     const served = resolveStaticFile(root, "oi-app://app/index.html", "GET");
@@ -36,9 +58,13 @@ it("serves html inside the renderer root and rejects escapes", () => {
       expect(served.contentType).toBe("text/html; charset=utf-8");
       expect(served.body.byteLength).toBeGreaterThan(0);
     }
-    expect(resolveStaticFile(root, "oi-app://app/index.html", "POST").kind).toBe("method");
+    expect(
+      resolveStaticFile(root, "oi-app://app/index.html", "POST").kind,
+    ).toBe("method");
     expect(bodyForMethod("HEAD", new Uint8Array([1]))).toBeNull();
-    expect(bodyForMethod("GET", new Uint8Array([1]))).toEqual(new Uint8Array([1]));
+    expect(bodyForMethod("GET", new Uint8Array([1]))).toEqual(
+      new Uint8Array([1]),
+    );
   });
 });
 

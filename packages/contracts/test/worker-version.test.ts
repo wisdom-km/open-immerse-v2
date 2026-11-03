@@ -3,12 +3,27 @@ import { Value } from "@sinclair/typebox/value";
 import { expect, it } from "vitest";
 
 import { healthResponseSchema } from "../src/worker/health.js";
-import { matchesWorkerVersion, workerVersionLimits, workerVersionText } from "../src/worker/worker-version.js";
+import {
+  matchesWorkerVersion,
+  workerVersionLimits,
+  workerVersionText,
+} from "../src/worker/worker-version.js";
 
-const samples = ["0.0.0", "", "0.0.0 ", "a".repeat(64), "a".repeat(65), "has space"];
+const samples = [
+  "0.0.0",
+  "",
+  "0.0.0 ",
+  "a".repeat(64),
+  "a".repeat(65),
+  "has space",
+];
 
 it("copies pattern and maxLength from the schema", () => {
-  const capped = Type.String({ minLength: 1, maxLength: 8, pattern: "^[a-z]+$" });
+  const capped = Type.String({
+    minLength: 1,
+    maxLength: 8,
+    pattern: "^[a-z]+$",
+  });
   expect(workerVersionLimits(capped)).toEqual({
     minLength: 1,
     maxLength: 8,
@@ -27,7 +42,9 @@ it("matches a workerVersion when the schema pattern and maxLength do", () => {
   expect(embedded.minLength).toBe(workerVersionText.minLength);
   expect(workerVersionText.maxLength).toBeUndefined();
   for (const sample of samples) {
-    expect(matchesWorkerVersion(sample)).toBe(Value.Check(workerVersionText, sample));
+    expect(matchesWorkerVersion(sample)).toBe(
+      Value.Check(workerVersionText, sample),
+    );
   }
   expect(matchesWorkerVersion("a".repeat(64))).toBe(true);
   expect(matchesWorkerVersion("a".repeat(65))).toBe(true);

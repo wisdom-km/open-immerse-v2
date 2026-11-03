@@ -4,7 +4,9 @@ declare const documentIdBrand: unique symbol;
 export type DocumentId = string & { readonly [documentIdBrand]: "DocumentId" };
 
 declare const pageRevisionIdBrand: unique symbol;
-export type PageRevisionId = string & { readonly [pageRevisionIdBrand]: "PageRevisionId" };
+export type PageRevisionId = string & {
+  readonly [pageRevisionIdBrand]: "PageRevisionId";
+};
 
 declare const blockIdBrand: unique symbol;
 export type BlockId = string & { readonly [blockIdBrand]: "BlockId" };
@@ -16,7 +18,9 @@ declare const assetIdBrand: unique symbol;
 export type AssetId = string & { readonly [assetIdBrand]: "AssetId" };
 
 declare const reservationIdBrand: unique symbol;
-export type ReservationId = string & { readonly [reservationIdBrand]: "ReservationId" };
+export type ReservationId = string & {
+  readonly [reservationIdBrand]: "ReservationId";
+};
 
 export type IdKind =
   | "DocumentId"
@@ -32,7 +36,10 @@ export type IdInvalid = {
 };
 
 // §2.4: a branded id is a string at runtime. No charset, length, UUID, or sha256 rule is specified.
-function parseId<T extends string>(value: unknown, kind: IdKind): Result<T, IdInvalid> {
+function parseId<T extends string>(
+  value: unknown,
+  kind: IdKind,
+): Result<T, IdInvalid> {
   if (typeof value !== "string") {
     return { ok: false, error: { code: "id_invalid", kind } };
   }
@@ -43,7 +50,9 @@ export function parseDocumentId(value: unknown): Result<DocumentId, IdInvalid> {
   return parseId(value, "DocumentId");
 }
 
-export function parsePageRevisionId(value: unknown): Result<PageRevisionId, IdInvalid> {
+export function parsePageRevisionId(
+  value: unknown,
+): Result<PageRevisionId, IdInvalid> {
   return parseId(value, "PageRevisionId");
 }
 
@@ -59,6 +68,8 @@ export function parseAssetId(value: unknown): Result<AssetId, IdInvalid> {
   return parseId(value, "AssetId");
 }
 
-export function parseReservationId(value: unknown): Result<ReservationId, IdInvalid> {
+export function parseReservationId(
+  value: unknown,
+): Result<ReservationId, IdInvalid> {
   return parseId(value, "ReservationId");
 }

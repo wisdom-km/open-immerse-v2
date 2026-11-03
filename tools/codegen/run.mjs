@@ -14,7 +14,9 @@ function option(name, fallback) {
 }
 
 const root = path.resolve(option("--root", process.cwd()));
-const manifestPath = path.resolve(option("--manifest", path.join(scriptDir, "manifest.json")));
+const manifestPath = path.resolve(
+  option("--manifest", path.join(scriptDir, "manifest.json")),
+);
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const generators = manifest.generators ?? [];
 await copyGenerators(root, generators);
@@ -27,9 +29,14 @@ if (schemaFlag || existsSync(schemaPath)) {
   await generateProtocol({
     schemaPath,
     outputDir: path.resolve(
-      option("--protocol-output", path.join(root, "workers/parser/oi_worker/protocol")),
+      option(
+        "--protocol-output",
+        path.join(root, "workers/parser/oi_worker/protocol"),
+      ),
     ),
-    parserRoot: path.resolve(option("--parser-root", path.join(root, "workers/parser"))),
+    parserRoot: path.resolve(
+      option("--parser-root", path.join(root, "workers/parser")),
+    ),
     pinPath: path.join(scriptDir, "pin.json"),
   });
 }

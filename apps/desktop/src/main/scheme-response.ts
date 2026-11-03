@@ -5,9 +5,15 @@ export type SchemeResponseInit = {
   headers: Record<string, string>;
 };
 
-type ResponseFactory = new (body: SchemeBody, init: SchemeResponseInit) => object;
+type ResponseFactory = new (
+  body: SchemeBody,
+  init: SchemeResponseInit,
+) => object;
 
-export function schemeResponse(body: SchemeBody, init: SchemeResponseInit): object {
+export function schemeResponse(
+  body: SchemeBody,
+  init: SchemeResponseInit,
+): object {
   return new (responseFactory())(body, init);
 }
 
