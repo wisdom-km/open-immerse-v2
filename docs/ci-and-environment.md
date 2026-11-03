@@ -8,17 +8,16 @@
 
 工作流是 `.github/workflows/ci.yml`。`node` job 跑 `pnpm check`、`pnpm test` 和 gitleaks。`pnpm check` 里的 pip 许可证（G10）要调用 `uv run`，所以这个 job 也安装锁定版本的 uv 和 worker Python。`python-worker` job 跑 ruff、pyright、import-linter、pytest、`tools/check-license/check-pip.mjs`，并核对 `uv.lock` 里的 PDF 依赖。pytest 收集到 0 个用例（退出码 5）时 CI 失败。`worker-health-windows` 与 `worker-health-macos` 共用健康检查和协议夹具：从 stdin 传入一次性令牌、启动 `python -m oi_worker`、读 `{"port": n}`、带 `Authorization: Bearer` 与 `OI-Protocol` 请求 `GET /v1/health`（200）、优雅停止后 stdout 有 `{"event":"exited"}` 且退出码为 0，并跑 `fixtures/protocol/` 的两侧测试。`fixtures/parsing-rules/` 目录还不在仓库里，目录出现而这一步没有跑它时该步失败。`worker-health-windows` 在 Node 依赖装好之后另跑 `corepack pnpm run check:deps` 与 `corepack pnpm exec vitest run tools/check-deps`（G5 在 Windows 上的启动，issue #99）。`worker-health-macos` 不跑这两步。安装 uv 的 job 都把 `version` 设成 `pyproject.toml` 的 `required-version`（`0.13.6`）。
 
-`pnpm check` 包含：ESLint（G2）、`tsc`（G3）、`tsconfig.core.json`（G14）、`tools/check-file-size`（G4）、dependency-cruiser（G5、G13、G15、G16）、core 测试里的 `@vitest-environment`（G16）、npm / pip / 模型清单许可证（G10）、一个切片（G18）、Conventional Commits、热点文件行数（G11 的具名文件）、PR 体量（G12）、`pnpm codegen && git diff --exit-code`（G7）。
+`pnpm check` 包含：Prettier（G1，只检查 `*.ts`、`*.tsx`、`*.mjs`、`*.js`、`*.cjs`）、ESLint（G2）、`tsc`（G3）、`tsconfig.core.json`（G14）、`tools/check-file-size`（G4）、dependency-cruiser（G5、G13、G15、G16）、core 测试里的 `@vitest-environment`（G16）、npm / pip / 模型清单许可证（G10）、一个切片（G18）、Conventional Commits、热点文件行数（G11 的具名文件）、PR 体量（G12）、`pnpm codegen && git diff --exit-code`（G7）。
 
-失败时在原输出后面追加改正说明。文案只在 `tools/gate-remediation/catalog.json`，对照表在 [gate-remediation.md](gate-remediation.md)。`tsc -b` 仍不是必需检查（M1-DEFER-G3）。G3 的违例样例在 `tools/gate-fixtures/g3/`，不在主 `tsconfig` 的编译范围内。
+失败时在原输出后面追加改正说明。文案只在 `tools/gate-remediation/catalog.json`，对照表在 [gate-remediation.md](gate-remediation.md)。Prettier 钉在 3.6.2，选项保持默认，写在 `prettier.config.mjs`。G1 的违例样例在 `tools/gate-fixtures/g1/`，由 `.prettierignore` 排除，不进入必需检查。`tsc -b` 仍不是必需检查（M1-DEFER-G3）。G3 的违例样例在 `tools/gate-fixtures/g3/`，不在主 `tsconfig` 的编译范围内。
 
-业务切片的 M1 门禁前提（RULES N-22，Wisdom 2026-11-02）由已经在 CI 运行的 G6（import-linter）、pyright 与 gitleaks 满足。G1、G3 `tsc -b`、G5 仍是 M1 交付（Issue #34），不挡住业务切片。工作流全绿仍不等于 G1–G18 全部已有。本段不改 CI 行为。
+业务切片的 M1 门禁前提（RULES N-22，Wisdom 2026-11-02）由已经在 CI 运行的 G6（import-linter）、pyright 与 gitleaks 满足。G1 Prettier 已进入 `pnpm check`。G3 `tsc -b`、G5 仍是 M1 交付（Issue #34），不挡住业务切片。工作流全绿仍不等于 G1–G18 全部已有。本段不改 CI 行为。
 
 还没接上，规格怎么写就怎么留着，不另造行为：
 
 | 门禁 | 原因 |
 | --- | --- |
-| G1 Prettier | Wisdom 2026-10-31 14:12 明确延后（PRD §8 M1，backlog M1-DEFER-G1，仍按 E-P2）。Python 格式是 ruff format，已经在 CI |
 | G3 `tsc -b` | Wisdom 2026-10-31 14:12 明确延后（backlog M1-DEFER-G3）。`composite` 会写出声明文件。第一个包使用 project references 之前保持 `tsc --noEmit`。Python 类型检查已锁定 pyright strict |
 | G5 `ui-events-declared` | Wisdom 2026-10-31 14:12 明确延后（backlog M1-DEFER-G5）。怎样从代码认出发布和订阅，规格还没有写。`contracts/src/ui-events.ts` 也还没有 |
 | G10 `license-checker` | 规格写的是这个工具。pnpm 工作区里它跟不上锁文件，改用 `pnpm licenses list --json`，规则仍是 §1.5。MPL-2.0「只作为独立文件」这一条没有机器检查 |
@@ -51,6 +50,7 @@ nvm install
 nvm use
 corepack enable
 corepack pnpm install --frozen-lockfile
+corepack pnpm run check:format
 corepack pnpm run lint
 corepack pnpm run typecheck
 corepack pnpm run typecheck:core

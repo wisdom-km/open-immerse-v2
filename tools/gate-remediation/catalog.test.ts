@@ -14,7 +14,7 @@ const skipNames = new Set([
 ]);
 
 const explicitCallers: Record<string, readonly string[]> = {
-  G1: [".github/workflows/ci.yml"],
+  G1: [".github/workflows/ci.yml", "package.json"],
   G2: ["package.json", ".github/workflows/ci.yml"],
   G3: ["tools/typecheck.mjs"],
   "G3-pyright": [".github/workflows/ci.yml"],
