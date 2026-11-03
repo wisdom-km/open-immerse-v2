@@ -6,6 +6,7 @@ credential, or call a model. `mode` is the process deployment (`local` or
 """
 
 from dataclasses import dataclass
+from typing import Literal, TypeAlias, TypedDict
 
 from oi_worker.api.package_version import package_version
 from oi_worker.api.protocol_version import IMPLEMENTED_PROTOCOL, gate_header
@@ -23,10 +24,29 @@ class HealthRequest:
     mode: str
 
 
+class HealthOkBody(TypedDict):
+    protocol: str
+    workerVersion: str
+    mode: str
+
+
+class UnsupportedBody(TypedDict):
+    supported: list[str]
+
+
 @dataclass(frozen=True, slots=True)
-class HealthExchange:
-    status: int
-    body: dict[str, str] | dict[str, list[str]]
+class HealthReady:
+    status: Literal[200]
+    body: HealthOkBody
+
+
+@dataclass(frozen=True, slots=True)
+class HealthOutOfRange:
+    status: Literal[426]
+    body: UnsupportedBody
+
+
+HealthExchange: TypeAlias = HealthReady | HealthOutOfRange
 
 
 def health_response(mode: str) -> HealthResponse:
@@ -44,16 +64,31 @@ def exchange_health(request: HealthRequest) -> HealthExchange:
         raise ValueError("health.route")
     rejected = gate_header(request.header)
     if rejected is not None:
-        return HealthExchange(status=426, body=rejected)
-    return HealthExchange(status=200, body=dump_health(health_response(request.mode)))
+        return HealthOutOfRange(status=426, body=_unsupported_body(rejected))
+    return HealthReady(status=200, body=dump_health(health_response(request.mode)))
 
 
-def dump_health(document: HealthResponse) -> dict[str, str]:
+def dump_health(document: HealthResponse) -> HealthOkBody:
     raw = document.model_dump(mode="json", by_alias=True)
-    body: dict[str, str] = {}
-    for key in ("protocol", "workerVersion", "mode"):
-        value = raw.get(key)
-        if not isinstance(value, str):
-            raise ValueError("health.document")
-        body[key] = value
+    protocol = raw.get("protocol")
+    worker_version = raw.get("workerVersion")
+    mode = raw.get("mode")
+    if (
+        not isinstance(protocol, str)
+        or not isinstance(worker_version, str)
+        or not isinstance(mode, str)
+    ):
+        raise ValueError("health.document")
+    body: HealthOkBody = {
+        "protocol": protocol,
+        "workerVersion": worker_version,
+        "mode": mode,
+    }
     return body
+
+
+def _unsupported_body(rejected: dict[str, list[str]]) -> UnsupportedBody:
+    supported = rejected.get("supported")
+    if supported is None:
+        raise ValueError("unsupported.supported")
+    return {"supported": supported}
