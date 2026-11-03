@@ -42,7 +42,7 @@ Forge 对 `a8a97de` 有条件通过。下面各项覆盖同题的草案。
 | 7 | `src/index.ts` 只再导出 `createFileLogger` 与调用所需的选项类型 | `7855bb3`。不导出 `REDACTED` | 同上 |
 | 8 | 四个单测文件，见审查结论。用例名 `<结果> when <条件>`，对得上的加 `AC-101`。注入 Clock 与临时目录，不 `sleep`。体积用 `truncate` 设定 `stat.size`。假密钥形态用 `oitest_`。不断言源码文本（F-08）。依赖断言读 `package.json`：键恰好两个，且没有 optional / peer | `7855bb3`。四个文件 30 通过 | 同上 |
 | 9 | 新建 `apps/desktop/src/main/composition-root.ts`，物理行数 ≤30（G11 按新增行计算）。导出 `startMainLogger`，在 `app.whenReady()` 里调用。注入 `app.getPath("userData")` 与 `{ nowMs: () => Date.now() }`。Electron 与 `Date.now` 只出现在装配根。platform-node 不 import `electron` | `7855bb3` 新建 14 行，在 `createMainWindow()` 之后调用。`2f7c18e` 让 `build` 先编译三个包 | 同上 |
-| 10 | `docs/evidence/77/commands.md`、AC-101 ②③⑤ 与 #76 的测试输出摘录、一条脱敏 JSON 行。命令在实现 tip 各跑一次。截图链到接入 logger 之后那个 tip 的 `desktop-e2e-windows-screenshots`，写明 run ID 与该 tip 的 SHA。不改 workflow，不加 xvfb，不改 `.cursor/install.sh` 与 `.cursor/environment.json` | include 收窄在 `4f8aaaa`。截图 tip 是 `2f35283` 的 run `41576448934` 与 `41576445396` | `docs/evidence/77/commands.md` |
+| 10 | `docs/evidence/77/commands.md`、AC-101 ②③⑤ 与 #76 的测试输出摘录、一条脱敏 JSON 行。命令在实现 tip 各跑一次。截图链到接入 logger 之后那个 tip 的 `desktop-e2e-windows-screenshots`，写明 run ID 与该 tip 的 SHA。不改 workflow，不加 xvfb，不改 `.cursor/install.sh` 与 `.cursor/environment.json` | include 收窄在 `4f8aaaa`。截图 tip 是 `89741ee` 的 run `41576666765` 与 `41576662056` | `docs/evidence/77/commands.md` |
 
 预计行数（开工前，含空行与注释）：
 
