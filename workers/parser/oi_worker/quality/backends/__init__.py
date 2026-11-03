@@ -1,1 +1,1 @@
-"""G6 layer module. Product behavior is not in this gate sample."""
+"""Jev backends. Only select_backend may import both of them."""

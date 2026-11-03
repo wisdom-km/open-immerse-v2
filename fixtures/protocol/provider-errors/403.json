@@ -1,0 +1,12 @@
+{
+  "httpStatus": 403,
+  "headers": {"X-Request-Id": "req_test_403"},
+  "expected": {
+    "kind": "auth",
+    "retryable": false,
+    "retryAfterMs": null,
+    "httpStatus": 403,
+    "vendorCode": null,
+    "requestId": "req_test_403"
+  }
+}
