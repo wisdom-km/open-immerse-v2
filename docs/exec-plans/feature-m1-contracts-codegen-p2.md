@@ -42,13 +42,13 @@ Forge 批准按本文实现。
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。Forge 通过后才写实现 |  | 本文件 |
-| 2 | 条目 2：只改 `contracts-kernel.test.ts`。临时 tsconfig 的 `baseUrl` 为 `"."`，paths 指向临时 `packages/kernel/src/index.ts`。临时 cruiser 配置复用 `forbiddenRules()`，`tsConfig.fileName` 指向该 tsconfig。临时 `index.ts` 类型导出 `Result`。仓库的 paths 与 `dependency-cruiser.config.mjs` 不动 |  |  |
-| 3 | 条目 3：`schema-module.mjs` 用源文件绝对路径的 sha256 前 16 位十六进制命名输出。静态 `from` / `import` 改写保持。转译结果含动态 `import(` 时抛出。补同 basename 与 `export * from` 测试。不引入打包器。schema 字节不变，不跑协议生成 |  |  |
-| 4 | 条目 5：`health.py` 用 `HealthReady`（`status: Literal[200]`，正文为 `protocol` / `workerVersion` / `mode`）与 `HealthOutOfRange`（`status: Literal[426]`，正文为 `supported`）。`dump_health` 返回 200 的 `TypedDict`。HTTP 状态码与 JSON 形状不变。`gate_header` 的返回类型保持，由 health.py 装进 426 变体 |  |  |
-| 5 | 条目 1、4、6 不改代码。理由写进 PR 正文 |  | PR 正文 |
-| 6 | 条目 7 不改夹具 |  | PR 正文 `Refs #61` |
-| 7 | `git diff --stat workers/parser/oi_worker/protocol/` 为空 |  |  |
+| 1 | 本文件。Forge 通过后才写实现 | 提交 `b3a694c`。Forge 通过后才写实现 | 本文件 |
+| 2 | 条目 2：只改 `contracts-kernel.test.ts`。临时 tsconfig 的 `baseUrl` 为 `"."`，paths 指向临时 `packages/kernel/src/index.ts`。临时 cruiser 配置复用 `forbiddenRules()`，`tsConfig.fileName` 指向该 tsconfig。临时 `index.ts` 类型导出 `Result`。仓库的 paths 与 `dependency-cruiser.config.mjs` 不动 | `25ff78f`。临时配置与 `index.ts` 只在测试夹具里。违规输出含 `→ packages/kernel/src/index.ts`，不含仓库 kernel 的绝对路径 | [docs/evidence/96/commands.md](../evidence/96/commands.md) |
+| 3 | 条目 3：`schema-module.mjs` 用源文件绝对路径的 sha256 前 16 位十六进制命名输出。静态 `from` / `import` 改写保持。转译结果含动态 `import(` 时抛出。补同 basename 与 `export * from` 测试。不引入打包器。schema 字节不变，不跑协议生成 | `fbe8fdb`。输出名为 sha256 前 16 位。动态 `import(` 抛出。同 basename 与 `export * from` 的测试通过 | 同上 |
+| 4 | 条目 5：`health.py` 用 `HealthReady`（`status: Literal[200]`，正文为 `protocol` / `workerVersion` / `mode`）与 `HealthOutOfRange`（`status: Literal[426]`，正文为 `supported`）。`dump_health` 返回 200 的 `TypedDict`。HTTP 状态码与 JSON 形状不变。`gate_header` 的返回类型保持，由 health.py 装进 426 变体 | `0c24680`。pyright strict 通过。`health_route.py` 未改。现有 health 与 versions 测试仍通过 | 同上 |
+| 5 | 条目 1、4、6 不改代码。理由写进 PR 正文 | 不改代码 | [PR #96](https://github.com/wisdom-km/open-immerse-v2/pull/96) |
+| 6 | 条目 7 不改夹具 | 不改夹具。PR 正文为 `Refs #61` | 同上 |
+| 7 | `git diff --stat workers/parser/oi_worker/protocol/` 为空 | 无输出。提交后 `pnpm run check` 的 G7 退出码 0 | 同上 |
 
 函数不超过 80 行，圈复杂度不超过 15，参数不超过 4 个。禁止顶层 `let`（F-06）。不建 `utils.ts`。不改门禁上限（N-08）。门禁不跳过。
 
@@ -137,4 +137,4 @@ schema 的 `minLength: 1` 与 `^\S+$` 已经是权威。仓库里没有 `workerV
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：
+- `docs/evidence/96/commands.md`：实现提交 `0c24680` 上的定向测试、worker 门禁、`pnpm run check` 与 `pnpm test`。
