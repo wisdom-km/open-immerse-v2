@@ -58,3 +58,5 @@ corepack pnpm run check
 ```
 
 Vitest：4 个文件、8 条通过，失败 0，跳过 0，退出码 0。`pnpm check` 退出码 0。`check:format` 打印 `All matched files use Prettier code style!`。`check-file-size` 打印 178 个源文件。`check-pr-size` 打印 `1979 non-generated lines`，格式化提交说明里的 `G12:` 被接受。没有跑 `pnpm test`。
+
+同一条 `pnpm check` 在 `3b60e31a41a35e77c3fc6c77f4fa446eccfcac5b` 上重跑，退出码 0。`check-pr-size` 打印 `1994 non-generated lines`。没有跑 `pnpm test`。
