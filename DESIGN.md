@@ -17,7 +17,7 @@
 
 # Open Immerse v2 视觉与交互规格（DESIGN）
 
-状态：草案 v0.2（Loom，2026-10-30，Asia/Shanghai）。Wisdom 21:13 批准起草；21:26 对 §6 三项与若干空白作出决定，已并入本版。**所有视觉数值都是第一稿，标「待审批」**；结构与行为规则可以先按本文实现。
+状态：草案 v0.3（Loom，2026-11-04，Asia/Shanghai；v0.3 内容经 Wisdom 2026-11-04 02:04–03:54 逐项批准）。v0.2：2026-10-30。Wisdom 21:13 批准起草；21:26 对 §6 三项与若干空白作出决定，已并入本版。**所有视觉数值都是第一稿，标「待审批」**；结构与行为规则可以先按本文实现。
 依据：`feature/v2-specs`（读取时 tip `d22b3f8`，包含 `bc66ec5`）的 PRD.md、ARCHITECTURE.md、docs/design/md-reader.md；原则见 [docs/design-principles.md](./docs/design-principles.md)（以下简称「原则」）。v1 参考：`wisdom-km/open-immerse` 只读浅克隆，v1 审查稿 `/workspace/oi-qa/` 下 AUDIT、AI-MODELS-SPEC、DIAG-UI-SPEC、FORMULA-REF-SIZE、black-frame SPEC。
 面向读者：Cursor Cloud Agents 与开发者。机器可读约定：token 名用反引号；每条验收有 `DS-xx` 编号；「待审批」= 第一稿视觉值，「待定标」= 需实测的数值，「规格空白」= PRD/ARCHITECTURE 未写、本文暂定。
 
@@ -280,6 +280,7 @@ flowchart TD
 | `SettingsRow` | settings ui | 左标题+说明，右控件 | — | — | 整行 .45 + 原因说明 | 控件加载 | — | 行下方错误 | 行内状态 ✓ |
 | `StatusLine` | ui-kit | 12px `--oi-text-muted`，`role=status` | — | — | — | 「正在…」 | 不渲染 | 文字 `--oi-warn`/`--oi-danger` + 图标 | `--oi-success` ✓ + 文字 |
 | `Dialog` | ui-kit | `--oi-surface-raised`，`--oi-elev-2`，最大宽 480 | — | — | — | 主按钮加载态 | — | 对话框内错误行（`role=alert`） | 关闭 |
+| `Sidebar`（文献库左导航） | app-shell | 只放内容类别：最近 / 全部论文 / Markdown 笔记库 / 术语库；**不放「设置」项**（Wisdom 2026-11-04 03:54 已批）。设置入口只有：Win ☰「设置… Ctrl+,」、mac 应用菜单「设置… ⌘,」、空态与就地提示里的「去设置」链接；模态打开时整个外壳（含侧栏）变暗且 inert（不响应悬停 / 焦点） | — | — | — | — | — | — | — |
 | `DialogActions` | ui-kit | 两平台同序：次要在左、主操作最右；与正文同底色、无分隔（R13） | — | — | — | — | — | — | — |
 | `TranslationBlock` | reader ui | 见 §4.1 `display` 五态 | 显示块操作（重译、复制、写笔记） | — | 块操作按 seam 能力隐藏 | `pending`：骨架；`retranslating`：上一版 + 状态行 | — | `previous_with_failure` / `never_succeeded` | `current` |
 | `MarkdownView` | ui-kit | 渲染 `MdDocument` | 链接下划线 | — | — | 流式：未闭合尾部按原文样式 | 宿主负责 | 单公式错误：原始 LaTeX + `--oi-reader-math-error-bg` | — |
@@ -544,8 +545,8 @@ flowchart TD
 读《Attention Is All You Need》这类论文时，先把专业术语列出来，每个术语有译名、在文中的位置与 AI 解释，降低读论文的门槛。
 
 #### 4.8.2 与现有文档的关系（已核对）
-- ARCHITECTURE §7.11 / PRD AC-74：已有 `GlossaryEntry`（原文术语、译名、可选备注）与端口 `GlossaryProvider.entriesFor(documentId)`；翻译时只把本块命中的条目放进提示词，命中条目进缓存键（术语摘要）。**但 v2 规定：没有录入界面，装配只注入空实现；不用 LLM 自动抽取术语，对任何服务商的「抽取术语」请求为 0。**
-- 本功能改变两条已定规则：① 翻译页「术语表」行（02:20 已批）就是录入界面；② 用 LLM 抽取术语（Q-T1=B，02:27 已批）。**ARCHITECTURE §7.11 / AC-74 的修改由 Forge 在 M4 的文档 PR 做，尚未完成**；在那之前本节只是界面方案。
+- ARCHITECTURE §7.11 / PRD AC-74：已有 `GlossaryEntry`（原文术语、译名、可选备注）与端口 `GlossaryProvider.entriesFor(documentId)`；翻译时只把本块命中的条目放进提示词，命中条目进缓存键（术语摘要）。原规定（没有录入界面、装配只注入空实现、LLM 抽取请求为 0）已由 [ADR 0001](./docs/adr/0001-m4-desktop-ui.md) 取代：术语抽取改为模型能力 `term-extraction`（M4），需外发同意与预算；PRD AC-74 与 ARCHITECTURE §7.11 已按该 ADR 改写。
+- 本功能改变两条已定规则：① 翻译页「术语表」行（02:20 已批）就是录入界面；② 用 LLM 抽取术语（Q-T1=B，02:27 已批）。ARCHITECTURE §7.11 / PRD AC-74 的修改已经 [ADR 0001](./docs/adr/0001-m4-desktop-ui.md) 采纳（状态：采纳，2026-11-04）。
 - 关系（Q-T3=A，02:27 已批）：**本文术语**（每篇自动抽取，只读、可多）≠ **我的术语表**（用户维护、跨论文、进翻译提示词）。本文术语中点「加入术语表」把「原文 + 译名」写入术语表；之后翻译按现有规则命中、进缓存键，保持译名一致。已有译文不自动重译，就地提示「重译本文以统一译名」。
 
 #### 4.8.3 入口
@@ -608,7 +609,7 @@ flowchart TD
 - Win / mac：仅快捷键符号、「在资源管理器 / 访达」差异；macOS 截图 MC24。
 
 #### 4.8.8 需要 Forge 补的 core / seam（提议的数据形状）
-核实：ARCHITECTURE 中只有 `GlossaryEntry` 与 `GlossaryProvider`（空实现），并规定「LLM 抽取请求为 0」；**没有术语抽取用例、没有 per-document 术语 seam、没有术语解释能力**。Q-T1=B 后，抽取改为 **经服务商适配层的 LLM 调用**，外发确认与预算闸门都在 core。ARCHITECTURE §7.11 / AC-74 的修改：Forge M4 文档 PR，未做。
+核实：ARCHITECTURE 中只有 `GlossaryEntry` 与 `GlossaryProvider`（空实现），并规定「LLM 抽取请求为 0」；**没有术语抽取用例、没有 per-document 术语 seam、没有术语解释能力**。Q-T1=B 后，抽取改为 **经服务商适配层的 LLM 调用**，外发确认与预算闸门都在 core。ARCHITECTURE §7.11 / AC-74 已按 [ADR 0001](./docs/adr/0001-m4-desktop-ui.md) 改写；§9.1 的接口名与类型仍是提议（ADR 0001 决定 5）。
 ```ts
 // contracts/src/terms.ts（提议，命名待 Forge 定）
 type DocTerm = {
@@ -652,7 +653,7 @@ type TermExplanation =
 规则全部在 core（P7）：估算、是否超预算、是否需要确认、预留与结算、失败原因都由 seam 返回，UI 只显示。
 
 #### 4.8.9 决定（**已批（Wisdom 2026-11-04 02:27）**）
-- **Q-T1 术语怎么抽取？→ B：用大模型抽取**，先过外发确认与预算（§9.4a）。需改 ARCHITECTURE §7.11 与 AC-74（Forge M4 文档 PR，未做）。
+- **Q-T1 术语怎么抽取？→ B：用大模型抽取**，先过外发确认与预算（§9.4a）。ARCHITECTURE §7.11 与 AC-74 已按 [ADR 0001](./docs/adr/0001-m4-desktop-ui.md) 改写。
 - **Q-T2 AI 解释何时生成？→ A：按需**，用户点「AI 解释」才请求，结果缓存（§9.5）。
 - **术语库**（02:29 已批）：文献库级、按领域自动分组、可手动改（§9.4b）。
 - **Q-T3 用户术语表与翻译的关系？→ A：跨论文的用户术语表**，之后的翻译统一译名；已有译文不自动重译，只提示「重译本文以统一译名」。需改 ARCHITECTURE「v2 没有录入界面」。
@@ -661,7 +662,9 @@ type TermExplanation =
 
 ### 4.9 数据存储位置（**已批 Wisdom 2026-11-04 03:02**：「加数据存储位置，能看路径也能更改位置并迁移」）
 
-**依据（仓库 ARCHITECTURE §8.2）**：`<userData>/` 下有 `db/oi.sqlite`（译文按块存在 tr_ 表）、`library/<sha256>/source.pdf`（导入时复制的 PDF）、`assets/`、`staging/`、`logs/`、`secrets.bin`；Markdown 笔记库不复制，不在 `<userData>` 内。Windows / macOS 默认文件夹的确切名称 **还没核实**，截图中的路径是示例。
+> 注：标题里「能看路径」是 Wisdom 03:02 原话；03:28 已定界面只显示名称 +「在资源管理器 / 访达中显示」，不显示完整路径。
+
+**依据（仓库 ARCHITECTURE §8.2）**：`<userData>/` 下有 `db/oi.sqlite`（译文按块存在 tr_ 表）、`library/<sha256>/source.pdf`（导入时复制的 PDF）、`assets/`、`staging/`、`logs/`、`secrets.bin`；Markdown 笔记库不复制，不在 `<userData>` 内。数据目录**可以迁移**（不再固定为 `<userData>`；ARCHITECTURE §8.2，[ADR 0001](./docs/adr/0001-m4-desktop-ui.md) 决定 3）。Windows / macOS 默认文件夹的确切名称 **还没核实**，截图中的名称是示例。
 
 **位置**：设置 › 隐私与数据，新增分组「数据存储位置」（E08 / ME08）。
 - 只显示数据文件夹**名称**（如「Open Immerse」），不显示完整路径；路径由「在资源管理器 / 访达中显示」在 main 进程打开（**已批 Wisdom 2026-11-04 03:28**，ARCH §9「renderer 不拿绝对路径」保持不变）；说明存放内容「论文 PDF、译文与笔记数据库、裁图」与总大小；注明 Markdown 笔记库不在这里、不受影响。
@@ -676,7 +679,7 @@ type TermExplanation =
 6. 失败 F13：留在旧位置，旧文件未改动，新位置已复制部分清理，不出现「一半在新、一半在旧」。错误原因：空间不足、没有写入权限、目标文件夹不为空、设备已移除（移动中拔出 U 盘等）。按钮「选择其他位置…」「好」（主操作最右）。
 
 **给 Forge 的说明（接缝，需改 ARCHITECTURE）**：
-- 数据目录迁移是**新能力**，ARCHITECTURE 目前只描述固定的 `<userData>`。需要 core 提供 `dataDir.get() / check(target) / relocate(target, {keepOld}) → 进度事件 + 可取消到 commit 点`，UI 只调接缝（P7）。新位置记录需要放在 `<userData>` 之外一个固定的小指针文件（具体做法由 Forge 定）。
+- 数据目录可迁移已由 [ADR 0001](./docs/adr/0001-m4-desktop-ui.md) 采纳（决定 3、4）：目标盘可用空间 ≥ 1.2 倍数据大小；迁移成功并重启后询问是否删除旧文件；界面只显示名称，加「在资源管理器中显示」（Win）/「在访达中显示」（mac），走 `shell.revealItem`，renderer 不拿绝对路径（ARCHITECTURE §9）。批准：Wisdom 2026-11-04 03:02、03:21、03:28。接口 `settings.dataDir.*` / `shell.revealItem` 的名字与类型仍是提议（ARCHITECTURE §9.1，ADR 0001 决定 5）；指针文件的文件名与位置**还没核实**。
 - `secrets.bin`：Electron safeStorage 加密结果可能绑定本机 / 当前用户（**还没核实**）。同机迁移理论上可直接复制；请 Forge 核实，若有风险则迁移后重新加密或提示重填 Key。
 - `staging/`、`logs/` 是否需要迁移（或直接清空）由 Forge 定；有进行中的翻译 / 解析任务时应先要求结束（复用 F06 的口径）。
 
@@ -754,7 +757,7 @@ type TermExplanation =
 
 **给 Forge（与 PRD / ARCHITECTURE 的冲突或缺口）**：
 - 文件关联、单实例（`requestSingleInstanceLock`、mac `open-file` 事件）、Dock / 任务栏拖放：ARCH 没写，需在 main 进程新增接缝 `shell.openFile(path)`，UI 只调接缝（P7）。
-- 状态恢复：需新增 `session.save/restore`（窗口几何、场景、阅读位置、缩放、侧栏），存在 `<userData>`；ARCH 没写。
+- 状态恢复：需新增 `session.save/restore`（窗口几何、场景、阅读位置、缩放、侧栏），存在数据目录（可迁移，§4.9）；接口为 ARCHITECTURE §9.1 的提议。
 - 菜单：Electron 默认 zoom role 缩放整个界面，需改为 PDF 缩放；撤销栈需 core 提供命令式接口（笔记、译名、分组的 do/undo）。
 - 「删除不可撤销」与 HIG 的撤销预期不同，属有意决定（03:08）。
 - 还没核实：HIG 菜单表格逐条内容、PDF 缩放的 HIG 条目、Windows Fluent 全部条目（跳转列表、F11 全屏惯例）、safeStorage 迁移（§10）。
@@ -940,6 +943,7 @@ type TermExplanation =
 - 03:02 数据存储位置可看路径、更改并迁移（§4.9）。
 - 03:08 外壳深色跟随系统、去掉应用内颜色模式开关；保持单窗口，加全屏与窗口菜单；删除论文保留确认框（§4.10）。
 - 03:18 v2 不做 PDF 高亮；mac 后退 / 前进 ⌘[ / ⌘]；批量删除保留确认框（§4.11）。
+- 03:54 文献库左侧栏不放「设置」项（见 §3.6 `Sidebar`）；设置入口只走菜单与「去设置」链接。
 - 03:28 数据目录与原文件丢失只显示名称 +「在资源管理器 / 访达中显示」，不显示完整路径；ARCH §9 不变。
 - 03:21 迁移后询问是否删除旧文件；目标盘可用空间 ≥ 1.2 倍；全部提议快捷键与数值（⌘1/2/3、缩放 25–400%、⌥⌘G / Ctrl+G、⌥⌘0、⌘/、历史 50 条不持久化、拖出为副本、Win Esc 不退出全屏）。
 

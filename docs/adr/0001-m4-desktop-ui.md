@@ -40,6 +40,7 @@ v2 原先规定：不用 LLM 抽取术语，对任何服务商的抽取请求为
 - renderer 不拿到绝对路径。`shell.revealItem` 在 main 内如何调用 Electron，留在该接口的 PR。§9.1 现写 main 再调用 `shell.showItemInFolder` / `shell.openPath`，那一行仍随接口签名，各自实现时走接口 PR。
 - 本页不改依赖图，也不改 CI 配置。§9.1 的名字还没有进 `packages/contracts`。
 - DESIGN.md 与 `docs/design-principles.md` 的正文仍归 Loom（RULES N-10）。
+- DESIGN v0.3 新增 R14，侧栏不放设置、模态时外壳压暗，Wisdom 2026-11-04 03:54。
 
 ## 状态
 
