@@ -1,6 +1,15 @@
-export function commonDirectory(sourcePaths: readonly string[]): string;
+import type { PlatformPath } from "node:path";
 
-export function relativeOutput(root: string, sourcePath: string): string;
+export function commonDirectory(
+  sourcePaths: readonly string[],
+  pathImpl?: PlatformPath,
+): string;
+
+export function relativeOutput(
+  root: string,
+  sourcePath: string,
+  pathImpl?: PlatformPath,
+): string;
 
 export function claimOutput(
   sourcePath: string,
