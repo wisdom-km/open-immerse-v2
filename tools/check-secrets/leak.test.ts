@@ -25,15 +25,23 @@ function gitleaksEnvFromProcess(): GitleaksEnv {
   };
 }
 
+function countsAsCi(value: string | undefined): boolean {
+  if (value === undefined || value.length === 0) {
+    return false;
+  }
+  return value !== "false" && value !== "0";
+}
+
 function binary(
   context: { skip: (note: string) => void },
   env: GitleaksEnv = gitleaksEnvFromProcess(),
 ): string {
   const fromEnv = env.GITLEAKS_BIN;
   if (fromEnv === undefined || fromEnv.length === 0) {
-    if (env.CI === "true") {
+    if (countsAsCi(env.CI)) {
+      const ci = env.CI ?? "";
       throw new Error(
-        "GITLEAKS_BIN is unset while CI=true. G9 must not skip in CI.",
+        `GITLEAKS_BIN is unset while CI=${ci}. G9 must not skip in CI.`,
       );
     }
     context.skip(
@@ -96,6 +104,45 @@ it("uses GITLEAKS_BIN when it is set, including under CI (G9)", () => {
     { CI: "true", GITLEAKS_BIN: "/tmp/gitleaks" },
   );
   expect(bin).toBe("/tmp/gitleaks");
+});
+
+it("fails when CI is 1 and GITLEAKS_BIN is missing (G9)", () => {
+  expect(() =>
+    binary({ skip: () => undefined }, { CI: "1", GITLEAKS_BIN: undefined }),
+  ).toThrow(/GITLEAKS_BIN is unset while CI=1/);
+  expect(() =>
+    binary({ skip: () => undefined }, { CI: "1", GITLEAKS_BIN: "" }),
+  ).toThrow(/GITLEAKS_BIN is unset while CI=1/);
+});
+
+it("skips when CI is 0 and GITLEAKS_BIN is missing (G9)", () => {
+  let note = "";
+  const bin = binary(
+    {
+      skip: (message) => {
+        note = message;
+      },
+    },
+    { CI: "0", GITLEAKS_BIN: undefined },
+  );
+  expect(bin).toBe("");
+  expect(note).toContain("GITLEAKS_BIN is unset");
+  expect(note).not.toContain("must not skip");
+});
+
+it("skips when CI is false and GITLEAKS_BIN is missing (G9)", () => {
+  let note = "";
+  const bin = binary(
+    {
+      skip: (message) => {
+        note = message;
+      },
+    },
+    { CI: "false", GITLEAKS_BIN: undefined },
+  );
+  expect(bin).toBe("");
+  expect(note).toContain("GITLEAKS_BIN is unset");
+  expect(note).not.toContain("must not skip");
 });
 
 it("rejects a committed access key that lacks the oitest_ prefix (G9)", (context) => {
