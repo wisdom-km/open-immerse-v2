@@ -25,7 +25,7 @@
 rg -n "platform-node|contracts ←|← kernel|-->" *.md docs/
 ```
 
-完整输出在同目录 `direction-search.txt`（190 行）。其中 `ARCHITECTURE.md:682` 是本 PR 加上的 `PN --> C`。
+完整输出在同目录 `direction-search.md` 的代码块里（190 行）。其中 `ARCHITECTURE.md:682` 是本 PR 加上的 `PN --> C`。
 
 写反候选：
 
@@ -83,6 +83,7 @@ rg -n "只依赖 kernel|platform-node 只|contracts 依赖|依赖下游|← cont
 | #74 | MERGED（PR，不入表） | 无独立行 |
 | #75 | OPEN | 92 |
 | #76 | OPEN | 93 |
+| #80 | OPEN | 98 |
 
 ## 对照 N-10 / N-11
 

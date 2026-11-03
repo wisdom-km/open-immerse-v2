@@ -1,3 +1,8 @@
+# 方向检索输出
+
+命令：`rg -n "platform-node|contracts ←|← kernel|-->" *.md docs/`
+
+```text
 DESIGN.md:76:  App["启动"] --> Home["首页<br/>最近 PDF · 最近本地 Markdown · 打开"]
 DESIGN.md:77:  Home -->|"Mod+O 选 PDF / 拖入"| Reader["阅读主屏<br/>原文 | 译文 | 侧栏(笔记/问答/大纲)"]
 DESIGN.md:78:  Home --> Lib["文献库"] --> Reader
@@ -188,3 +193,4 @@ docs/design/md-reader.md:143:  MV -->|"链接到库内 PDF"| PR
 docs/design/md-reader.md:144:  PR -->|"笔记「在笔记库中显示」（如已导出）"| MV
 docs/design/md-reader.md:298:**v2 必须不做**：不在 preload 暴露 `writeFile`；装配根不注入 `MdFileWriter`（用例收到写请求返回 `write_disabled`）；`platform-node` 不为 markdown 实现写入适配器；UI 不显示「编辑」按钮或快捷键；任何代码不得以「保存译文」「导出」等名义写入用户笔记库文件夹（应用自有数据目录除外）。
 docs/design/md-reader.md:367:| MD-25 | 调用写入用例返回 `write_disabled`；`getCapabilities` 返回 `canWrite:false`；platform-node 中没有 markdown 写入适配器（依赖检查） |
+```
