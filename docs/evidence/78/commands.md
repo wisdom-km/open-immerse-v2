@@ -2,7 +2,7 @@
 
 日期：2026-11-03。工作目录是仓库根，除非另行写出。Node 是 `.nvmrc` 的 v22.23.4，PATH 前置 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin`。`node -v` 为 v22.23.4，`corepack pnpm --version` 为 10.34.9。未改日志。
 
-Electron e2e 仅在 Windows CI 运行，Cloud Linux 无法运行，本地未跑 e2e。
+本文件对应的提交没有在本地跑 Electron e2e。CI 仍只跑 `desktop-e2e-windows`（`windows-latest`），工作流里没有 xvfb，也不改 `.cursor/install.sh`（N-11）。Anvil 在 PR #78 用 `xvfb-run` 于 Linux 跑 desktop e2e：24 passed，10.6s（Issue #82、#83）。Anvil 在 PR #90 验收时 Linux Box 上 desktop e2e 24 passed（Anvil 验收报告，未入库）；是否经 `xvfb-run`：未核实。同一份报告记录 Windows 真机 DESKTOP-0GI64S8 上 desktop e2e 24/24。`docs/evidence/90/commands.md` 另记本机 xvfb 的 `e2e/permissions.spec.ts` 6 passed，以及 Windows CI run `41610915781` 的 `24 passed (23.3s)`。
 
 证据对应 `f7aebc5ab1504b23ab05be288d2c49b2faea114e`。本文件提交之后仅改 docs。
 

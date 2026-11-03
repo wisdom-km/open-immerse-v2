@@ -143,7 +143,7 @@ await app.evaluate(({ session }) => {
 
 ## 证据链接
 
-- `docs/evidence/78/commands.md`。Electron e2e 仅在 Windows CI 运行，Cloud Linux 无法运行，本地未跑 e2e。截图在 run `41575859404` 的 artifact `13202629209`。证据对应 `f7aebc5`，其后只改文档。
+- `docs/evidence/78/commands.md`。本文件对应的提交没有在本地跑 Electron e2e。CI 仍只跑 `desktop-e2e-windows`（`windows-latest`），工作流里没有 xvfb，也不改 `.cursor/install.sh`（N-11）。Anvil 在 PR #78 用 `xvfb-run` 于 Linux 跑 desktop e2e：24 passed，10.6s（Issue #82、#83）。Anvil 在 PR #90 验收时 Linux Box 上 desktop e2e 24 passed（Anvil 验收报告，未入库）；是否经 `xvfb-run`：未核实。同一份报告记录 Windows 真机 DESKTOP-0GI64S8 上 desktop e2e 24/24。截图在 run `41575859404` 的 artifact `13202629209`。证据对应 `f7aebc5`，其后只改文档。
 
 ## 何时停
 

@@ -53,7 +53,7 @@ Cloud Agent 的 PATH 里 `/exec-daemon/node` 排在 nvm 前面。2026-11-02 这�
 | worker 类型 | `node ../../tools/gate-remediation/run.mjs --id G3-pyright -- uv run pyright` | 0 | 工作目录是 `workers/parser/`。RULES §1.2。strict。钉在 pyright 1.1.407 |
 | worker 分层 | `node ../../tools/gate-remediation/run.mjs --id G6 -- uv run lint-imports` | 0 | 工作目录是 `workers/parser/`。G6。契约在 `workers/parser/pyproject.toml` |
 | worker 测试 | `node ../../tools/gate-remediation/run.mjs --id G8 -- uv run pytest` | 0 | 工作目录是 `workers/parser/`。收集到测试。退出码 5（0 个用例）不再被 CI 改成通过 |
-| JS 单测 | `corepack pnpm exec vitest run <文件>` | 0 | 例如 `tools/check-file-size/limit.test.ts`。过滤：`corepack pnpm exec vitest run --test-name-pattern '<名字>'` |
+| JS 单测 | `corepack pnpm exec vitest run <文件>` | 0 | 例如 `tools/check-file-size/limit.test.ts`。过滤：`corepack pnpm exec vitest run --test-name-pattern '<名字>'`。`tools/vitest-collect/no-node-modules.test.ts` 必须在仓库根目录跑（PR #90） |
 | Python 单测 | `uv run pytest tests/test_<模块>.py`，或 `uv run pytest -k <名字>` | 0 | 例如 `tests/test_smoke.py`。指向不存在的文件时退出码 4 |
 
 在 `workers/parser/` 里工作时，局部命令见 [workers/parser/AGENTS.md](workers/parser/AGENTS.md)。与本文冲突时以本文和 RULES 为准。

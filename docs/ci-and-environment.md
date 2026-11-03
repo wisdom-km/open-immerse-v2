@@ -60,6 +60,8 @@ corepack pnpm run check
 
 `pnpm test` 是 Vitest。`pnpm run typecheck` 在有 `.ts` / `.tsx` 时执行 `tsc --noEmit`。`pnpm check` 会跑 `git diff`，工作区必须干净，对比基线默认是 `main`。
 
+`tools/vitest-collect/no-node-modules.test.ts` 必须在仓库根目录跑（PR #90）。它用 `path.resolve(".")` 作为子进程 cwd，并从该 cwd 解析 `node_modules/vitest/vitest.mjs`。
+
 Python worker 在 `workers/parser/`：
 
 ```bash
