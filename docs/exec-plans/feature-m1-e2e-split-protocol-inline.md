@@ -28,8 +28,8 @@ Forge 审查 Draft #78 的 `56ba9db` 后要求改计划再批准。本修订只�
 | 1 | 提交本文件，开 Draft PR，停下等 Forge。不写实现 | `56ba9db` 开 Draft #78。本修订按 Forge 对 `56ba9db` 的意见改计划，仍不写实现 | PR #78 |
 | 2 | 在 `handleAppProtocol` 的 `protocol.handle` 回调里直接传 `request.url`、`request.method`，删除 `readUrl` 与 `readMethod`。不改 `respond`、状态码、响应头 | `7b230e2`。回调直接传 `request.url`、`request.method`。`respond` 未改 | `apps/desktop/src/main/app-protocol.ts` |
 | 3 | 用下面的 fixture 与 spec 替换 `smoke.spec.ts`。一条断言一个 `test`。名字是 `<结果> when <条件>`。fixture 为 test-scoped，每个用例各启动一次，`close` 在 teardown | `8907752`。`e2e/fixtures/electron-app.ts` 的 `desktop` fixture，`scope: "test"`，`close` 在 `finally`。删除 `smoke.spec.ts` | 同提交的 `apps/desktop/e2e/` |
-| 4 | 加上四条权限 query 用例，都断言 `denied`。名字固定为 `denied when renderer queries <permission>`。权限名见下一节。TypeError 不跳过 | `8907752`。`permissions.spec.ts` 四条 query，没有 `test.skip` | 同上 |
-| 5 | 提交一条对照 e2e：`grants notifications when the check handler is overridden to allow`。只在该用例的 main 进程里覆盖 check handler，断言 `state` 不是 `denied`。不改 `src/` | `8907752`。`app.evaluate` 里 `setPermissionCheckHandler(() => true)`，然后断言 `state` 不是 `denied`。没有改 `src/` | 同上 |
+| 4 | 加上四条权限 query 用例，都断言 `denied`。名字是 `returns denied when the renderer queries <permission>`。权限名见下一节。TypeError 不跳过 | `8907752` 先用短标题。Forge 审查后改为带 `returns` 的标题，见本文件权限表 | 同上 |
+| 5 | 提交一条对照 e2e：`grants notifications when the check handler is overridden to allow`。只在该用例的 main 进程里覆盖 check handler，断言 `state` 是 `granted` 或 `prompt`。不改 `src/` | `8907752` 先断言不是 `denied`。Forge 审查后收成 `granted` 或 `prompt`。没有改 `src/` | 同上 |
 | 6 | 实现提交里把 `docs/backlog.md` 第 95–96 行标成由本 PR 处理。不新开 Issue。405/404 的 Issue 由 Forge 开 | backlog 第 95–96 行标为 PR #78。#80 已开，本计划引用它，不加 backlog 行 | `docs/backlog.md`、本文件 |
 | 7 | Windows CI 绿之后写 `docs/evidence/<PR号>/commands.md`：命令、基线 SHA、tip SHA、通过 / 失败 / 跳过、用例清单、CI 摘录、截图表、与 #77 的交集为空。截图只留在 artifact。artifact 链接与目录名见「截图」 |  |  |
 | 8 | 每个实现 tip 全量只跑一次：`corepack pnpm run check` 与 `corepack pnpm test`。e2e 不在 Linux 上跑 |  |  |
@@ -92,10 +92,10 @@ Renderer 里执行 `navigator.permissions.query({ name })`，断言 `state` 为 
 
 | 权限名 | 用例 |
 | --- | --- |
-| `notifications` | `denied when renderer queries notifications` |
-| `geolocation` | `denied when renderer queries geolocation` |
-| `camera` | `denied when renderer queries camera` |
-| `microphone` | `denied when renderer queries microphone` |
+| `notifications` | `returns denied when the renderer queries notifications` |
+| `geolocation` | `returns denied when the renderer queries geolocation` |
+| `camera` | `returns denied when the renderer queries camera` |
+| `microphone` | `returns denied when the renderer queries microphone` |
 
 `oi-app` 已以 `secure: true` 注册，query 跑在安全上下文里。任一名字的 `query` 抛出 TypeError 时停下升级，触发是规格冲突：ARCHITECTURE §9 要求 check handler 拒绝这些权限，而该 Electron 的 `PermissionName` 不接受这个名字。不改断言，不改 `security/**`。
 
@@ -107,7 +107,7 @@ await app.evaluate(({ session }) => {
 });
 ```
 
-再在 renderer 里 `navigator.permissions.query({ name: "notifications" })`，断言 `state` 不是 `"denied"`。用例名：`grants notifications when the check handler is overridden to allow`。不改 `src/`、`security/**`、`index.ts`。产品路径上的 handler 仍是拒绝。覆盖只存在于这个用例的这次进程里，随 teardown 的 `app.close()` 结束。
+再在 renderer 里 `navigator.permissions.query({ name: "notifications" })`，断言 `state` 是 `granted` 或 `prompt`。用例名：`grants notifications when the check handler is overridden to allow`。不改 `src/`、`security/**`、`index.ts`。产品路径上的 handler 仍是拒绝。覆盖只存在于这个用例的这次进程里，随 teardown 的 `app.close()` 结束。
 
 若覆盖之后 `state` 仍是 `"denied"`，停下升级：这条 query 没有观察到 check handler，不能用来证明拒绝断言有效。
 

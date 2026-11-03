@@ -14,7 +14,7 @@ test("returns null when the renderer calls window.open", async ({ desktop }) => 
 
 test("keeps the web contents count when the renderer calls window.open", async ({ desktop }) => {
   const before = await webContentsCount(desktop.app);
-  await evaluate(desktop.page, "window.open('https://example.com/') === null");
+  await evaluate(desktop.page, "window.open('https://example.com/')");
   expect(await webContentsCount(desktop.app)).toBe(before);
 });
 
