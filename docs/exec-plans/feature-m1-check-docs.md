@@ -175,13 +175,13 @@ findings: 19
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 只提交本文件，开 Draft，把计划发到 PR 评论，停下等 Forge |  | 本文件 |
-| 2 | 按「文件」一节实现。CI 用上面的 diff。不碰「不改的文件」 |  | `docs/evidence/<PR号>/commands.md` |
+| 1 | 只提交本文件，开 Draft，把计划发到 PR 评论，停下等 Forge | 计划提交 `e3f6412`。Draft PR #114。评论在该 PR 上。这一笔还不写实现 | `docs/evidence/114/commands.md` |
+| 2 | 按「文件」一节实现。CI 用上面的 diff。不碰「不改的文件」 |  | `docs/evidence/114/commands.md` |
 | 3 | 跑「实现时要跑的命令」。摘要里的 `findings` 记进实际列 |  | 同上 |
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：这一笔只记录基线统计用的规则和发现数 19。实现命令在 Forge 通过之后再补。
+- `docs/evidence/114/commands.md`：这一笔只记录基线统计用的规则和发现数 19。实现命令在 Forge 通过之后再补。
 
 ## 给 Forge 的提问
 
