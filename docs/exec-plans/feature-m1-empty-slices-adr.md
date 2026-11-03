@@ -35,11 +35,11 @@ M1 收尾里这一截：四个空切片、空的 `packages/providers`、ingest �
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。然后按任务实现，不把实现推迟到另一次审查 | 待填 | 本文件 |
-| 2 | 四个空切片。入口 `export {}`。测试只断言两个入口没有运行时导出 | 待填 | `docs/evidence/<PR号>/commands.md` |
-| 3 | 空的 `providers`，登记 workspace，并写入巡航用的 paths。`pnpm install` 只更新 lockfile 的 importer | 待填 | 同上 |
-| 4 | ADR 0002、0003，改索引。§4.1 补一句。不改矩阵，图上已经是这九条，`repair` 已经没有指向 `quality` | 待填 | 同上 |
-| 5 | 在 `packages/providers/src/index.ts` 临时加上对 `jobs` 入口的导入，跑 `check:deps`，期望非 0 且含 `providers-boundary`。删掉这行，工作区恢复。再跑 `GATE_BASE=origin/main corepack pnpm run check`，期望 0 | 待填 | 同上 |
+| 1 | 本文件。然后按任务实现，不把实现推迟到另一次审查 | `630e4a7` 只有本文件。随后按任务实现，PR 保持 Draft | 本文件 |
+| 2 | 四个空切片。入口 `export {}`。测试只断言两个入口没有运行时导出 | `984081b`。四个包都不在 workspace。占位测试 4 passed | [docs/evidence/122/commands.md](../evidence/122/commands.md) |
+| 3 | 空的 `providers`，登记 workspace，并写入巡航用的 paths。`pnpm install` 只更新 lockfile 的 importer | `5c6649d`。lockfile 只加 `packages/providers` 的三条 workspace 链接。paths 增加 `@oi/providers`。规则文本未改 | 同上 |
+| 4 | ADR 0002、0003，改索引。§4.1 补一句。不改矩阵，图上已经是这九条，`repair` 已经没有指向 `quality` | `6eba91f`。未改 `feature-edges.mjs` 与架构图 | 同上 |
+| 5 | 在 `packages/providers/src/index.ts` 临时加上对 `jobs` 入口的导入，跑 `check:deps`，期望非 0 且含 `providers-boundary`。删掉这行，工作区恢复。再跑 `GATE_BASE=origin/main corepack pnpm run check`，期望 0 | 违规样例退出码 1，含 `providers-boundary`。恢复后 `6eba91f` 上 check 退出码 0。`check-one-slice: 4 feature slice(s)` | 同上 |
 
 函数不超过 80 行。不建 `utils`。不改门禁上限（N-08）。预计对 `main` 的非生成 diff 低于 600 行。若超过，提交说明或 `PR_BODY` 加一行 `G12:`。
 
@@ -78,4 +78,4 @@ M1 收尾里这一截：四个空切片、空的 `packages/providers`、ingest �
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：PR 开出号码后写入 `commands.md`
+- `docs/evidence/122/`：[commands.md](../evidence/122/commands.md)
