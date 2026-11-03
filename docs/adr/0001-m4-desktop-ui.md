@@ -2,7 +2,7 @@
 
 状态：采纳。日期：2026-11-04（Asia/Shanghai）。决定人：Wisdom。
 
-规格来自 Loom 的 DESIGN v0.3。Wisdom 于 2026-11-04 02:16–03:28 批准。`637f9af` 把对应句子写进 [PRD.md](../../PRD.md) 与 [ARCHITECTURE.md](../../ARCHITECTURE.md)，当时标成提议。本页记下哪些已经采纳，哪一条仍是提议。不另写一份规格。
+规格来自 Loom 的 DESIGN v0.3。Wisdom 于 2026-11-04 02:16–03:28 批准。`637f9af` 把对应句子写进 [PRD.md](../../PRD.md) 与 [ARCHITECTURE.md](../../ARCHITECTURE.md)，当时标成提议。Forge 审过 #116 之后，AC-74、PRD §3.6、ARCHITECTURE §7.11、§8.2、§9.1 改为已采纳。§9.1 的接口签名仍各自实现时走接口 PR。不另写一份规格。
 
 ## 背景
 
@@ -29,7 +29,7 @@ v2 原先规定：不用 LLM 抽取术语，对任何服务商的抽取请求为
 2. **术语库**按领域自动分组，用户可以改。`domain` 字段带 `llm` | `user` 来源。LLM 抽取时给出领域，来源是 `llm`；用户改过之后来源是 `user`，之后再抽取不覆盖（DESIGN §4.8.4b、§4.8.8，Wisdom 2026-11-04 02:29）。
 3. **数据目录可以迁移**。目标盘空余空间至少是数据大小的 1.2 倍。迁移完成并重启之后，问用户要不要删除旧文件（DESIGN §4.9，Wisdom 2026-11-04 03:02、03:21；ARCHITECTURE §8.2）。
 4. **界面层仍然拿不到完整路径**，只显示名称。设置里的数据目录，以及原文件丢失的那一行，配「在资源管理器中显示」（Windows）/「在访达中显示」（macOS）。按钮走 seam `shell.revealItem`。路径只在 main 里解析，不返回给 renderer。§9「返回给 renderer 的数据不含绝对文件路径」保持不变（Wisdom 2026-11-04 03:28）。
-5. **§9.1 的新接口只是提议**。`settings.dataDir.*`、`shell.revealItem`、`shell.openFile`、`session.save` / `restore`、`edit.do` / `undo` / `redo`、`library.checkSource` / `relocate` / `list`、`reader.setZoom` 的类型与错误码，各自实现时走接口 PR（RULES §3 第 3 条）。本决定不定这些类型。
+5. **§9.1 的职责已采纳**。接口签名各自实现时走接口 PR。`settings.dataDir.*`、`shell.revealItem`、`shell.openFile`、`session.save` / `restore`、`edit.do` / `undo` / `redo`、`library.checkSource` / `relocate` / `list`、`reader.setZoom` 的类型与错误码在那些 PR 里定（RULES §3 第 3 条）。本决定不定这些类型。
 
 本页不代定、规格里仍写「还没核实」的：指针文件的文件名与位置；`secrets.bin` 同机能否直接复制；`staging/` 与 `logs/` 是迁移还是清空；原 PDF 丢失时 `library/<sha256>/source.pdf` 副本能否直接打开（ARCHITECTURE §8.2、§9.1；DESIGN §4.9、§6.1）。
 
@@ -37,10 +37,10 @@ v2 原先规定：不用 LLM 抽取术语，对任何服务商的抽取请求为
 
 - 术语抽取、术语库分组和数据目录迁移按本页，以及 ARCHITECTURE §7.11、§8.2、§9 与 PRD AC-74（`637f9af` 的改写）实现。
 - 外发同意的能力列表加入 `term-extraction`（§7.0 第 6 条）。预算沿用现有预留，科目是该服务商的术语抽取。
-- renderer 不拿到绝对路径。`shell.revealItem` 在 main 内如何调用 Electron，留在该接口的 PR。§9.1 现写 main 再调用 `shell.showItemInFolder` / `shell.openPath`，那一行仍随接口提议。
+- renderer 不拿到绝对路径。`shell.revealItem` 在 main 内如何调用 Electron，留在该接口的 PR。§9.1 现写 main 再调用 `shell.showItemInFolder` / `shell.openPath`，那一行仍随接口签名，各自实现时走接口 PR。
 - 本页不改依赖图，也不改 CI 配置。§9.1 的名字还没有进 `packages/contracts`。
 - DESIGN.md 与 `docs/design-principles.md` 的正文仍归 Loom（RULES N-10）。
 
 ## 状态
 
-采纳。§9.1 的接口名与类型保持提议。被取代时改本页状态并指向新页，不在正文里追加「后来改为」。
+采纳。§9.1 的接口签名各自实现时走接口 PR。被取代时改本页状态并指向新页，不在正文里追加「后来改为」。
