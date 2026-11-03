@@ -83,7 +83,7 @@
 | 把 `LaunchBearerMiddleware` 从 `BaseHTTPMiddleware` 换成纯 ASGI 中间件 | SSE 之前。`BaseHTTPMiddleware` 会缓冲请求体，不适合 `GET /v1/jobs/{id}/events` | ARCH §10.2；#58、#60 |
 | 接管前收到 SIGINT / SIGTERM 时 worker 退出码非 0（130 带 `KeyboardInterrupt` 回溯，SIGTERM 为 143）。退出码 0 依赖 uvicorn 0.38.0 恢复信号处理再重新抛出 | M3（supervisor 实现 PR）一起改。桌面端不要把 130 / 143 当成崩溃 | #59；ARCH §10.1、§10.5 |
 | PR #55 / #56 审查 P2：`ids` 构造校验、迁移测试不完全封闭、codegen 按 basename 命名、`read*` 运行时校验的归属、health 响应体改成判别联合、`workerVersion` 字符集与长度、主版本不符时作业数为 0 | M1。前几条随下一个触碰 codegen 或 contracts 的 PR；作业数为 0 随 jobs API | #61 |
-| macOS 上的 worker 健康检查；`server.py`、`loopback.py`、`listen_port.py` 是否从 `api/` 移到 `oi_worker/runtime/` | 健康检查 job 与必需检查已在 main@d411710 完成。三个文件留在 `api/`，不搬。理由：jobs 尚未落地（`oi_worker/jobs/__init__.py` 只有分层占位，没有 jobs API）；ARCHITECTURE §10.3 把 HTTP 适配、端口和退出放在 `api/`，`runtime/` 是模型清单、设备探测与内存限制。以后 jobs PR 若仍要搬，先改 §10.3 和 import-linter，不在 #62 做。Wisdom 2026-11-03 批准用这条记录收口 #62 第 2 条 | #62；ARCH §10.3 |
+| macOS 上的 worker 健康检查；`server.py`、`loopback.py`、`listen_port.py` 是否从 `api/` 移到 `oi_worker/runtime/` | 健康检查 job 与必需检查已在 main@d411710 完成。三个文件留在 `api/`，不搬。理由：jobs 尚未落地（`oi_worker/jobs/__init__.py` 只有分层占位，没有 jobs API）；ARCHITECTURE §10.3 把 HTTP 适配、端口和退出放在 `api/`，`runtime/` 是模型清单、设备探测与内存限制。以后 jobs PR 若仍要搬，先改 §10.3 和 import-linter，不在 #62 做。Forge 2026-11-03 按 #62 验收（注明不做理由）批准，待 Wisdom 合入确认 | #62；ARCH §10.3 |
 | 把 `CI / worker-health-windows` 与 `CI / worker-health-macos` 设为必需检查 | M1。仓库管理员做。Agent 不改分支保护（N-02） | #33 |
 | Linux 与 macOS 的 Playwright Electron 冒烟。外壳 PR 只在 `windows-latest` 跑。不加 xvfb，不改 `.cursor/install.sh` | 外壳开窗之后。不并进 #30（那是 M2 改 `.cursor/*`） | #66；PRD AC-67 ①；ARCH §9、§15.2 |
 | 由契约生成 preload，不手写 IPC。外壳 PR 只暴露空的 `window.oi` | 另立 PR。现有 codegen 只生成 worker 协议 | #67；ARCH §9；G7 |
