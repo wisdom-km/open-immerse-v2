@@ -1,9 +1,16 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
 
-import { loadProtocolSchemas } from "./schema-module.mjs";
+import { loadProtocolSchemas, writeExclusive } from "./schema-module.mjs";
 
 function write(root: string, rel: string, text: string) {
   const full = path.join(root, rel);
@@ -57,6 +64,22 @@ it("rejects a dynamic import", async () => {
     await expect(
       loadProtocolSchemas(path.join(root, "entry.ts")),
     ).rejects.toThrow(/^dynamic import: /);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+it("does not write a module when the output path is already occupied", async () => {
+  const root = mkdtempSync(path.join(tmpdir(), "oi-schema-write-"));
+  const output = path.join(root, "entry.codegen.mjs");
+  const payload = "export const protocolSchemas = [];\n";
+  writeFileSync(output, "sentinel");
+  try {
+    await expect(
+      writeExclusive(output, "entry.codegen.mjs", payload),
+    ).rejects.toThrow(/^schema output collision: /);
+    expect(readFileSync(output, "utf8")).toBe("sentinel");
+    expect(readdirSync(root)).toEqual(["entry.codegen.mjs"]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

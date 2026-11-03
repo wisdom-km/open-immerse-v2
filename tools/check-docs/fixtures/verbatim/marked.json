@@ -1,0 +1,10 @@
+{
+  "pairs": [
+    {
+      "left": "mark-a.md",
+      "right": "mark-b.md",
+      "start": "<!-- start -->",
+      "end": "<!-- end -->"
+    }
+  ]
+}
