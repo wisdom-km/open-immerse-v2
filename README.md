@@ -23,6 +23,8 @@ Open Immerse v2：把英文学术 PDF 做成可对照、可追溯、公式不走
 
 [docs/architecture/](docs/architecture/README.md) 是早期输入。其中的需求表（含手机平台、账号式能力）不授权实现。冲突时以根目录 `PRD.md`、`ARCHITECTURE.md`、`RULES.md` 为准。
 
+[docs/README.md](docs/README.md) 的「历史 / 愿景」收录架构重设计 v1.1，不作为 v2 需求。
+
 ## CI 与云端环境
 
 Node 依赖用 pnpm（`corepack pnpm`）。检查命令、GitHub Actions 与云端 Agent 的 Node / Python 安装见 [docs/ci-and-environment.md](docs/ci-and-environment.md)。
