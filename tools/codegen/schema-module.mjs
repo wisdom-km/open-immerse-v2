@@ -110,7 +110,7 @@ function resolveHref(spec, sourcePath, outputs) {
   return pathToFileURL(createRequire(sourcePath).resolve(spec)).href;
 }
 
-async function writeExclusive(output, relative, text) {
+export async function writeExclusive(output, relative, text) {
   try {
     await writeFile(output, text, { flag: "wx" });
   } catch (error) {
