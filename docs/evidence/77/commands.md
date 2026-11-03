@@ -2,7 +2,7 @@
 
 日期：2026-11-03。工作目录是仓库根。Node 是 `.nvmrc` 的 v22.23.4，PATH 前置 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin`。`node -v` 为 v22.23.4，`corepack pnpm --version` 为 10.34.9。
 
-门禁与 Windows 截图的 tip 是 `4f8aaaabd09b5640e8d7b220ca9a908569d0d1fe`。这一笔把 include 收成 `packages/platform-node/test/**/*.test.ts`，不再扫进 `node_modules` 里指向 kernel 与 contracts 的符号链接。通过数是收窄之后的。`main` 用 merge 接进 `91760ba`（§5.1 补线，PR #79）。没有 rebase，没有 force push。
+门禁与 Windows 截图的 tip 是 `2f352839dd1aa30bb79d0df1a6912bb0521c0bd0`。include 收成 `packages/platform-node/test/**/*.test.ts` 在 `4f8aaaabd09b5640e8d7b220ca9a908569d0d1fe`，不再扫进 `node_modules` 里指向 kernel 与 contracts 的符号链接。`2f35283` 不改测试收集，通过数仍是收窄之后那一次。`main` 用 merge 接进 `91760ba`（§5.1 补线，PR #79）。没有 rebase，没有 force push。
 
 本 Cloud Agent 是 Linux，不跑 Playwright Electron：不加 xvfb，不改 `.cursor/install.sh`。窗口截图以 CI job `desktop-e2e-windows` 为准。
 
@@ -13,7 +13,7 @@
 | 命令 | 退出码 | 备注 |
 | --- | --- | --- |
 | `GATE_BASE=origin/main corepack pnpm test` | 0 | Vitest 69 个文件、144 通过、2 跳过、0 失败。类型错误 0。定向 `packages/platform-node` 为 4 个文件、30 通过。跳过的是未设 `GITLEAKS_BIN` 的本地密钥夹具。CI 的 `node` job 设了该变量 |
-| `GATE_BASE=origin/main corepack pnpm run check` | 0 | lint、typecheck、typecheck:core、行数（150 个源文件）、`check:deps`（77 modules，144 dependencies，无违例）、G18（0 个功能切片）、Conventional Commits、热点、PR 体量（1086 行非生成 diff，提交说明里有 `G12:`）、codegen、G7。这是 `4f8aaaa` 上的数字 |
+| `GATE_BASE=origin/main corepack pnpm run check` | 0 | lint、typecheck、typecheck:core、行数（150 个源文件）、`check:deps`（77 modules，144 dependencies，无违例）、G18（0 个功能切片）、Conventional Commits、热点、PR 体量（1090 行非生成 diff，提交说明里有 `G12:`）、codegen、G7。这是 `2f35283` 上的数字 |
 | `corepack pnpm exec vitest run packages/platform-node/test/log-paths.test.ts packages/platform-node/test/value-guard.test.ts packages/platform-node/test/debug-retention.test.ts packages/platform-node/test/file-logger.test.ts --reporter=verbose` | 0 | 4 个文件、30 通过。摘录见下 |
 
 `test:core`：不适用（`package.json` 没有这个脚本）。没有执行。
@@ -85,13 +85,13 @@ CI `node` job 的 G9：gitleaks 8.30.1，`no leaks found`。没有放宽 `.gitle
 
 ## Windows 截图
 
-job：`desktop-e2e-windows`，`runs-on: windows-latest`。tip SHA `4f8aaaabd09b5640e8d7b220ca9a908569d0d1fe`。`push` 与 `pull_request` 都是 success，五个 job 都通过。冒烟日志是 `1 passed`。当前 renderer 只有标题、没有正文，所以页面是空白。图不入库（N-12）。
+job：`desktop-e2e-windows`，`runs-on: windows-latest`。tip SHA `2f352839dd1aa30bb79d0df1a6912bb0521c0bd0`。`push` 与 `pull_request` 都是 success，五个 job 都通过。冒烟日志是 `1 passed`。当前 renderer 只有标题、没有正文，所以页面是空白。图不入库（N-12）。
 
-PR 那组：run [41576098671](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576098671)。截图 artifact：[desktop-e2e-windows-screenshots](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576098671/artifacts/13203323478)。`1 passed (8.5s)`。
+PR 那组：run [41576448934](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576448934)。截图 artifact：[desktop-e2e-windows-screenshots](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576448934/artifacts/13203882385)。`1 passed (9.3s)`。
 
-同一提交的 `push` 那组：run [41576092162](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576092162)，artifact [13202564625](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576092162/artifacts/13202564625)。`1 passed (9.4s)`。
+同一提交的 `push` 那组：run [41576445396](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576445396)，artifact [13203134733](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576445396/artifacts/13203134733)。`1 passed (8.2s)`。
 
-`7855bb3` 的 [run 41568563677](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41568563677) 在下载 Electron 时超过 120 秒，没有 png。不把它当作本 PR 的截图。`2f7c18e` 的截图也不再作为本 tip 的记录。
+`7855bb3` 的 [run 41568563677](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41568563677) 在下载 Electron 时超过 120 秒，没有 png。不把它当作本 PR 的截图。`2f7c18e` 与 `4f8aaaa` 的截图也不再作为本 tip 的记录。
 
 `actions/upload-artifact` 用的是 tag `v7.0.2`。该 tag 仍指向 `cf430e030ddbb5b0abf93d22962f4752f3646cd9`。
 
