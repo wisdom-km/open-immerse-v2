@@ -34,3 +34,13 @@ tests/quality/test_select_backend.py ...
 ```
 
 假 key 只有 `oitest_jevclient`。产品代码不读 `MODELBEST_API_KEY`。
+
+## Forge nits（审查 `92fa9a0`）
+
+修复提交 `d31124b2effa7a10aedd85482a3b509951976169`。空白凭据视为缺失；响应体解码失败记整批 `service_failed`；只有 `NetworkDisabledError` 与 `httpx.HTTPError` 映射成上游故障，其他 `RuntimeError` 继续抛出。`docs/backlog.md` 的 `score_best` 行改为 Issue #86。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `node ../../tools/gate-remediation/run.mjs --id G8 -- uv run pytest tests/quality -q` | 0 | 工作目录 `workers/parser/`。57 passed |
+| `node ../../tools/gate-remediation/run.mjs --id G6 -- uv run lint-imports` | 0 | 7 kept，0 broken |
+| `GATE_BASE=origin/main corepack pnpm run check` | 0 | 在 `d31124b`。`check-pr-size` 1667 行非生成 diff。工作树干净 |
