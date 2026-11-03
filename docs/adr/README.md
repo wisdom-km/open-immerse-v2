@@ -1,10 +1,10 @@
 # 架构决定索引
 
-状态：索引。日期：2026-11-02（Asia/Shanghai）。
+状态：索引。日期：2026-11-04（Asia/Shanghai）。
 
 这里只指向已经写在规格里的决定，不重写决定，也不另写一份规格。Q1–Q12 的问题、取舍和结论在 [差异清单](../v2-gap-and-changes.md) §6，落点在 [ARCHITECTURE.md](../../ARCHITECTURE.md) §16。
 
-独立的 ADR 文件仍留到 M1。届时登记的第一批包括：`formula-source`、Markdown 的依赖边、`ingest` 的九条边、`budget`、`packages/providers` 与外发检查、存储升级规则、G18、`ui-events-declared`、`supervisor-state`、解析规则集 `oi-rules/1`（ARCHITECTURE §16 末段）。在那之前，新增依赖边的 PR 仍按该段更新架构图。本索引不代替那条规则，也不表示这些文件已经存在。
+M1 要登记的第一批独立 ADR 仍未建页：`formula-source`、Markdown 的依赖边、`ingest` 的九条边、`budget`、`packages/providers` 与外发检查、存储升级规则、G18、`ui-events-declared`、`supervisor-state`、解析规则集 `oi-rules/1`（ARCHITECTURE §16 末段）。在那之前，新增依赖边的 PR 仍按该段更新架构图。本索引不代替那条规则。下面「已成页」是 2026-11-04 另记的一页，不在这一批里。
 
 ## 新决定用的模板
 
@@ -33,4 +33,10 @@
 | Q11 | 未配置翻译时能否借用多模态 | 差异清单 §6 的 Q11 行；ARCHITECTURE §16 的 Q11 行 |
 | Q12 | Unlimited-OCR 是否接入 | 差异清单 §6 的 Q12 行；ARCHITECTURE §16 的 Q12 行 |
 
-Q1–Q12 之后的决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，2026-10-31 的 D-D、D-E、W-4，以及 2026-11-02 的面壁 API 主路线、同日 Jev 契约与 Jev API 客户端里程碑）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.15。本索引不抄那些段落。
+## 已成页
+
+| 编号 | 问的是什么 | 记录在 |
+| --- | --- | --- |
+| 0001 | M4 桌面端：术语抽取与外发同意、术语库的领域来源、数据目录迁移、路径只显示名称。§9.1 已采纳；接口签名各自实现时走接口 PR | [0001-m4-desktop-ui.md](0001-m4-desktop-ui.md) |
+
+Q1–Q12 之后的其余决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，2026-10-31 的 D-D、D-E、W-4，以及 2026-11-02 的面壁 API 主路线、同日 Jev 契约与 Jev API 客户端里程碑）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.15。本索引不抄那些段落。0001 的正文在它自己的页上，这里不重抄。

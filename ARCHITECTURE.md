@@ -1524,7 +1524,7 @@ type ReadingOrderResult = Readonly<{
 - 端口 `GlossaryProvider.entriesFor(documentId)` 返回 `GlossaryEntry[]`（原文术语、译名、可选备注）；v2 没有录入界面，装配根只注入返回空数组的实现。
 - `glossary.ts` 只挑出本块原文里出现的条目放进提示词；没有命中时提示词里不出现术语段落，与没有术语表时逐字节相同。
 - 缓存键加一项「术语摘要」：本块命中条目规范化后的 SHA-256；没有命中时是固定值。只改未命中的条目，键不变（§8.1.1「进提示词的每一项都要进键」）。
-- 不用 LLM 自动抽取术语：v2 对任何服务商的「抽取术语」请求为 0。
+- ~~不用 LLM 自动抽取术语：v2 对任何服务商的「抽取术语」请求为 0。~~ **【已采纳，ADR 0001，Wisdom 2026-11-04】** 改为：术语抽取是一个模型能力（`term-extraction`，默认 API），走服务商适配层；发送前经外发同意（§7.0 第 6 条，按服务商 + 能力），只发文字层文本；单篇 / 每月预算科目预留；里程碑 **M4**（与术语表接口同里程碑）；结果写入 `glossary` 存储（论文级 + 文献库级术语库，领域分组可手动改），再由 `GlossaryProvider` 提供给翻译。数据形状草案见 DESIGN §4.8.8。
 
 **扫描页判定**（PRD AC-75）：
 
@@ -1794,6 +1794,7 @@ type FormulaCropRef = Readonly<{
 - 迁移文件放在各切片 `migrations/`，运行器按（切片, 版本号）排序执行并记录在 `schema_migrations`；**两个切片的迁移永远不会改同一个文件**。
 - 写入顺序：资产写暂存 → 校验摘要 → 事务内写引用 → 提交。失败不留半份文献。
 - 采用版本切换使用乐观锁（比较旧 `revisionId`）；过期任务结果不能覆盖新版本。
+- **数据目录迁移（已采纳，ADR 0001，Wisdom 2026-11-04）**：`<userData>` 改为可迁移的数据根 `dataRoot`。固定位置保留一个小指针文件记录当前 `dataRoot`（文件名与位置由 Forge 定）。迁移顺序：检查（目标为空、可写、可用空间 ≥ 1.2 × 数据大小、不在笔记库或系统目录、不在当前根内）→ 停止写入与任务 → 复制 → 逐个校验 → 原子更新指针（commit 点，之前可取消）→ 重启 → 询问是否删除旧根。失败或取消：指针不变、清理目标、旧根未改动。`secrets.bin`（safeStorage）同机迁移是否可直接复制**还没核实**，否则迁移后重新加密或提示重填 Key。`staging/`、`logs/` 迁移或清空由 Forge 定。
 
 ### 8.3 配置与密钥隔离
 
@@ -1841,6 +1842,26 @@ type FormulaCropRef = Readonly<{
   - 页面来源：应用页面由自定义协议 `oi-app://` 提供（安全清单第 18 条），不用 `file://` 加载，因此下面的 `GrantFileProtocolExtraPrivileges` 可以关闭。
   - CSP：由 main 给 `oi-app://` 的响应加 `Content-Security-Policy` 头，常量在 `apps/desktop/src/main/security/csp.ts`。草案：`default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' oi-asset:; font-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'`。不允许 `unsafe-eval`，PDF.js 以 `isEvalSupported: false` 运行。下列三项**待 M2 实测**：KaTeX 的行内样式是否需要 `style-src 'unsafe-inline'`；PDF.js 是否需要 `wasm-unsafe-eval` 与 `blob:` 的 worker；PDF 数据经 `oi-asset://` 加载是否需要 `supportFetchAPI` 与 `connect-src oi-asset:`。任何放宽都要 ADR，并写到期里程碑。PRD AC-67 ① 在 M1 用 e2e 读出窗口实际生效的 CSP，与常量逐字一致。
   - Fuses：打包时用 `@electron/fuses` 设置——`RunAsNode` 关、`EnableNodeOptionsEnvironmentVariable` 关、`EnableNodeCliInspectArguments` 关、`EnableCookieEncryption` 开、`OnlyLoadAppFromAsar` 开、`EnableEmbeddedAsarIntegrityValidation` 开（各平台是否支持**未核实**）、`GrantFileProtocolExtraPrivileges` 关。依据 Electron `docs/tutorial/fuses.md`（2026-10-30 查阅 main 分支），M1 按锁定版本复核；M8 打包后用 `npx @electron/fuses read --app <应用路径>` 核对（PRD AC-67 ③）。
+
+### 9.1 v2 桌面端 UI 新增 seam**【已采纳，ADR 0001，Wisdom 2026-11-04】**
+
+UI 只调 seam，规则在 core / main（P7）。下面列出的职责已采纳。接口签名各自实现时走接口 PR，类型与错误码在那些 PR 里定：
+
+| seam | 所在 | 职责 |
+| --- | --- | --- |
+| `settings.dataDir.get()` → `{name, sizeBytes, contents}` | main + platform-node | 只返回文件夹名称、大小与内容类别，不返回路径 |
+| `settings.dataDir.choose()` → `{handle, name} \| null` | main | 用原生文件夹对话框选择目标；返回不透明句柄（main 内映射到路径，单次有效）与文件夹名称 |
+| `settings.dataDir.check(handle)` / `relocate(handle)` + `onRelocateProgress` / `cancelRelocate()` | main + platform-node | §8.2 数据目录迁移；检查结果与错误码不含路径；进度事件只含字节数；commit 点之前可取消 |
+| `shell.revealItem({kind: 'dataDir' \| 'librarySource', id?})` | main | 在资源管理器 / 访达中显示：main 按 kind 与 id 解析路径后调用 `shell.showItemInFolder` / `shell.openPath`；不向 renderer 返回路径；`librarySource` 的原所在文件夹不存在时返回 `not-found` |
+| `shell.openFile(path)` | main | 文件关联、「打开方式」、拖到 Dock / 任务栏图标、单实例第二次启动（`requestSingleInstanceLock`、mac `open-file`）统一入口，内部调 `ingest.openDocument`；最近文档写系统列表（`app.addRecentDocument`） |
+| `session.save(state)` / `session.restore()` | main | 窗口几何、最大化 / 全屏、场景、文档与阅读位置、视图、PDF 缩放、侧栏、列表排序；存 `<dataRoot>`；位置后退 / 前进历史**不**持久化 |
+| `edit.do(cmd)` / `edit.undo()` / `edit.redo()` + `onUndoStateChanged` | core（各切片注册命令） | 笔记新建 / 删除 / 编辑、术语译名修改、术语分组移动；按场景分栈；删除论文与数据迁移不进撤销 |
+| `library.checkSource(id)` → `{status, fileName}` / `library.relocate(id)` | library + main | 原 PDF 路径不存在时返回 `missing` 与文件名（不含路径）；`relocate` 由 main 打开原生文件选择器，重新定位按内容 SHA-256 核对。与 `library/<sha256>/source.pdf` 副本的关系**还没核实** |
+| `library.list({sort: {field: 'title'\|'status'\|'openedAt'\|'addedAt', dir}})` | library | 列排序（默认 `openedAt desc`）；多选批量删除 / 导出笔记接受 id 数组 |
+| `reader.setZoom(docId, level\|'fit-width'\|'fit-page')` | reader | 只缩放 PDF 原文栏，25%–400%；按文档记住。菜单不用 Electron 默认 `zoomIn` / `zoomOut` role（会缩放整个界面） |
+
+**与 §9 绝对路径规则的关系（已批 Wisdom 2026-11-04 03:28）**：§9「返回给 renderer 的数据不含绝对文件路径」**保持不变**。设置 › 隐私与数据（数据目录）与原文件丢失行只显示文件夹 / 文件**名称**，加「在资源管理器中显示」（Win）/「在访达中显示」（mac）按钮，路径只在 main 内解析。
+- 外发同意（§7.0 第 6 条）的能力列表需加入 `term-extraction`。
 
 ## 10. Python worker 协议（oi-parse/1）
 
@@ -2059,7 +2080,7 @@ type EvalRecord = Readonly<{
 | G16 core 测试只调 seam、不渲染 UI | Vitest 工程 `core` + dependency-cruiser 规则 `core-test-through-seam` | `core` 工程：`environment: 'node'`，include `packages/features/*/test/core/**`；文件内出现 `@vitest-environment` 注释即失败。`core-test-through-seam`：from `^packages/features/([^/]+)/test/core/`，to `^packages/features/$1/src/` 且 pathNot `^packages/features/$1/src/((index\|pure)\.ts\|testing/)` → 失败；to `react`、`@testing-library/*`、`jsdom`、`happy-dom`、`@oi/ui-kit`、`src/ui/` → 失败。每个切片 `README.md` 登记的 core 规则必须至少有一个 core 测试（脚本核对测试名中的规则编号） |
 | G18 一个 PR 一个切片 | 脚本 | PR 改动的 `packages/features/*/src/**` 只属于一个切片（RULES §2）；例外：解析规则集 PR（`parsing` + worker 对应规则 + `fixtures/parsing-rules/`，§7.10）与带 ADR 编号的 PR。由此「UI 改动的 PR 又改了另一个切片的 core」必然失败（架构评审 P1-11）；同一切片的 UI 与 core 在一个 PR 里不失败 |
 
-**运行环境**（架构评审 P2-5）：Linux 跑 G1–G16、G18 全部；Windows 与 macOS 各有一条任务，跑不带模型的 worker 健康检查、`fixtures/protocol/` 与 `fixtures/parsing-rules/` 的两侧测试，这几步相同。Windows 这一条在装好 Node 依赖之后另跑 `pnpm run check:deps` 与 `tools/check-deps` 的 Vitest，macOS 不跑这两步。Linux 全部门禁与 Windows 健康检查仍是 AC-80 ⑤ 的两条必需检查。macOS 健康检查由 Wisdom 2026-11-02 20:07 批准。2026-11-04 本代理再查 `GET repos/wisdom-km/open-immerse-v2/branches/main/protection` 仍是 403。以 2026-11-04 Anvil 查到的为准：`CI / worker-health-windows` 与 `CI / worker-health-macos` 已是 required。本段不改设置（Issue #33，RULES N-02）。macOS 签名与公证留到 M8，由人执行。
+**运行环境**（架构评审 P2-5）：Linux 跑 G1–G16、G18 全部；Windows 与 macOS 各有一条任务，跑不带模型的 worker 健康检查、`fixtures/protocol/` 与 `fixtures/parsing-rules/` 的两侧测试，这几步相同。Windows 这一条在装好 Node 依赖之后另跑 `pnpm run check:deps` 与 `tools/check-deps` 的 Vitest，macOS 不跑这两步。macOS 健康检查由 Wisdom 2026-11-02 20:07 批准。2026-11-04 本代理再查 `GET repos/wisdom-km/open-immerse-v2/branches/main/protection` 仍是 403。以 2026-11-04 Anvil 查到的分支保护 API 为准，必需检查是四条，都已设为 required：`CI / node`、`CI / python-worker`、`CI / worker-health-windows`、`CI / worker-health-macos`。本段不改设置（Issue #33，RULES N-02）。macOS 签名与公证留到 M8，由人执行。
 
 原 G17（同一 PR 同时改 UI 路径与 core 路径即失败）已按架构评审删除（Wisdom 2026-10-30 19:57 批准）：一个垂直切片的功能本来就同时包含 core 与 UI，按层强制拆 PR 与 §0「改一个功能只动一个切片」相反。Q3 的执行规则 2、3 仍然有效，由评审清单与 UI–core 交接说明检查（RULES §5 第 11 条、§8）；依赖方向与 core 测试由 G13–G16 机器检查。
 
@@ -2202,3 +2223,5 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 
 - 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3、M6a、M6b 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
 - 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、架构评审新增的 `ingest` 切片及其九条出边、`budget` 切片与删除的 `repair → quality`，以及修复 B 新增的 `packages/providers` 包与 `providers-boundary` 规则、`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），以及 PR C 新增的 G18、`ui-events-declared`、`supervisor-state` 与解析规则集 `oi-rules/1`，在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。2026-11-03 10:40 批准的 `platform-node` → `contracts` 值导入同样等到那时登记；门禁配置不在批准它的文档 PR 里改。
+
+**v2 桌面端 UI 引起的架构变更（Wisdom 2026-11-04 采纳；[ADR 0001](./docs/adr/0001-m4-desktop-ui.md)）**：§7.11 术语抽取改为需要外发同意和预算的模型能力，放在 M4，抽取前的同意也算该服务商的外发同意；术语库按领域自动分组，用户可以改，`domain` 带来源 `llm` | `user`；§8.2 数据目录可迁移，目标盘空余至少为数据大小的 1.2 倍，迁移完询问是否删除旧文件；§9 绝对路径规则保持不变，UI 只显示名称，用 `shell.revealItem` 在资源管理器 / 访达中显示。§9.1 已采纳；接口签名各自实现时走接口 PR。依据：Wisdom 2026-11-04 02:27、03:02、03:08、03:14、03:18、03:21、03:28 的批准（DESIGN v0.3 §6.1）。决定人与日期见 ADR 0001。

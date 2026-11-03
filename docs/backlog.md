@@ -84,7 +84,7 @@
 | 接管前收到 SIGINT / SIGTERM 时 worker 退出码非 0（130 带 `KeyboardInterrupt` 回溯，SIGTERM 为 143）。退出码 0 依赖 uvicorn 0.38.0 恢复信号处理再重新抛出。测试里等 `oi-worker-before-hold` 再发 SIGINT 已由 #107 改完，退出码没改 | M3（supervisor 实现 PR）一起改产品行为。桌面端不要把 130 / 143 当成崩溃 | #59；ARCH §10.1、§10.5；#107 |
 | PR #55 / #56 审查 P2 仍开放的两条：`read*` 运行时校验的归属（条目 4）；主版本不符时作业数为 0（条目 7，随 jobs API）。条目 2、3、5 已由 #96 收口。条目 1 与 6 已由 #109 收口：六个 `parse*` 对字符串打品牌，空字符串仍合法；`workerVersion` 的 pattern / maxLength 只从 schema 读。空 ID、空白 ID 与没有 maxLength 见下面的 #109 行 | 条目 4 仍是 M1。条目 7 随 jobs API | #61；#96；#109 |
 | macOS 上的 worker 健康检查；`server.py`、`loopback.py`、`listen_port.py` 是否从 `api/` 移到 `oi_worker/runtime/` | 健康检查 job 与必需检查已在 main@d411710 完成。三个文件留在 `api/`，不搬。理由：jobs 尚未落地（`oi_worker/jobs/__init__.py` 只有分层占位，没有 jobs API）；ARCHITECTURE §10.3 把 HTTP 适配、端口和退出放在 `api/`，`runtime/` 是模型清单、设备探测与内存限制。以后 jobs PR 若仍要搬，先改 §10.3 和 import-linter，不在 #62 做。Forge 2026-11-03 按 #62 验收（注明不做理由）批准，待 Wisdom 合入确认 | #62；ARCH §10.3 |
-| 把 `CI / worker-health-windows` 与 `CI / worker-health-macos` 设为必需检查 | 以 2026-11-04 Anvil 查到的为准：已是 required。2026-11-04 本代理再查 `GET repos/wisdom-km/open-immerse-v2/branches/main/protection` 仍是 403。不改任何设置（N-02）。Issue #33 仍 OPEN，正文要的是 `node`、`python-worker` 与 `MODELBEST_API_KEY` | #33 |
+| 把 `CI / node`、`CI / python-worker`、`CI / worker-health-windows` 与 `CI / worker-health-macos` 设为必需检查 | 以 2026-11-04 Anvil 查到的分支保护 API 为准：四条都已是 required。2026-11-04 本代理再查 `GET repos/wisdom-km/open-immerse-v2/branches/main/protection` 仍是 403。不改任何设置（N-02）。Issue #33 仍 OPEN，正文还要 `MODELBEST_API_KEY` | #33 |
 | Linux 与 macOS 的 Playwright Electron 冒烟。外壳 PR 只在 `windows-latest` 跑。不加 xvfb，不改 `.cursor/install.sh` | 外壳开窗之后。不并进 #30（那是 M2 改 `.cursor/*`） | #66；PRD AC-67 ①；ARCH §9、§15.2 |
 | 由契约生成 preload，不手写 IPC。外壳 PR 只暴露空的 `window.oi` | 另立 PR。现有 codegen 只生成 worker 协议 | #67；ARCH §9；G7 |
 | 打包时按 ARCHITECTURE §9 设置 Electron Fuses。`EnableEmbeddedAsarIntegrityValidation` 各平台是否支持仍未核实 | M8。验收 AC-67 ③ | #68；ARCH §9 |
@@ -170,11 +170,11 @@ P0 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）�
 | --- | --- | --- |
 | E-P0-1 | README 对齐 v2，AGENTS.md | 已处理。与 23:55 的入口是同一份，不另写第二份规格 |
 | E-P0-2 | 写明当前 CI 是空跑 | 已处理。README 与 docs/ci-and-environment.md「当前是空跑」 |
-| E-P1-1 | ADR 索引 | 已处理：`docs/adr/README.md` 只指向 Q1–Q12。独立 ADR 文件仍在 M1 |
+| E-P1-1 | ADR 索引 | 已处理：`docs/adr/README.md` 指向 Q1–Q12，并指向 2026-11-04 的 `docs/adr/0001-m4-desktop-ui.md`。M1 第一批独立 ADR 仍未建页 |
 | E-P1-2 | Issue 与 PR 模板 | 已处理。字段来自 RULES §2 与 §8.4，PR 模板含所在提交 SHA |
 | E-P1-11 | 事故复盘模板 | 已处理：`docs/incidents/TEMPLATE.md` |
 | E-P1-12 | 三种版本号 | 已处理。README「三种版本号」 |
-| E-P1-3 | 把两个 CI job 设为必需检查 | 未处理。仓库管理员做。Agent 不改分支保护（N-02） |
+| E-P1-3 | 把两个 CI job 设为必需检查 | 以 2026-11-04 Anvil 查到的分支保护 API 为准：`CI / node` 与 `CI / python-worker` 已是 required，另有 `CI / worker-health-windows`、`CI / worker-health-macos`。四条都已设为必需。Issue #33 仍 OPEN（还要 `MODELBEST_API_KEY`）。Agent 不改设置（N-02） |
 | E-P1-4 | CODEOWNERS | 已处理。`.github/CODEOWNERS` 是 `* @wisdom-km`。按路径拆所有者仍等 Wisdom 指定 |
 | E-P1-5 | Conventional Commits 检查 | 已处理。`pnpm run check:commits`，并进 `pnpm check` |
 | E-P1-6 | dependency-cruiser 与 `tsconfig.core.json` | 已处理。规则在 `tools/check-deps/`，core 编译配置是 `tsconfig.core.json` |

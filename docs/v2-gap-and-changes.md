@@ -492,7 +492,7 @@ Wisdom 批准开 PR C：只改规格，验收编号接在 AC-67 之后。各评�
 | BabelDOC | AGPL-3.0 且依赖 PyMuPDF：只借思路，严禁复制代码。六项：公式占位加固（字面 `⟦⟧` 保护、改动即拒、纯公式块不发请求）、重译不读缓存而写回覆盖、术语表只留接口（空时提示词不变，命中条目进缓存键，不做自动抽取）、按页扫描判定 `trusted` / `untrusted` / `none`、段落只在解析侧切分（segmenter 只分批）、产物 JSON Schema 带主版本 `$id` 且两侧校验 | ARCH §7.11、§8.1.1、§10.2、§10.3；PRD AC-72–AC-77、QM-02、M2–M4；RULES §1.5、N-19；本文 §2.11 |
 | P1-6 借用多模态翻译 | 装配期复用同一服务商绑定，没有 `translation → repair` | ARCH §4.3；PRD AC-78 |
 | P1-7 Markdown 两条解析路径 | `pure.ts` 不导出解析器，renderer 里没有解析器（G15）；`readFile` / `openFile` 返回块窗口，其余块经 `readBlocks` 按需取 | ARCH §4.5.3、§4.5.4、§4.5.6、G15；PRD AC-79 |
-| P1-11 后半、P2-1、P2-5 | 热点收窄为装配根、`slots.ts` 与被两个以上切片 import 的契约文件；契约 PR 非生成代码 200 行上限；新增 G18「一个 PR 一个切片」；M1 违规样例改写；domain 纯函数只受文件上限；CI 有 Linux 与 Windows 两条必需检查 | ARCH §6、§13、§14.4；RULES §1.3、§2、§3、§8.2；PRD AC-80、M1 |
+| P1-11 后半、P2-1、P2-5 | 热点收窄为装配根、`slots.ts` 与被两个以上切片 import 的契约文件；契约 PR 非生成代码 200 行上限；新增 G18「一个 PR 一个切片」；M1 违规样例改写；domain 纯函数只受文件上限；CI 必需检查是四条：`CI / node`、`CI / python-worker`、`CI / worker-health-windows`、`CI / worker-health-macos`（2026-11-04 Anvil 查到的分支保护 API） | ARCH §6、§13、§14.4；RULES §1.3、§2、§3、§8.2；PRD AC-80、M1 |
 | P2-2 UI 事件 | 登记发布方与订阅方，载荷只能是普通数据，新增事件要 ADR | ARCH §4.3、§5.3、G5；RULES §3；PRD AC-82 |
 | P2-3 历史草案的表格 | 表格上方加一句说明，不改表内句子 | `docs/architecture/README.md` |
 | P2-4 诊断保留量 | 保留天数与体积可设置，默认值 M2 实测后定标 | ARCH §11；PRD AC-83 |
