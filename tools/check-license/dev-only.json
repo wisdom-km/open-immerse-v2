@@ -1,5 +1,5 @@
 {
-  "reason": "PSF-2.0 is allowed only for these dev/CI packages. They are not shipped. Wisdom 2026-10-31 14:12. RULES §1.5.",
+  "reason": "PSF-2.0 is not on the general whitelist. These package names are allowed in the dev/CI group and in the runtime dependency closure. Wisdom 2026-11-03 23:33. RULES §1.5.",
   "ids": ["PSF-2.0"],
   "packages": ["typing_extensions"]
 }
