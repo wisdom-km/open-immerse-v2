@@ -13,7 +13,10 @@ function write(root: string, rel: string, text: string) {
   writeFileSync(full, text);
 }
 
-function writeClosedConfig(root: string): string {
+function writeClosedConfig(
+  root: string,
+  kernelRel = "packages/kernel/src/index.ts",
+): string {
   const tsconfig = path.join(root, "tsconfig.paths.json");
   write(
     root,
@@ -22,7 +25,7 @@ function writeClosedConfig(root: string): string {
       {
         compilerOptions: {
           baseUrl: ".",
-          paths: { "@oi/kernel": ["packages/kernel/src/index.ts"] },
+          paths: { "@oi/kernel": [kernelRel] },
         },
       },
       null,
@@ -121,6 +124,39 @@ it("allows a type-only kernel re-export and rejects a value import", () => {
       path.resolve("packages/kernel/src/index.ts"),
     );
     expect(rejected.output).toContain(remediationBlock("G5"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}, 30_000);
+
+it("resolves @oi/kernel to the temp marker when the repo paths name index.ts", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "oi-kernel-closed-"));
+  const repoKernel = path.resolve("packages/kernel");
+  try {
+    write(
+      root,
+      "packages/kernel/src/result.ts",
+      "export type Result<T, E> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: E };\n",
+    );
+    write(
+      root,
+      "packages/kernel/src/closed-marker.ts",
+      'export type { Result } from "./result.ts";\n',
+    );
+    write(
+      root,
+      "packages/contracts/src/value-package.ts",
+      'import { Result } from "@oi/kernel";\nexport const leak: unknown = Result;\n',
+    );
+    const rejected = cruise(
+      root,
+      writeClosedConfig(root, "packages/kernel/src/closed-marker.ts"),
+    );
+    expect(rejected.status).not.toBe(0);
+    expect(rejected.output).toContain("contracts-kernel-type-only");
+    expect(rejected.output).toContain("closed-marker.ts");
+    expect(rejected.output).not.toContain(repoKernel);
+    expect(rejected.output).not.toContain("packages/kernel/src/index.ts");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
