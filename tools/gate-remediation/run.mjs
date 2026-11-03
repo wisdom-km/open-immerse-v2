@@ -17,6 +17,25 @@ function runChild(command, args, cwd) {
   });
 }
 
+function catalogError(id) {
+  try {
+    requireGate(id);
+    return undefined;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
+function exitForUnknown(status) {
+  if (status === null || status === undefined) {
+    return 1;
+  }
+  if (status === 0) {
+    return 2;
+  }
+  return status;
+}
+
 function main() {
   const separator = process.argv.indexOf("--");
   const head = separator === -1 ? [] : process.argv.slice(2, separator);
@@ -26,15 +45,17 @@ function main() {
     console.error("usage: run.mjs --id <gate> [--cwd dir] -- <command> [args]");
     process.exit(2);
   }
-  try {
-    requireGate(id);
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exit(2);
-  }
+  const unknown = catalogError(id);
   const result = runChild(command, process.argv.slice(separator + 2), option(head, "--cwd"));
   process.stdout.write(result.stdout ?? "");
   process.stderr.write(result.stderr ?? "");
+  if (unknown !== undefined) {
+    if (result.error) {
+      console.error(result.error.message);
+    }
+    console.error(unknown);
+    process.exit(exitForUnknown(result.status));
+  }
   if ((result.status ?? 1) === 0) {
     return;
   }
