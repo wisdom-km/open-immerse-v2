@@ -244,6 +244,9 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
+      - name: Desktop unit tests
+        run: corepack pnpm exec vitest run apps/desktop/test
+
       - name: Playwright Electron smoke
         run: corepack pnpm --filter desktop e2e
         env:
