@@ -64,6 +64,14 @@ GATE_BASE=origin/main corepack pnpm run check
 
 退出码 0。`check-pr-size: 802 non-generated lines`。其余步骤与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-0417.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
 
+术语抽取的 M4 顺序与 `docs/approvals.md` 写在 `d0b37e172194a2fb02bb213cb865bb6c36e8d551`。在该提交上跑：
+
+```bash
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+退出码 0。`check-pr-size: 843 non-generated lines`。仓库没有 `check-docs` 脚本，这次没有跑。`check-pr-size` 通过，没有为它改提交说明。日志在 `/opt/cursor/artifacts/pnpm-check-116-m4-order.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
+
 ## 链接
 
 对 `637f9af` 改过的 `PRD.md`、`ARCHITECTURE.md`、`DESIGN.md`、`docs/design-principles.md` 抽出仓库内 Markdown 链接，标题锚点按 GitHub 的算法（小写，去掉标点，空格改成 `-`）核对。73 条能打开。唯一对不上文件的是 AC-38 表格里的例句 `[x](x.md)`，那是验收条文里的链接写法，不是仓库链接，未改。这四份文件在 `637f9af` 的新增行里没有新的 Markdown 链接。没有断链要修。
