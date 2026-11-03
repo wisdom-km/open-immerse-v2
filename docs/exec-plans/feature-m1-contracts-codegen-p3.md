@@ -35,9 +35,9 @@
 | --- | --- | --- | --- |
 | 1 | 本文件。Forge 通过后才写实现 | 提交 `c7510c5`。Forge 通过后才写实现。新测试若失败则停，不自写解析器；测试通过，未写解析器 | 本文件 |
 | 2 | 条目 2：只加测试。临时 paths 指向 `packages/kernel/src/closed-marker.ts`。违规输出含这个文件名，不含仓库 `packages/kernel` 的绝对路径，也不含仓库 paths 的目标 `packages/kernel/src/index.ts`。仓库的 paths 与 cruiser 配置不动 | `ddebc8f`。仓库 paths 与 cruiser 配置未改。新用例通过 | [docs/evidence/115/commands.md](../evidence/115/commands.md) |
-| 3 | 条目 3：相对路径命名，撞名抛出并不写。说明符改用 TypeScript 语法树。`export *` 仍可加载。动态 `import(` 抛出。不引入打包器 | `fa06a55`。三个文件各管一件事。同 basename、`export *`、动态 import、撞名测试通过 | 同上 |
+| 3 | 条目 3：相对路径命名，撞名抛出并不写。说明符改用 TypeScript 语法树。`export *` 仍可加载。动态 `import(` 抛出。不引入打包器 | `173f416`。说明符按节点位置改写，普通字符串不改。占住输出文件后再写会抛 `schema output collision:`，原内容还在。`relativeOutput` 拒绝 `..` 和根目录外的路径 | 同上 |
 | 4 | 条目 5：不改 Python。现有 health 测试仍断言 200 的三字段与 426 的 `{"supported": ["1.0"]}` | 不改 Python。pytest 27 passed | 同上 |
-| 5 | 跑 codegen。`workers/parser/oi_worker/protocol/` 无 diff。G7 通过 | `fa06a55` 上 `pnpm run check` 退出码 0。codegen 之后协议目录无 diff | 同上 |
+| 5 | 跑 codegen。`workers/parser/oi_worker/protocol/` 无 diff。G7 通过 | 复查后的 tip 上 `pnpm run check` 退出码 0。codegen 之后协议目录无 diff。非生成 diff 超过 600，提交说明有 `G12:` | 同上 |
 | 6 | 条目 1、4、6、7 不改代码。4 与 7 的不做理由和规格建议写在 PR 正文，不改 ARCHITECTURE、backlog、spec-changelog | 不改代码。规格建议留在 PR 正文 | [PR #115](https://github.com/wisdom-km/open-immerse-v2/pull/115) |
 
 函数不超过 80 行，圈复杂度不超过 15，参数不超过 4 个。禁止顶层 `let`（F-06）。不建 `utils.ts`。不改门禁上限（N-08）。门禁不跳过。预计对 `main` 的非生成 diff 低于 600 行。若实现时超过 600，提交说明或 `PR_BODY` 加一行 `G12:`，不调上限。
@@ -120,4 +120,4 @@ Python 模型名仍来自 schema 的 `name` 字段。schema 字节不变，所�
 
 ## 证据链接
 
-- `docs/evidence/115/commands.md`：实现提交 `fa06a55` 上的定向测试与 `GATE_BASE=origin/main pnpm run check`。
+- `docs/evidence/115/commands.md`：`173f416` 上的定向测试，以及含 `G12:` 的 tip 上的 `GATE_BASE=origin/main pnpm run check`。
