@@ -1,9 +1,11 @@
 import { app, session } from "electron";
 import path from "node:path";
+import { stderr } from "node:process";
 import { fileURLToPath } from "node:url";
 
 import { handleAppProtocol, registerAppScheme } from "./app-protocol.js";
 import { startMainLogger } from "./composition-root.js";
+import { runWhenReady } from "./run-when-ready.js";
 import { blockUnlessAllowed, decideWebViewAttach } from "./security/navigation.js";
 import { decidePermissionCheck, decidePermissionRequest } from "./security/permissions.js";
 import { createMainWindow } from "./window.js";
@@ -20,12 +22,19 @@ app.on("web-contents-created", (_event, contents) => {
   });
 });
 
-void app.whenReady().then(() => {
+runWhenReady(app.whenReady(), startDesktop, reportReadyFailure);
+
+function startDesktop(): void {
   handleAppProtocol(rendererRoot(fileURLToPath(import.meta.url)));
   denyPermissions();
   createMainWindow();
   startMainLogger();
-});
+}
+
+function reportReadyFailure(error: unknown): void {
+  const text = error instanceof Error ? (error.stack ?? error.message) : String(error);
+  stderr.write(`${text}\n`);
+}
 
 function rendererRoot(mainFile: string): string {
   return path.resolve(path.dirname(mainFile), "../../src/renderer");
