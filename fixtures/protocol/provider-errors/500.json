@@ -1,0 +1,12 @@
+{
+  "httpStatus": 500,
+  "headers": {"X-Request-Id": "req_test_500"},
+  "expected": {
+    "kind": "service_failed",
+    "retryable": true,
+    "retryAfterMs": null,
+    "httpStatus": 500,
+    "vendorCode": null,
+    "requestId": "req_test_500"
+  }
+}

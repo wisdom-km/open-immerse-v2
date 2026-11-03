@@ -1,0 +1,12 @@
+{
+  "httpStatus": 422,
+  "headers": {"X-Request-Id": "req_test_422"},
+  "expected": {
+    "kind": "invalid_request",
+    "retryable": false,
+    "retryAfterMs": null,
+    "httpStatus": 422,
+    "vendorCode": null,
+    "requestId": "req_test_422"
+  }
+}

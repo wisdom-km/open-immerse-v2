@@ -1,0 +1,12 @@
+{
+  "httpStatus": 401,
+  "headers": {"X-Request-Id": "req_test_401"},
+  "expected": {
+    "kind": "auth",
+    "retryable": false,
+    "retryAfterMs": null,
+    "httpStatus": 401,
+    "vendorCode": null,
+    "requestId": "req_test_401"
+  }
+}

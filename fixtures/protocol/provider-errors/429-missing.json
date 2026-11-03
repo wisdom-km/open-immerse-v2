@@ -1,0 +1,12 @@
+{
+  "httpStatus": 429,
+  "headers": {"X-Request-Id": "req_test_429_missing"},
+  "expected": {
+    "kind": "rate_limited",
+    "retryable": false,
+    "retryAfterMs": null,
+    "httpStatus": 429,
+    "vendorCode": null,
+    "requestId": "req_test_429_missing"
+  }
+}

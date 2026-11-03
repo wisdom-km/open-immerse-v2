@@ -1,0 +1,12 @@
+{
+  "httpStatus": 400,
+  "headers": {"X-Request-Id": "req_test_400"},
+  "expected": {
+    "kind": "invalid_request",
+    "retryable": false,
+    "retryAfterMs": null,
+    "httpStatus": 400,
+    "vendorCode": null,
+    "requestId": "req_test_400"
+  }
+}

@@ -326,6 +326,7 @@ version = "0.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "pydantic" },
     { name = "pypdfium2" },
     { name = "uvicorn" },
@@ -334,7 +335,6 @@ dependencies = [
 [package.optional-dependencies]
 dev = [
     { name = "datamodel-code-generator" },
-    { name = "httpx" },
     { name = "import-linter" },
     { name = "pip-licenses" },
     { name = "pyright" },
@@ -346,7 +346,7 @@ dev = [
 requires-dist = [
     { name = "datamodel-code-generator", marker = "extra == 'dev'", specifier = "==0.87.0" },
     { name = "fastapi", specifier = "==0.119.0" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = "==0.28.1" },
+    { name = "httpx", specifier = "==0.28.1" },
     { name = "import-linter", marker = "extra == 'dev'", specifier = "==2.5" },
     { name = "pip-licenses", marker = "extra == 'dev'", specifier = "==5.5.5" },
     { name = "pydantic", specifier = "==2.14.2" },

@@ -1,0 +1,12 @@
+{
+  "httpStatus": 413,
+  "headers": {"X-Request-Id": "req_test_413"},
+  "expected": {
+    "kind": "too_large",
+    "retryable": true,
+    "retryAfterMs": null,
+    "httpStatus": 413,
+    "vendorCode": null,
+    "requestId": "req_test_413"
+  }
+}

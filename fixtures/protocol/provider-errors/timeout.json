@@ -1,0 +1,11 @@
+{
+  "timeout": true,
+  "expected": {
+    "kind": "timeout",
+    "retryable": true,
+    "retryAfterMs": null,
+    "httpStatus": null,
+    "vendorCode": null,
+    "requestId": null
+  }
+}

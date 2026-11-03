@@ -1,0 +1,12 @@
+{
+  "httpStatus": 502,
+  "headers": {"X-Request-Id": "req_test_502"},
+  "expected": {
+    "kind": "service_failed",
+    "retryable": true,
+    "retryAfterMs": null,
+    "httpStatus": 502,
+    "vendorCode": null,
+    "requestId": "req_test_502"
+  }
+}

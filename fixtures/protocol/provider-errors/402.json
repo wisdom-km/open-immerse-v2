@@ -1,0 +1,12 @@
+{
+  "httpStatus": 402,
+  "headers": {"X-Request-Id": "req_test_402"},
+  "expected": {
+    "kind": "quota",
+    "retryable": false,
+    "retryAfterMs": null,
+    "httpStatus": 402,
+    "vendorCode": null,
+    "requestId": "req_test_402"
+  }
+}

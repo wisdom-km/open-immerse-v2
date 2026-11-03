@@ -1,0 +1,12 @@
+{
+  "httpStatus": 429,
+  "headers": {"Retry-After": "2", "X-Request-Id": "req_test_429"},
+  "expected": {
+    "kind": "rate_limited",
+    "retryable": true,
+    "retryAfterMs": 2000,
+    "httpStatus": 429,
+    "vendorCode": null,
+    "requestId": "req_test_429"
+  }
+}

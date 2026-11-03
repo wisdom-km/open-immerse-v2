@@ -1,0 +1,12 @@
+{
+  "httpStatus": 404,
+  "headers": {"X-Request-Id": "req_test_404"},
+  "expected": {
+    "kind": "invalid_request",
+    "retryable": false,
+    "retryAfterMs": null,
+    "httpStatus": 404,
+    "vendorCode": "not_found",
+    "requestId": "req_test_404"
+  }
+}
