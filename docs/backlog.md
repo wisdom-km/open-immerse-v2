@@ -1,7 +1,7 @@
 # 待办与架构评审处理状态
 
 状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-04（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。同日 Electron 外壳延期三条：#66、#67、#68。2026-11-03 补上 #76、#80。同日 10:40 Wisdom 批准 platform-node → contracts 值导入，记在 §12，ARCH §5.1 补 `PN --> C`。同日 PR #85 把 `score_best` / `score_best_batch` 记入 §4，Issue #86。同日核对 #80–#87：#80、#86 已各有一行。#81、#82、#84 已关闭，不加行。补 #83、#87。2026-11-04 补 #102 连着推 main 时 pending 被顶替、#106 缺 `bin.depcruise` 与 macOS 不跑 `check:deps`、#109 空 ID、#111，以及 `desktop-e2e-windows` 仍不是必需检查。G3、G5 已在 §7，不另加行。§10 的暂停句因 M1 已开工改记状态。同日按 Anvil 把 #33 的两条健康检查改记为已是 required（本代理再查分支保护仍是 403，不改设置）。
-用途：逐条记录[架构评审](./reviews/2026-10-30-architecture-review.md)的每个发现由哪个规格 PR 处理、落在规格哪里，以及还没处理、留给哪个里程碑的事。决定的理由见[差异清单](./v2-gap-and-changes.md) §6.6–§6.13；本文只记状态，不重述规格。§5 记 Jev 开关审查（2026-10-30 22:06）各项的处理状态。§8 收录还要等 M0 的项，也记下已经拍板的项（2026-10-31 01:08 建表；同日 D-D、D-E 与 W-4 的过渡默认已决定）。未决的行不代选。
+用途：逐条记录[架构评审](./reviews/2026-10-30-architecture-review.md)的每个发现由哪个规格 PR 处理、落在规格哪里，以及还没处理、留给哪个里程碑的事。决定的理由见[差异清单](./v2-gap-and-changes.md) §6.6–§6.13；本文只记状态，不重述规格。§5 记 Jev 开关审查（2026-10-30 22:06）各项的处理状态。§8 收录还要等 M0 的项，也记下已经拍板的项（2026-10-31 01:08 建表；同日 D-D、D-E 与 W-4 的过渡默认已决定）。未决的行不代选。2026-11-04：§7 E-P1-8 改为已处理，验收结果格式在 `docs/acceptance/`，不预填数字。
 
 三个规格 PR：
 
@@ -179,7 +179,7 @@ P0 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）�
 | E-P1-5 | Conventional Commits 检查 | 已处理。`pnpm run check:commits`，并进 `pnpm check` |
 | E-P1-6 | dependency-cruiser 与 `tsconfig.core.json` | 已处理。规则在 `tools/check-deps/`，core 编译配置是 `tsconfig.core.json` |
 | E-P1-7 | 空测试目录不再把 pytest 退出码 5 当成通过；Vitest 要有会失败的样例 | 已处理。pytest 退出码 5 使 CI 失败；Vitest 夹具覆盖各门禁的违规样例 |
-| E-P1-8 | `docs/acceptance/` 结果格式 | 未处理。M0 开工时 |
+| E-P1-8 | `docs/acceptance/` 结果格式 | 已处理。空模板在 [acceptance/TEMPLATE.md](./acceptance/TEMPLATE.md)，目录说明在 [acceptance/README.md](./acceptance/README.md)。不预填数字。M0 第一份结果按该模板另交，本行不附结果 |
 | E-P1-9 | 提示词目录与 Jev 模型卡 | 未处理。M4 / M6a |
 | E-P1-10 | Dependabot 与 gitleaks | gitleaks 8.30.1 已接入 CI（G9）。Dependabot 仍未加 |
 | E-P2-1–E-P2-10 | 并发取消、quarantine 目录、发版清单、崩溃只写本机、红队、`.env.example`、SECURITY.md、不用通用功能开关、Prettier、合入后是否删分支 | 其中 Prettier（E-P2-9）已随 M1-DEFER-G1 接上。其余未处理，按原报告的里程碑。E-P2-10 由管理员决定，Agent 不改仓库设置 |
