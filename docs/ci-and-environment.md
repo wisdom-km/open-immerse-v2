@@ -78,7 +78,7 @@ pytest 收集到 0 个用例时退出码是 5。CI 不再把 5 改成通过。�
 
 ### GitHub Actions
 
-工作流是 `.github/workflows/ci.yml`，在 `push` 和 `pull_request` 上运行。`node`、`python-worker` 与 `worker-health` 矩阵里的 `actions/setup-node` 都读 `.nvmrc`（`22.23.4`），没有另写版本号。
+工作流是 `.github/workflows/ci.yml`。`push` 只在分支 `main` 上触发。拉取请求由 `pull_request` 触发（GitHub 默认事件：`opened`、`synchronize`、`reopened`）。已经开了 PR 的分支再推送时，这一次推送只产生 `pull_request` 运行：`node`、`python-worker`、`worker-health-windows`、`worker-health-macos` 与 `desktop-e2e-windows` 在该 tip 上各出现一次。还没有 PR 的分支推送不会跑这个工作流。本仓库的流程是推上去立刻开 Draft PR，所以正常开发仍会跑。`node`、`python-worker` 与 `worker-health` 矩阵里的 `actions/setup-node` 都读 `.nvmrc`（`22.23.4`），没有另写版本号。
 
 | Job | 步骤 | 缓存 |
 | --- | --- | --- |
@@ -89,9 +89,9 @@ pytest 收集到 0 个用例时退出码是 5。CI 不再把 5 改成通过。�
 
 Wisdom 2026-11-02 20:07 批准把 `CI / worker-health-windows` 设为保护分支的必需检查，并批准 macOS 健康检查加上后同样设为必需。原文：「都按你的建议：400、--port/OI_WORKER_PORT、Windows 设必需；另开小 PR 加 macOS 健康检查并设必需」。这两项的启用由仓库管理员做（Issue #33，RULES N-02）。Agent 不修改分支保护。`CI / node` 与 `CI / python-worker` 仍是建议中的必需检查。
 
-同一分支的一次推送会同时触发 `push` 与（如果已开 PR）`pull_request`。保护分支看的是 PR 上的那一组 check。
+`push` 只覆盖 `main`。开着 PR 的功能分支再推送时，检查只来自 `pull_request`。保护分支看的是 PR 上的那一组 check，每个检查名在该 tip 上只出现一次。还没有 PR 就推送的分支不会跑 CI。本仓库的流程是立刻开 Draft PR。
 
-工作流在 `jobs` 之前有 `concurrency`。组是 `${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}`。`pull_request` 与非 `refs/heads/main` 的运行 `cancel-in-progress` 为真：同一 PR 或同一非 main 分支上，新的运行取消还在排队或进行中的旧运行。推到 `main` 时 `cancel-in-progress` 为假，进行中的 main 运行不被取消，同组里后到的 main 运行排队。`push` 与 `pull_request` 的组不同，互不取消。不改 job 名、触发器、步骤，也不改分支保护（N-02）。
+工作流在 `jobs` 之前保留 #102 的 `concurrency`，本文件对应的改动不改这一块。组是 `${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}`。`pull_request` 与非 `refs/heads/main` 的运行 `cancel-in-progress` 为真：同一 PR 上，新的运行取消还在排队或进行中的旧运行。推到 `main` 时 `cancel-in-progress` 为假，进行中的 main 运行不被取消，同组里后到的 main 运行排队。`push` 与 `pull_request` 的组不同，互不取消。触发器收成「`push` 只在 `main`」之后，功能分支不再另开一组 `push` 运行，所以这一块保持原样：`pull_request` 仍会取消同 PR 的旧运行，`main` 上的 `push` 仍不取消。job 名、步骤、runner 与分支保护都不改（N-02）。
 
 ### 云端 Agent
 
