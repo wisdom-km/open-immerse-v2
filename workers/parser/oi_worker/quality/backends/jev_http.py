@@ -58,7 +58,7 @@ class RetryPolicy:
 @dataclass(frozen=True, slots=True)
 class JevHttpSettings:
     base_url: str = INTERNATIONAL_BASE_URL
-    credential: str | None = None
+    credential: str | None = field(default=None, repr=False)
     retry: RetryPolicy = field(default_factory=RetryPolicy)
     transport: httpx.BaseTransport | None = None
     clock: Callable[[], float] = time.perf_counter

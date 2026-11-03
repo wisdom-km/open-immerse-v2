@@ -137,6 +137,13 @@ def test_strips_surrounding_whitespace_when_the_credential_is_present() -> None:
     assert script.requests[0].headers["authorization"] == f"Bearer {KEY}"
 
 
+def test_omits_the_key_when_settings_are_rendered() -> None:
+    settings = JevHttpSettings(credential=KEY)
+    assert settings.credential == KEY
+    assert KEY not in repr(settings)
+    assert KEY not in str(settings)
+
+
 def test_ac_59_keeps_the_key_in_the_authorization_header_when_scoring() -> None:
     script = _Script([_ok(1, 4)])
     result = JevHttpBackend(_settings(script)).score(_items(1))
