@@ -2,7 +2,7 @@
 
 日期：2026-11-03。工作目录是仓库根。Node 是 `.nvmrc` 的 v22.23.4，PATH 前置 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin`。`node -v` 为 v22.23.4，`corepack pnpm --version` 为 10.34.9。
 
-门禁与 Windows 截图的 tip 是 `1f860b0c49df22b5e1628a2e3d55227c4fd6de0c`。include 收成 `packages/platform-node/test/**/*.test.ts` 在 `4f8aaaabd09b5640e8d7b220ca9a908569d0d1fe`，不再扫进 `node_modules` 里指向 kernel 与 contracts 的符号链接。通过数是收窄之后的全量，其后的证据提交不改测试收集。`main` 用 merge 接进 `91760ba`（§5.1 补线，PR #79）。没有 rebase，没有 force push。
+门禁与 Windows 截图的 tip 是 `4eb316c71d07770e34362e1de4d726cbdb9f825e`。这一笔补上 GitHub 前缀、AWS `AKIA`/`ASIA` 加 16 位、40 位及以上 hex，以及长度 ≥ 20 且每字符香农熵 ≥ 4.0 的兜底。include 收成 `packages/platform-node/test/**/*.test.ts` 在 `4f8aaaabd09b5640e8d7b220ca9a908569d0d1fe`，不再扫进 `node_modules` 里指向 kernel 与 contracts 的符号链接。`main` 仍是 `91760ba`（§5.1 补线，PR #79），这次没有新的 merge。没有 rebase，没有 force push。写入这些 run id 的提交在 `4eb316c` 之后，不改守卫。
 
 本 Cloud Agent 是 Linux，不跑 Playwright Electron：不加 xvfb，不改 `.cursor/install.sh`。窗口截图以 CI job `desktop-e2e-windows` 为准。
 
@@ -12,9 +12,9 @@
 
 | 命令 | 退出码 | 备注 |
 | --- | --- | --- |
-| `GATE_BASE=origin/main corepack pnpm test` | 0 | Vitest 69 个文件、144 通过、2 跳过、0 失败。类型错误 0。定向 `packages/platform-node` 为 4 个文件、30 通过。跳过的是未设 `GITLEAKS_BIN` 的本地密钥夹具。CI 的 `node` job 设了该变量 |
-| `GATE_BASE=origin/main corepack pnpm run check` | 0 | lint、typecheck、typecheck:core、行数（150 个源文件）、`check:deps`（77 modules，144 dependencies，无违例）、G18（0 个功能切片）、Conventional Commits、热点、PR 体量（1090 行非生成 diff，提交说明里有 `G12:`）、codegen、G7。非生成 diff 1090 行是 `2f35283` 的测量；本 tip 只改证据里的 SHA 与链接，行数不变 |
-| `corepack pnpm exec vitest run packages/platform-node/test/log-paths.test.ts packages/platform-node/test/value-guard.test.ts packages/platform-node/test/debug-retention.test.ts packages/platform-node/test/file-logger.test.ts --reporter=verbose` | 0 | 4 个文件、30 通过。摘录见下 |
+| `GATE_BASE=origin/main corepack pnpm test` | 0 | Vitest 70 个文件、153 通过、2 跳过、0 失败。类型错误 0。定向 `packages/platform-node` 为 5 个文件、39 通过。跳过的是未设 `GITLEAKS_BIN` 的本地密钥夹具。CI 的 `node` job 设了该变量 |
+| `GATE_BASE=origin/main corepack pnpm run check` | 0 | lint、typecheck、typecheck:core、行数（151 个源文件）、`check:deps`（78 modules，145 dependencies，无违例）、G18（0 个功能切片）、Conventional Commits、热点、PR 体量（1303 行非生成 diff，提交说明里有 `G12:`）、codegen、G7。1303 行是 `4eb316c` 的测量。gitleaks 8.30.1 对工作区与 222 个提交都是 `no leaks found`，没有放宽 `.gitleaks.toml` |
+| `corepack pnpm exec vitest run packages/platform-node/test/log-paths.test.ts packages/platform-node/test/value-guard.test.ts packages/platform-node/test/value-guard-secrets.test.ts packages/platform-node/test/debug-retention.test.ts packages/platform-node/test/file-logger.test.ts --reporter=verbose` | 0 | 5 个文件、39 通过。摘录见下 |
 
 `test:core`：不适用（`package.json` 没有这个脚本）。没有执行。
 
@@ -69,11 +69,22 @@ CI `node` job 的 G9：gitleaks 8.30.1，`no leaks found`。没有放宽 `.gitle
 ✓ drops an extra key when the record still passes the whitelist
 ✓ returns undefined when readDiagEvent rejects the record
 ✓ AC-101 writes a redacted debug line when a charset-valid key is logged
+✓ AC-101 writes a redacted line when a provider token or long hex is logged
 ✓ AC-101 keeps api-key-missing when that error class is logged
 ✓ AC-101 writes nothing when the record fails readDiagEvent
+✓ AC-101 replaces provider tokens and long hex when any string field carries them
+✓ AC-101 replaces a github token when the prefix casing varies
+✓ AC-101 replaces a high-entropy token when the length reaches 20
+✓ AC-101 keeps a high-entropy token when the length stays under 20
+✓ AC-101 keeps api-key-missing and a short prose token when entropy is not consulted
+✓ AC-101 keeps a uuid run_id when the characters are evenly mixed
+✓ AC-101 keeps a timestamp and a long low-entropy token when the charset allows them
+✓ AC-101 keeps an access-key prefix when the suffix is 15 characters
 ```
 
-守卫识别不了无空格、又短于长度上限、且落在字符集里的正文。正文出现 0 次，靠调用方不传，再加上长度上限。
+九类样本是 `ghp_`、`gho_`、`ghu_`、`ghs_`、`ghr_`、`github_pat_`、`AKIA`+16、`ASIA`+16、40 位 hex。hex 另测了 40 位数字与 40 个同一字符。字段是 `ts`、`level`、`feature`、`run_id`、`route`、`step`、`status`、`error_class`、`requestId`、`channel`。`api-key-missing`、标准 UUID、`2026-11-02T00:00:00.000Z`、长而低熵的枚举，以及长度 19 的高熵串，都原样保留。
+
+短于 20 且没有命中前缀的无空格正文（例如 `fixture-paper-body`）仍然原样保留。正文出现 0 次，靠调用方不传，再加上长度上限与这条高熵兜底。
 
 ## 脱敏 JSON 行
 
@@ -85,11 +96,11 @@ CI `node` job 的 G9：gitleaks 8.30.1，`no leaks found`。没有放宽 `.gitle
 
 ## Windows 截图
 
-job：`desktop-e2e-windows`，`runs-on: windows-latest`。tip SHA `1f860b0c49df22b5e1628a2e3d55227c4fd6de0c`。`push` 与 `pull_request` 都是 success，五个 job 都通过。冒烟日志是 `1 passed`。当前 renderer 只有标题、没有正文，所以页面是空白。图不入库（N-12）。
+job：`desktop-e2e-windows`，`runs-on: windows-latest`。tip SHA `4eb316c71d07770e34362e1de4d726cbdb9f825e`。`push` 与 `pull_request` 都是 success，五个 job 都通过。冒烟日志是 `1 passed`。当前 renderer 只有标题、没有正文，所以页面是空白。图不入库（N-12）。
 
-PR 那组：run [41576898895](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576898895)。截图 artifact：[desktop-e2e-windows-screenshots](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576898895/artifacts/13203444643)。`1 passed (9.0s)`。
+PR 那组：run [41579214744](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41579214744)。截图 artifact：[desktop-e2e-windows-screenshots](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41579214744/artifacts/13204439754)。`1 passed (8.1s)`。
 
-同一提交的 `push` 那组：run [41576892353](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576892353)，artifact [13203399718](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576892353/artifacts/13203399718)。`1 passed (8.6s)`。
+同一提交的 `push` 那组：run [41579211538](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41579211538)，artifact [13205122677](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41579211538/artifacts/13205122677)。`1 passed (6.9s)`。
 
 `7855bb3` 的 [run 41568563677](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41568563677) 在下载 Electron 时超过 120 秒，没有 png。不把它当作本 PR 的截图。
 
