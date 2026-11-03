@@ -2,7 +2,7 @@
 
 日期：2026-11-03。工作目录是仓库根。Node 是 `.nvmrc` 的 v22.23.4，PATH 前置 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin`。`node -v` 为 v22.23.4，`corepack pnpm --version` 为 10.34.9。
 
-门禁与 Windows 截图的 tip 是 `89741eed9c0dfd9e121cd403b9f9ba3b2258fd20`。include 收成 `packages/platform-node/test/**/*.test.ts` 在 `4f8aaaabd09b5640e8d7b220ca9a908569d0d1fe`，不再扫进 `node_modules` 里指向 kernel 与 contracts 的符号链接。通过数是收窄之后的全量，其后的证据提交不改测试收集。`main` 用 merge 接进 `91760ba`（§5.1 补线，PR #79）。没有 rebase，没有 force push。
+门禁与 Windows 截图的 tip 是 `1f860b0c49df22b5e1628a2e3d55227c4fd6de0c`。include 收成 `packages/platform-node/test/**/*.test.ts` 在 `4f8aaaabd09b5640e8d7b220ca9a908569d0d1fe`，不再扫进 `node_modules` 里指向 kernel 与 contracts 的符号链接。通过数是收窄之后的全量，其后的证据提交不改测试收集。`main` 用 merge 接进 `91760ba`（§5.1 补线，PR #79）。没有 rebase，没有 force push。
 
 本 Cloud Agent 是 Linux，不跑 Playwright Electron：不加 xvfb，不改 `.cursor/install.sh`。窗口截图以 CI job `desktop-e2e-windows` 为准。
 
@@ -85,11 +85,11 @@ CI `node` job 的 G9：gitleaks 8.30.1，`no leaks found`。没有放宽 `.gitle
 
 ## Windows 截图
 
-job：`desktop-e2e-windows`，`runs-on: windows-latest`。tip SHA `89741eed9c0dfd9e121cd403b9f9ba3b2258fd20`。`push` 与 `pull_request` 都是 success，五个 job 都通过。冒烟日志是 `1 passed`。当前 renderer 只有标题、没有正文，所以页面是空白。图不入库（N-12）。
+job：`desktop-e2e-windows`，`runs-on: windows-latest`。tip SHA `1f860b0c49df22b5e1628a2e3d55227c4fd6de0c`。`push` 与 `pull_request` 都是 success，五个 job 都通过。冒烟日志是 `1 passed`。当前 renderer 只有标题、没有正文，所以页面是空白。图不入库（N-12）。
 
-PR 那组：run [41576666765](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576666765)。截图 artifact：[desktop-e2e-windows-screenshots](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576666765/artifacts/13204045286)。`1 passed (6.8s)`。
+PR 那组：run [41576898895](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576898895)。截图 artifact：[desktop-e2e-windows-screenshots](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576898895/artifacts/13203444643)。`1 passed (9.0s)`。
 
-同一提交的 `push` 那组：run [41576662056](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576662056)，artifact [13202959720](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576662056/artifacts/13202959720)。`1 passed (11.2s)`。
+同一提交的 `push` 那组：run [41576892353](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576892353)，artifact [13203399718](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41576892353/artifacts/13203399718)。`1 passed (8.6s)`。
 
 `7855bb3` 的 [run 41568563677](https://github.com/wisdom-km/open-immerse-v2/actions/runs/41568563677) 在下载 Electron 时超过 120 秒，没有 png。不把它当作本 PR 的截图。
 
