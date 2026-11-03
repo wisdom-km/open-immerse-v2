@@ -29,4 +29,8 @@ Type Errors  no errors
 
 ## Windows CI
 
-`desktop-e2e-windows` 的 `Desktop unit tests` 步骤日志在该 job 跑完后补在这里。单测若失败，后面的截图上传可能因为没有 png 再失败一次；主信号是 vitest 那一步。
+`ad3cab1` 的 pull_request 运行：https://github.com/wisdom-km/open-immerse-v2/actions/runs/41650061759
+
+Job `desktop-e2e-windows`：https://github.com/wisdom-km/open-immerse-v2/actions/runs/41650061759/job/125965529997
+
+步骤 `Desktop unit tests`（`corepack pnpm exec vitest run apps/desktop/test`）结论 success。8 个文件通过（8），16 条通过（16），0 跳过。Type Errors: no errors。Duration 661ms。`static-file.test.ts` 为 2 tests 通过。Vitest 汇总没有 skipped 行。
