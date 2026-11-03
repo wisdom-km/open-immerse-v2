@@ -21,11 +21,15 @@ test("returns denied when the renderer queries microphone", async ({ desktop }) 
 });
 
 test("grants notifications when the check handler is overridden to allow", async ({ desktop }) => {
+  expect(await permissionState(desktop.page, "notifications")).toBe("denied");
   await desktop.app.evaluate(({ session }) => {
     session.defaultSession.setPermissionCheckHandler(() => true);
   });
-  const state = await permissionState(desktop.page, "notifications");
-  expect(state === "granted" || state === "prompt", `query state was ${String(state)}`).toBe(true);
+  const first = await permissionState(desktop.page, "notifications");
+  const second = await permissionState(desktop.page, "notifications");
+  console.log(`notification query after override: ${String(first)} ${String(second)}`);
+  expect(first).toBe(second);
+  expect(first).toBe("granted");
 });
 
 function permissionState(page: EvaluatePage, name: string): Promise<unknown> {
