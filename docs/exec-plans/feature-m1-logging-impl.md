@@ -36,11 +36,11 @@ Forge 对 `a8a97de` 有条件通过。下面各项覆盖同题的草案。
 | 1 | 本文件。草案含文件清单、预计行数、AC → 测试、#76 值约束。先停 | `a8a97de` 只提交本文件。Forge 结论在 `0d86b46`。Wisdom 批准在 `55b1f53` | 本文件 |
 | 2 | 新包 `@oi/platform-node`（Apache-2.0，`type: module`，`exports` 指向 `./src/index.js`）。`dependencies` 的键恰好是 `@oi/kernel` 与 `@oi/contracts`（`workspace:*`），没有 optional / peer。`value-guard` 值导入 `readDiagEvent`。无其他运行时依赖，不加日志框架。登记：`pnpm-workspace.yaml`、`apps/desktop/package.json`、`tools/check-deps/tsconfig.paths.json`、`vitest.config.ts` 的 include 加 `packages/platform-node/**/*.test.ts`。不放进 `tsconfig.core.json`，不放进 ESLint `coreFiles` | `7855bb3` 建包，依赖键恰好那两个。`2f7c18e` 把 kernel、contracts、platform-node 的 `exports.types` 留在 `./src/index.js`，`default` 指到 `./dist/index.js`。Vitest include 改为 `packages/platform-node/test/**/*.test.ts`，不再扫进 `node_modules` 里的符号链接 | `docs/evidence/77/commands.md` |
 | 3 | `src/logging/log-paths.ts`。用注入的应用数据目录拼接 kernel 的 `PRODUCT_LOG_DIRECTORY` 与 `DEBUG_LOG_DIRECTORY`。路径只来自参数 | `7855bb3` | 同上 |
-| 4 | `src/logging/value-guard.ts`。先值导入并调用 `readDiagEvent`，失败则整条不写。通过后按「值约束」脱敏和长度。`[redacted]` 只导出这一处。有限数字原样。占位符不回扫字符集 | `7855bb3`。失败则不写 | 同上 |
+| 4 | `src/logging/value-guard.ts`。先值导入并调用 `readDiagEvent`，失败则整条不写。通过后按「值约束」脱敏和长度。`[redacted]` 只导出这一处。有限数字原样。占位符不回扫字符集 | `7855bb3`。失败则不写。Wisdom 2026-11-03 12:23 补 GitHub 前缀、`AKIA`/`ASIA`+16、40 位 hex，以及长度 ≥ 20 且香农熵 ≥ 4.0 的兜底。UUID 与 `ts` 字符集豁免 | 同上 |
 | 5 | `src/logging/debug-retention.ts`。只处理 debug 目录。先删 `mtimeMs < nowMs - DEBUG_LOG_MAX_AGE_MS` 的文件，再按 mtime 从旧到新删，直到 `stat.size` 之和 ≤ `DEBUG_LOG_MAX_BYTES`。单文件仍超过 50 MB 时整文件删除，不截断半行。产品目录不进这个函数 | `7855bb3`。超限整文件删除 | 同上 |
 | 6 | `src/logging/file-logger.ts`。`createFileLogger` 返回 kernel `Logger`。`log` 为同步 `appendFileSync`，返回 `void`。产品目录在记录通过值守卫后始终追加。调试目录仅在 `setDebugMode({ enabled: true })` 之后追加同一条 JSON 行。默认关且从未开启时不创建 debug 目录。写入后把 mtime 设为 `clock.nowMs()`。保留在构造、再次开启、以及每次 debug 写入之后运行。`clearDebugLogs` 使 debug 文件数为 0。`setDebugMode({ enabled: false, deleteFiles })` 按布尔删除或保留。文件名 `<UTC YYYY-MM-DD>.jsonl`。构造时不写文件。同步 IO 失败则抛出（见审查结论）。调试开关只在该实例内。返回 `Logger<DiagEvent>` | `7855bb3`。IO 失败抛出 | 同上 |
 | 7 | `src/index.ts` 只再导出 `createFileLogger` 与调用所需的选项类型 | `7855bb3`。不导出 `REDACTED` | 同上 |
-| 8 | 四个单测文件，见审查结论。用例名 `<结果> when <条件>`，对得上的加 `AC-101`。注入 Clock 与临时目录，不 `sleep`。体积用 `truncate` 设定 `stat.size`。假密钥形态用 `oitest_`。不断言源码文本（F-08）。依赖断言读 `package.json`：键恰好两个，且没有 optional / peer | `7855bb3`。四个文件 30 通过 | 同上 |
+| 8 | 四个单测文件，见审查结论。用例名 `<结果> when <条件>`，对得上的加 `AC-101`。注入 Clock 与临时目录，不 `sleep`。体积用 `truncate` 设定 `stat.size`。假密钥形态用 `oitest_`。不断言源码文本（F-08）。依赖断言读 `package.json`：键恰好两个，且没有 optional / peer | `7855bb3`。四个文件 30 通过。Anvil 的 9 类假 key 与误伤用例在 `value-guard-secrets.test.ts`，每个字符串字段都测 | 同上 |
 | 9 | 新建 `apps/desktop/src/main/composition-root.ts`，物理行数 ≤30（G11 按新增行计算）。导出 `startMainLogger`，在 `app.whenReady()` 里调用。注入 `app.getPath("userData")` 与 `{ nowMs: () => Date.now() }`。Electron 与 `Date.now` 只出现在装配根。platform-node 不 import `electron` | `7855bb3` 新建 14 行，在 `createMainWindow()` 之后调用。`2f7c18e` 让 `build` 先编译三个包 | 同上 |
 | 10 | `docs/evidence/77/commands.md`、AC-101 ②③⑤ 与 #76 的测试输出摘录、一条脱敏 JSON 行。命令在实现 tip 各跑一次。截图链到接入 logger 之后那个 tip 的 `desktop-e2e-windows-screenshots`，写明 run ID 与该 tip 的 SHA。不改 workflow，不加 xvfb，不改 `.cursor/install.sh` 与 `.cursor/environment.json` | include 收窄在 `4f8aaaa`。截图 tip 是 `1f860b0` 的 run `41576898895` 与 `41576892353` | `docs/evidence/77/commands.md` |
 
@@ -68,14 +68,23 @@ Forge 已让提问 2 按草案执行。不改契约类型。`[redacted]` 只从 
 1. `readDiagEvent` 失败：两个目录都不写。Wisdom 2026-11-03 10:40 批准这里值导入它。
 2. 字符串先脱敏，再看长度与字符集。命中任一条，整个值换成 `REDACTED`。占位符含括号，不再送去字符集检查。
 3. 脱敏（整值替换，包含匹配）：`authorization`、`bearer`、`sk-` 不区分大小写；合成前缀 `oitest_` 不区分大小写（这样 `route: "oitest_fixturekey"` 能通过字符集，仍然被脱敏挡住）；`access_token=`、`client_id=`、`client_secret=`、`key=`；绝对路径（以 `/` 开头、以盘符加斜杠开头、或含 `\`）。
-4. 字符集与长度，未命中脱敏时才用：
+4. Wisdom 2026-11-03 12:23，Anvil 在 `3d1b709` 探测到三条原样落盘。补在字符集之前，仍是整值替换：
+   - GitHub：不区分大小写，包含 `ghp_`、`gho_`、`ghu_`、`ghs_`、`ghr_`、`github_pat_`。`ghp_oitestfake` 能通过小写字符集，以前会落盘。
+   - AWS：区分大小写，`AKIA` 或 `ASIA` 后面紧跟 16 位 `[A-Za-z0-9]`。`run_id` 与 `requestId` 允许大写，所以这条必须在字符集之前。后缀只有 15 位、又落在这两个字段的字符集里时，原样保留。
+   - 十六进制：包含连续 40 位及以上 `[0-9a-fA-F]`。全是数字的 40 位也算，它能通过 `ts` 字符集。同一字符重复 40 次时熵是 0，仍然替换。
+   - 高熵兜底：长度 ≥ 20，且每字符香农熵 ≥ 4.0 bit。阈值选 4.0 是为了接住 `qm7w2e9r4t6y8u1i3o5p0a`（长 22，约 4.46）。误伤边界：
+     - 长度不到 20 不查熵。`api-key-missing` 长 15。`fixture-paper-body` 长 18、熵约 3.73。`qm7w2e9r4t6y8u1i3o5` 长 19、熵约 4.25，仍然保留。
+     - 标准 UUID（`8-4-4-4-12` 的十六进制）整段豁免。均匀样本 `01234567-89ab-cdef-0123-456789abcdef` 熵约 4.06，这是该形式的上限。`550e8400-e29b-41d4-a716-446655440000`（约 3.39）与 `123e4567-e89b-12d3-a456-426614174000`（约 3.69）原样保留。
+     - 符合 `ts` 字符集 `^[0-9TZ:.+-]+$` 的字符串豁免。该字符集理论上限是 4.0。`2026-11-02T00:00:00.000Z` 实测约 2.55。40 位纯数字仍由十六进制那条替换。
+     - 长但低熵的枚举原样保留：`error-error-error-error`（长 23，约 1.75）、`pipeline-step-parse-done`（长 24，约 3.32）。
+5. 字符集与长度，未命中脱敏时才用：
    - `event`、`level`、`feature`、`step`、`status`、`error_class`、`route`、`channel`，以及其余字符串：`^[a-z0-9_.:-]*$`，长度 ≤ 64。空串合法。
    - `run_id`、`requestId`：`^[A-Za-z0-9_.:-]+$`，长度 ≤ 128。
    - `ts`：`^[0-9TZ:.+-]+$`，长度 ≤ 64。`2026-11-02T00:00:00.000Z` 可以落盘。
-5. 有限数字原样，含 `duration_ms` 与 `bytes`。守卫不新增键。
-6. 开启调试后写入 debug 的仍是这一条已守卫的 JSON 行。本 PR 不发明第二套调试字段。
+6. 有限数字原样，含 `duration_ms` 与 `bytes`。守卫不新增键。
+7. 开启调试后写入 debug 的仍是这一条已守卫的 JSON 行。本 PR 不发明第二套调试字段。
 
-`step: "sk-oitest_abc"` 与 `route: "oitest_fixturekey"` 都符合第 4 条的字符集，用例要证明是脱敏把它们换成占位符。`error_class: "api-key-missing"` 不含 `key=`，原样保留。
+`step: "sk-oitest_abc"` 与 `route: "oitest_fixturekey"` 都符合第 5 条的字符集，用例要证明是脱敏把它们换成占位符。`error_class: "api-key-missing"` 不含 `key=`，原样保留。
 
 守卫识别不了无空格、又短于长度上限、且落在字符集里的正文（例如单独的 `fixture-paper-body`）。正文出现 0 次，靠调用方不把正文放进字段，再加上长度上限挡住超长字符串。带空格或超过 64 的合成正文会变成占位符，落盘里这段样本出现 0 次。
 

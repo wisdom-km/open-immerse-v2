@@ -178,6 +178,23 @@ it("AC-101 writes a redacted debug line when a charset-valid key is logged", () 
   expect(text).not.toContain("fixture-paper-body");
 });
 
+it("AC-101 writes a redacted line when a provider token or long hex is logged", () => {
+  const { root, logger } = openLogger(Date.parse("2026-11-03T00:00:00.000Z"));
+  logger.setDebugMode({ enabled: true });
+  const github = "ghp_oitestfake";
+  const hex = "0123456789".repeat(4);
+  const accessKey = ["AKIA", "OITEST", "FAKE", "123456"].join("");
+  logger.log(pipeline({ step: github, route: hex, run_id: accessKey }));
+  const product = readFileSync(path.join(root, "diagnostics", "2026-11-03.jsonl"), "utf8");
+  const debug = readFileSync(path.join(root, "debug", "2026-11-03.jsonl"), "utf8");
+  for (const line of [product, debug]) {
+    expect(line).toContain(REDACTED);
+    expect(line).not.toContain(github);
+    expect(line).not.toContain(hex);
+    expect(line).not.toContain(accessKey);
+  }
+});
+
 it("AC-101 keeps api-key-missing when that error class is logged", () => {
   const { root, logger } = openLogger(Date.parse("2026-11-03T00:00:00.000Z"));
   logger.log(pipeline({ error_class: "api-key-missing" }));

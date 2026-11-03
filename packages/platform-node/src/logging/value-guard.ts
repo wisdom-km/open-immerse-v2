@@ -6,6 +6,15 @@ export const REDACTED = "[redacted]";
 const tokenPattern = /^[a-z0-9_.:-]*$/u;
 const idPattern = /^[A-Za-z0-9_.:-]+$/u;
 const timestampPattern = /^[0-9TZ:.+-]+$/u;
+const uuidPattern =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/u;
+const githubPrefixes = ["ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_"] as const;
+const awsAccessKeyPattern = /(?:AKIA|ASIA)[A-Za-z0-9]{16}/u;
+const longHexPattern = /[0-9a-fA-F]{40,}/u;
+/** 短于这个长度不查熵。`api-key-missing` 长 15。 */
+const entropyMinLength = 20;
+/** 每字符香农熵。均匀 UUID 约 4.06，靠形式豁免，不靠把阈值抬过它。 */
+const entropyMinBits = 4;
 
 export function guardDiagRecord(value: unknown): DiagEvent | undefined {
   const read = readDiagEvent(value);
@@ -112,16 +121,53 @@ function scrubTimestamp(value: string): string {
 }
 
 function containsSecret(value: string): boolean {
+  if (containsMarker(value) || containsProviderToken(value) || isHighEntropy(value)) {
+    return true;
+  }
+  return isAbsolutePath(value) || containsQuerySecret(value);
+}
+
+function containsMarker(value: string): boolean {
   const lower = value.toLowerCase();
-  if (
+  return (
     lower.includes("authorization") ||
     lower.includes("bearer") ||
     lower.includes("sk-") ||
     lower.includes("oitest_")
-  ) {
-    return true;
+  );
+}
+
+function containsProviderToken(value: string): boolean {
+  const lower = value.toLowerCase();
+  for (const prefix of githubPrefixes) {
+    if (lower.includes(prefix)) {
+      return true;
+    }
   }
-  return isAbsolutePath(value) || containsQuerySecret(value);
+  return awsAccessKeyPattern.test(value) || longHexPattern.test(value);
+}
+
+function isHighEntropy(value: string): boolean {
+  if (value.length < entropyMinLength) {
+    return false;
+  }
+  if (uuidPattern.test(value) || timestampPattern.test(value)) {
+    return false;
+  }
+  return shannonBits(value) >= entropyMinBits;
+}
+
+function shannonBits(value: string): number {
+  const counts = new Map<string, number>();
+  for (const char of value) {
+    counts.set(char, (counts.get(char) ?? 0) + 1);
+  }
+  let bits = 0;
+  for (const count of counts.values()) {
+    const probability = count / value.length;
+    bits -= probability * Math.log2(probability);
+  }
+  return bits;
 }
 
 function containsQuerySecret(value: string): boolean {
