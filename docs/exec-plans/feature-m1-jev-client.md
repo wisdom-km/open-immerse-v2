@@ -1,6 +1,6 @@
 # 执行计划
 
-跨 `quality` 与 `fixtures/protocol/`。第一笔提交只有本文件。基线 `origin/main@222ac93`（2026-11-03）。Forge 审查通过之前不写实现。PR 保持 Draft，不合入。本分支同步 `main` 只用 merge。
+跨 `quality` 与 `fixtures/protocol/`。第一笔提交只有本文件。基线 `origin/main@222ac93`（2026-11-03）。Forge 已通过 `9a1e4c5`，实现在 `ad7d218`。PR 保持 Draft，不合入。本分支同步 `main` 只用 merge。
 
 ## 现状理解
 
@@ -71,7 +71,7 @@ AC-59 ② 的 worker 侧，ARCHITECTURE §7.2：
 | 401、403 | `auth` | 不重试，整批 `unavailable`，原因 `auth` |
 | 402 | `quota` | 不重试，整批 `unavailable`，原因 `quota` |
 | 413 | `too_large` | 表内写拆半重试。见下一节的默认 |
-| 429 | `rate_limited` | `retryAfterMs` 取自响应。字段名见「仍开放」 |
+| 429 | `rate_limited` | `retryAfterMs` 取自响应。字段名见「审查结论」 |
 | 5xx，含用量无效的 502 | `service_failed` | 表内写有上限的退避 |
 | 超时 | `timeout` | 表内写有上限的退避 |
 
@@ -84,7 +84,7 @@ AC-59 ② 的 worker 侧，ARCHITECTURE §7.2：
 - 默认下请求只发出一次。413 记 `too_large`，不拆半。429、5xx、超时不再请求，也不睡一段自造的时间。
 - 测试要走重试路径时，必须显式传入 `max_retries > 0`。退避毫秒只出现在该测试夹具里。
 - 显式允许重试时，413 按规格拆半，拆半函数在 `batching.py`。429 只使用响应里已经给出的 `retryAfterMs`。
-- 本 PR 没有 `BudgetGate`，不造额度信封。信封扣次留 M6a。与 §10.2「没有信封不得调用付费上游」的关系见「仍开放」。
+- 本 PR 没有 `BudgetGate`，不造额度信封。信封扣次留 M6a。与 §10.2「没有信封不得调用付费上游」的关系见「审查结论」。
 
 ### usage
 
@@ -98,7 +98,7 @@ AC-103 ②③，AC-05 的 worker 侧：
 - `jev.route` 为 `'local'` 时，对 `api.modelbest.ai`、`api.modelbest.cn` 以及任何面壁 Jev HTTP 的调用为 0。不下载模型。
 - 桩的结果是 `unavailable`，不带分数。缺凭据或桩失败都不把 route 改成 `'api'`。
 - 本 PR 没有补救代码，因此不发出补救请求。
-- 现有 import-linter 契约继续禁止两个后端互 import。按 `jev.route` 分支的模块见「仍开放」。`__main__.py` 本计划不改。
+- 现有 import-linter 契约继续禁止两个后端互 import。按 `jev.route` 分支的模块见「审查结论」。`__main__.py` 本计划不改。
 
 ### 测量字段
 
@@ -110,21 +110,21 @@ AC-103 ②③，AC-05 的 worker 侧：
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | `batching.py`：按 64 分批；另给「拆半」，只在调用方显式允许重试时由 HTTP 模块使用 |  |  |
-| 2 | `http_errors.py`：上表的纯映射。样例进 `fixtures/protocol/provider-errors/` |  |  |
-| 3 | 新建 `quality/request_body.py`：只构造 `mode: "score"` 的请求体。纯模块，不 import `httpx` |  |  |
-| 4 | 新建 `quality/response_body.py`：二次解析 `content`，`results[i]` 对齐 `items[i]`，解析失败整批 `service_failed`，上游分原样 |  |  |
-| 5 | 新建最小 `QualityEvaluatorBackend`（`max_batch = 64`，`describe`，`evaluate`）。`describe` 只含部署、模型名 `MiniCPM-OCR-Jev`、base URL 所属站点。不填写未核实的权重 sha256，不填 `template_md5`。不手改 `protocol/`，不新建 `evaluate.ts`。文件位置见「仍开放」 |  |  |
-| 6 | `jev_http.py`：httpx。测试注入 mock transport，未打桩的请求失败。缺凭据时请求数为 0。产品默认 `max_retries = 0`。`score` 返回结果里带测量字段；`evaluate` 按 §7.2 返回 `list[EvalOutcome]` |  |  |
-| 7 | `local_engine.py`：同一 Protocol 的桩。`unavailable`，不带分数，面壁调用数为 0，不下载模型 |  |  |
-| 8 | 唯一按 `jev.route` 分支的模块。`'api'` 用 `jev_http`，`'local'` 用桩。两个后端互不 import。不因失败改 route。模块路径见「仍开放」 |  |  |
-| 9 | 把 `httpx` 从 dev extra 升到运行时 `dependencies`。`uv.lock` 用 uv 重生成，不手改。G10 通过。`request_body.py` 与 `response_body.py` 加入 `python core forbids io` 的 `source_modules`（收紧，不放宽 forbidden 列表）。`package-aliases.json` 里 httpx、certifi 的理由不再写「不随应用发布」。不改白名单 |  |  |
-| 10 | 测试放 `workers/parser/tests/quality/`，与包镜像。用例名 `<结果> when <条件>`，对应 AC 加编号前缀。假 key 只用 `oitest_` 前缀。不读源码做断言。无 `@live` 用例，产品代码不读 `MODELBEST_API_KEY` |  |  |
-| 11 | 每个实现 tip 全量跑一次 `pnpm run check`、`pnpm test`，以及 worker 的 pyright、ruff format、ruff check、lint-imports、pytest。日志写入 `docs/evidence/<PR号>/` |  |  |
+| 1 | `batching.py`：按 64 分批；另给「拆半」，只在调用方显式允许重试时由 HTTP 模块使用 | `chunks` 默认 64。`split_in_half` 少于 2 项返回空，否则从中点切开。65 项为 64 与 1 | `tests/quality/test_batching.py` |
+| 2 | `http_errors.py`：上表的纯映射。样例进 `fixtures/protocol/provider-errors/` | 纯映射，不 import `httpx`。`Retry-After` 支持秒数与 HTTP-date，解析不到为 `None` 且不重试。样例 13 个，只给 Python 断言 | `tests/quality/test_http_errors.py` |
+| 3 | 新建 `quality/request_body.py`：只构造 `mode: "score"` 的请求体。纯模块，不 import `httpx` | 顶层只有 `model`、`messages`、`minicpm_ocr_jev`、`stream`。图片一律 `data:image/png;base64,`。有 `case_id` 才写入 | `tests/quality/test_request_body.py` |
+| 4 | 新建 `quality/response_body.py`：二次解析 `content`，`results[i]` 对齐 `items[i]`，解析失败整批 `service_failed`，上游分原样 | `0.0` 与 `-1.0` 原样留下。`content` 不是 JSON 字符串、条数不符、布尔分都整批失败。缺 `prompt_tokens` 为 `None`，不记 0 | `tests/quality/test_response_body.py` |
+| 5 | 新建最小 `QualityEvaluatorBackend`（`max_batch = 64`，`describe`，`evaluate`）。`describe` 只含部署、模型名 `MiniCPM-OCR-Jev`、base URL 所属站点。不填写未核实的权重 sha256，不填 `template_md5`。不手改 `protocol/`，不新建 `evaluate.ts`。文件位置见「审查结论」 | 放在 `quality/evaluator.py`。`evaluate` 只返回 `list[EvalOutcome]`。失败项不带分数，也不带上游 verdict。不建 `engines/base.py` | `oi_worker/quality/evaluator.py` |
+| 6 | `jev_http.py`：httpx。测试注入 mock transport，未打桩的请求失败。缺凭据时请求数为 0。产品默认 `max_retries = 0`。`score` 返回结果里带测量字段；`evaluate` 按 §7.2 返回 `list[EvalOutcome]` | 未注入 transport 时 `_RefuseTransport` 拒绝联网。未打桩请求抛 `AssertionError`，不记成失败结果。缺凭据 0 次 HTTP。测量在 `JevScoreResult`：耗时、状态、`prompt_tokens`、失败、`retry_count` | `tests/quality/test_jev_http.py` |
+| 7 | `local_engine.py`：同一 Protocol 的桩。`unavailable`，不带分数，面壁调用数为 0，不下载模型 | `deployment` 为 `local-stub`，`model` 与 `site` 为空。`attempts` 为空，`retry_count` 为 0。不 import `jev_http` | `tests/quality/test_local_engine.py` |
+| 8 | 唯一按 `jev.route` 分支的模块。`'api'` 用 `jev_http`，`'local'` 用桩。两个后端互不 import。不因失败改 route。模块路径见「审查结论」 | `quality/select_backend.py`。`'local'` 不构造 HTTP 后端。其他取值 `ValueError("jev.route")`，不回显原值。`__main__.py` 未改。import-linter 增加 protected：只有 `select_backend` 可以 import 两个后端 | `tests/quality/test_select_backend.py`；G6 |
+| 9 | 把 `httpx` 从 dev extra 升到运行时 `dependencies`。`uv.lock` 用 uv 重生成，不手改。G10 通过。`request_body.py` 与 `response_body.py` 加入 `python core forbids io` 的 `source_modules`（收紧，不放宽 forbidden 列表）。`package-aliases.json` 里 httpx、certifi 的理由不再写「不随应用发布」。不改白名单 | `httpx==0.28.1` 进入 `dependencies`，并从 dev extra 删除。`uv.lock` 只改依赖组。`evaluator.py` 一并列入禁止 IO 的源模块。别名只改第 43、49 行的 `reason`。白名单与 `dev-only.json` 未改。`check-license:pip` 通过 | `tools/check-license/package-aliases.json`；`docs/evidence/85/commands.md` |
+| 10 | 测试放 `workers/parser/tests/quality/`，与包镜像。用例名 `<结果> when <条件>`，对应 AC 加编号前缀。假 key 只用 `oitest_` 前缀。不读源码做断言。无 `@live` 用例，产品代码不读 `MODELBEST_API_KEY` | 7 个文件、50 个用例。假 key 为 `oitest_jevclient`。全量 pytest 153 通过 | `docs/evidence/85/commands.md` |
+| 11 | 每个实现 tip 全量跑一次 `pnpm run check`、`pnpm test`，以及 worker 的 pyright、ruff format、ruff check、lint-imports、pytest。日志写入 `docs/evidence/<PR号>/` | 在 `ad7d218` 各跑一次，退出码都是 0。非生成 diff 1578 行，提交说明有 `G12:` | `docs/evidence/85/commands.md` |
 
 ## 文件清单
 
-本提交只新增本计划。实现阶段预计改这些路径：
+实现提交 `ad7d218` 改了这些路径：
 
 - `workers/parser/oi_worker/quality/batching.py`
 - `workers/parser/oi_worker/quality/http_errors.py`
@@ -166,11 +166,11 @@ httpx 已在锁文件里，给 FastAPI `TestClient` 用。本计划把它升为�
 | 项 | 内容 |
 | --- | --- |
 | 用途 | `jev_http` 的 HTTP 传输。测试用 `httpx.MockTransport`，CI 不连外网 |
-| 许可证 | httpx 0.28.1 为 BSD-3-Clause。`tools/check-license/package-aliases.json` 已把 pip-licenses 的 `BSD License` 记成这个 SPDX。传递依赖 httpcore、h11、anyio、idna 在白名单内。certifi 2026.10.23 是 MPL-2.0，白名单已含 MPL-2.0，现有别名理由写明它只在 dev extra |
+| 许可证 | httpx 0.28.1 为 BSD-3-Clause。`tools/check-license/package-aliases.json` 已把 pip-licenses 的 `BSD License` 记成这个 SPDX。传递依赖 httpcore、h11、anyio、idna 在白名单内。certifi 2026.10.23 是 MPL-2.0，白名单已含 MPL-2.0。升到运行时之后只改了 httpx 与 certifi 两条 `reason`，白名单未改 |
 | 体积 | 锁里的 wheel：httpx 73517 字节，httpcore 78784，h11 37515，certifi 135082，idna 69583，anyio 134521。升组不引入新的包名 |
 | 替代 | 标准库 `urllib`。Q9 已指定 httpx，本计划不改选 |
 
-实现时若 G10 因 certifi 进入运行时依赖而失败，停在该命令，不放宽白名单。这是「仍开放」的第 6 条。
+G10 在 `ad7d218` 通过，没有改白名单。这是「审查结论」的第 6 条。
 
 ## 不做
 
@@ -182,20 +182,20 @@ httpx 已在锁文件里，给 FastAPI `TestClient` 用。本计划把它升为�
 - Python 值守卫、诊断事件、测量 CLI。
 - 手改 `oi_worker/protocol/`。改 DESIGN、`docs/design/**`、`.cursor/*`、CI 行为、分支保护。
 
-## 仍开放
+## 审查结论
 
-交给 Forge。下面的拟议只说明本计划打算落在哪，审查改口之后再写实现。
+Forge 2026-11-03 审查 `9a1e4c5` 通过，九条按下面执行。本计划不再留开放问题。
 
-1. 上游 `0.0` / `-1.0`。§7.2 写 `EvalOutcome` 原样返回。§7.3 写规范化时丢弃，规范化在 TS。官方文档把 `precheck_reject`、`render_error`、`missing_original_image` 的占位分写成 0.0，把 `encode_error`、`forward_error` 写成 -1.0。拟议：worker 原样上报，本 PR 不丢弃，也不标成低分。请确认。
-2. AC-59 ③ 与 §10.2 写 TS 与 Python 两侧用同一批 `fixtures/protocol/provider-errors/`。`packages/providers` 不在本 PR。拟议：本 PR 放入样例，只加 Python 断言。请确认这样交差，TS 断言留到 providers 那个 PR。
-3. 装配根。§7.4 与 AC-103 ⑤ 要求只有装配根按 `jev.route` 分支。`__main__.py` 上限 150 行，现在只装配健康检查；评测端点又不在本 PR。拟议：新建 `quality/select_backend.py`，它是唯一同时 import 两个后端的模块；`__main__.py` 不改。现有 independence 契约保留。请确认。若必须放在 `__main__.py`，实现前改这一处。
-4. Protocol 文件。§7.2、§10.3 拟议在 `engines/base.py`，那份草稿还含 `DocumentEngine`、`LayoutEngine` 等，并 import 尚未生成的 `protocol` 类型。拟议：本 PR 只在 `quality/evaluator.py` 放 `QualityEvaluatorBackend` 和它用到的最小类型，不建整份 `engines/base.py`，也不把这些类型手写进 `protocol/`。请确认。
-5. 测量字段的位置。§7.2 的 `evaluate` 返回 `list[EvalOutcome]`，usage 在响应顶层，不在每一项上。拟议：`score` 的返回值带耗时、HTTP 状态、重试次数、usage、失败；`evaluate` 只返回 outcomes。请确认。
-6. certifi。白名单已有 MPL-2.0，别名理由仍写「不随应用发布」。拟议：httpx 升到运行时依赖后只改正这两句理由，不改白名单、不改 `dev-only.json`。若这超出 RULES §1.5「MPL-2.0 仅作为独立文件」，实现前停下来问 Wisdom。
-7. `retryAfterMs` 的字段。§7.4 写「取自响应」，官方错误表只写按指示退避，没有字段名。拟议：只解析响应头 `Retry-After`（秒则换算成毫秒；HTTP-date 解析不了则视为没有）。没有可解析的值时 `retryAfterMs` 为 null；即便测试打开了重试，也不睡一段自造的时间，停在 `rate_limited`。请确认字段与这个停法。
-8. 三种 `mode` 的契约测试。§7.4 写契约类型覆盖三种 mode，契约测试覆盖三种请求形态。本任务的 AC-59 ① 只要求 `score`。拟议：本 PR 只实现并测试 `score`。请确认另外两种不算本 PR 漏测。
-9. §10.2「没有信封的作业不得调用付费上游」，以及 §7.8 每次重试扣信封。本 PR 按决定不接 `BudgetGate`。拟议：这个库不检查信封；产品默认一次请求；mock transport 不产生费用。作业层在 M6a 发请求前预留。请确认库本身这样做不违反那两句。
+1. 上游 `0.0` / `-1.0`：worker 原样上报，含 `providerVerdict`。丢弃只在 TS `quality/domain`。
+2. `fixtures/protocol/provider-errors/`：本 PR 只做 Python 断言。TS 侧留 M6a。
+3. 按 `jev.route` 分支的模块是新建的 `quality/select_backend.py`。`__main__.py` 不改。import-linter：只有 `select_backend` 可以同时 import 两个后端。
+4. `QualityEvaluatorBackend` 只放 `quality/evaluator.py`。不建 `engines/base.py`。
+5. 测量字段放 `score` 的返回值。`evaluate` 仍只返回 `list[EvalOutcome]`。
+6. 只改正 certifi / httpx 的别名理由。不改许可证白名单。改动的两行写在 PR 描述里。
+7. `retryAfterMs` 只解析响应头 `Retry-After`。秒数与 HTTP-date 都支持，解析不到为 `None`。解析不到时不自造等待，按不重试处理。
+8. 本 PR 只做 `mode: "score"`。`score_best` / `score_best_batch` 不算漏测，在 `docs/backlog.md` §4 记一行。
+9. 本 PR 不提供任何作业端点，不从产品路径调用付费上游。客户端模块 docstring 写明调用方必须先持有 §10.2 额度信封，信封扣次在 M6a 作业层。真实网络调用 0 次。
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：实现提交之后才有命令日志。本提交没有测试日志。
+- `docs/evidence/85/commands.md`：`ad7d218` 上的 node 与 python-worker 命令和退出码。
