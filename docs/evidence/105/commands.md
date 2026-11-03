@@ -100,3 +100,27 @@ worker-health-windows	pending	0	https://github.com/wisdom-km/open-immerse-v2/act
 ```
 
 五条检查各一行。补上这一节的提交会再触发一次 `pull_request`，并取消 `41684919814`。那个新 tip 的 `gh run list` / `gh pr checks` 写在 PR 描述里，不在本文件再追加一节，避免每补一次名单就再取消一轮。
+
+## CI：合入 head `b1430ab`
+
+合入时的 head 是 `b1430ab80cf7bf2575b82953dc8c1bdb847f6e5c`。merge commit 是 `d2f7a1ce239704c52d2e5926e7979cc8829ec98f`。下面记的是 head。来源是合入 PR 描述里的 tip。2026-11-04 用 `gh` 复核，与当时一致。上面停在 `b05c732` 的采集。这次是合入之后的文档补记，不会重开 #105。
+
+`gh run list --commit b1430ab80cf7bf2575b82953dc8c1bdb847f6e5c --limit 20`：
+
+```
+completed	success	ci: 每个 PR tip 只跑一轮检查	CI	feature/m1-ci-single-run	pull_request	41685143258	10m50s	2026-11-03T17:31:57Z
+```
+
+只有这一条，事件 `pull_request`，结论 success，用时 10m50s。
+
+`gh pr checks 105`：
+
+```
+desktop-e2e-windows	pass	1m12s	https://github.com/wisdom-km/open-immerse-v2/actions/runs/41685143258/job/126088921232
+node	pass	51s	https://github.com/wisdom-km/open-immerse-v2/actions/runs/41685143258/job/126088921857
+python-worker	pass	23s	https://github.com/wisdom-km/open-immerse-v2/actions/runs/41685143258/job/126088921790
+worker-health-macos	pass	32s	https://github.com/wisdom-km/open-immerse-v2/actions/runs/41685143258/job/126088921666
+worker-health-windows	pass	1m6s	https://github.com/wisdom-km/open-immerse-v2/actions/runs/41685143258/job/126088922995
+```
+
+五条都是 pass。
