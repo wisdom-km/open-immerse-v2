@@ -11,7 +11,14 @@ const uuidPattern =
 /** ARCHITECTURE §9。整串合上后不再查熵；密钥识别仍在这之前。 */
 const channelPattern =
   /^[a-z][a-z0-9]*(-[a-z0-9]+)*\.(on[A-Z][A-Za-z0-9]*|[a-z][A-Za-z0-9]*)$/u;
-const githubPrefixes = ["ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_"] as const;
+const githubPrefixes = [
+  "ghp_",
+  "gho_",
+  "ghu_",
+  "ghs_",
+  "ghr_",
+  "github_pat_",
+] as const;
 const awsAccessKeyPattern = /(?:AKIA|ASIA)[A-Za-z0-9]{16}/u;
 const longHexPattern = /[0-9a-fA-F]{40,}/u;
 /** 短于这个长度不查熵。`api-key-missing` 长 15。 */
@@ -46,7 +53,9 @@ function scrubEvent(event: DiagEvent): DiagEvent {
   }
 }
 
-function scrubPipeline(event: Extract<DiagEvent, { event: "pipeline.run" }>): DiagEvent {
+function scrubPipeline(
+  event: Extract<DiagEvent, { event: "pipeline.run" }>,
+): DiagEvent {
   const scrubbed = {
     ...envelope(event),
     event: "pipeline.run" as const,
@@ -63,7 +72,9 @@ function scrubPipeline(event: Extract<DiagEvent, { event: "pipeline.run" }>): Di
   return { ...scrubbed, requestId: scrubId(event.requestId) };
 }
 
-function scrubUpstream(event: Extract<DiagEvent, { event: "upstream.server_error" }>): DiagEvent {
+function scrubUpstream(
+  event: Extract<DiagEvent, { event: "upstream.server_error" }>,
+): DiagEvent {
   return {
     ...envelope(event),
     event: "upstream.server_error",
@@ -71,7 +82,9 @@ function scrubUpstream(event: Extract<DiagEvent, { event: "upstream.server_error
   };
 }
 
-function scrubOversize(event: Extract<DiagEvent, { event: "ipc.oversize" }>): DiagEvent {
+function scrubOversize(
+  event: Extract<DiagEvent, { event: "ipc.oversize" }>,
+): DiagEvent {
   const scrubbed = {
     ...envelope(event),
     event: "ipc.oversize" as const,
@@ -85,7 +98,10 @@ function scrubOversize(event: Extract<DiagEvent, { event: "ipc.oversize" }>): Di
 }
 
 function scrubNamed(
-  event: Extract<DiagEvent, { event: "egress.ask" | "budget.refused" | "scoring.unavailable" }>,
+  event: Extract<
+    DiagEvent,
+    { event: "egress.ask" | "budget.refused" | "scoring.unavailable" }
+  >,
 ): DiagEvent {
   const scrubbed = { ...envelope(event), event: event.event };
   if (event.requestId === undefined) {
@@ -94,7 +110,11 @@ function scrubNamed(
   return { ...scrubbed, requestId: scrubId(event.requestId) };
 }
 
-function envelope(event: DiagEvent): { ts: string; level: string; feature: string } {
+function envelope(event: DiagEvent): {
+  ts: string;
+  level: string;
+  feature: string;
+} {
   return {
     ts: scrubTimestamp(event.ts),
     level: scrubToken(event.level),
@@ -117,14 +137,22 @@ function scrubId(value: string): string {
 }
 
 function scrubTimestamp(value: string): string {
-  if (containsSecret(value) || value.length > 64 || !timestampPattern.test(value)) {
+  if (
+    containsSecret(value) ||
+    value.length > 64 ||
+    !timestampPattern.test(value)
+  ) {
     return REDACTED;
   }
   return value;
 }
 
 function scrubChannel(value: string): string {
-  if (hasHardSecret(value) || value.length > 64 || !channelPattern.test(value)) {
+  if (
+    hasHardSecret(value) ||
+    value.length > 64 ||
+    !channelPattern.test(value)
+  ) {
     return REDACTED;
   }
   return value;
@@ -196,5 +224,9 @@ function containsQuerySecret(value: string): boolean {
 }
 
 function isAbsolutePath(value: string): boolean {
-  return value.startsWith("/") || value.includes("\\") || /^[A-Za-z]:[\\/]/u.test(value);
+  return (
+    value.startsWith("/") ||
+    value.includes("\\") ||
+    /^[A-Za-z]:[\\/]/u.test(value)
+  );
 }

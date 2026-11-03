@@ -26,7 +26,11 @@ it("keeps unknown usage distinct from zero and requires every unit", () => {
 });
 
 it("covers both budget refusal codes and leaves caps unset in the envelope", () => {
-  expectTypeOf<Exclude<BudgetRefusal["code"], "budget_exhausted" | "budget_cap_unset">>().toBeNever();
+  expectTypeOf<
+    Exclude<BudgetRefusal["code"], "budget_exhausted" | "budget_cap_unset">
+  >().toBeNever();
   expectTypeOf<BudgetEnvelope["maxRequests"]>().toEqualTypeOf<number>();
-  expectTypeOf<BudgetEnvelope["maxTokens"]>().toEqualTypeOf<number | undefined>();
+  expectTypeOf<BudgetEnvelope["maxTokens"]>().toEqualTypeOf<
+    number | undefined
+  >();
 });

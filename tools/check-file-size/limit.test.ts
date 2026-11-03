@@ -7,9 +7,13 @@ import { expect, it } from "vitest";
 import { commandOutput, remediationBlock } from "../gate-remediation/block.js";
 
 function run(root: string) {
-  return spawnSync("node", [path.resolve("tools/check-file-size/check.mjs"), "--root", root], {
-    encoding: "utf8",
-  });
+  return spawnSync(
+    "node",
+    [path.resolve("tools/check-file-size/check.mjs"), "--root", root],
+    {
+      encoding: "utf8",
+    },
+  );
 }
 
 it("rejects a source file over 600 lines (G4)", () => {

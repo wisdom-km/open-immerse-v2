@@ -31,7 +31,9 @@ const failures = subjects(option("--base", "main")).filter(
 );
 
 if (failures.length > 0) {
-  console.error("check-commits: Conventional Commits rejected (RULES §2, E-P1-5)");
+  console.error(
+    "check-commits: Conventional Commits rejected (RULES §2, E-P1-5)",
+  );
   for (const line of failures) {
     console.error(`  ${line}`);
   }

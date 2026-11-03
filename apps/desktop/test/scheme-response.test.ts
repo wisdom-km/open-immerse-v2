@@ -12,7 +12,9 @@ it("sets the CSP header on the scheme response", async () => {
     },
   });
   expect(readStatus(response)).toBe(200);
-  expect(await readHeader(response, "content-security-policy")).toBe(CONTENT_SECURITY_POLICY);
+  expect(await readHeader(response, "content-security-policy")).toBe(
+    CONTENT_SECURITY_POLICY,
+  );
 });
 
 function readStatus(value: object): number {
@@ -31,7 +33,11 @@ async function readHeader(value: object, name: string): Promise<string> {
 }
 
 function headerLookup(value: object): { get: (name: string) => unknown } {
-  if (!("headers" in value) || typeof value.headers !== "object" || value.headers === null) {
+  if (
+    !("headers" in value) ||
+    typeof value.headers !== "object" ||
+    value.headers === null
+  ) {
     throw new Error("missing headers");
   }
   if (!("get" in value.headers) || typeof value.headers.get !== "function") {

@@ -21,7 +21,9 @@ it("loads the entry schema when another file shares its basename", async () => {
     );
     write(root, "right/item.ts", 'export const title = "from-right";\n');
     const schemas = await loadProtocolSchemas(path.join(root, "left/item.ts"));
-    expect(schemas).toEqual([{ name: "alpha", schema: { type: "string", title: "from-right" } }]);
+    expect(schemas).toEqual([
+      { name: "alpha", schema: { type: "string", title: "from-right" } },
+    ]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -52,9 +54,9 @@ it("rejects a dynamic import", async () => {
       'export const protocolSchemas = [];\nexport const pending = import("./leaf.js");\n',
     );
     write(root, "leaf.ts", "export const value = 1;\n");
-    await expect(loadProtocolSchemas(path.join(root, "entry.ts"))).rejects.toThrow(
-      /^dynamic import: /,
-    );
+    await expect(
+      loadProtocolSchemas(path.join(root, "entry.ts")),
+    ).rejects.toThrow(/^dynamic import: /);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

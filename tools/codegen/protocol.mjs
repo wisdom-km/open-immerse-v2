@@ -1,4 +1,12 @@
-import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -74,12 +82,19 @@ function mkdirTemp() {
 
 async function writeSchemas(schemaDir, schemas) {
   for (const item of schemas) {
-    await writeFile(path.join(schemaDir, `${item.name}.json`), canonicalJson(item.schema));
+    await writeFile(
+      path.join(schemaDir, `${item.name}.json`),
+      canonicalJson(item.schema),
+    );
   }
 }
 
 function uv(parserRoot, args) {
-  return run("uv", ["run", "--frozen", "--extra", "dev", "--directory", parserRoot, ...args], parserRoot);
+  return run(
+    "uv",
+    ["run", "--frozen", "--extra", "dev", "--directory", parserRoot, ...args],
+    parserRoot,
+  );
 }
 
 async function formatModels(parserRoot, modelDir) {
@@ -88,14 +103,31 @@ async function formatModels(parserRoot, modelDir) {
     .sort()
     .map((name) => path.join(modelDir, name));
   const config = path.join(parserRoot, "pyproject.toml");
-  uv(parserRoot, ["ruff", "check", "--fix", "--no-cache", "--config", config, ...files]);
-  uv(parserRoot, ["ruff", "format", "--no-cache", "--config", config, ...files]);
+  uv(parserRoot, [
+    "ruff",
+    "check",
+    "--fix",
+    "--no-cache",
+    "--config",
+    config,
+    ...files,
+  ]);
+  uv(parserRoot, [
+    "ruff",
+    "format",
+    "--no-cache",
+    "--config",
+    config,
+    ...files,
+  ]);
   uv(parserRoot, ["ruff", "check", "--no-cache", "--config", config, ...files]);
 }
 
 async function publishModels(outputDir, modelDir) {
   await mkdir(outputDir, { recursive: true });
-  const staged = (await readdir(modelDir)).filter((name) => name.endsWith(".py")).sort();
+  const staged = (await readdir(modelDir))
+    .filter((name) => name.endsWith(".py"))
+    .sort();
   const current = await readdir(outputDir);
   for (const name of current) {
     if (name.endsWith(".py") && !staged.includes(name)) {

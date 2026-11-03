@@ -11,7 +11,9 @@ function readIds(name) {
 
 const whitelist = readIds("whitelist.json");
 const unlistedPermissive = readIds("unlisted-permissive.json");
-const devOnly = JSON.parse(readFileSync(path.join(directory, "dev-only.json"), "utf8"));
+const devOnly = JSON.parse(
+  readFileSync(path.join(directory, "dev-only.json"), "utf8"),
+);
 const devOnlyIds = new Set(devOnly.ids);
 const devOnlyPackages = new Set(devOnly.packages);
 const aliases = JSON.parse(
@@ -44,7 +46,9 @@ function tokenize(source) {
     }
     const word = /^[A-Za-z0-9.+-]+/.exec(source.slice(index));
     if (!word) {
-      throw new Error(`bad license token at ${source.slice(index, index + 12)}`);
+      throw new Error(
+        `bad license token at ${source.slice(index, index + 12)}`,
+      );
     }
     tokens.push(word[0]);
     index += word[0].length;
@@ -102,10 +106,16 @@ function parseOr(tokens, position) {
 
 function evaluateNode(node, packageName) {
   if (node.op === "OR") {
-    return evaluateNode(node.left, packageName) || evaluateNode(node.right, packageName);
+    return (
+      evaluateNode(node.left, packageName) ||
+      evaluateNode(node.right, packageName)
+    );
   }
   if (node.op === "AND") {
-    return evaluateNode(node.left, packageName) && evaluateNode(node.right, packageName);
+    return (
+      evaluateNode(node.left, packageName) &&
+      evaluateNode(node.right, packageName)
+    );
   }
   if (node.op === "WITH") {
     return false;
@@ -135,7 +145,10 @@ export function reportedLicense(packageName, reported) {
 
 export function licenseAllowed(packageName, reported) {
   try {
-    return expressionAllowed(reportedLicense(packageName, reported), packageName);
+    return expressionAllowed(
+      reportedLicense(packageName, reported),
+      packageName,
+    );
   } catch {
     return false;
   }

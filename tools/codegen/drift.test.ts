@@ -17,7 +17,9 @@ it("codegen leaves a diff when generated output drifted (G7)", () => {
     writeFileSync(path.join(root, "generated.txt"), "right\n");
     writeFileSync(
       path.join(root, "manifest.json"),
-      JSON.stringify({ generators: [{ input: "source.txt", output: "generated.txt" }] }),
+      JSON.stringify({
+        generators: [{ input: "source.txt", output: "generated.txt" }],
+      }),
     );
     git(root, ["init"]);
     git(root, ["config", "user.email", "gate@example.com"]);
@@ -26,7 +28,13 @@ it("codegen leaves a diff when generated output drifted (G7)", () => {
     git(root, ["commit", "-m", "chore: fixture"]);
     execFileSync(
       "node",
-      [path.resolve("tools/codegen/run.mjs"), "--root", root, "--manifest", path.join(root, "manifest.json")],
+      [
+        path.resolve("tools/codegen/run.mjs"),
+        "--root",
+        root,
+        "--manifest",
+        path.join(root, "manifest.json"),
+      ],
       { cwd: root, stdio: "pipe" },
     );
     const drifted = spawnSync(

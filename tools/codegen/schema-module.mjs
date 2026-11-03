@@ -14,7 +14,9 @@ export async function loadProtocolSchemas(schemaPath) {
   const root = await mkdtemp(path.join(tmpdir(), "oischema-"));
   try {
     const entry = await emitFile(path.resolve(schemaPath), root, new Set());
-    const imported = await import(`${pathToFileURL(entry).href}?codegen=${Date.now()}`);
+    const imported = await import(
+      `${pathToFileURL(entry).href}?codegen=${Date.now()}`
+    );
     return schemasFrom(imported.protocolSchemas);
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -73,7 +75,10 @@ function specifiers(code) {
 
 async function resolveSpecifier(spec, sourcePath, root, seen) {
   if (spec.startsWith(".")) {
-    const target = path.resolve(path.dirname(sourcePath), spec.replace(/\.js$/, ".ts"));
+    const target = path.resolve(
+      path.dirname(sourcePath),
+      spec.replace(/\.js$/, ".ts"),
+    );
     const emitted = await emitFile(target, root, seen);
     return pathToFileURL(emitted).href;
   }
@@ -81,7 +86,9 @@ async function resolveSpecifier(spec, sourcePath, root, seen) {
 }
 
 function applySpecifiers(code, mapped) {
-  const specs = [...mapped.keys()].sort((left, right) => right.length - left.length);
+  const specs = [...mapped.keys()].sort(
+    (left, right) => right.length - left.length,
+  );
   let next = code;
   for (const spec of specs) {
     const href = JSON.stringify(mapped.get(spec));

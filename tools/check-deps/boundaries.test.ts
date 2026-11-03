@@ -20,8 +20,16 @@ function stubReact(root: string) {
     "node_modules/react/package.json",
     '{"name":"react","version":"0.0.0","main":"index.js","types":"index.d.ts"}\n',
   );
-  write(root, "node_modules/react/index.js", "export function createElement() { return null; }\n");
-  write(root, "node_modules/react/index.d.ts", "export type FC = () => void;\n");
+  write(
+    root,
+    "node_modules/react/index.js",
+    "export function createElement() { return null; }\n",
+  );
+  write(
+    root,
+    "node_modules/react/index.d.ts",
+    "export type FC = () => void;\n",
+  );
 }
 
 function cruise(root: string) {
@@ -45,7 +53,11 @@ function withRoot(runCase: (root: string) => void) {
 
 it("allows a matrix edge and rejects the other four M1 examples", () => {
   withRoot((root) => {
-    write(root, "packages/features/document/src/index.ts", "export const id = 1;\n");
+    write(
+      root,
+      "packages/features/document/src/index.ts",
+      "export const id = 1;\n",
+    );
     write(
       root,
       "packages/features/library/src/index.ts",
@@ -60,7 +72,11 @@ it("allows a matrix edge and rejects the other four M1 examples", () => {
       "packages/features/library/src/domain/calls-ingest.ts",
       'import { id } from "../../../ingest/src/index.ts";\nexport const used = id;\n',
     );
-    write(root, "packages/features/ingest/src/index.ts", "export const id = 1;\n");
+    write(
+      root,
+      "packages/features/ingest/src/index.ts",
+      "export const id = 1;\n",
+    );
     const ingest = cruise(root);
     expect(ingest.status).not.toBe(0);
     expect(ingest.output).toContain("feature-dependency-matrix");
@@ -76,7 +92,11 @@ it("allows a matrix edge and rejects the other four M1 examples", () => {
     expect(reactType.output).toContain("core-no-ui");
     expect(reactType.output).toContain(remediationBlock("G13"));
 
-    write(root, "packages/features/notes/src/application/use.ts", "export const id = 1;\n");
+    write(
+      root,
+      "packages/features/notes/src/application/use.ts",
+      "export const id = 1;\n",
+    );
     write(
       root,
       "packages/features/reader/src/ui/pane.ts",
@@ -107,7 +127,11 @@ it("rejects electron outside the desktop app and node builtins in the renderer",
       '{"name":"electron","version":"0.0.0","main":"index.js"}\n',
     );
     write(root, "node_modules/electron/index.js", "module.exports = {};\n");
-    write(root, "packages/kernel/src/index.ts", 'import "electron";\nexport const id = 1;\n');
+    write(
+      root,
+      "packages/kernel/src/index.ts",
+      'import "electron";\nexport const id = 1;\n',
+    );
     const outside = cruise(root);
     expect(outside.status).not.toBe(0);
     expect(outside.output).toContain("electron-only-in-desktop");

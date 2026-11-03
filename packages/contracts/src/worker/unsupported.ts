@@ -16,7 +16,9 @@ export const unsupportedProtocolSchema = Type.Object(
 
 export type UnsupportedProtocol = Static<typeof unsupportedProtocolSchema>;
 
-export function readUnsupportedProtocol(document: unknown): UnsupportedProtocol | undefined {
+export function readUnsupportedProtocol(
+  document: unknown,
+): UnsupportedProtocol | undefined {
   if (!Value.Check(unsupportedProtocolSchema, document)) {
     return undefined;
   }

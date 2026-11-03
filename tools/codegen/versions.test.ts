@@ -15,7 +15,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function load(file: string): Record<string, unknown> {
-  const parsed: unknown = JSON.parse(readFileSync(path.join(directory, file), "utf8"));
+  const parsed: unknown = JSON.parse(
+    readFileSync(path.join(directory, file), "utf8"),
+  );
   if (!isRecord(parsed)) {
     throw new Error(file);
   }

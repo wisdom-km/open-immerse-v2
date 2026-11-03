@@ -27,14 +27,26 @@ it("prints G3 remediation for a tsc violation that stays outside the required ch
   expect(output).toContain("TS2322");
   expect(output).toContain(remediationBlock("G3"));
 
-  expect(readFileSync("tsconfig.json", "utf8")).toContain("tools/gate-fixtures");
-  expect(readFileSync("tsconfig.core.json", "utf8")).toContain("tools/gate-fixtures");
-  expect(readFileSync("eslint.config.js", "utf8")).toContain("tools/gate-fixtures/**");
+  expect(readFileSync("tsconfig.json", "utf8")).toContain(
+    "tools/gate-fixtures",
+  );
+  expect(readFileSync("tsconfig.core.json", "utf8")).toContain(
+    "tools/gate-fixtures",
+  );
+  expect(readFileSync("eslint.config.js", "utf8")).toContain(
+    "tools/gate-fixtures/**",
+  );
   expect(readFileSync("package.json", "utf8")).not.toContain("tsc -b");
-  expect(readFileSync(".github/workflows/ci.yml", "utf8")).not.toContain("tsc -b");
-  expect(readFileSync("package.json", "utf8")).not.toContain("gate-fixtures/g3");
+  expect(readFileSync(".github/workflows/ci.yml", "utf8")).not.toContain(
+    "tsc -b",
+  );
+  expect(readFileSync("package.json", "utf8")).not.toContain(
+    "gate-fixtures/g3",
+  );
 
-  const required = spawnSync("node", ["tools/typecheck.mjs"], { encoding: "utf8" });
+  const required = spawnSync("node", ["tools/typecheck.mjs"], {
+    encoding: "utf8",
+  });
   expect(required.status).toBe(0);
   expect(commandOutput(required)).not.toContain("gate-remediation:");
 });

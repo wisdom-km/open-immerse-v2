@@ -24,7 +24,11 @@ it("rejects a model manifest whose license is GPL (G10)", () => {
     );
     const result = spawnSync(
       "node",
-      [path.resolve("tools/check-license/check-models.mjs"), "--manifest", manifest],
+      [
+        path.resolve("tools/check-license/check-models.mjs"),
+        "--manifest",
+        manifest,
+      ],
       { encoding: "utf8" },
     );
     expect(result.status).not.toBe(0);

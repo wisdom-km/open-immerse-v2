@@ -83,7 +83,9 @@ function layerRules() {
     rule(
       "layer-direction",
       { path: "^packages/features/[^/]+/src/domain/" },
-      { path: `^packages/features/[^/]+/src/(application|adapters|ui)/|${shellIo}` },
+      {
+        path: `^packages/features/[^/]+/src/(application|adapters|ui)/|${shellIo}`,
+      },
     ),
     rule(
       "layer-direction",
@@ -116,7 +118,8 @@ function boundaryRules() {
       { path: "^packages/features/([^/]+)/" },
       {
         path: "^packages/features/",
-        pathNot: "^packages/features/$1/|^packages/features/[^/]+/src/index\\.ts$",
+        pathNot:
+          "^packages/features/$1/|^packages/features/[^/]+/src/index\\.ts$",
       },
     ),
     rule(
@@ -148,7 +151,10 @@ function boundaryRules() {
     ),
     rule(
       "providers-boundary",
-      { pathNot: "^packages/features/[^/]+/src/adapters/|^apps/desktop/src/main/" },
+      {
+        pathNot:
+          "^packages/features/[^/]+/src/adapters/|^apps/desktop/src/main/",
+      },
       { path: `^packages/providers/|${pkg("@oi/providers")}` },
     ),
     rule(
@@ -205,5 +211,10 @@ function seamRules() {
 }
 
 export function forbiddenRules() {
-  return [...matrixRules(), ...layerRules(), ...boundaryRules(), ...seamRules()];
+  return [
+    ...matrixRules(),
+    ...layerRules(),
+    ...boundaryRules(),
+    ...seamRules(),
+  ];
 }

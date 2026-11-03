@@ -42,7 +42,9 @@ function lineCount(content) {
 function globToRegExp(pattern) {
   const body = pattern
     .split("**")
-    .map((part) => part.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*"))
+    .map((part) =>
+      part.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*"),
+    )
     .join(".*");
   return new RegExp(`^${body}$`);
 }
@@ -83,7 +85,9 @@ function loadAllowlist(file) {
   }
   for (const item of parsed.exemptions ?? []) {
     if (!item.path || !item.reason || !item.adr || !item.expiresMilestone) {
-      throw new Error("exemption needs path, reason, adr, and expiresMilestone");
+      throw new Error(
+        "exemption needs path, reason, adr, and expiresMilestone",
+      );
     }
   }
   return {

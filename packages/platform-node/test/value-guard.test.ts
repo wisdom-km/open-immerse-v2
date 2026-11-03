@@ -2,7 +2,9 @@ import { expect, it } from "vitest";
 
 import { guardDiagRecord, REDACTED } from "../src/logging/value-guard.js";
 
-function pipeline(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+function pipeline(
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
   return {
     ts: "2026-11-02T00:00:00.000Z",
     level: "info",
@@ -41,7 +43,9 @@ it("AC-101 replaces a charset-valid fake key when the value contains the oitest_
 });
 
 it("AC-101 keeps api-key-missing when the value has no query separator", () => {
-  expect(guardDiagRecord(pipeline({ error_class: "api-key-missing" }))).toMatchObject({
+  expect(
+    guardDiagRecord(pipeline({ error_class: "api-key-missing" })),
+  ).toMatchObject({
     error_class: "api-key-missing",
   });
 });
@@ -61,7 +65,8 @@ it("AC-101 replaces a query value when it contains access_token= or key=", () =>
   const guarded = guardDiagRecord(
     pipeline({
       route: "cb?access_token=oitest_querytoken",
-      error_class: "preset?key=abc&client_id=oitest_cid&client_secret=oitest_sec",
+      error_class:
+        "preset?key=abc&client_id=oitest_cid&client_secret=oitest_sec",
     }),
   );
   const encoded = JSON.stringify(guarded);
@@ -72,7 +77,9 @@ it("AC-101 replaces a query value when it contains access_token= or key=", () =>
 });
 
 it("AC-101 replaces an absolute path when it is stored in a string field", () => {
-  const guarded = guardDiagRecord(pipeline({ route: "/tmp/fixture/paper.pdf" }));
+  const guarded = guardDiagRecord(
+    pipeline({ route: "/tmp/fixture/paper.pdf" }),
+  );
   expect(guarded).toMatchObject({ route: REDACTED });
   expect(JSON.stringify(guarded)).not.toContain("/tmp/fixture/paper.pdf");
 });
@@ -106,7 +113,9 @@ it("drops an extra key when the record still passes the whitelist", () => {
 
 it("returns undefined when readDiagEvent rejects the record", () => {
   expect(guardDiagRecord({ ...pipeline(), ts: "" })).toBeUndefined();
-  expect(guardDiagRecord({ ...pipeline(), event: "langsmith.trace" })).toBeUndefined();
+  expect(
+    guardDiagRecord({ ...pipeline(), event: "langsmith.trace" }),
+  ).toBeUndefined();
   expect(guardDiagRecord(null)).toBeUndefined();
 });
 
@@ -143,7 +152,11 @@ it("AC-101 keeps a channel when the name matches section 9", () => {
 });
 
 it("AC-101 replaces a channel when the name leaves the section 9 shape", () => {
-  const channels = ["Ingest.onProgress", "ingest.on Progress", "ingest/onProgress"];
+  const channels = [
+    "Ingest.onProgress",
+    "ingest.on Progress",
+    "ingest/onProgress",
+  ];
   for (const channel of channels) {
     const guarded = guardDiagRecord(oversize(channel));
     expect(guarded).toMatchObject({ channel: REDACTED });

@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const catalogPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "catalog.json");
+const catalogPath = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "catalog.json",
+);
 
 function fail(message) {
   throw new Error(message);
@@ -56,7 +59,11 @@ function readGate(value, seen) {
 
 export function loadCatalog() {
   const parsed = JSON.parse(readFileSync(catalogPath, "utf8"));
-  if (typeof parsed !== "object" || parsed === null || !Array.isArray(parsed.gates)) {
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    !Array.isArray(parsed.gates)
+  ) {
     fail("gate remediation catalog is empty");
   }
   if (parsed.gates.length === 0) {
@@ -104,7 +111,10 @@ export function writeRemediation(ids) {
 }
 
 export function renderTable(gates) {
-  const lines = ["| 编号 | 问题 | 怎么改 | 规格 |", "| --- | --- | --- | --- |"];
+  const lines = [
+    "| 编号 | 问题 | 怎么改 | 规格 |",
+    "| --- | --- | --- | --- |",
+  ];
   for (const gate of gates) {
     lines.push(`| ${gate.id} | ${gate.problem} | ${gate.fix} | ${gate.spec} |`);
   }
@@ -161,7 +171,10 @@ function runCli() {
 
 function isDirectRun() {
   const entry = process.argv[1];
-  return entry !== undefined && path.resolve(entry) === fileURLToPath(import.meta.url);
+  return (
+    entry !== undefined &&
+    path.resolve(entry) === fileURLToPath(import.meta.url)
+  );
 }
 
 if (isDirectRun()) {

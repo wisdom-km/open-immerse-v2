@@ -11,5 +11,7 @@ export function registerAppScheme(): void {
 }
 
 export function handleAppProtocol(rendererRoot: string): void {
-  protocol.handle(SCHEME, (request) => respond(rendererRoot, request.url, request.method));
+  protocol.handle(SCHEME, (request) =>
+    respond(rendererRoot, request.url, request.method),
+  );
 }

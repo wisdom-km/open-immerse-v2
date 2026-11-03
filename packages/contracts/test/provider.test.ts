@@ -1,10 +1,20 @@
 import { expectTypeOf, it } from "vitest";
 
-import type { DefaultJevRoute, JevRoute, JevRouteSetting } from "../src/ipc/settings.js";
+import type {
+  DefaultJevRoute,
+  JevRoute,
+  JevRouteSetting,
+} from "../src/ipc/settings.js";
 
-type JevRouteGap<R extends JevRoute> = R extends "api" ? never : R extends "local" ? never : R;
+type JevRouteGap<R extends JevRoute> = R extends "api"
+  ? never
+  : R extends "local"
+    ? never
+    : R;
 
-const jevRouteIsExhaustive: [JevRouteGap<JevRoute>] extends [never] ? true : false = true;
+const jevRouteIsExhaustive: [JevRouteGap<JevRoute>] extends [never]
+  ? true
+  : false = true;
 
 it("exhausts the Jev route", () => {
   expectTypeOf<Exclude<JevRoute, "api" | "local">>().toBeNever();
