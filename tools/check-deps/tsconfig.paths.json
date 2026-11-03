@@ -4,12 +4,14 @@
     "paths": {
       "@oi/kernel": ["packages/kernel/src/index.ts"],
       "@oi/contracts": ["packages/contracts/src/index.ts"],
-      "@oi/platform-node": ["packages/platform-node/src/index.ts"]
+      "@oi/platform-node": ["packages/platform-node/src/index.ts"],
+      "@oi/providers": ["packages/providers/src/index.ts"]
     }
   },
   "files": [
     "../../packages/kernel/src/index.ts",
     "../../packages/contracts/src/index.ts",
-    "../../packages/platform-node/src/index.ts"
+    "../../packages/platform-node/src/index.ts",
+    "../../packages/providers/src/index.ts"
   ]
 }

@@ -1,0 +1,17 @@
+{
+  "name": "@oi/providers",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@oi/contracts": "workspace:*",
+    "@oi/kernel": "workspace:*",
+    "@oi/platform-node": "workspace:*"
+  }
+}
