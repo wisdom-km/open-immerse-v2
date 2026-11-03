@@ -30,7 +30,7 @@ export default defineConfig({
       include: ["packages/contracts/**/*.test.ts", "packages/kernel/**/*.test.ts"],
       tsconfig: "./tsconfig.core.json",
     },
-    exclude: ["tools/gate-fixtures/**", "node_modules/**"],
+    exclude: ["tools/gate-fixtures/**", "node_modules/**", "**/node_modules/**"],
     passWithNoTests: false,
   },
 });
