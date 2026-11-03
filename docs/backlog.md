@@ -1,6 +1,6 @@
 # 待办与架构评审处理状态
 
-状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-02（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。同日 Electron 外壳延期三条：#66、#67、#68。
+状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-03（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。同日 Electron 外壳延期三条：#66、#67、#68。2026-11-03 补上 #76、#80。同日 10:40 Wisdom 批准 platform-node → contracts 值导入，记在 §12，ARCH §5.1 补 `PN --> C`。
 用途：逐条记录[架构评审](./reviews/2026-10-30-architecture-review.md)的每个发现由哪个规格 PR 处理、落在规格哪里，以及还没处理、留给哪个里程碑的事。决定的理由见[差异清单](./v2-gap-and-changes.md) §6.6–§6.13；本文只记状态，不重述规格。§5 记 Jev 开关审查（2026-10-30 22:06）各项的处理状态。§8 收录还要等 M0 的项，也记下已经拍板的项（2026-10-31 01:08 建表；同日 D-D、D-E 与 W-4 的过渡默认已决定）。未决的行不代选。
 
 三个规格 PR：
@@ -90,10 +90,12 @@
 | 打包时按 ARCHITECTURE §9 设置 Electron Fuses。`EnableEmbeddedAsarIntegrityValidation` 各平台是否支持仍未核实 | M8。验收 AC-67 ③ | #68；ARCH §9 |
 | Python worker 把结构化 JSON 写到 stderr，supervisor 收集并加上 `source: worker`。字段服从诊断事件白名单和禁止项。落地时要把 `source: "worker"` 纳入允许字段，避免读入时丢掉 | M3（与 supervisor 一起） | #73；ARCH §11 |
 | 关闭调试模式前询问是否删除调试日志。M1 只把 `deleteFiles` 作为 `setDebugMode` 的参数，不画界面 | M2，交 Loom | #75；ARCH §11；PRD AC-101 ② |
+| 诊断日志白名单字段值加长度/格式约束，并在落盘前脱敏 | M1 PR-B（`feature/m1-logging-impl` / PR #77） | #76；来源 PR #74 Anvil 低风险；ARCH §11、§7.9.5 |
 | oi-app 协议按扩展名设置 Content-Type（`static-file.ts:19` 固定 text/html），并加 `X-Content-Type-Options: nosniff` | M2（开始服务非 HTML 资源时） | #69；PR #65 Forge 审查 + Anvil 低风险 |
 | 打包后 renderer 路径 `dist/../../src/renderer` 失效 | M8 | #70；PR #65 Anvil 低风险 |
 | desktop e2e 覆盖权限 check handler（`navigator.permissions.query`）并把单个冒烟测试拆开 | 本 PR #78 处理 | #71；PR #65 Forge 审查 |
 | `app-protocol.ts` 的 `readUrl`/`readMethod` 透传内联 | 本 PR #78 处理 | #72；PR #65 Forge 审查 |
+| app-protocol 的 `respond()` 返回的 HTTP 状态码（405/404）缺测试 | M1 | #80；来源 PR #78 计划审查 |
 
 ## 5. Jev 开关审查（2026-10-30 22:06）的处理
 
@@ -244,3 +246,7 @@ Wisdom 2026-11-02 16:38 UTC+8。原文与决定正文在 PRD §9 和差异清单
 - N-22：业务切片的门禁前提由已经在 CI 的 G6、pyright、gitleaks 满足。G1、G3、G5 仍是 M1 交付（Issue #34，本节 M1-DEFER-G1、M1-DEFER-G3、M1-DEFER-G5），不挡住业务切片。
 - 同日 17:03：面壁 Jev 的托管 API 与本地部署在契约里都是一等。本地预留：`jev.route` 选 `local` 时可以完全不调用面壁 API。正文在 PRD §9 与差异清单 §6.15，验收 AC-103。不另写一套规则。PP-DocLayout 与其余本机推理仍是上面的第二路线。
 - 同日 17:21：原文「Jev API 客户端提前到 M1，M6a 接进完整流程」。最小托管 API 客户端是 M1 交付，M0 测量用它；M6a 接入完整流程。本地仍是 stub。正文在 PRD §9 与差异清单 §6.15。不另写一套规则。
+
+## 12. 2026-11-03 platform-node 值导入 contracts
+
+2026-11-03 10:40 Wisdom 批准 platform-node → contracts 值导入，ARCH §5.1 补 `PN --> C`。`contracts` 仍是叶子。`contracts` → `kernel` 仍只许 type-only。门禁规则不在本决定里改。不重开 Q3、Q5、D-D、D-E、W-4。
