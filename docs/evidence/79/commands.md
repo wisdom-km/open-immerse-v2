@@ -2,7 +2,7 @@
 
 日期：2026-11-03。工作目录是仓库根。Node 是 `.nvmrc` 的 v22.23.4，PATH 前置 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin`。`node -v` 为 v22.23.4，`corepack pnpm --version` 为 10.34.9。gitleaks 8.30.1，与 CI 的 v8.30.1 相同。
 
-门禁跑在规格提交 `f9897d1fb0c27193a36d23448117afdede578ffd`。本文件是后一笔，只补记录。基线 `origin/main` 为 `28428ff1478dc77711ae457f73475a1f35cdf016`。
+门禁跑在规格提交 `f9897d1fb0c27193a36d23448117afdede578ffd`。本文件所在提交 `52c36adbc604ab3cd71ecc1f5ad8e351d2bd54c9` 上又跑了一次 `GATE_BASE=origin/main corepack pnpm run check`，退出码 0（PR 体量 293 行）。基线 `origin/main` 为 `28428ff1478dc77711ae457f73475a1f35cdf016`。
 
 纯文档，不碰 `apps/desktop`。没有界面可点，所以没有截图。
 
