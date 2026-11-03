@@ -30,7 +30,15 @@ Forge 审过 `853b284` 之后，采纳标记与四条必需检查写在 `facbdd2
 GATE_BASE=origin/main corepack pnpm run check
 ```
 
-退出码 0。`check-pr-size: 761 non-generated lines`。`check:format`、`check-file-size`（178）、dependency-cruiser（92 modules, 175 dependencies）、`check-commits`、codegen 与 `git diff --exit-code` 与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-adopt.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
+退出码 0。`check-pr-size: 761 non-generated lines`。`check:format`、`check-file-size`（178）、dependency-cruiser（92 modules, 175 dependencies）、`check-commits`、codegen 与 `git diff --exit-code` 与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-adopt.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。tip `9a6a04e912f8e79f2f3ee5e6f5f830b7defc4c40` 再跑退出码 0，`check-pr-size: 769 non-generated lines`。
+
+Loom 的 DESIGN 跟进补丁在 `3335afe20225da20f3040749e5677576dd166482`。DESIGN.md 相对上一提交是 +12/−8。在该提交上再跑：
+
+```bash
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+退出码 0。`check-pr-size: 776 non-generated lines`。其余步骤与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-design.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
 
 ## 链接
 
