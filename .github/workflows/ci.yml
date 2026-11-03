@@ -279,3 +279,19 @@ jobs:
           name: desktop-e2e-windows-screenshots
           path: apps/desktop/test-results/**/*.png
           if-no-files-found: error
+
+  docs-report:
+    name: docs-report
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Docs report
+        run: node tools/check-docs/check.mjs

@@ -34,7 +34,7 @@ Wisdom 2026-11-04 03:08 原文：「嗯，这个我批准了。」批准的是�
 
 ### 状态行与索引
 
-范围：`docs/**/*.md`，去掉 `docs/evidence/**`（那是 PR 命令记录，不是 #25 的目录）。基线上 31 个文件。
+范围：`docs/**/*.md`，去掉 `docs/evidence/**`（那是 PR 命令记录，不是 #25 的目录）。基线上 31 个文件。Forge 审查之后，实现再去掉 `docs/exec-plans/**`。下面的 18 与合计 19 是审查前在 `25762f1` 上的统计，不改写。
 
 文件自己的状态行：前 40 行里，第一行符合 `^(?:>\s*)?状态：` 或 `^日期：.+。状态：`。
 
@@ -132,6 +132,8 @@ findings: 19
 
 `checkout` 与 `setup-node` 的 SHA 与现有 job 相同。不安装依赖，不跑 `pnpm check`，不跑测试。
 
+合入 `origin/main` 之后，`ci.yml` 末尾在第 281 行。实现按当时的末尾追加，job 正文与上面相同。实际 hunk 是 `@@ -279,3 +279,19 @@ jobs:`。上面那份 diff 的行号是审查前的，不改写。
+
 大约两周无误报之后，另开 PR 再让脚本在 `findings` 非 0 时退出 1，并去掉 `continue-on-error`。那时才由 Wisdom 把 `CI / docs-report` 设为必需。那一笔不在本计划里做。
 
 ## 文件
@@ -176,12 +178,12 @@ findings: 19
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
 | 1 | 只提交本文件，开 Draft，把计划发到 PR 评论，停下等 Forge | 计划提交 `e3f6412`。Draft PR #114。评论在该 PR 上。这一笔还不写实现 | `docs/evidence/114/commands.md` |
-| 2 | 按「文件」一节实现。CI 用上面的 diff。不碰「不改的文件」 |  | `docs/evidence/114/commands.md` |
-| 3 | 跑「实现时要跑的命令」。摘要里的 `findings` 记进实际列 |  | 同上 |
+| 2 | 按「文件」一节实现。CI 用上面的 diff。不碰「不改的文件」 | 检查器在 `tools/check-docs/`。`ci.yml` 只在末尾加 `docs-report`（`@@ -279,3 +279,19 @@ jobs:`）。状态行范围去掉 `docs/exec-plans/**`。未改 #113 的文件 | `docs/evidence/114/commands.md` |
+| 3 | 跑「实现时要跑的命令」。摘要里的 `findings` 记进实际列 | `findings: 10`（links 0，anchors 0，status 10，verbatim 0）。定向测试 15 条通过。`pnpm check` 的退出码写在证据里 | 同上 |
 
 ## 证据链接
 
-- `docs/evidence/114/commands.md`：这一笔只记录基线统计用的规则和发现数 19。实现命令在 Forge 通过之后再补。
+- `docs/evidence/114/commands.md`：审查前的基线发现数 19，以及实现后的实测发现数。
 
 ## 给 Forge 的提问
 
@@ -189,3 +191,14 @@ findings: 19
 
 1. 状态行范围去掉了 `docs/evidence/**`。18 条里有 9 个是 `docs/exec-plans/`。若执行计划也不算 #25 的目录，实现时从范围里拿掉，发现数会少于 19。
 2. 新 job 叫 `docs-report`，检查名 `CI / docs-report`。没有塞进 `node`。
+
+## Forge 审查
+
+通过，可以开始实现。
+
+1. `docs/exec-plans/**` 不进状态行检查。它是工作草稿，不属于 Issue #25 的目录。
+2. job 名 `docs-report`，`continue-on-error: true`，只在文件末尾追加。不进分支保护，不进 `pnpm check`。
+3. 单元测试用夹具覆盖缺文件、缺锚点、缺状态行。外链不访问。
+4. 不改 #113 的 `ARCHITECTURE.md`、`docs/backlog.md`、`docs/ci-and-environment.md`、`docs/spec-changelog.md`、`docs/evidence/105`。
+
+实测发现数是 10。上面「第一次报告的发现数」仍是审查前的基线，不改成 10。
