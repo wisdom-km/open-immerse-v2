@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 
 function pinVersion(): string {
-  const parsed: unknown = JSON.parse(readFileSync("tools/codegen/pin.json", "utf8"));
+  const parsed: unknown = JSON.parse(
+    readFileSync("tools/codegen/pin.json", "utf8"),
+  );
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new Error("pin");
   }

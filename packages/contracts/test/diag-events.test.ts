@@ -50,9 +50,13 @@ it("rejects an event id outside the whitelist when the name is not listed", () =
   // @ts-expect-error event id is not on the whitelist
   const event: DiagEvent = { ...envelope, event: "langsmith.trace" };
   expectTypeOf(event).toExtend<DiagEvent>();
-  expect(readDiagEvent({ ...envelope, event: "langsmith.trace" }).ok).toBe(false);
+  expect(readDiagEvent({ ...envelope, event: "langsmith.trace" }).ok).toBe(
+    false,
+  );
   expect(readDiagEvent(null).ok).toBe(false);
-  expect(readDiagEvent({ ...envelope, ts: "", event: "egress.ask" }).ok).toBe(false);
+  expect(readDiagEvent({ ...envelope, ts: "", event: "egress.ask" }).ok).toBe(
+    false,
+  );
 });
 
 it("AC-101 keeps only pipeline.run fields when a parse, ocr, or translate run succeeds", () => {
@@ -117,7 +121,11 @@ it("rejects a pipeline.run record when a required field is missing or duration i
 });
 
 it("drops extra keys when egress.ask, budget.refused, or scoring.unavailable is read", () => {
-  for (const event of ["egress.ask", "budget.refused", "scoring.unavailable"] as const) {
+  for (const event of [
+    "egress.ask",
+    "budget.refused",
+    "scoring.unavailable",
+  ] as const) {
     expect(readDiagEvent({ ...envelope, event, body: forbidden[0] })).toEqual({
       ok: true,
       value: { ...envelope, event },
@@ -137,7 +145,9 @@ it("keeps requestId and drops the response body when upstream.server_error is re
     ok: true,
     value: { ...envelope, event: "upstream.server_error", requestId: "req-9" },
   });
-  expect(readDiagEvent({ ...envelope, event: "upstream.server_error" }).ok).toBe(false);
+  expect(
+    readDiagEvent({ ...envelope, event: "upstream.server_error" }).ok,
+  ).toBe(false);
 });
 
 it("keeps the channel name and byte count when ipc.oversize is read", () => {
@@ -151,9 +161,19 @@ it("keeps the channel name and byte count when ipc.oversize is read", () => {
     }),
   ).toEqual({
     ok: true,
-    value: { ...envelope, event: "ipc.oversize", channel: "document.open", bytes: 1_048_576 },
+    value: {
+      ...envelope,
+      event: "ipc.oversize",
+      channel: "document.open",
+      bytes: 1_048_576,
+    },
   });
   expect(
-    readDiagEvent({ ...envelope, event: "ipc.oversize", channel: "document.open", bytes: 1.5 }).ok,
+    readDiagEvent({
+      ...envelope,
+      event: "ipc.oversize",
+      channel: "document.open",
+      bytes: 1.5,
+    }).ok,
   ).toBe(false);
 });

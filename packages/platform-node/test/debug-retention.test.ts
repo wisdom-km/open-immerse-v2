@@ -1,4 +1,11 @@
-import { existsSync, mkdtempSync, statSync, truncateSync, utimesSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  statSync,
+  truncateSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -13,7 +20,12 @@ function directory(): string {
   return mkdtempSync(path.join(tmpdir(), "oi-debug-"));
 }
 
-function plant(dir: string, name: string, size: number, mtimeMs: number): string {
+function plant(
+  dir: string,
+  name: string,
+  size: number,
+  mtimeMs: number,
+): string {
   const fullPath = path.join(dir, name);
   writeFileSync(fullPath, "");
   truncateSync(fullPath, size);
@@ -39,7 +51,9 @@ it("AC-101 deletes the oldest files first when the total exceeds 50 MB", () => {
   const newest = plant(dir, "c.jsonl", chunk, now - 1000);
   enforceDebugRetention(dir, now);
   expect(statOrMissing(oldest)).toBeUndefined();
-  expect(statSync(middle).size + statSync(newest).size).toBeLessThanOrEqual(DEBUG_LOG_MAX_BYTES);
+  expect(statSync(middle).size + statSync(newest).size).toBeLessThanOrEqual(
+    DEBUG_LOG_MAX_BYTES,
+  );
 });
 
 it("AC-101 deletes one file when that file alone exceeds 50 MB", () => {

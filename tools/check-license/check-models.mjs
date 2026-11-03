@@ -21,8 +21,16 @@ if (!existsSync(manifestPath)) {
 const models = JSON.parse(readFileSync(manifestPath, "utf8"));
 const failures = [];
 for (const model of models) {
-  if (!model.name || !model.version || !model.sha256 || !model.license || !model.source) {
-    failures.push(`${model.name ?? "(unnamed)"}: missing name, version, sha256, license, or source`);
+  if (
+    !model.name ||
+    !model.version ||
+    !model.sha256 ||
+    !model.license ||
+    !model.source
+  ) {
+    failures.push(
+      `${model.name ?? "(unnamed)"}: missing name, version, sha256, license, or source`,
+    );
     continue;
   }
   if (!licenseAllowed(model.name, String(model.license))) {

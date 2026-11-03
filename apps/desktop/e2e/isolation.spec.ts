@@ -6,23 +6,33 @@ test("exposes an empty object when window.oi is read", async ({ desktop }) => {
   expect(await evaluate(desktop.page, "JSON.stringify(window.oi)")).toBe("{}");
 });
 
-test("enables context isolation when web preferences are read", async ({ desktop }) => {
+test("enables context isolation when web preferences are read", async ({
+  desktop,
+}) => {
   expect((await preferences(desktop.app)).contextIsolation).toBe(true);
 });
 
-test("enables the sandbox when web preferences are read", async ({ desktop }) => {
+test("enables the sandbox when web preferences are read", async ({
+  desktop,
+}) => {
   expect((await preferences(desktop.app)).sandbox).toBe(true);
 });
 
-test("disables node integration when web preferences are read", async ({ desktop }) => {
+test("disables node integration when web preferences are read", async ({
+  desktop,
+}) => {
   expect((await preferences(desktop.app)).nodeIntegration).toBe(false);
 });
 
-test("leaves web security enabled when web preferences are read", async ({ desktop }) => {
+test("leaves web security enabled when web preferences are read", async ({
+  desktop,
+}) => {
   expect((await preferences(desktop.app)).webSecurity).not.toBe(false);
 });
 
-async function preferences(app: ElectronApplication): Promise<Record<string, unknown>> {
+async function preferences(
+  app: ElectronApplication,
+): Promise<Record<string, unknown>> {
   const prefs = await app.evaluate(({ BrowserWindow }) => {
     const win = BrowserWindow.getAllWindows()[0];
     if (win === undefined) {

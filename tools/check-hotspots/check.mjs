@@ -23,7 +23,9 @@ function git(args) {
 }
 
 function changedFiles(base) {
-  return git(["diff", "--name-only", `${base}...HEAD`]).split("\n").filter(Boolean);
+  return git(["diff", "--name-only", `${base}...HEAD`])
+    .split("\n")
+    .filter(Boolean);
 }
 
 function changedLines(base, file) {

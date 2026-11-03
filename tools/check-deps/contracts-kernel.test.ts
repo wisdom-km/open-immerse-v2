@@ -29,7 +29,9 @@ function writeClosedConfig(root: string): string {
       2,
     )}\n`,
   );
-  const rules = pathToFileURL(path.resolve("tools/check-deps/build-rules.mjs")).href;
+  const rules = pathToFileURL(
+    path.resolve("tools/check-deps/build-rules.mjs"),
+  ).href;
   write(
     root,
     "dependency-cruiser.config.mjs",
@@ -68,13 +70,21 @@ function seedTypeOnly(root: string) {
     "packages/kernel/src/result.ts",
     "export type Result<T, E> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: E };\n",
   );
-  write(root, "packages/kernel/src/index.ts", 'export type { Result } from "./result.ts";\n');
+  write(
+    root,
+    "packages/kernel/src/index.ts",
+    'export type { Result } from "./result.ts";\n',
+  );
   write(
     root,
     "packages/contracts/src/result.ts",
     'export type { Result } from "../../kernel/src/result.ts";\n',
   );
-  write(root, "packages/contracts/src/from-package.ts", 'export type { Result } from "@oi/kernel";\n');
+  write(
+    root,
+    "packages/contracts/src/from-package.ts",
+    'export type { Result } from "@oi/kernel";\n',
+  );
   write(
     root,
     "packages/contracts/src/import-type.ts",
@@ -107,7 +117,9 @@ it("allows a type-only kernel re-export and rejects a value import", () => {
     expect(rejected.output).toContain("value-relative.ts");
     expect(rejected.output).toContain("value-package.ts");
     expect(rejected.output).toContain("→ packages/kernel/src/index.ts");
-    expect(rejected.output).not.toContain(path.resolve("packages/kernel/src/index.ts"));
+    expect(rejected.output).not.toContain(
+      path.resolve("packages/kernel/src/index.ts"),
+    );
     expect(rejected.output).toContain(remediationBlock("G5"));
   } finally {
     rmSync(root, { recursive: true, force: true });

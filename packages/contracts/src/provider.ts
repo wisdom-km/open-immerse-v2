@@ -32,11 +32,18 @@ export type ProviderDescriptor = Readonly<{
 
 export type ChatPart =
   | Readonly<{ type: "text"; text: string }>
-  | Readonly<{ type: "image"; assetId: AssetId; mediaType: "image/png" | "image/jpeg" }>;
+  | Readonly<{
+      type: "image";
+      assetId: AssetId;
+      mediaType: "image/png" | "image/jpeg";
+    }>;
 
 export type ChatRequest = Readonly<{
   messages: ReadonlyArray<
-    Readonly<{ role: "system" | "user" | "assistant"; parts: readonly ChatPart[] }>
+    Readonly<{
+      role: "system" | "user" | "assistant";
+      parts: readonly ChatPart[];
+    }>
   >;
   maxOutputTokens: number;
   stream: boolean;
@@ -75,5 +82,10 @@ export type ProviderFailure = Readonly<{
 export interface ProviderAuthorizer {
   authorize(
     req: Readonly<{ vendorId: string; host: string; slot: string }>,
-  ): Promise<Result<Readonly<Record<string, string>>, "host_not_allowed" | "secret_missing">>;
+  ): Promise<
+    Result<
+      Readonly<Record<string, string>>,
+      "host_not_allowed" | "secret_missing"
+    >
+  >;
 }

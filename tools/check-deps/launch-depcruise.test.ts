@@ -18,7 +18,12 @@ interface SpawnCall {
 }
 
 function depcruiseBinRelative(pkg: unknown): string {
-  if (pkg === null || typeof pkg !== "object" || Array.isArray(pkg) || !("bin" in pkg)) {
+  if (
+    pkg === null ||
+    typeof pkg !== "object" ||
+    Array.isArray(pkg) ||
+    !("bin" in pkg)
+  ) {
     throw new Error("dependency-cruiser bin.depcruise was not found");
   }
   const binField = pkg.bin;

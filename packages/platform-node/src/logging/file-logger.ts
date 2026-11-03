@@ -9,8 +9,15 @@ import {
   type Logger,
 } from "@oi/kernel";
 
-import { clearDebugDirectory, enforceDebugRetention } from "./debug-retention.js";
-import { diagnosticFileName, logDirectories, type LogDirectories } from "./log-paths.js";
+import {
+  clearDebugDirectory,
+  enforceDebugRetention,
+} from "./debug-retention.js";
+import {
+  diagnosticFileName,
+  logDirectories,
+  type LogDirectories,
+} from "./log-paths.js";
 import { guardDiagRecord } from "./value-guard.js";
 
 export type FileLoggerOptions = {
@@ -18,7 +25,9 @@ export type FileLoggerOptions = {
   readonly clock: Clock;
 };
 
-export function createFileLogger(options: FileLoggerOptions): Logger<DiagEvent> {
+export function createFileLogger(
+  options: FileLoggerOptions,
+): Logger<DiagEvent> {
   const directories = logDirectories(options.appDataDirectory);
   const clock = options.clock;
   let debugEnabled = DEBUG_MODE_DEFAULT;
@@ -57,7 +66,11 @@ function writeRecord(
   enforceDebugRetention(directories.debug, nowMs);
 }
 
-function applyDebugMode(debugDirectory: string, clock: Clock, change: DebugModeChange): void {
+function applyDebugMode(
+  debugDirectory: string,
+  clock: Clock,
+  change: DebugModeChange,
+): void {
   if (change.enabled) {
     enforceDebugRetention(debugDirectory, clock.nowMs());
     return;

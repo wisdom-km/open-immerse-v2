@@ -6,20 +6,32 @@ import type {
   EgressDestination,
   WithdrawEgressConsentError,
 } from "../src/egress.js";
-import type { SettingsEgressChannel, SettingsEgressCommands, SettingsEgressEventPayload } from "../src/ipc/settings.js";
+import type {
+  SettingsEgressChannel,
+  SettingsEgressCommands,
+  SettingsEgressEventPayload,
+} from "../src/ipc/settings.js";
 import type { Result } from "../src/result.js";
 
 it("returns Result from each settings egress command", () => {
-  expectTypeOf<SettingsEgressCommands["answerEgressConsent"]>().returns.toEqualTypeOf<
+  expectTypeOf<
+    SettingsEgressCommands["answerEgressConsent"]
+  >().returns.toEqualTypeOf<
     Promise<Result<Readonly<{ vendorId: string }>, AnswerEgressConsentError>>
   >();
-  expectTypeOf<SettingsEgressCommands["withdrawEgressConsent"]>().returns.toEqualTypeOf<
+  expectTypeOf<
+    SettingsEgressCommands["withdrawEgressConsent"]
+  >().returns.toEqualTypeOf<
     Promise<Result<Readonly<{ vendorId: string }>, WithdrawEgressConsentError>>
   >();
-  expectTypeOf<SettingsEgressCommands["setEgressPromptEnabled"]>().returns.toEqualTypeOf<
+  expectTypeOf<
+    SettingsEgressCommands["setEgressPromptEnabled"]
+  >().returns.toEqualTypeOf<
     Promise<Result<Readonly<{ enabled: boolean }>, never>>
   >();
-  expectTypeOf<SettingsEgressCommands["listEgressDestinations"]>().returns.toEqualTypeOf<
+  expectTypeOf<
+    SettingsEgressCommands["listEgressDestinations"]
+  >().returns.toEqualTypeOf<
     Promise<Result<readonly EgressDestination[], never>>
   >();
 });

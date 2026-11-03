@@ -1,0 +1,8 @@
+# 必需检查的范围只限 *.ts *.tsx *.mjs *.js *.cjs。
+# Markdown 归 N-10。工作流归 N-02，不在这里改 .github。
+.github
+**/*.md
+**/*.json
+**/*.yml
+**/*.yaml
+tools/gate-fixtures

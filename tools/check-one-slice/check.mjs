@@ -55,7 +55,9 @@ function rulesViolation(files) {
   const textLayer = files.some((file) =>
     file.startsWith("packages/features/parsing/src/domain/text-layer/"),
   );
-  const fixtures = files.some((file) => file.startsWith("fixtures/parsing-rules/"));
+  const fixtures = files.some((file) =>
+    file.startsWith("fixtures/parsing-rules/"),
+  );
   const worker = files.some((file) => startsWithAny(file, workerRules));
   const touched = textLayer || fixtures || worker;
   if (!touched) {

@@ -75,7 +75,9 @@ it("AC-101 writes no debug file when debug mode was never enabled", () => {
   expectTypeOf<ReturnType<(typeof logger)["log"]>>().toBeVoid();
   expect(debugFiles(root)).toEqual([]);
   expect(existsSync(path.join(root, "debug"))).toBe(false);
-  expect(readdirSync(path.join(root, "diagnostics"))).toEqual(["2026-11-03.jsonl"]);
+  expect(readdirSync(path.join(root, "diagnostics"))).toEqual([
+    "2026-11-03.jsonl",
+  ]);
 });
 
 it("AC-101 writes a debug line when debug mode is enabled", () => {
@@ -84,7 +86,9 @@ it("AC-101 writes a debug line when debug mode is enabled", () => {
   logger.log(pipeline());
   expect(debugFiles(root)).toEqual(["2026-11-03.jsonl"]);
   const repoDiagnostics = path.resolve("packages/features/diagnostics");
-  expect(path.resolve(root, "diagnostics").startsWith(repoDiagnostics)).toBe(false);
+  expect(path.resolve(root, "diagnostics").startsWith(repoDiagnostics)).toBe(
+    false,
+  );
   expect(path.resolve(root, "debug").startsWith(repoDiagnostics)).toBe(false);
 });
 
@@ -96,7 +100,10 @@ it("AC-101 drops debug files older than 7 days when a later line is written", ()
   clock.advance(8 * DAY);
   logger.log(pipeline({ run_id: "run-2" }));
   expect(debugFiles(root)).toEqual(["2026-11-09.jsonl"]);
-  const text = readFileSync(path.join(root, "debug", "2026-11-09.jsonl"), "utf8");
+  const text = readFileSync(
+    path.join(root, "debug", "2026-11-09.jsonl"),
+    "utf8",
+  );
   expect(text).toContain("run-2");
 });
 
@@ -135,12 +142,19 @@ it("AC-101 keeps recent debug files when debug mode turns off with deleteFiles f
   const { root, logger } = openLogger(Date.parse("2026-11-03T00:00:00.000Z"));
   logger.setDebugMode({ enabled: true });
   logger.log(pipeline());
-  const before = readFileSync(path.join(root, "debug", "2026-11-03.jsonl"), "utf8");
+  const before = readFileSync(
+    path.join(root, "debug", "2026-11-03.jsonl"),
+    "utf8",
+  );
   logger.setDebugMode({ enabled: false, deleteFiles: false });
   logger.log(pipeline({ run_id: "run-2" }));
   expect(debugFiles(root)).toEqual(["2026-11-03.jsonl"]);
-  expect(readFileSync(path.join(root, "debug", "2026-11-03.jsonl"), "utf8")).toBe(before);
-  expect(readFileSync(path.join(root, "diagnostics", "2026-11-03.jsonl"), "utf8")).toContain("run-2");
+  expect(
+    readFileSync(path.join(root, "debug", "2026-11-03.jsonl"), "utf8"),
+  ).toBe(before);
+  expect(
+    readFileSync(path.join(root, "diagnostics", "2026-11-03.jsonl"), "utf8"),
+  ).toContain("run-2");
 });
 
 it("AC-101 removes expired debug files when the logger is constructed", () => {
@@ -170,9 +184,12 @@ it("AC-101 writes a redacted debug line when a charset-valid key is logged", () 
       error_class: `fixture-paper-body ${"x".repeat(80)}`,
     }),
   );
-  const text = readFileSync(path.join(root, "debug", "2026-11-03.jsonl"), "utf8");
+  const text = readFileSync(
+    path.join(root, "debug", "2026-11-03.jsonl"),
+    "utf8",
+  );
   expect(text).toContain(REDACTED);
-  expect(text).toContain("\"status\":\"done\"");
+  expect(text).toContain('"status":"done"');
   expect(text).not.toContain("sk-oitest_abc");
   expect(text).not.toContain("oitest_fixturekey");
   expect(text).not.toContain("fixture-paper-body");
@@ -185,8 +202,14 @@ it("AC-101 writes a redacted line when a provider token or long hex is logged", 
   const hex = "0123456789".repeat(4);
   const accessKey = ["AKIA", "OITEST", "FAKE", "123456"].join("");
   logger.log(pipeline({ step: github, route: hex, run_id: accessKey }));
-  const product = readFileSync(path.join(root, "diagnostics", "2026-11-03.jsonl"), "utf8");
-  const debug = readFileSync(path.join(root, "debug", "2026-11-03.jsonl"), "utf8");
+  const product = readFileSync(
+    path.join(root, "diagnostics", "2026-11-03.jsonl"),
+    "utf8",
+  );
+  const debug = readFileSync(
+    path.join(root, "debug", "2026-11-03.jsonl"),
+    "utf8",
+  );
   for (const line of [product, debug]) {
     expect(line).toContain(REDACTED);
     expect(line).not.toContain(github);
@@ -198,14 +221,22 @@ it("AC-101 writes a redacted line when a provider token or long hex is logged", 
 it("AC-101 keeps api-key-missing when that error class is logged", () => {
   const { root, logger } = openLogger(Date.parse("2026-11-03T00:00:00.000Z"));
   logger.log(pipeline({ error_class: "api-key-missing" }));
-  const text = readFileSync(path.join(root, "diagnostics", "2026-11-03.jsonl"), "utf8");
+  const text = readFileSync(
+    path.join(root, "diagnostics", "2026-11-03.jsonl"),
+    "utf8",
+  );
   expect(text).toContain("api-key-missing");
 });
 
 it("AC-101 writes nothing when the record fails readDiagEvent", () => {
   const { root, logger } = openLogger(Date.parse("2026-11-03T00:00:00.000Z"));
   logger.setDebugMode({ enabled: true });
-  logger.log({ ts: "", level: "info", feature: "pipeline", event: "egress.ask" });
+  logger.log({
+    ts: "",
+    level: "info",
+    feature: "pipeline",
+    event: "egress.ask",
+  });
   expect(existsSync(path.join(root, "diagnostics"))).toBe(false);
   expect(existsSync(path.join(root, "debug"))).toBe(false);
 });
@@ -249,7 +280,10 @@ it("AC-101 allows only kernel and contracts when the package manifest is read", 
     optionalDependencies?: Record<string, string>;
     peerDependencies?: Record<string, string>;
   };
-  expect(Object.keys(manifest.dependencies ?? {}).sort()).toEqual(["@oi/contracts", "@oi/kernel"]);
+  expect(Object.keys(manifest.dependencies ?? {}).sort()).toEqual([
+    "@oi/contracts",
+    "@oi/kernel",
+  ]);
   expect(manifest.optionalDependencies).toBeUndefined();
   expect(manifest.peerDependencies).toBeUndefined();
 });

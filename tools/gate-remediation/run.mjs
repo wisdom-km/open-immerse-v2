@@ -46,7 +46,11 @@ function main() {
     process.exit(2);
   }
   const unknown = catalogError(id);
-  const result = runChild(command, process.argv.slice(separator + 2), option(head, "--cwd"));
+  const result = runChild(
+    command,
+    process.argv.slice(separator + 2),
+    option(head, "--cwd"),
+  );
   process.stdout.write(result.stdout ?? "");
   process.stderr.write(result.stderr ?? "");
   if (unknown !== undefined) {

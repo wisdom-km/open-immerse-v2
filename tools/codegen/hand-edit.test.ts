@@ -1,5 +1,11 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import type { Dirent } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -44,7 +50,10 @@ function snapshot(dir: string): readonly (readonly [string, string])[] {
 }
 
 function prepare(root: string): string {
-  writeFileSync(path.join(root, "manifest.json"), JSON.stringify({ generators: [] }));
+  writeFileSync(
+    path.join(root, "manifest.json"),
+    JSON.stringify({ generators: [] }),
+  );
   const left = path.join(root, "left");
   const right = path.join(root, "right");
   generate(root, left);
@@ -69,7 +78,11 @@ function assertNoSchemaLoaderInContracts(): void {
   }
 }
 
-function visitContractsEntry(pending: string[], current: string, entry: Dirent): void {
+function visitContractsEntry(
+  pending: string[],
+  current: string,
+  entry: Dirent,
+): void {
   if (entry.isDirectory()) {
     if (entry.name !== "node_modules") {
       pending.push(path.join(current, entry.name));

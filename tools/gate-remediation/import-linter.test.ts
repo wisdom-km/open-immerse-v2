@@ -6,7 +6,9 @@ import { expect, it } from "vitest";
 import { commandOutput, remediationBlock } from "./block.js";
 
 it("prints G6 remediation when import-linter rejects pymupdf", () => {
-  const target = path.resolve("workers/parser/oi_worker/preprocess/_gate_pymupdf.py");
+  const target = path.resolve(
+    "workers/parser/oi_worker/preprocess/_gate_pymupdf.py",
+  );
   writeFileSync(target, "import pymupdf\n");
   try {
     const result = spawnSync(

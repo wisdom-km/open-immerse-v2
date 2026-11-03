@@ -95,25 +95,30 @@ export default tseslint.config(
           paths: [
             {
               name: "katex",
-              message: "G2: katex only in ui-kit math and formula katex-renderer",
+              message:
+                "G2: katex only in ui-kit math and formula katex-renderer",
             },
             {
               name: "markdown-it",
-              message: "G2: markdown parser only in features/markdown/src/domain/parse",
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
             },
             {
               name: "micromark",
-              message: "G2: markdown parser only in features/markdown/src/domain/parse",
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
             },
             {
               name: "mdast",
-              message: "G2: markdown parser only in features/markdown/src/domain/parse",
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
             },
           ],
           patterns: [
             {
               group: ["katex/*"],
-              message: "G2: katex only in ui-kit math and formula katex-renderer",
+              message:
+                "G2: katex only in ui-kit math and formula katex-renderer",
             },
           ],
         },
@@ -132,15 +137,18 @@ export default tseslint.config(
           paths: [
             {
               name: "markdown-it",
-              message: "G2: markdown parser only in features/markdown/src/domain/parse",
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
             },
             {
               name: "micromark",
-              message: "G2: markdown parser only in features/markdown/src/domain/parse",
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
             },
             {
               name: "mdast",
-              message: "G2: markdown parser only in features/markdown/src/domain/parse",
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
             },
           ],
         },
@@ -148,7 +156,9 @@ export default tseslint.config(
     },
   },
   {
-    files: ["packages/features/markdown/src/domain/parse/**/*.{js,mjs,cjs,ts,tsx}"],
+    files: [
+      "packages/features/markdown/src/domain/parse/**/*.{js,mjs,cjs,ts,tsx}",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -156,13 +166,15 @@ export default tseslint.config(
           paths: [
             {
               name: "katex",
-              message: "G2: katex only in ui-kit math and formula katex-renderer",
+              message:
+                "G2: katex only in ui-kit math and formula katex-renderer",
             },
           ],
           patterns: [
             {
               group: ["katex/*"],
-              message: "G2: katex only in ui-kit math and formula katex-renderer",
+              message:
+                "G2: katex only in ui-kit math and formula katex-renderer",
             },
           ],
         },
@@ -178,19 +190,23 @@ export default tseslint.config(
           paths: [
             {
               name: "katex",
-              message: "G2: katex only in ui-kit math and formula katex-renderer",
+              message:
+                "G2: katex only in ui-kit math and formula katex-renderer",
             },
             {
               name: "markdown-it",
-              message: "G2: markdown parser only in features/markdown/src/domain/parse",
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
             },
             {
               name: "micromark",
-              message: "G2: markdown parser only in features/markdown/src/domain/parse",
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
             },
             {
               name: "mdast",
-              message: "G2: markdown parser only in features/markdown/src/domain/parse",
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
             },
             {
               name: "node:fs",
@@ -223,7 +239,8 @@ export default tseslint.config(
           patterns: [
             {
               group: ["katex/*"],
-              message: "G2: katex only in ui-kit math and formula katex-renderer",
+              message:
+                "G2: katex only in ui-kit math and formula katex-renderer",
             },
           ],
         },

@@ -21,13 +21,17 @@ it("requires deleteFiles when debug mode is turned off", () => {
   type Off = Extract<DebugModeChange, { enabled: false }>;
   type On = Extract<DebugModeChange, { enabled: true }>;
   expectTypeOf<keyof Off>().toEqualTypeOf<"enabled" | "deleteFiles">();
-  expectTypeOf<undefined extends Off["deleteFiles"] ? true : false>().toEqualTypeOf<false>();
+  expectTypeOf<
+    undefined extends Off["deleteFiles"] ? true : false
+  >().toEqualTypeOf<false>();
   expectTypeOf<keyof On>().toEqualTypeOf<"enabled">();
   const turningOff: Extract<DebugModeChange, { enabled: false }> = {
     enabled: false,
     deleteFiles: true,
   };
-  const turningOn: Extract<DebugModeChange, { enabled: true }> = { enabled: true };
+  const turningOn: Extract<DebugModeChange, { enabled: true }> = {
+    enabled: true,
+  };
   expect(turningOff.deleteFiles).toBe(true);
   expect(turningOn.enabled).toBe(true);
 });

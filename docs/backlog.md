@@ -177,8 +177,8 @@ P0 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）�
 | E-P1-8 | `docs/acceptance/` 结果格式 | 未处理。M0 开工时 |
 | E-P1-9 | 提示词目录与 Jev 模型卡 | 未处理。M4 / M6a |
 | E-P1-10 | Dependabot 与 gitleaks | gitleaks 8.30.1 已接入 CI（G9）。Dependabot 仍未加 |
-| E-P2-1–E-P2-10 | 并发取消、quarantine 目录、发版清单、崩溃只写本机、红队、`.env.example`、SECURITY.md、不用通用功能开关、Prettier、合入后是否删分支 | 未处理。按原报告的里程碑。E-P2-10 由管理员决定，Agent 不改仓库设置 |
-| M1-DEFER-G1 | G1 Prettier | 未处理。Wisdom 2026-10-31 14:12：M1 退出明确延后，仍按 E-P2。Python 格式继续用 ruff format |
+| E-P2-1–E-P2-10 | 并发取消、quarantine 目录、发版清单、崩溃只写本机、红队、`.env.example`、SECURITY.md、不用通用功能开关、Prettier、合入后是否删分支 | 其中 Prettier（E-P2-9）已随 M1-DEFER-G1 接上。其余未处理，按原报告的里程碑。E-P2-10 由管理员决定，Agent 不改仓库设置 |
+| M1-DEFER-G1 | G1 Prettier | 已处理（PR #110）。`pnpm check` 的 `check:format` 跑 Prettier `--check`，只覆盖 `*.ts`、`*.tsx`、`*.mjs`、`*.js`、`*.cjs`。Python 格式仍是 ruff format。不格式化 Markdown 与 `.github/**` |
 | M1-DEFER-G3 | G3 `tsc -b` | 未处理。Wisdom 2026-10-31 14:12：第一个包使用 project references 之前保持 `tsc --noEmit` |
 | M1-DEFER-G5 | G5 `ui-events-declared` | 未处理。Wisdom 2026-10-31 14:12：规格先定义怎样从代码认出发布和订阅，再写这条检查 |
 
@@ -246,7 +246,7 @@ Wisdom 2026-11-02 16:38 UTC+8。原文与决定正文在 PRD §9 和差异清单
 
 - 面壁 API 是已经写成面壁的能力的主路线。本地部署是第二路线：M0/M1 只留接口和 stub，不下载模型，不设本地推理门禁。标为推迟，不删除。
 - M0 不再测本机模型。要测的是面壁 API 单篇耗时、单篇费用、失败率与重试，以及客户端内存（不含本地模型）。Key 不在时标「未核实」。
-- N-22：业务切片的门禁前提由已经在 CI 的 G6、pyright、gitleaks 满足。G1、G3、G5 仍是 M1 交付（Issue #34，本节 M1-DEFER-G1、M1-DEFER-G3、M1-DEFER-G5），不挡住业务切片。
+- N-22：业务切片的门禁前提由已经在 CI 的 G6、pyright、gitleaks 满足。G1 Prettier 已进入 `pnpm check`（本节 M1-DEFER-G1）。G3、G5 仍是 M1 交付（Issue #34，本节 M1-DEFER-G3、M1-DEFER-G5），不挡住业务切片。
 - 同日 17:03：面壁 Jev 的托管 API 与本地部署在契约里都是一等。本地预留：`jev.route` 选 `local` 时可以完全不调用面壁 API。正文在 PRD §9 与差异清单 §6.15，验收 AC-103。不另写一套规则。PP-DocLayout 与其余本机推理仍是上面的第二路线。
 - 同日 17:21：原文「Jev API 客户端提前到 M1，M6a 接进完整流程」。最小托管 API 客户端是 M1 交付，M0 测量用它；M6a 接入完整流程。本地仍是 stub。正文在 PRD §9 与差异清单 §6.15。不另写一套规则。
 

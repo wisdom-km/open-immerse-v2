@@ -15,11 +15,15 @@ export interface SettingsEgressCommands {
   ): Promise<Result<Readonly<{ vendorId: string }>, AnswerEgressConsentError>>;
   withdrawEgressConsent(
     input: WithdrawEgressConsentInput,
-  ): Promise<Result<Readonly<{ vendorId: string }>, WithdrawEgressConsentError>>;
+  ): Promise<
+    Result<Readonly<{ vendorId: string }>, WithdrawEgressConsentError>
+  >;
   setEgressPromptEnabled(
     input: SetEgressPromptEnabledInput,
   ): Promise<Result<Readonly<{ enabled: boolean }>, never>>;
-  listEgressDestinations(): Promise<Result<readonly EgressDestination[], never>>;
+  listEgressDestinations(): Promise<
+    Result<readonly EgressDestination[], never>
+  >;
 }
 
 export type SettingsEgressChannel =
