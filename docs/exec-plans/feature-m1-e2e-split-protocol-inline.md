@@ -31,8 +31,8 @@ Forge 审查 Draft #78 的 `56ba9db` 后要求改计划再批准。本修订只�
 | 4 | 加上四条权限 query 用例，都断言 `denied`。名字是 `returns denied when the renderer queries <permission>`。权限名见下一节。TypeError 不跳过 | `8907752` 先用短标题。Forge 审查后改为带 `returns` 的标题，见本文件权限表 | 同上 |
 | 5 | 提交一条对照 e2e：`grants notifications when the check handler is overridden to allow`。只在该用例的 main 进程里覆盖 check handler，断言 `state` 是 `granted` 或 `prompt`。不改 `src/` | `8907752` 先断言不是 `denied`。Forge 审查后收成 `granted` 或 `prompt`。没有改 `src/` | 同上 |
 | 6 | 实现提交里把 `docs/backlog.md` 第 95–96 行标成由本 PR 处理。不新开 Issue。405/404 的 Issue 由 Forge 开 | backlog 第 95–96 行标为 PR #78。#80 已开，本计划引用它，不加 backlog 行 | `docs/backlog.md`、本文件 |
-| 7 | Windows CI 绿之后写 `docs/evidence/<PR号>/commands.md`：命令、基线 SHA、tip SHA、通过 / 失败 / 跳过、用例清单、CI 摘录、截图表、与 #77 的交集为空。截图只留在 artifact。artifact 链接与目录名见「截图」 |  |  |
-| 8 | 每个实现 tip 全量只跑一次：`corepack pnpm run check` 与 `corepack pnpm test`。e2e 不在 Linux 上跑 |  |  |
+| 7 | Windows CI 绿之后写 `docs/evidence/<PR号>/commands.md`：命令、基线 SHA、tip SHA、通过 / 失败 / 跳过、用例清单、CI 摘录、截图表、与 #77 的交集为空。截图只留在 artifact。artifact 链接与目录名见「截图」 | `docs/evidence/78/commands.md`。表对应 `f7aebc5` 的 PR run `41575859404`，24 通过、0 失败、0 跳过。其后只改文档 | 该文件 |
+| 8 | 每个实现 tip 全量只跑一次：`corepack pnpm run check` 与 `corepack pnpm test`。e2e 不在 Linux 上跑 | `f7aebc5` 上 `pnpm test` 114 通过、2 跳过；`pnpm run check` 退出码 0。e2e 只看 Windows CI | `docs/evidence/78/commands.md` |
 
 ## 文件清单与预计行数
 
@@ -143,8 +143,7 @@ await app.evaluate(({ session }) => {
 
 ## 证据链接
 
-- 实现完成前：无。本提交不跑 lint、typecheck、单测、e2e。
-- 实现之后：`docs/evidence/<PR号>/commands.md`。其中写：Electron e2e 仅在 Windows CI 运行，Cloud Linux 无法运行，本地未跑 e2e。
+- `docs/evidence/78/commands.md`。Electron e2e 仅在 Windows CI 运行，Cloud Linux 无法运行，本地未跑 e2e。截图在 run `41575859404` 的 artifact `13202629209`。证据对应 `f7aebc5`，其后只改文档。
 
 ## 何时停
 
