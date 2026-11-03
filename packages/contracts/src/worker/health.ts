@@ -2,11 +2,12 @@ import { Type, type Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
 import { versionText } from "./version-text.js";
+import { workerVersionText } from "./worker-version.js";
 
 export const healthResponseSchema = Type.Object(
   {
     protocol: versionText,
-    workerVersion: Type.String({ minLength: 1, pattern: "^\\S+$" }),
+    workerVersion: workerVersionText,
     mode: Type.Union([Type.Literal("local"), Type.Literal("server")]),
   },
   {

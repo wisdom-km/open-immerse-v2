@@ -2,9 +2,19 @@ export type {
   AssetId,
   BlockId,
   DocumentId,
+  IdInvalid,
+  IdKind,
   JobId,
   PageRevisionId,
   ReservationId,
+} from "./ids.js";
+export {
+  parseAssetId,
+  parseBlockId,
+  parseDocumentId,
+  parseJobId,
+  parsePageRevisionId,
+  parseReservationId,
 } from "./ids.js";
 export type { Result } from "./result.js";
 export {
@@ -62,6 +72,7 @@ export type {
   SettingsEgressEventPayload,
 } from "./ipc/settings.js";
 export { healthResponseSchema, readHealthResponse } from "./worker/health.js";
+export { matchesWorkerVersion, workerVersionText } from "./worker/worker-version.js";
 export type { HealthResponse } from "./worker/health.js";
 export { protocolHeaderSchema, readProtocolHeader } from "./worker/protocol-header.js";
 export type { ProtocolHeader } from "./worker/protocol-header.js";
