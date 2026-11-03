@@ -1,6 +1,6 @@
 # 待办与架构评审处理状态
 
-状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-03（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。同日 Electron 外壳延期三条：#66、#67、#68。2026-11-03 补上 #76、#80。同日 10:40 Wisdom 批准 platform-node → contracts 值导入，记在 §12，ARCH §5.1 补 `PN --> C`。同日 PR #85 把 `score_best` / `score_best_batch` 记入 §4，Issue #86。同日核对 #80–#87：#80、#86 已各有一行。#81、#82、#84 已关闭，不加行。补 #83、#87。
+状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-04（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。同日 Electron 外壳延期三条：#66、#67、#68。2026-11-03 补上 #76、#80。同日 10:40 Wisdom 批准 platform-node → contracts 值导入，记在 §12，ARCH §5.1 补 `PN --> C`。同日 PR #85 把 `score_best` / `score_best_batch` 记入 §4，Issue #86。同日核对 #80–#87：#80、#86 已各有一行。#81、#82、#84 已关闭，不加行。补 #83、#87。2026-11-04 补 #102 连着推 main 时 pending 被顶替、#106 缺 `bin.depcruise` 与 macOS 不跑 `check:deps`、#109 空 ID、#111，以及 `desktop-e2e-windows` 仍不是必需检查。G3、G5 已在 §7，不另加行。§10 的暂停句因 M1 已开工改记状态。同日按 Anvil 把 #33 的两条健康检查改记为已是 required（本代理再查分支保护仍是 403，不改设置）。
 用途：逐条记录[架构评审](./reviews/2026-10-30-architecture-review.md)的每个发现由哪个规格 PR 处理、落在规格哪里，以及还没处理、留给哪个里程碑的事。决定的理由见[差异清单](./v2-gap-and-changes.md) §6.6–§6.13；本文只记状态，不重述规格。§5 记 Jev 开关审查（2026-10-30 22:06）各项的处理状态。§8 收录还要等 M0 的项，也记下已经拍板的项（2026-10-31 01:08 建表；同日 D-D、D-E 与 W-4 的过渡默认已决定）。未决的行不代选。
 
 三个规格 PR：
@@ -81,10 +81,10 @@
 | 「明确不确定证据」作为补救入口的证据清单与验收 | 未定义，定义前不作为入口；需要时另开规格 PR | ARCH §7.1「低分再补」；差异清单 §6.9 第 8 条 |
 | 协议代码生成与其后的 worker 切片 | M1 前提。Forge 排序（2026-11-02，不是业主决定）：契约（#55）→ 代码生成与 worker 健康检查（#56）→ FastAPI、`__main__` 与 Windows 健康检查（#58）。代码生成必须先于任何使用协议模型的 worker 切片。`run.mjs` 生成 `workers/parser/oi_worker/protocol/`，datamodel-code-generator 钉 0.87.0（`tools/codegen/pin.json`） | PRD §8 M1；ARCH §10.1、§10.2、§10.4、§13 G7、F-11 |
 | 把 `LaunchBearerMiddleware` 从 `BaseHTTPMiddleware` 换成纯 ASGI 中间件 | SSE 之前。`BaseHTTPMiddleware` 会缓冲请求体，不适合 `GET /v1/jobs/{id}/events` | ARCH §10.2；#58、#60 |
-| 接管前收到 SIGINT / SIGTERM 时 worker 退出码非 0（130 带 `KeyboardInterrupt` 回溯，SIGTERM 为 143）。退出码 0 依赖 uvicorn 0.38.0 恢复信号处理再重新抛出 | M3（supervisor 实现 PR）一起改。桌面端不要把 130 / 143 当成崩溃 | #59；ARCH §10.1、§10.5 |
-| PR #55 / #56 审查 P2：`ids` 构造校验、迁移测试不完全封闭、codegen 按 basename 命名、`read*` 运行时校验的归属、health 响应体改成判别联合、`workerVersion` 字符集与长度、主版本不符时作业数为 0 | M1。前几条随下一个触碰 codegen 或 contracts 的 PR；作业数为 0 随 jobs API | #61 |
+| 接管前收到 SIGINT / SIGTERM 时 worker 退出码非 0（130 带 `KeyboardInterrupt` 回溯，SIGTERM 为 143）。退出码 0 依赖 uvicorn 0.38.0 恢复信号处理再重新抛出。测试里等 `oi-worker-before-hold` 再发 SIGINT 已由 #107 改完，退出码没改 | M3（supervisor 实现 PR）一起改产品行为。桌面端不要把 130 / 143 当成崩溃 | #59；ARCH §10.1、§10.5；#107 |
+| PR #55 / #56 审查 P2 仍开放的两条：`read*` 运行时校验的归属（条目 4）；主版本不符时作业数为 0（条目 7，随 jobs API）。条目 2、3、5 已由 #96 收口。条目 1 与 6 已由 #109 收口：六个 `parse*` 对字符串打品牌，空字符串仍合法；`workerVersion` 的 pattern / maxLength 只从 schema 读。空 ID、空白 ID 与没有 maxLength 见下面的 #109 行 | 条目 4 仍是 M1。条目 7 随 jobs API | #61；#96；#109 |
 | macOS 上的 worker 健康检查；`server.py`、`loopback.py`、`listen_port.py` 是否从 `api/` 移到 `oi_worker/runtime/` | 健康检查 job 与必需检查已在 main@d411710 完成。三个文件留在 `api/`，不搬。理由：jobs 尚未落地（`oi_worker/jobs/__init__.py` 只有分层占位，没有 jobs API）；ARCHITECTURE §10.3 把 HTTP 适配、端口和退出放在 `api/`，`runtime/` 是模型清单、设备探测与内存限制。以后 jobs PR 若仍要搬，先改 §10.3 和 import-linter，不在 #62 做。Forge 2026-11-03 按 #62 验收（注明不做理由）批准，待 Wisdom 合入确认 | #62；ARCH §10.3 |
-| 把 `CI / worker-health-windows` 与 `CI / worker-health-macos` 设为必需检查 | M1。仓库管理员做。Agent 不改分支保护（N-02） | #33 |
+| 把 `CI / worker-health-windows` 与 `CI / worker-health-macos` 设为必需检查 | 以 2026-11-04 Anvil 查到的为准：已是 required。2026-11-04 本代理再查 `GET repos/wisdom-km/open-immerse-v2/branches/main/protection` 仍是 403。不改任何设置（N-02）。Issue #33 仍 OPEN，正文要的是 `node`、`python-worker` 与 `MODELBEST_API_KEY` | #33 |
 | Linux 与 macOS 的 Playwright Electron 冒烟。外壳 PR 只在 `windows-latest` 跑。不加 xvfb，不改 `.cursor/install.sh` | 外壳开窗之后。不并进 #30（那是 M2 改 `.cursor/*`） | #66；PRD AC-67 ①；ARCH §9、§15.2 |
 | 由契约生成 preload，不手写 IPC。外壳 PR 只暴露空的 `window.oi` | 另立 PR。现有 codegen 只生成 worker 协议 | #67；ARCH §9；G7 |
 | 打包时按 ARCHITECTURE §9 设置 Electron Fuses。`EnableEmbeddedAsarIntegrityValidation` 各平台是否支持仍未核实 | M8。验收 AC-67 ③ | #68；ARCH §9 |
@@ -99,6 +99,11 @@
 | `score_best` 与 `score_best_batch` 的请求形态。M1 客户端只实现 `mode: "score"`，这两种不算本 PR 漏测 | M6a | #86；PR #85 Forge 审查（2026-11-03）；ARCH §7.4 |
 | 把「Cloud Linux 无法运行 Electron e2e」改成两件事实：Linux 上 `xvfb-run` 能跑；CI 仍只跑 `desktop-e2e-windows`。不改 CI，不改 `.cursor/*` | 本 PR 处理 | #83；来源 PR #78 Anvil。Linux 与 macOS 的 CI 冒烟仍是 #66 |
 | `workers/parser/tests/test_import_gates.py` 与 `test_ruff_gates.py` 用裸 `uv` 起子进程。Windows 的 PATH 没有 `uv` 时 WinError 2 | M1 | #87；来源 PR #85 Anvil，tip `3eca4fc`。两文件不在该 PR 的 diff 里 |
+| 连着推 `main` 时，进行中的那次不取消；已经 `pending` 的上一次会被更新的一次顶掉。`cancel-in-progress` 在 `refs/heads/main` 的 push 上为假。工作流没有 `queue` 键，GitHub 默认 `queue: single`（同组最多一个 pending）。要保留每一次 main 运行必须改工作流 | 未决。Agent 不改 CI（N-02） | #102 |
+| `bin.depcruise` 缺失时 `tools/check-deps/launch-depcruise.mjs` 的 `depcruiseEntry()` 抛出 `dependency-cruiser bin.depcruise was not found`（找不到包，或 `bin.depcruise` 不是非空字符串）。单测只覆盖装好包之后的启动参数，没有缺 bin 的用例。`check:deps` 与 `tools/check-deps` 的 Vitest 只在 `worker-health-windows` 上跑（#108，`matrix.os == windows`），macOS 未跑。Windows 上 `node_modules/.bin/depcruise` 的 ENOENT 已由 #100 / #106 收口，issue #99 已关闭 | 缺 bin 的单测与 macOS 上的 `check:deps` 仍未做。不改 CI（N-02） | #106；#99；#108 |
+| 六个 `parse*` 接受空字符串（`packages/contracts/test/ids.test.ts` 断言 `parseDocumentId("")` 为 ok）。空白字符串同样是 string，`parseId` 只拒绝非字符串，测试没有单独断言空白。`workerVersion` 没有 `maxLength`：64 与 65 个 `a` 都通过；`""` 与带尾随空格的版本串被 pattern `^\S+$` 拒绝。§10.4 只记下 schema 现况 | 未决。不在这里选定字符集或 64 字上限，也不把空 ID 判成非法 | #109；ARCH §10.4 |
+| `check:format` 是否因 Prettier 3 默认读取 `.gitignore` 而忽略产物目录，本仓库还没测。`.prettierignore` 列了 `.github`、Markdown、json、yml、`tools/gate-fixtures`。`.gitignore` 已含 `dist/`、`test-results/`、`coverage/`。新的产物目录（`out/`、`release/`、生成的 `.js`）若两份忽略都没有，`pnpm check` 的 `check:format` 会失败 | M8 打包前核对。低优先级，不挡 M1。建议：`dist/` 下放不合格式的 `.js` 时 `check:format` 仍通过；M8 新目录同时进 `.gitignore` | #111；来源 PR #110 Anvil |
+| `desktop-e2e-windows` 在规格里写明不是分支保护的必需检查。要不要改成必需是 Wisdom / 仓库管理员的决定，本行不是该决定。2026-11-04 用分支保护 API 核对现场名单时返回 403（`repos/wisdom-km/open-immerse-v2/branches/main/protection/required_status_checks`，`Resource not accessible by integration`；GraphQL `branchProtectionRules` 为 FORBIDDEN；rulesets 为空），现场必需名单没有重新核对 | 未决。Agent 不改分支保护（N-02） | #65、#74、#95、#105；`docs/ci-and-environment.md` |
 
 ## 5. Jev 开关审查（2026-10-30 22:06）的处理
 
@@ -179,8 +184,8 @@ P0 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）�
 | E-P1-10 | Dependabot 与 gitleaks | gitleaks 8.30.1 已接入 CI（G9）。Dependabot 仍未加 |
 | E-P2-1–E-P2-10 | 并发取消、quarantine 目录、发版清单、崩溃只写本机、红队、`.env.example`、SECURITY.md、不用通用功能开关、Prettier、合入后是否删分支 | 其中 Prettier（E-P2-9）已随 M1-DEFER-G1 接上。其余未处理，按原报告的里程碑。E-P2-10 由管理员决定，Agent 不改仓库设置 |
 | M1-DEFER-G1 | G1 Prettier | 已处理（PR #110）。`pnpm check` 的 `check:format` 跑 Prettier `--check`，只覆盖 `*.ts`、`*.tsx`、`*.mjs`、`*.js`、`*.cjs`。Python 格式仍是 ruff format。不格式化 Markdown 与 `.github/**` |
-| M1-DEFER-G3 | G3 `tsc -b` | 未处理。Wisdom 2026-10-31 14:12：第一个包使用 project references 之前保持 `tsc --noEmit` |
-| M1-DEFER-G5 | G5 `ui-events-declared` | 未处理。Wisdom 2026-10-31 14:12：规格先定义怎样从代码认出发布和订阅，再写这条检查 |
+| M1-DEFER-G3 | G3 `tsc -b` | 未处理。Wisdom 2026-10-31 14:12：第一个包使用 project references 之前保持 `tsc --noEmit`。PR #110 明确不做，仍按这个触发条件。Issue #34 仍开放 |
+| M1-DEFER-G5 | G5 `ui-events-declared` | 未处理。Wisdom 2026-10-31 14:12：规格先定义怎样从代码认出发布和订阅，再写这条检查。PR #110 明确不做，仍按这个触发条件。Issue #34 仍开放 |
 
 ## 8. M0 后决定（Wisdom 2026-10-31 01:08）
 
@@ -235,7 +240,7 @@ PR #12 已合入 `main`（`c14e4b6`）。下面三条来自 Forge 对 `e11e54b` 
 
 Wisdom 2026-10-31 13:14。不重开 Q3、Q5、D-D、D-E、W-4。M0 费用、M3 真值表与显示链确认的正文在 PRD §8、§9，ARCHITECTURE §7.13，差异清单 §6.14。这里只记暂停、风险和愿景，不另写一套规则。
 
-- **不挡 M1 的规格 PR 暂停，直到 M1 开工。** 本次是点名要写的。写完之后，不挡住里程碑的规格整理先停。挡住 M1 的缺口（门禁、空跑、契约包）不在这句里，仍按各自的里程碑做。
+- **不挡 M1 的规格 PR 暂停，直到 M1 开工。** 本次是点名要写的。写完之后，不挡住里程碑的规格整理先停。挡住 M1 的缺口（门禁、空跑、契约包）不在这句里，仍按各自的里程碑做。M1 已经开工：契约包 #55、协议代码生成 #56、健康检查 #58、G1 #110 均已合入。「直到 M1 开工」已经满足，不再暂停不挡里程碑的规格整理。挡住里程碑的缺口仍按各自里程碑。原决定不重开 Q3、Q5、D-D、D-E、W-4。
 - **阅读顺序的两侧实现，退出条款只记风险。** 现行规则不变：一套规则集，TS 与 Python 两侧实现，用 `fixtures/parsing-rules/` 对拍；改规则必须两侧和夹具同一个 PR（ARCHITECTURE §7.10，RULES §5 第 19 条）。风险是两侧会长期分叉、对拍成本会上去。不在这里加「可以只留一侧」的出口，也不改 M2、M3 的退出条件。
 - **`architecture-redesign` 的 v1.1 是 v3+ 愿景。** 本仓库没有这份文件。v1 审查引用过 `docs/architecture-redesign.md`（手机、写作、音频在那份旧稿里）。那些能力是 v3 及以后的愿景，与已经决定的 Q3（v2 只做桌面端）、Q5（写作辅助移出 v2 实现，只留架构预留）冲突。不按那份愿景实现，不重开 Q3、Q5。
 - **公式显示链已在文档里。** 核对过：v2 没有矢量重绘。显示链是 LaTeX → 裁图 → 占位框（ARCHITECTURE §7.5；PRD AC-04、AC-89）。v1 审查 §4.7、差异清单 §5、README、AGENTS.md 已经这样写。本次只确认，不改这些句子的含义。落点在差异清单 §6.14。

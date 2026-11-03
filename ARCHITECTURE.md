@@ -362,7 +362,7 @@ packages/features/<name>/
 | `platform-node/src/logging/file-logger.ts` | JSON 行日志落盘。调试日志写在 `<应用数据目录>/debug/`，最多 7 天且总量上限 50 MB（先到先清，§11）。产品诊断日志的天数与体积仍等 M2 实测 |
 | `worker-client/src/client.ts` | 提交、查询、取消、取产物；只对 main 拉起的回环 worker 附 `OI-Provider-Authorization`，其他地址拒绝附带（§10.1） |
 | `worker-client/src/sse.ts` | SSE 订阅与断线续传 |
-| `worker-client/src/supervisor-protocol.ts` | 健康检查、能力协商、协议版本检查（支持的主版本范围常量，§10.4） |
+| `packages/worker-client/src/supervisor-protocol.ts`（计划中） | 健康检查、能力协商、协议版本检查（支持的主版本范围常量，§10.4）。2026-11-04 核对 `origin/main`：`packages/worker-client/` 还不存在，本行仍是计划路径 |
 | `providers/src/index.ts` | 唯一入口：`createChatTransport`、`createOcrTransport`、`listPresets`；不导出格式的内部文件 |
 | `providers/src/registry/registry.ts` | 汇总 `vendors/*` 并校验：能力标记是该格式所支持能力的子集、Base URL 的主机在 `allowedHosts` 里、`devEnvVars` 已在 §15.4 登记 |
 | `providers/src/registry/vendors/<vendor>.ts` | 一家服务商一个文件，只有数据：端点与格式、`allowedHosts`、鉴权方式与密钥槽、预置模型与能力标记、开发用环境变量名、未核实项 |
@@ -1928,8 +1928,9 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 桌面与远程 worker 各自升级，版本迟早会错开。规则：
 
 - **版本号。** 每个请求带请求头 `OI-Protocol: <主版本>.<次版本>`，第一版是 `1.0`。`GET /v1/health` 返回 `protocol`（worker 实现的版本）、`workerVersion` 与 `mode`（`local` / `server`）。
+- **`workerVersion` 的 pattern 与 maxLength。** 这两项只出现在 JSON Schema，本节不另写一套字符集或长度上限。定义在 `packages/contracts/src/worker/worker-version.ts` 的 `workerVersionText`。当前 pattern 是 `^\S+$`，没有 `maxLength`（`minLength` 是 1）。`GET /v1/health` 的 schema 引用同一份。64 字上限没有写进规格。
 - **兼容规则。** 次版本只新增可选字段与新端点；双方都接受并忽略不认识的字段。删除字段、改字段含义、把可选改为必填，都要升主版本。
-- **桌面的判定。** 桌面声明自己支持的主版本范围（常量在 `worker-client/src/supervisor-protocol.ts`）。连接后先调 `/v1/health`：主版本不在范围内时，不提交任何作业，界面提示「worker 版本过旧」或「桌面版本过旧」，相关能力记「不可用（版本不兼容）」，按 §7.0 表最后一列降级。本机 worker 随桌面一起发布，版本总是匹配。
+- **桌面的判定。** 桌面声明自己支持的主版本范围（常量计划放在 `packages/worker-client/src/supervisor-protocol.ts`，计划中；2026-11-04 核对 `origin/main`，这个文件还不存在）。连接后先调 `/v1/health`：主版本不在范围内时，不提交任何作业，界面提示「worker 版本过旧」或「桌面版本过旧」，相关能力记「不可用（版本不兼容）」，按 §7.0 表最后一列降级。本机 worker 随桌面一起发布，版本总是匹配。
 - **按次版本开功能。** 依赖新端点或新字段的功能，按 worker 报出的次版本决定是否启用，不靠试探请求。
 - **worker 的判定。** 请求的主版本 worker 不支持时返回 `426`，响应体 `{ "supported": ["1.0"] }` 列出它支持的版本。
 - **缺头或坏头（Wisdom 2026-11-02 20:07 批准）。** 原文：「都按你的建议：400、--port/OI_WORKER_PORT、Windows 设必需；另开小 PR 加 macOS 健康检查并设必需」。上面只写了主版本不支持时返回 `426`。请求头 `OI-Protocol` 缺失，或值不是 `<主版本>.<次版本>` 时，`parse_protocol_header` 抛出 `ProtocolVersionError`。HTTP 适配层按这个异常的类型映射为 `400`，响应体是 `{"code":"protocol.version"}`。不创建作业。响应体里没有路径，也没有密钥。
@@ -2058,7 +2059,7 @@ type EvalRecord = Readonly<{
 | G16 core 测试只调 seam、不渲染 UI | Vitest 工程 `core` + dependency-cruiser 规则 `core-test-through-seam` | `core` 工程：`environment: 'node'`，include `packages/features/*/test/core/**`；文件内出现 `@vitest-environment` 注释即失败。`core-test-through-seam`：from `^packages/features/([^/]+)/test/core/`，to `^packages/features/$1/src/` 且 pathNot `^packages/features/$1/src/((index\|pure)\.ts\|testing/)` → 失败；to `react`、`@testing-library/*`、`jsdom`、`happy-dom`、`@oi/ui-kit`、`src/ui/` → 失败。每个切片 `README.md` 登记的 core 规则必须至少有一个 core 测试（脚本核对测试名中的规则编号） |
 | G18 一个 PR 一个切片 | 脚本 | PR 改动的 `packages/features/*/src/**` 只属于一个切片（RULES §2）；例外：解析规则集 PR（`parsing` + worker 对应规则 + `fixtures/parsing-rules/`，§7.10）与带 ADR 编号的 PR。由此「UI 改动的 PR 又改了另一个切片的 core」必然失败（架构评审 P1-11）；同一切片的 UI 与 core 在一个 PR 里不失败 |
 
-**运行环境**（架构评审 P2-5）：Linux 跑 G1–G16、G18 全部；Windows 与 macOS 各有一条任务，跑不带模型的 worker 健康检查、`fixtures/protocol/` 与 `fixtures/parsing-rules/` 的两侧测试，这几步相同。Windows 这一条在装好 Node 依赖之后另跑 `pnpm run check:deps` 与 `tools/check-deps` 的 Vitest，macOS 不跑这两步。Linux 全部门禁与 Windows 健康检查仍是 AC-80 ⑤ 的两条必需检查。macOS 健康检查由 Wisdom 2026-11-02 20:07 批准，与 Windows 健康检查一起由仓库管理员设为必需（Issue #33，RULES N-02）。macOS 签名与公证留到 M8，由人执行。
+**运行环境**（架构评审 P2-5）：Linux 跑 G1–G16、G18 全部；Windows 与 macOS 各有一条任务，跑不带模型的 worker 健康检查、`fixtures/protocol/` 与 `fixtures/parsing-rules/` 的两侧测试，这几步相同。Windows 这一条在装好 Node 依赖之后另跑 `pnpm run check:deps` 与 `tools/check-deps` 的 Vitest，macOS 不跑这两步。Linux 全部门禁与 Windows 健康检查仍是 AC-80 ⑤ 的两条必需检查。macOS 健康检查由 Wisdom 2026-11-02 20:07 批准。2026-11-04 本代理再查 `GET repos/wisdom-km/open-immerse-v2/branches/main/protection` 仍是 403。以 2026-11-04 Anvil 查到的为准：`CI / worker-health-windows` 与 `CI / worker-health-macos` 已是 required。本段不改设置（Issue #33，RULES N-02）。macOS 签名与公证留到 M8，由人执行。
 
 原 G17（同一 PR 同时改 UI 路径与 core 路径即失败）已按架构评审删除（Wisdom 2026-10-30 19:57 批准）：一个垂直切片的功能本来就同时包含 core 与 UI，按层强制拆 PR 与 §0「改一个功能只动一个切片」相反。Q3 的执行规则 2、3 仍然有效，由评审清单与 UI–core 交接说明检查（RULES §5 第 11 条、§8）；依赖方向与 core 测试由 G13–G16 机器检查。
 
