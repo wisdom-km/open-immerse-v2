@@ -11,7 +11,8 @@
 | 命令 | 退出码 | 备注 |
 | --- | --- | --- |
 | `GATE_BASE=origin/main corepack pnpm test` | 0 | Vitest 70 个文件、153 通过、2 跳过、0 失败。类型错误 0。跳过的是未设 `GITLEAKS_BIN` 的本地密钥夹具 |
-| `GATE_BASE=origin/main corepack pnpm run check` | 0 | lint、typecheck、typecheck:core、行数（168 个源文件）、`check:deps`（84 modules，153 dependencies，无违例）、core 测试位置、npm/pip/模型许可证、G18（0 个功能切片）、Conventional Commits、热点、PR 体量（1578 行非生成 diff，`ad7d218` 的说明里有 `G12:`）、codegen（1 个生成器）、G7。其后工作树干净。`check-license: pip licenses accepted` |
+| `GATE_BASE=origin/main corepack pnpm run check` | 0 | 在 `ad7d218`。lint、typecheck、typecheck:core、行数（168 个源文件）、`check:deps`（84 modules，153 dependencies，无违例）、core 测试位置、npm/pip/模型许可证、G18（0 个功能切片）、Conventional Commits、热点、PR 体量（1578 行非生成 diff，`ad7d218` 的说明里有 `G12:`）、codegen（1 个生成器）、G7。其后工作树干净。`check-license: pip licenses accepted` |
+| `GATE_BASE=origin/main corepack pnpm run check` | 0 | 在文档提交 `22a88b9` 再跑一次。同一组门禁。`check-pr-size` 为 1616 行非生成 diff。工作树干净 |
 | `node ../../tools/gate-remediation/run.mjs --id G1 -- uv run ruff format --check .` | 0 | 工作目录 `workers/parser/` |
 | `node ../../tools/gate-remediation/run.mjs --id G2 -- uv run ruff check .` | 0 | All checks passed |
 | `node ../../tools/gate-remediation/run.mjs --id G3-pyright -- uv run pyright` | 0 | 0 errors, 0 warnings, 0 informations |

@@ -120,7 +120,7 @@ AC-103 ②③，AC-05 的 worker 侧：
 | 8 | 唯一按 `jev.route` 分支的模块。`'api'` 用 `jev_http`，`'local'` 用桩。两个后端互不 import。不因失败改 route。模块路径见「审查结论」 | `quality/select_backend.py`。`'local'` 不构造 HTTP 后端。其他取值 `ValueError("jev.route")`，不回显原值。`__main__.py` 未改。import-linter 增加 protected：只有 `select_backend` 可以 import 两个后端 | `tests/quality/test_select_backend.py`；G6 |
 | 9 | 把 `httpx` 从 dev extra 升到运行时 `dependencies`。`uv.lock` 用 uv 重生成，不手改。G10 通过。`request_body.py` 与 `response_body.py` 加入 `python core forbids io` 的 `source_modules`（收紧，不放宽 forbidden 列表）。`package-aliases.json` 里 httpx、certifi 的理由不再写「不随应用发布」。不改白名单 | `httpx==0.28.1` 进入 `dependencies`，并从 dev extra 删除。`uv.lock` 只改依赖组。`evaluator.py` 一并列入禁止 IO 的源模块。别名只改第 43、49 行的 `reason`。白名单与 `dev-only.json` 未改。`check-license:pip` 通过 | `tools/check-license/package-aliases.json`；`docs/evidence/85/commands.md` |
 | 10 | 测试放 `workers/parser/tests/quality/`，与包镜像。用例名 `<结果> when <条件>`，对应 AC 加编号前缀。假 key 只用 `oitest_` 前缀。不读源码做断言。无 `@live` 用例，产品代码不读 `MODELBEST_API_KEY` | 7 个文件、50 个用例。假 key 为 `oitest_jevclient`。全量 pytest 153 通过 | `docs/evidence/85/commands.md` |
-| 11 | 每个实现 tip 全量跑一次 `pnpm run check`、`pnpm test`，以及 worker 的 pyright、ruff format、ruff check、lint-imports、pytest。日志写入 `docs/evidence/<PR号>/` | 在 `ad7d218` 各跑一次，退出码都是 0。非生成 diff 1578 行，提交说明有 `G12:` | `docs/evidence/85/commands.md` |
+| 11 | 每个实现 tip 全量跑一次 `pnpm run check`、`pnpm test`，以及 worker 的 pyright、ruff format、ruff check、lint-imports、pytest。日志写入 `docs/evidence/<PR号>/` | 在 `ad7d218` 各跑一次，退出码都是 0。当时非生成 diff 1578 行，提交说明有 `G12:`。文档提交 `22a88b9` 再跑 `pnpm run check`，退出码 0，1616 行 | `docs/evidence/85/commands.md` |
 
 ## 文件清单
 
