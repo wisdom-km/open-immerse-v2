@@ -1928,6 +1928,7 @@ Python 分层用 `import-linter` 强制：`api → jobs → engines | quality �
 桌面与远程 worker 各自升级，版本迟早会错开。规则：
 
 - **版本号。** 每个请求带请求头 `OI-Protocol: <主版本>.<次版本>`，第一版是 `1.0`。`GET /v1/health` 返回 `protocol`（worker 实现的版本）、`workerVersion` 与 `mode`（`local` / `server`）。
+- **`workerVersion` 的 pattern 与 maxLength。** 这两项只出现在 JSON Schema，本节不另写一套字符集或长度上限。定义在 `packages/contracts/src/worker/worker-version.ts` 的 `workerVersionText`。当前 pattern 是 `^\S+$`，没有 `maxLength`（`minLength` 是 1）。`GET /v1/health` 的 schema 引用同一份。64 字上限没有写进规格。
 - **兼容规则。** 次版本只新增可选字段与新端点；双方都接受并忽略不认识的字段。删除字段、改字段含义、把可选改为必填，都要升主版本。
 - **桌面的判定。** 桌面声明自己支持的主版本范围（常量在 `worker-client/src/supervisor-protocol.ts`）。连接后先调 `/v1/health`：主版本不在范围内时，不提交任何作业，界面提示「worker 版本过旧」或「桌面版本过旧」，相关能力记「不可用（版本不兼容）」，按 §7.0 表最后一列降级。本机 worker 随桌面一起发布，版本总是匹配。
 - **按次版本开功能。** 依赖新端点或新字段的功能，按 worker 报出的次版本决定是否启用，不靠试探请求。
