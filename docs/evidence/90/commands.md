@@ -40,8 +40,16 @@
 
 第二次是已提交的 `toBe("granted")`。退出码 0。6 passed（2.7s）。覆盖后日志仍是 `notification query after override: granted granted`。启动毫秒：270、265、257、279、256、249。合计 1576，平均 1576/6 ms。
 
-两次覆盖前的查询都由用例断言为 `denied`，否则这 6 条不会通过。fixture 的 `scope` 仍是 `test`。没有跑其余 18 个 e2e，所以全套平均启动 T 不是这张表。
+两次覆盖前的查询都由用例断言为 `denied`，否则这 6 条不会通过。fixture 的 `scope` 仍是 `test`。本机没有跑其余 18 个 e2e。全套平均启动 T 用下面的 Windows 日志，不用本机这 6 次。
 
-## 仍未核实
+## desktop-e2e-windows
 
-`desktop-e2e-windows` 尚未用本 PR 的 CI 日志读取。标 Ready 前要补：该 job 里覆盖后的 state，以及从 `electron launch ms:` 算出的平均启动 T。在那之前这两项写未核实。
+run `41610915781`，job `125832260932`，结论 success。head SHA `da2a901281c37fc2f3d35893823068d0f363eb82`。日志步骤 Playwright Electron smoke：`Running 24 tests using 1 worker`，结尾 `24 passed (23.3s)`。23.3s 是这条墙钟，不是启动合计。
+
+覆盖用例 `e2e\permissions.spec.ts:23:1 › grants notifications when the check handler is overridden to allow` 的下一行是：
+
+`notification query after override: granted granted`
+
+24 条 `electron launch ms` 按出现顺序：6680、444、443、438、462、457、456、451、425、428、416、416、447、444、415、428、419、425、417、421、419、411、423、421。条数 24，合计 16606 ms，平均 16606/24 ms。第一条 6680 的前面有一行 `Downloading Electron binary...`，平均含这次下载。
+
+门槛按这个平均重算：用例数 × (16606/24) 达到 Playwright `timeout` 120_000 ms 时，再改为 worker 级 fixture。173 × 16606 / 24 = 2872838/24 ms，低于 120_000。174 × 16606 / 24 = 2889444/24 ms，高于 120_000。当前 24 条的启动合计就是 16606 ms。
