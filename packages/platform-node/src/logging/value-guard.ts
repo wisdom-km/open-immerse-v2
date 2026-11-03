@@ -8,6 +8,9 @@ const idPattern = /^[A-Za-z0-9_.:-]+$/u;
 const timestampPattern = /^[0-9TZ:.+-]+$/u;
 const uuidPattern =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/u;
+/** ARCHITECTURE §9。整串合上后不再查熵；密钥识别仍在这之前。 */
+const channelPattern =
+  /^[a-z][a-z0-9]*(-[a-z0-9]+)*\.(on[A-Z][A-Za-z0-9]*|[a-z][A-Za-z0-9]*)$/u;
 const githubPrefixes = ["ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_"] as const;
 const awsAccessKeyPattern = /(?:AKIA|ASIA)[A-Za-z0-9]{16}/u;
 const longHexPattern = /[0-9a-fA-F]{40,}/u;
@@ -72,7 +75,7 @@ function scrubOversize(event: Extract<DiagEvent, { event: "ipc.oversize" }>): Di
   const scrubbed = {
     ...envelope(event),
     event: "ipc.oversize" as const,
-    channel: scrubToken(event.channel),
+    channel: scrubChannel(event.channel),
     bytes: event.bytes,
   };
   if (event.requestId === undefined) {
@@ -120,11 +123,24 @@ function scrubTimestamp(value: string): string {
   return value;
 }
 
-function containsSecret(value: string): boolean {
-  if (containsMarker(value) || containsProviderToken(value) || isHighEntropy(value)) {
-    return true;
+function scrubChannel(value: string): string {
+  if (hasHardSecret(value) || value.length > 64 || !channelPattern.test(value)) {
+    return REDACTED;
   }
-  return isAbsolutePath(value) || containsQuerySecret(value);
+  return value;
+}
+
+function containsSecret(value: string): boolean {
+  return hasHardSecret(value) || isHighEntropy(value);
+}
+
+function hasHardSecret(value: string): boolean {
+  return (
+    containsMarker(value) ||
+    containsProviderToken(value) ||
+    isAbsolutePath(value) ||
+    containsQuerySecret(value)
+  );
 }
 
 function containsMarker(value: string): boolean {
