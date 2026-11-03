@@ -1,6 +1,6 @@
 # 执行计划
 
-跨 `app-protocol` 与 desktop e2e，所以有这份计划。路径按 [TEMPLATE.md](TEMPLATE.md) 用分支名。第一笔提交只有本文件。Forge 审查通过之前不写实现。PR 保持 Draft，不离开 Draft，不合入。
+跨 `app-protocol` 与 desktop e2e，所以有这份计划。路径按 [TEMPLATE.md](TEMPLATE.md) 用分支名。第一笔提交只有本文件。Forge 复审 `df22143` 已通过，其后的提交是实现。PR 保持 Draft，不离开 Draft，不合入。
 
 基线：main@28428ff（`28428ff1478dc77711ae457f73475a1f35cdf016`）。分支：`feature/m1-e2e-split-protocol-inline`。关闭 #71、#72。
 
@@ -11,13 +11,13 @@ Forge 审查 Draft #78 的 `56ba9db` 后要求改计划再批准。本修订只�
 3. fixture 是 test-scoped。`close` 放在 teardown。
 4. `camera` 与 `microphone` 直接断言 `denied`。出现 TypeError 按规格冲突停下。
 5. 截图证据的 artifact 列用 `.../actions/runs/<run id>/artifacts/<artifact id>`。png 目录名照抄 artifact 里的路径。renderer 是空页面，截图为白屏，M1 可接受。
-6. 405/404 的 e2e 本 PR 仍不新增。Forge 另开 Issue 跟踪。本计划不开这条 Issue。
+6. 405/404 的 e2e 本 PR 不新增。Forge 已开 [#80](https://github.com/wisdom-km/open-immerse-v2/issues/80) 跟踪。本计划不开新 Issue，也不在 backlog 加行。
 
 ## 现状理解
 
 - 已有行为：`apps/desktop/e2e/smoke.spec.ts` 只有一个用例 `opens one oi-app window under the security baseline`（第 11 行），里面有 19 个 `expect`（见下表，含第 45 行 reload 响应非空）。权限只断言 `Notification.requestPermission()` 为 `denied`（第 27 行，request handler）。没有 `navigator.permissions.query`。`apps/desktop/src/main/app-protocol.ts` 第 21–27 行的 `readUrl`、`readMethod` 只返回 `request.url` 与 `request.method`。`security/permissions.ts` 的 `decidePermissionRequest` 与 `decidePermissionCheck` 都返回 `false`，返回类型是字面量 `false`。接线在 `index.ts` 的 `denyPermissions`（第 32–37 行），同时注册 request 与 check handler。`index.ts` 在 PR #77 的文件列表里，本计划不改它。`playwright.config.ts` 已设 `screenshot: "on"`。CI job `desktop-e2e-windows`（`windows-latest`）已用 `actions/upload-artifact` 上传 `apps/desktop/test-results/**/*.png`（`if: always()`，`if-no-files-found: error`，artifact 名 `desktop-e2e-windows-screenshots`）。main 上 run `41478055464` 的该 artifact 存在（436 字节，未过期）。renderer 只有标题，页面是空的。
 - 相关的节：PRD AC-67 ①。ARCHITECTURE §6、§9（request 与 check handler 一律拒绝；`oi-app://`；CSP）、§13、§15.2。RULES §1.4 测试命名、§4 证据与每个 tip 全量一次、§5 无 `utils`、N-01、N-02、N-05、N-08、N-12。`docs/backlog.md` 第 95–96 行是 #71、#72。
-- 还没做的部分：check handler 的 e2e（含一条只在该用例内覆盖 handler 的对照）；把那 19 个 `expect` 拆成各自的用例；删掉两个透传函数。没有 e2e 覆盖协议 405 / 404。`static-file.test.ts` 断言 POST 的 `kind` 为 `method`，以及越界路径为 `null`，不经过 `respond` 的 HTTP 状态。
+- 还没做的部分（写计划时）：check handler 的 e2e（含一条只在该用例内覆盖 handler 的对照）；把那 19 个 `expect` 拆成各自的用例；删掉两个透传函数。没有 e2e 覆盖协议 405 / 404，跟踪在 #80。`static-file.test.ts` 断言 POST 的 `kind` 为 `method`，以及越界路径为 `null`，不经过 `respond` 的 HTTP 状态。实现落点见下表实际列。
 
 ## 计划 / 实际
 
@@ -26,11 +26,11 @@ Forge 审查 Draft #78 的 `56ba9db` 后要求改计划再批准。本修订只�
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
 | 1 | 提交本文件，开 Draft PR，停下等 Forge。不写实现 | `56ba9db` 开 Draft #78。本修订按 Forge 对 `56ba9db` 的意见改计划，仍不写实现 | PR #78 |
-| 2 | 在 `handleAppProtocol` 的 `protocol.handle` 回调里直接传 `request.url`、`request.method`，删除 `readUrl` 与 `readMethod`。不改 `respond`、状态码、响应头 |  |  |
-| 3 | 用下面的 fixture 与 spec 替换 `smoke.spec.ts`。一条断言一个 `test`。名字是 `<结果> when <条件>`。fixture 为 test-scoped，每个用例各启动一次，`close` 在 teardown |  |  |
-| 4 | 加上四条权限 query 用例，都断言 `denied`。名字固定为 `denied when renderer queries <permission>`。权限名见下一节。TypeError 不跳过 |  |  |
-| 5 | 提交一条对照 e2e：`grants notifications when the check handler is overridden to allow`。只在该用例的 main 进程里覆盖 check handler，断言 `state` 不是 `denied`。不改 `src/` |  |  |
-| 6 | 实现提交里把 `docs/backlog.md` 第 95–96 行标成由本 PR 处理。不新开 Issue。405/404 的 Issue 由 Forge 开 |  |  |
+| 2 | 在 `handleAppProtocol` 的 `protocol.handle` 回调里直接传 `request.url`、`request.method`，删除 `readUrl` 与 `readMethod`。不改 `respond`、状态码、响应头 | `7b230e2`。回调直接传 `request.url`、`request.method`。`respond` 未改 | `apps/desktop/src/main/app-protocol.ts` |
+| 3 | 用下面的 fixture 与 spec 替换 `smoke.spec.ts`。一条断言一个 `test`。名字是 `<结果> when <条件>`。fixture 为 test-scoped，每个用例各启动一次，`close` 在 teardown | `8907752`。`e2e/fixtures/electron-app.ts` 的 `desktop` fixture，`scope: "test"`，`close` 在 `finally`。删除 `smoke.spec.ts` | 同提交的 `apps/desktop/e2e/` |
+| 4 | 加上四条权限 query 用例，都断言 `denied`。名字固定为 `denied when renderer queries <permission>`。权限名见下一节。TypeError 不跳过 | `8907752`。`permissions.spec.ts` 四条 query，没有 `test.skip` | 同上 |
+| 5 | 提交一条对照 e2e：`grants notifications when the check handler is overridden to allow`。只在该用例的 main 进程里覆盖 check handler，断言 `state` 不是 `denied`。不改 `src/` | `8907752`。`app.evaluate` 里 `setPermissionCheckHandler(() => true)`，然后断言 `state` 不是 `denied`。没有改 `src/` | 同上 |
+| 6 | 实现提交里把 `docs/backlog.md` 第 95–96 行标成由本 PR 处理。不新开 Issue。405/404 的 Issue 由 Forge 开 | backlog 第 95–96 行标为 PR #78。#80 已开，本计划引用它，不加 backlog 行 | `docs/backlog.md`、本文件 |
 | 7 | Windows CI 绿之后写 `docs/evidence/<PR号>/commands.md`：命令、基线 SHA、tip SHA、通过 / 失败 / 跳过、用例清单、CI 摘录、截图表、与 #77 的交集为空。截图只留在 artifact。artifact 链接与目录名见「截图」 |  |  |
 | 8 | 每个实现 tip 全量只跑一次：`corepack pnpm run check` 与 `corepack pnpm test`。e2e 不在 Linux 上跑 |  |  |
 
@@ -84,7 +84,7 @@ Forge 审查 Draft #78 的 `56ba9db` 后要求改计划再批准。本修订只�
 | 第 106 行，`nodeIntegration` 为 false | `disables node integration when web preferences are read` |
 | 第 107 行，`webSecurity` 不是 false | `leaves web security enabled when web preferences are read` |
 
-不新增 405 / 404 的 e2e。现有 `smoke.spec.ts` 没有这两条断言。#72 只要求删透传并让已有协议单测照常通过。已有单测是 `apps/desktop/test/static-file.test.ts`。Forge 另开 Issue 跟踪 405/404 的 e2e。本 PR 不开这条 Issue，也不在 `docs/backlog.md` 替它加行。
+不新增 405 / 404 的 e2e。现有冒烟没有这两条断言。#72 只要求删透传并让已有协议单测照常通过。已有单测是 `apps/desktop/test/static-file.test.ts`。Forge 已开 #80 跟踪 `respond()` 的 405/404。本 PR 不开这条 Issue，也不在 `docs/backlog.md` 替它加行。
 
 ## 权限 check
 
@@ -139,7 +139,7 @@ await app.evaluate(({ session }) => {
 
 #66、#67、#69、#70 已有 Issue 和 backlog 行，本 PR 不做，不重复开。#71、#72 由本 PR 处理，实现时改 backlog 那两行，不开新 Issue。
 
-协议 405/404 的 e2e 不在本 PR。Forge 另开 Issue 跟踪。本计划不开这条 Issue，也不在 backlog 加行。
+协议 405/404 的 e2e 不在本 PR。Forge 已开 #80。本计划不开这条 Issue，也不在 backlog 加行。
 
 ## 证据链接
 

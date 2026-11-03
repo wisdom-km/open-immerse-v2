@@ -92,8 +92,8 @@
 | 关闭调试模式前询问是否删除调试日志。M1 只把 `deleteFiles` 作为 `setDebugMode` 的参数，不画界面 | M2，交 Loom | #75；ARCH §11；PRD AC-101 ② |
 | oi-app 协议按扩展名设置 Content-Type（`static-file.ts:19` 固定 text/html），并加 `X-Content-Type-Options: nosniff` | M2（开始服务非 HTML 资源时） | #69；PR #65 Forge 审查 + Anvil 低风险 |
 | 打包后 renderer 路径 `dist/../../src/renderer` 失效 | M8 | #70；PR #65 Anvil 低风险 |
-| desktop e2e 覆盖权限 check handler（`navigator.permissions.query`，`smoke.spec.ts:27`）并把单个冒烟测试拆开 | M1 收尾 | #71；PR #65 Forge 审查 |
-| `app-protocol.ts:21-28` 的 `readUrl`/`readMethod` 透传可内联 | M1（下一个碰该文件的 PR） | #72；PR #65 Forge 审查 |
+| desktop e2e 覆盖权限 check handler（`navigator.permissions.query`）并把单个冒烟测试拆开 | 本 PR #78 处理 | #71；PR #65 Forge 审查 |
+| `app-protocol.ts` 的 `readUrl`/`readMethod` 透传内联 | 本 PR #78 处理 | #72；PR #65 Forge 审查 |
 
 ## 5. Jev 开关审查（2026-10-30 22:06）的处理
 
