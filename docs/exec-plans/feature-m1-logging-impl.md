@@ -16,7 +16,7 @@
 
 Forge 对 `a8a97de` 有条件通过。下面各项覆盖同题的草案。
 
-- 提问 1：门禁允许这条边，也符合 §11 的意图。改 §5.1 的图要 Wisdom 拍板。拍板前不从 `@oi/platform-node` 值导入 `@oi/contracts`，因此 `value-guard` 先做脱敏和长度，还不调用 `readDiagEvent`。未通过 `readDiagEvent` 才拒绝落盘的用例，等 Wisdom 确认导入方式后补。本 PR 不改 ARCHITECTURE，不改 G5。Wisdom 若不批，再另行改。
+- 提问 1：Wisdom 2026-11-03 10:40 批准 `platform-node` 值导入 `readDiagEvent`。`value-guard` 先调用它，失败则不写。§5.1 补线由下一个文档 PR 处理。本 PR 不改 ARCHITECTURE，不改 G5。
 - 提问 2：按草案，并补下面三节「值约束」。`[redacted]` 是 `value-guard` 的单一导出常量，测试引用它。`sk-`、`Bearer`、`Authorization` 按包含匹配，不区分大小写。能通过字符集的假 Key 也要被脱敏挡住，样本是 `step: "sk-oitest_abc"` 与 `route: "oitest_fixturekey"`（后者靠合成前缀 `oitest_` 的包含匹配）。查询参数只按 `key=`、`access_token=`、`client_id=`、`client_secret=` 匹配。`error_class: "api-key-missing"` 原样保留。`ts` 为 `^[0-9TZ:.+-]+$`，长度 ≤ 64。单文件超过 50 MB 整文件删除，并测当天正在写的文件被删后，下次写入能重新创建。守卫识别不了无空格的正文；正文出现 0 次，靠调用方不传，再加上长度上限。
 - 提问 3：接受。不新增 G5 规则。`dependencies` 的键恰好是 `@oi/kernel` 与 `@oi/contracts`，没有 `optionalDependencies` 与 `peerDependencies`。`commands.md` 写明 ③ 的证据是只有文件 sink、依赖允许清单、以及 `check:deps` 通过。
 - 装配根导出构造函数，在 `app.whenReady()` 里调用。不用副作用导入。`composition-root.ts` ≤ 30 行。PR 描述按 G11 声明这个热点文件。
@@ -33,11 +33,11 @@ Forge 对 `a8a97de` 有条件通过。下面各项覆盖同题的草案。
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
 | 1 | 本文件。草案含文件清单、预计行数、AC → 测试、#76 值约束。先停 |  | 本文件 |
-| 2 | 新包 `@oi/platform-node`（Apache-2.0，`type: module`，`exports` 指向 `./src/index.js`）。`dependencies` 的键恰好是 `@oi/kernel` 与 `@oi/contracts`（`workspace:*`），没有 optional / peer。确认前源码不导入 `@oi/contracts`。无其他运行时依赖，不加日志框架。登记：`pnpm-workspace.yaml`、`apps/desktop/package.json`、`tools/check-deps/tsconfig.paths.json`、`vitest.config.ts` 的 include 加 `packages/platform-node/**/*.test.ts`。不放进 `tsconfig.core.json`，不放进 ESLint `coreFiles` |  |  |
+| 2 | 新包 `@oi/platform-node`（Apache-2.0，`type: module`，`exports` 指向 `./src/index.js`）。`dependencies` 的键恰好是 `@oi/kernel` 与 `@oi/contracts`（`workspace:*`），没有 optional / peer。`value-guard` 值导入 `readDiagEvent`。无其他运行时依赖，不加日志框架。登记：`pnpm-workspace.yaml`、`apps/desktop/package.json`、`tools/check-deps/tsconfig.paths.json`、`vitest.config.ts` 的 include 加 `packages/platform-node/**/*.test.ts`。不放进 `tsconfig.core.json`，不放进 ESLint `coreFiles` |  |  |
 | 3 | `src/logging/log-paths.ts`。用注入的应用数据目录拼接 kernel 的 `PRODUCT_LOG_DIRECTORY` 与 `DEBUG_LOG_DIRECTORY`。路径只来自参数 |  |  |
-| 4 | `src/logging/value-guard.ts`。按「值约束」脱敏和长度。`[redacted]` 只导出这一处。Wisdom 确认前不调用 `readDiagEvent`。有限数字原样。占位符不回扫字符集 |  |  |
+| 4 | `src/logging/value-guard.ts`。先值导入并调用 `readDiagEvent`，失败则整条不写。通过后按「值约束」脱敏和长度。`[redacted]` 只导出这一处。有限数字原样。占位符不回扫字符集 |  |  |
 | 5 | `src/logging/debug-retention.ts`。只处理 debug 目录。先删 `mtimeMs < nowMs - DEBUG_LOG_MAX_AGE_MS` 的文件，再按 mtime 从旧到新删，直到 `stat.size` 之和 ≤ `DEBUG_LOG_MAX_BYTES`。单文件仍超过 50 MB 时整文件删除，不截断半行。产品目录不进这个函数 |  |  |
-| 6 | `src/logging/file-logger.ts`。`createFileLogger` 返回 kernel `Logger`。`log` 为同步 `appendFileSync`，返回 `void`。产品目录在记录通过值守卫后始终追加。调试目录仅在 `setDebugMode({ enabled: true })` 之后追加同一条 JSON 行。默认关且从未开启时不创建 debug 目录。写入后把 mtime 设为 `clock.nowMs()`。保留在构造、再次开启、以及每次 debug 写入之后运行。`clearDebugLogs` 使 debug 文件数为 0。`setDebugMode({ enabled: false, deleteFiles })` 按布尔删除或保留。文件名 `<UTC YYYY-MM-DD>.jsonl`。构造时不写文件。同步 IO 失败则抛出（见审查结论）。调试开关只在该实例内。返回类型在接上 `readDiagEvent` 之前用本包的记录类型，不从 contracts 导入 `DiagEvent` |  |  |
+| 6 | `src/logging/file-logger.ts`。`createFileLogger` 返回 kernel `Logger`。`log` 为同步 `appendFileSync`，返回 `void`。产品目录在记录通过值守卫后始终追加。调试目录仅在 `setDebugMode({ enabled: true })` 之后追加同一条 JSON 行。默认关且从未开启时不创建 debug 目录。写入后把 mtime 设为 `clock.nowMs()`。保留在构造、再次开启、以及每次 debug 写入之后运行。`clearDebugLogs` 使 debug 文件数为 0。`setDebugMode({ enabled: false, deleteFiles })` 按布尔删除或保留。文件名 `<UTC YYYY-MM-DD>.jsonl`。构造时不写文件。同步 IO 失败则抛出（见审查结论）。调试开关只在该实例内。返回 `Logger<DiagEvent>` |  |  |
 | 7 | `src/index.ts` 只再导出 `createFileLogger` 与调用所需的选项类型 |  |  |
 | 8 | 四个单测文件，见审查结论。用例名 `<结果> when <条件>`，对得上的加 `AC-101`。注入 Clock 与临时目录，不 `sleep`。体积用 `truncate` 设定 `stat.size`。假密钥形态用 `oitest_`。不断言源码文本（F-08）。依赖断言读 `package.json`：键恰好两个，且没有 optional / peer |  |  |
 | 9 | 新建 `apps/desktop/src/main/composition-root.ts`，物理行数 ≤30（G11 按新增行计算）。导出 `startMainLogger`，在 `app.whenReady()` 里调用。注入 `app.getPath("userData")` 与 `{ nowMs: () => Date.now() }`。Electron 与 `Date.now` 只出现在装配根。platform-node 不 import `electron` |  |  |
@@ -64,7 +64,7 @@ Forge 对 `a8a97de` 有条件通过。下面各项覆盖同题的草案。
 
 Forge 已让提问 2 按草案执行。不改契约类型。`[redacted]` 只从 `value-guard.ts` 导出一次，测试引用这个常量。
 
-1. Wisdom 确认前不调用 `readDiagEvent`。非对象不写。确认后：`readDiagEvent` 失败则两个目录都不写。
+1. `readDiagEvent` 失败：两个目录都不写。Wisdom 2026-11-03 10:40 批准这里值导入它。
 2. 字符串先脱敏，再看长度与字符集。命中任一条，整个值换成 `REDACTED`。占位符含括号，不再送去字符集检查。
 3. 脱敏（整值替换，包含匹配）：`authorization`、`bearer`、`sk-` 不区分大小写；合成前缀 `oitest_` 不区分大小写（这样 `route: "oitest_fixturekey"` 能通过字符集，仍然被脱敏挡住）；`access_token=`、`client_id=`、`client_secret=`、`key=`；绝对路径（以 `/` 开头、以盘符加斜杠开头、或含 `\`）。
 4. 字符集与长度，未命中脱敏时才用：
@@ -87,7 +87,7 @@ Forge 已让提问 2 按草案执行。不改契约类型。`[redacted]` 只从 
 | AC-101 ② | 从未开启时 debug 文件数为 0，且不创建该目录。开启后 debug 出现 JSON 行。注入时钟拨到 8 天前写入、再拨回现在跑保留：早于 7 天的文件数为 0。`truncate` 造出总量 > 50 MB：保留后总量 ≤ 50 MB，且先删更旧的文件。单文件 `stat.size` > 50 MB 时该文件被删。当天文件被删掉之后，下一次 `log` 重新创建它。`clearDebugLogs` 后文件数为 0。`{ enabled: false, deleteFiles: true }` 后为 0；`deleteFiles: false` 且文件仍在 7 天与 50 MB 以内时文件还在。构造时也会跑保留，所以越过上限的旧文件在下次启动被清掉。调试行里被脱敏或超长的样本命中 0 次 |
 | AC-101 ③④ | `dependencies` 的键排序后恰好是 `@oi/contracts`、`@oi/kernel`。没有 optional / peer。测试把 `globalThis.fetch` 设为抛错并计数，写日志时期望次数为 0。不新增 G5 规则。`check:deps` 通过写进 `commands.md`。`log` 的返回类型是 `void`；调用返回后文件已能读到该行 |
 | AC-101 ⑤ | 产品文件在 `<注入目录>/diagnostics/`，调试文件在 `<注入目录>/debug/`。断言该路径不位于仓库的 `packages/features/diagnostics/` |
-| AC-101 ① + #76 | 脱敏样本与超长正文落盘命中 0 次。`api-key-missing`、`parse`、空 `error_class` 原样保留。`readDiagEvent` 拒绝后不落盘的用例等 Wisdom 确认导入后再补 |
+| AC-101 ① + #76 | 脱敏样本与超长正文落盘命中 0 次。`api-key-missing`、`parse`、空 `error_class` 原样保留。未通过 `readDiagEvent` 的值不产生新字节 |
 
 ## 装配根
 
@@ -110,9 +110,7 @@ G11 只数 `composition-root.ts` 与 `slots.ts`。本 PR 不改 `slots.ts`。`co
 
 ## 给 Forge 的提问
 
-Forge 已答复。提问 2、提问 3 按「Forge 审查结论」执行。提问 1 仍等 Wisdom：
-
-1. 触发：规格图与落盘需要的导入不一致。停在：`value-guard.ts` 对 `readDiagEvent` 的值导入。已读：§5.1、§11、G5、Forge 对 PR #77 的审查。现状：脱敏已按提问 2 做，源码尚未导入 `@oi/contracts`。提问：Wisdom 是否批准 `platform-node` 值导入 `readDiagEvent`，同时本 PR 仍不改 §5.1、不改 G5？
+三条都已答复。提问 1：Wisdom 2026-11-03 10:40 批准值导入 `readDiagEvent`。§5.1 的补线不在本 PR。
 
 ## 证据链接
 
