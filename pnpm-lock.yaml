@@ -32,6 +32,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@oi/platform-node':
+        specifier: workspace:*
+        version: link:../../packages/platform-node
       electron:
         specifier: 45.2.1
         version: 45.2.1
@@ -50,6 +53,15 @@ importers:
         version: 0.34.52
 
   packages/kernel: {}
+
+  packages/platform-node:
+    dependencies:
+      '@oi/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@oi/kernel':
+        specifier: workspace:*
+        version: link:../kernel
 
 packages:
 
