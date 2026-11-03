@@ -16,7 +16,13 @@ GATE_BASE=origin/main corepack pnpm run check
 
 退出码 0。`check:format` 打印 `All matched files use Prettier code style!`。`check-file-size: 178 source files within hard limits`。dependency-cruiser：`no dependency violations found (92 modules, 175 dependencies cruised)`。`check-commits` 通过。`check-pr-size: 726 non-generated lines`（`8474da8` 的说明含 `G12:`）。codegen 1 个 generator，随后的 `git diff --exit-code` 通过。
 
-写入本文件和 changelog 行的提交只追加记录。该提交上再跑一次的退出码写在 PR 描述。
+写入本文件和 changelog 行的提交是 `bca8ad00ed46c5fc94c20a40c130a2df94f106fb`。在该提交上再跑：
+
+```bash
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+退出码 0。`check-pr-size: 750 non-generated lines`。其余步骤与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
 
 ## 链接
 
