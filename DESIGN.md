@@ -924,6 +924,8 @@ type TermExplanation =
 
 ### 6.1 v2 桌面端决策记录（2026-11-04）
 
+批准记录见 [docs/approvals.md](./docs/approvals.md)。
+
 
 原 Q1–Q3 均已于 2026-11-04 02:04 由 Wisdom 批准（均选 A），已并入 §1：
 - R5 首页并入「文献库」场景（最近 / 全部论文 / Markdown 笔记库）—— **已批（Wisdom 2026-11-04 02:04）**
