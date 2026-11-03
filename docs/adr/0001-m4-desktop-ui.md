@@ -2,7 +2,7 @@
 
 状态：采纳。日期：2026-11-04（Asia/Shanghai）。决定人：Wisdom。
 
-规格来自 Loom 的 DESIGN v0.3。Wisdom 于 2026-11-04 02:04–03:54 批准。`637f9af` 把对应句子写进 [PRD.md](../../PRD.md) 与 [ARCHITECTURE.md](../../ARCHITECTURE.md)，当时标成提议。Forge 审过 #116 之后，AC-74、PRD §3.6、ARCHITECTURE §7.11、§8.2、§9.1 改为已采纳。§9.1 的接口签名仍各自实现时走接口 PR。不另写一份规格。批准记录见 [docs/approvals.md](../approvals.md)。
+规格来自 Loom 的 DESIGN v0.3。Wisdom 于 2026-11-04 02:04–04:22 批准。`637f9af` 把对应句子写进 [PRD.md](../../PRD.md) 与 [ARCHITECTURE.md](../../ARCHITECTURE.md)，当时标成提议。Forge 审过 #116 之后，AC-74、PRD §3.6、ARCHITECTURE §7.11、§8.2、§9.1 改为已采纳。§9.1 的接口签名仍各自实现时走接口 PR。不另写一份规格。批准记录见 [docs/approvals.md](../approvals.md)。
 
 ## 背景
 
