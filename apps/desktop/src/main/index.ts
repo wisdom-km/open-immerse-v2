@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { handleAppProtocol, registerAppScheme } from "./app-protocol.js";
+import { startMainLogger } from "./composition-root.js";
 import { blockUnlessAllowed, decideWebViewAttach } from "./security/navigation.js";
 import { decidePermissionCheck, decidePermissionRequest } from "./security/permissions.js";
 import { createMainWindow } from "./window.js";
@@ -23,6 +24,7 @@ void app.whenReady().then(() => {
   handleAppProtocol(rendererRoot(fileURLToPath(import.meta.url)));
   denyPermissions();
   createMainWindow();
+  startMainLogger();
 });
 
 function rendererRoot(mainFile: string): string {
