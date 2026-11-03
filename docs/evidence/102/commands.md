@@ -27,3 +27,26 @@ COMPARE_OK
 ```
 
 `git diff origin/main -- .github/workflows/ci.yml` 只有新增的 `concurrency` 四行。`name:` 与 `on:` 没有出现在增删行里。
+
+## 合入 origin/main 761f22c
+
+日期仍是 2026-11-03。只解决 `docs/spec-changelog.md` 的冲突：main 的每一行都留着，#102 的一行放在表格第一行。没有改工作流，也没有改 `tools/gate-remediation/`。仓库里没有读取这份变更记录的测试。定向核对是下面这条 Python 比较。没有跑 `corepack pnpm test` 与 `corepack pnpm run check`。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| 比较 `docs/spec-changelog.md` 与 `origin/main` 的表格行，并确认工作流里的 `concurrency` 块还在 | 0 | `CHANGELOG_OK`。main 27 行都在。多出来的只有 #102。第一行是 #102，第二行是 #101。日期非递增。没有冲突标记 |
+
+输出：
+
+```
+conflict_markers []
+main_row_count 27
+resolved_row_count 28
+missing_from_main 0
+extra_rows 1
+first_row_has_102 True
+second_row_has_101 True
+dates_non_increasing True
+first_dates ['2026-11-03', '2026-11-03', '2026-11-03', '2026-11-03']
+CHANGELOG_OK
+```
