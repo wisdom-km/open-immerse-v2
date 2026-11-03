@@ -91,6 +91,8 @@ Wisdom 2026-11-02 20:07 批准把 `CI / worker-health-windows` 设为保护分�
 
 同一分支的一次推送会同时触发 `push` 与（如果已开 PR）`pull_request`。保护分支看的是 PR 上的那一组 check。
 
+工作流在 `jobs` 之前有 `concurrency`。组是 `${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}`。`pull_request` 与非 `refs/heads/main` 的运行 `cancel-in-progress` 为真：同一 PR 或同一非 main 分支上，新的运行取消还在排队或进行中的旧运行。推到 `main` 时 `cancel-in-progress` 为假，进行中的 main 运行不被取消，同组里后到的 main 运行排队。`push` 与 `pull_request` 的组不同，互不取消。不改 job 名、触发器、步骤，也不改分支保护（N-02）。
+
 ### 云端 Agent
 
 `.cursor/environment.json` 的 `install` 是 `bash .cursor/install.sh`。脚本用 `.nvmrc` 安装 Node，执行 `corepack enable`，再按 `pnpm-lock.yaml` 执行 `corepack pnpm install --frozen-lockfile`；然后安装锁定版本的 uv（可执行文件链到 `/usr/local/bin`，避免非交互登录壳读不到 `~/.bashrc`），并在 `workers/parser/` 执行 `uv python install` 与 `uv sync --frozen --extra dev`。
