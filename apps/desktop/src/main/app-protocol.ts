@@ -13,17 +13,7 @@ export function registerAppScheme(): void {
 }
 
 export function handleAppProtocol(rendererRoot: string): void {
-  protocol.handle(SCHEME, (request) =>
-    respond(rendererRoot, readUrl(request), readMethod(request)),
-  );
-}
-
-function readUrl(request: { url: string }): string {
-  return request.url;
-}
-
-function readMethod(request: { method: string }): string {
-  return request.method;
+  protocol.handle(SCHEME, (request) => respond(rendererRoot, request.url, request.method));
 }
 
 function respond(root: string, requestUrl: string, method: string): Response {
