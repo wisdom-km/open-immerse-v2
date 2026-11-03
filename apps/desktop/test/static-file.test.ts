@@ -11,7 +11,7 @@ function withRoot(run: (root: string) => void): void {
   try {
     writeFileSync(path.join(root, "index.html"), "<title>Open Immerse</title>\n");
     writeFileSync(path.join(outside, "secret.html"), "secret");
-    symlinkSync(path.join(outside, "secret.html"), path.join(root, "secret.html"));
+    symlinkSync(outside, path.join(root, "linked"), "junction");
     run(root);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -27,7 +27,7 @@ it("serves html inside the renderer root and rejects escapes", () => {
     expect(resolveInsideRoot(root, "oi-app://app/index.html%00.html")).toBeNull();
     expect(resolveInsideRoot(root, "oi-app://app/%5C..%5Csecret.html")).toBeNull();
     expect(resolveInsideRoot(root, "oi-app://evil/index.html")).toBeNull();
-    expect(resolveInsideRoot(root, "oi-app://app/secret.html")).toBeNull();
+    expect(resolveInsideRoot(root, "oi-app://app/linked/secret.html")).toBeNull();
     expect(resolveInsideRoot(root, "file:///etc/passwd")).toBeNull();
 
     const served = resolveStaticFile(root, "oi-app://app/index.html", "GET");
