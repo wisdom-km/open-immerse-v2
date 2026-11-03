@@ -56,4 +56,47 @@ worker-health-windows	pending	0	https://github.com/wisdom-km/open-immerse-v2/act
 
 五条检查各一行。没有重复的 `node`、`python-worker`、`worker-health-windows`、`worker-health-macos` 或 `desktop-e2e-windows`。
 
-推送本文件会再触发一次 `pull_request`，并取消上面这一轮还在跑的 run。含本文件的 tip 另有一节，在该 tip 的 run 列出检查之后补上。
+推送含本文件的 `b05c732` 之后，这一轮被取消。`gh run view 41684675979 --json event,headSha,status,conclusion,url`：
+
+```json
+{"conclusion":"cancelled","event":"pull_request","headSha":"ccbaa6a8e5911407d85af4a7c342aff2a8edee32","status":"completed","url":"https://github.com/wisdom-km/open-immerse-v2/actions/runs/41684675979"}
+```
+
+取消的是被取代的旧 run，不是多出来的第二组。该 SHA 上从头到尾只有这一条 `pull_request`。
+
+## CI：tip `b05c732` 每个检查出现一次
+
+`b05c732619a96c6dbfbec3e3cef8ef97f856bc91` 是写入上面两节时的 tip。分支上同时能看到的 run 只有这一条在进行，加上被取消的 `41684675979`。没有 `push`。
+
+`gh run list --branch feature/m1-ci-single-run --limit 10`：
+
+```
+in_progress		ci: 每个 PR tip 只跑一轮检查	CI	feature/m1-ci-single-run	pull_request	41684919814	26s	2026-11-03T17:30:36Z
+completed	cancelled	ci: 每个 PR tip 只跑一轮检查	CI	feature/m1-ci-single-run	pull_request	41684675979	1m42s	2026-11-03T17:29:06Z
+```
+
+`gh run list --commit b05c732619a96c6dbfbec3e3cef8ef97f856bc91 --limit 20` 只有 `41684919814`，事件 `pull_request`。
+
+`gh pr view 105 --json headRefOid,statusCheckRollup`：
+
+```json
+{"head":"b05c732619a96c6dbfbec3e3cef8ef97f856bc91","counts":[{"count":1,"name":"desktop-e2e-windows"},{"count":1,"name":"node"},{"count":1,"name":"python-worker"},{"count":1,"name":"worker-health-macos"},{"count":1,"name":"worker-health-windows"}]}
+```
+
+`gh pr checks 105`：
+
+```
+desktop-e2e-windows	pending	0	https://github.com/wisdom-km/open-immerse-v2/actions/runs/41684919814/job/126088129954
+node	pending	0	https://github.com/wisdom-km/open-immerse-v2/actions/runs/41684919814/job/126088130449
+python-worker	pending	0	https://github.com/wisdom-km/open-immerse-v2/actions/runs/41684919814/job/126088130361
+worker-health-macos	pending	0	https://github.com/wisdom-km/open-immerse-v2/actions/runs/41684919814/job/126088130580
+worker-health-windows	pending	0	https://github.com/wisdom-km/open-immerse-v2/actions/runs/41684919814/job/126088130443
+```
+
+`gh run view 41684919814 --json event,headSha,status,url,jobs`（采集时 `python-worker` 与 `worker-health-macos` 已成功）：
+
+```json
+{"event":"pull_request","headSha":"b05c732619a96c6dbfbec3e3cef8ef97f856bc91","status":"in_progress","url":"https://github.com/wisdom-km/open-immerse-v2/actions/runs/41684919814","jobs":[{"name":"desktop-e2e-windows","status":"in_progress"},{"name":"python-worker","status":"completed","conclusion":"success"},{"name":"worker-health-windows","status":"in_progress"},{"name":"node","status":"in_progress"},{"name":"worker-health-macos","status":"completed","conclusion":"success"}]}
+```
+
+五条检查各一行。补上这一节的提交会再触发一次 `pull_request`，并取消 `41684919814`。那个新 tip 的 `gh run list` / `gh pr checks` 写在 PR 描述里，不在本文件再追加一节，避免每补一次名单就再取消一轮。
