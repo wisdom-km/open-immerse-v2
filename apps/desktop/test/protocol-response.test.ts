@@ -10,15 +10,11 @@ const PAGE = "<title>Open Immerse</title>\n";
 
 async function withPage(run: (root: string) => Promise<void> | void): Promise<void> {
   const root = mkdtempSync(path.join(tmpdir(), "oi-app-"));
-  const outside = mkdtempSync(path.join(tmpdir(), "oi-outside-"));
   try {
     writeFileSync(path.join(root, "index.html"), PAGE);
-    writeFileSync(path.join(outside, "secret.html"), "secret");
-    symlinkSync(path.join(outside, "secret.html"), path.join(root, "secret.html"));
     await run(root);
   } finally {
     rmSync(root, { recursive: true, force: true });
-    rmSync(outside, { recursive: true, force: true });
   }
 }
 
@@ -36,11 +32,18 @@ it("returns 404 when the html file is missing", async () => {
   });
 });
 
-it("returns 404 when the path is a symlink outside the root", async () => {
-  await withPage((root) => {
-    const response = respond(root, "oi-app://app/secret.html", "GET");
+it("returns 404 when a directory link points outside the root", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "oi-app-"));
+  const outside = mkdtempSync(path.join(tmpdir(), "oi-outside-"));
+  try {
+    writeFileSync(path.join(outside, "secret.html"), "secret");
+    symlinkSync(outside, path.join(root, "linked"), "junction");
+    const response = respond(root, "oi-app://app/linked/secret.html", "GET");
     expect(response.status).toBe(404);
-  });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
 });
 
 it("returns 200 when GET reads an html file inside the root", async () => {
