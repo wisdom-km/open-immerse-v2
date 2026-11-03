@@ -21,7 +21,7 @@ export default defineConfig({
       "packages/features/*/test/core/**/*.ts",
       "packages/contracts/**/*.test.ts",
       "packages/kernel/**/*.test.ts",
-      "packages/platform-node/**/*.test.ts",
+      "packages/platform-node/test/**/*.test.ts",
       "apps/desktop/test/**/*.test.ts",
     ],
     typecheck: {

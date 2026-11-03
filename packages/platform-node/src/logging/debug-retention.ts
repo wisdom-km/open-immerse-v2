@@ -10,6 +10,7 @@ type DebugFile = {
   readonly size: number;
 };
 
+/** 年龄和删除顺序看 mtime。写入方把 mtime 设成注入时钟的 nowMs。 */
 export function enforceDebugRetention(directory: string, nowMs: number): void {
   const staleBefore = nowMs - DEBUG_LOG_MAX_AGE_MS;
   for (const file of listDebugFiles(directory)) {
