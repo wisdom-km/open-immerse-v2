@@ -38,7 +38,15 @@ Loom 的 DESIGN 跟进补丁在 `3335afe20225da20f3040749e5677576dd166482`。DES
 GATE_BASE=origin/main corepack pnpm run check
 ```
 
-退出码 0。`check-pr-size: 776 non-generated lines`。其余步骤与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-design.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
+退出码 0。`check-pr-size: 776 non-generated lines`。其余步骤与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-design.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。tip `508ee3da2d5680ccb9bdae267a68ac305bd87f25` 再跑退出码 0，`check-pr-size: 784 non-generated lines`。
+
+Anvil 审过 `508ee3d` 之后，ADR 0001 的选项与决定对齐写在 `651fcc7ef162ea332b8fa06b1bac5b0026c91f68`。在该提交上再跑：
+
+```bash
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+退出码 0。`check-pr-size: 783 non-generated lines`。其余步骤与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-adr.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
 
 ## 链接
 
