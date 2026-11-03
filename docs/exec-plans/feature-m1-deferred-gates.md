@@ -50,11 +50,11 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 只交这份计划。不改三道门禁，不改工作流，不改 #108 正在改的三份文档 |  | `docs/evidence/<PR号>/commands.md` |
+| 1 | 只交这份计划。不改三道门禁，不改工作流，不改 #108 正在改的三份文档 | 计划已提交。实现未写 | `docs/evidence/110/commands.md` |
 | 2 | Forge 若同意拆分：G1 用单独的 PR 接 Prettier，只格式化 89 个代码文件，提交说明含 `G12:`，忽略 Markdown 与 `.github/**` |  |  |
 | 3 | G3 保持 `tsc --noEmit`，直到第一个包真的使用 project references。那个 PR 再改 `typecheck.mjs`，不改 `ci.yml` |  |  |
 | 4 | G5 等认法写进规格、且 #108 已合入并 merge `main` 之后，再在 `check:deps` 的路径上加检查。不在依赖规则里发明发布/订阅的认法 |  |  |
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：测量命令与退出码。Prettier 没有 `--write` 进工作区。
+- `docs/evidence/110/`：测量命令与退出码。Prettier 没有 `--write` 进工作区。
