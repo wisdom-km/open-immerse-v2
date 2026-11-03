@@ -69,3 +69,23 @@ it("allows a synthetic key that uses the oitest_ prefix (G9)", (context) => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+it("rejects the same suffix when the prefix is nottest_ (G9)", (context) => {
+  const bin = binary(context);
+  const root = mkdtempSync(path.join(tmpdir(), "oi-leak-prefix-"));
+  try {
+    git(root, ["init"]);
+    git(root, ["config", "user.email", "gate@example.com"]);
+    git(root, ["config", "user.name", "gate"]);
+    const suffix = ["1WqE2rT3", "yU4iO5pA", "6sD7fG8h", "J9kL0zXc", "VbNm"].join("");
+    const key = ["nottest_", suffix].join("");
+    writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
+    git(root, ["add", "secret.txt"]);
+    git(root, ["commit", "-m", "chore: leak fixture"]);
+    const leaked = detect(bin, root);
+    expect(leaked.status).not.toBe(0);
+    expect(commandOutput(leaked)).toContain(remediationBlock("G9"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
