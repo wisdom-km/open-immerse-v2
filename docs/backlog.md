@@ -1,6 +1,6 @@
 # 待办与架构评审处理状态
 
-状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-03（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。同日 Electron 外壳延期三条：#66、#67、#68。2026-11-03 补上 #76、#80。同日 10:40 Wisdom 批准 platform-node → contracts 值导入，记在 §12，ARCH §5.1 补 `PN --> C`。同日 PR #85 把 `score_best` / `score_best_batch` 记入 §4，查重没有已有 Issue，本环境不能开 GitHub Issue。
+状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-03（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。同日 Electron 外壳延期三条：#66、#67、#68。2026-11-03 补上 #76、#80。同日 10:40 Wisdom 批准 platform-node → contracts 值导入，记在 §12，ARCH §5.1 补 `PN --> C`。同日 PR #85 把 `score_best` / `score_best_batch` 记入 §4，Issue #86。
 用途：逐条记录[架构评审](./reviews/2026-10-30-architecture-review.md)的每个发现由哪个规格 PR 处理、落在规格哪里，以及还没处理、留给哪个里程碑的事。决定的理由见[差异清单](./v2-gap-and-changes.md) §6.6–§6.13；本文只记状态，不重述规格。§5 记 Jev 开关审查（2026-10-30 22:06）各项的处理状态。§8 收录还要等 M0 的项，也记下已经拍板的项（2026-10-31 01:08 建表；同日 D-D、D-E 与 W-4 的过渡默认已决定）。未决的行不代选。
 
 三个规格 PR：
@@ -96,7 +96,7 @@
 | desktop e2e 覆盖权限 check handler（`navigator.permissions.query`）并把单个冒烟测试拆开 | 本 PR #78 处理 | #71；PR #65 Forge 审查 |
 | `app-protocol.ts` 的 `readUrl`/`readMethod` 透传内联 | 本 PR #78 处理 | #72；PR #65 Forge 审查 |
 | app-protocol 的 `respond()` 返回的 HTTP 状态码（405/404）缺测试 | M1 | #80；来源 PR #78 计划审查 |
-| `score_best` 与 `score_best_batch` 的请求形态。M1 客户端只实现 `mode: "score"`，这两种不算本 PR 漏测 | M6a。查重没有已有 Issue；本环境不能开 GitHub Issue | PR #85 Forge 审查（2026-11-03）；ARCH §7.4 |
+| `score_best` 与 `score_best_batch` 的请求形态。M1 客户端只实现 `mode: "score"`，这两种不算本 PR 漏测 | M6a | #86；PR #85 Forge 审查（2026-11-03）；ARCH §7.4 |
 
 ## 5. Jev 开关审查（2026-10-30 22:06）的处理
 

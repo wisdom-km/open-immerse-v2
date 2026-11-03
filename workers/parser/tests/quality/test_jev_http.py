@@ -11,6 +11,7 @@ from oi_worker.quality.backends.jev_http import (
     INTERNATIONAL_BASE_URL,
     JevHttpBackend,
     JevHttpSettings,
+    NetworkDisabledError,
     RetryPolicy,
 )
 from oi_worker.quality.evaluator import EvalItem
@@ -118,7 +119,7 @@ def test_ac_59_sends_64_then_1_when_there_are_65_items() -> None:
     assert [attempt.prompt_tokens for attempt in result.attempts] == [10, 3]
 
 
-@pytest.mark.parametrize("credential", [None, ""])
+@pytest.mark.parametrize("credential", [None, "", " ", "\t", " \n "])
 def test_ac_59_sends_nothing_when_the_credential_is_missing(credential: str | None) -> None:
     script = _Script([_ok(1, 1)])
     result = JevHttpBackend(_settings(script, credential=credential)).score(_items(2))
@@ -128,6 +129,12 @@ def test_ac_59_sends_nothing_when_the_credential_is_missing(credential: str | No
     assert [outcome.failure_kind for outcome in result.outcomes] == ["auth", "auth"]
     assert [outcome.unavailable for outcome in result.outcomes] == [True, True]
     assert [outcome.raw_score for outcome in result.outcomes] == [None, None]
+
+
+def test_strips_surrounding_whitespace_when_the_credential_is_present() -> None:
+    script = _Script([_ok(1, 1)])
+    JevHttpBackend(_settings(script, credential=f"  {KEY}  ")).score(_items(1))
+    assert script.requests[0].headers["authorization"] == f"Bearer {KEY}"
 
 
 def test_ac_59_keeps_the_key_in_the_authorization_header_when_scoring() -> None:
@@ -142,6 +149,19 @@ def test_ac_59_keeps_the_key_in_the_authorization_header_when_scoring() -> None:
 def test_ac_59_records_service_failed_when_content_does_not_parse() -> None:
     script = _Script([httpx.Response(200, json={"choices": [{"message": {"content": "{"}}]})])
     result = JevHttpBackend(_settings(script)).score(_items(2))
+    assert result.retry_count == 0
+    assert [outcome.failure_kind for outcome in result.outcomes] == [
+        "service_failed",
+        "service_failed",
+    ]
+    assert [outcome.raw_score for outcome in result.outcomes] == [None, None]
+    assert [outcome.provider_verdict for outcome in result.outcomes] == [None, None]
+
+
+def test_records_service_failed_when_the_body_is_not_utf8() -> None:
+    script = _Script([httpx.Response(200, content=b"\xff")])
+    result = JevHttpBackend(_settings(script)).score(_items(2))
+    assert len(script.requests) == 1
     assert result.retry_count == 0
     assert [outcome.failure_kind for outcome in result.outcomes] == [
         "service_failed",
@@ -245,6 +265,20 @@ def test_fails_when_a_request_is_not_stubbed() -> None:
     script = _Script([])
     with pytest.raises(AssertionError, match="unstubbed"):
         JevHttpBackend(_settings(script)).score(_items(1))
+
+
+def test_propagates_a_runtime_error_when_the_transport_raises_one() -> None:
+    script = _Script([RuntimeError("programming error")])
+    with pytest.raises(RuntimeError, match="programming error"):
+        JevHttpBackend(_settings(script)).score(_items(1))
+
+
+def test_records_service_failed_when_the_network_is_disabled() -> None:
+    script = _Script([NetworkDisabledError("real network is disabled")])
+    result = JevHttpBackend(_settings(script)).score(_items(1))
+    assert result.outcomes[0].failure_kind == "service_failed"
+    assert result.outcomes[0].raw_score is None
+    assert result.attempts[0].http_status is None
 
 
 def test_makes_no_socket_call_when_no_transport_is_injected() -> None:

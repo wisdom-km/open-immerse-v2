@@ -32,9 +32,13 @@ INTERNATIONAL_BASE_URL = "https://api.modelbest.ai/v1"
 DOMESTIC_BASE_URL_UNVERIFIED = "https://api.modelbest.cn/v1"
 
 
+class NetworkDisabledError(Exception):
+    """No transport was injected, so this client refuses to open a socket."""
+
+
 class _RefuseTransport(httpx.BaseTransport):
     def handle_request(self, request: httpx.Request) -> httpx.Response:
-        raise RuntimeError("real network is disabled")
+        raise NetworkDisabledError("real network is disabled")
 
 
 def _sleep_ms(delay_ms: int) -> None:
@@ -145,9 +149,8 @@ class JevHttpBackend:
             response = self._send(items)
         except httpx.TimeoutException:
             return _record(self._settings.clock, started, None, map_timeout()), None
-        except (httpx.HTTPError, RuntimeError):
-            failure = ProviderFailure("service_failed", False, None, None, None, None)
-            return _record(self._settings.clock, started, None, failure), None
+        except (NetworkDisabledError, httpx.HTTPError):
+            return _record(self._settings.clock, started, None, _transport_failure()), None
         return self._from_response(items, response, started)
 
     def _from_response(
@@ -170,8 +173,8 @@ class JevHttpBackend:
         return AttemptRecord(elapsed, status, tokens, None), tuple(parsed)
 
     def _send(self, items: list[EvalItem]) -> httpx.Response:
-        credential = self._settings.credential
-        if credential is None or credential == "":
+        credential = _stripped(self._settings.credential)
+        if credential is None:
             raise RuntimeError("missing credential")
         transport = self._settings.transport
         if transport is None:
@@ -183,7 +186,20 @@ class JevHttpBackend:
 
 
 def _missing(credential: str | None) -> bool:
-    return credential is None or credential == ""
+    return _stripped(credential) is None
+
+
+def _stripped(credential: str | None) -> str | None:
+    if credential is None:
+        return None
+    text = credential.strip()
+    if text == "":
+        return None
+    return text
+
+
+def _transport_failure() -> ProviderFailure:
+    return ProviderFailure("service_failed", False, None, None, None, None)
 
 
 def _elapsed(clock: Callable[[], float], started: float) -> int:
@@ -202,7 +218,7 @@ def _record(
 def _json_body(response: httpx.Response) -> object | None:
     try:
         body: object = response.json()
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, UnicodeDecodeError):
         return None
     return body
 
