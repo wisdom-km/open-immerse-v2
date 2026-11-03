@@ -27,7 +27,7 @@ M1 收尾里这一截：四个空切片、空的 `packages/providers`、ingest �
 
 不改：`.github/workflows/**`、`DESIGN.md`、`docs/design-principles.md`、`docs/design/**`、`.cursor/environment.json`、`.cursor/install.sh`、`tools/check-secrets/leak.test.ts`、`docs/README.md`、`docs/backlog.md`、`docs/spec-changelog.md`、`docs/acceptance/**`、`dependency-cruiser.config.mjs`、`tools/check-deps/build-rules.mjs`、`tools/check-deps/feature-edges.mjs`。不写密钥。不改依赖版本。
 
-`docs/spec-changelog.md` 按任务不碰。§4.1 这一句因此没有 changelog 行，写在 PR 的风险里。
+`docs/spec-changelog.md` 按当时的任务不碰。§4.1 这一句因此没有 changelog 行，写在 PR 的风险里。Forge 审查在 #121 合入 main@4d83106 之后取消这一处禁改。步骤 6 补上 changelog，并按 RULES §7 改掉因此失真的 `docs/backlog.md` 与 ARCHITECTURE §4.3、§16。`docs/README.md`、`docs/acceptance/**`、`tools/check-secrets/leak.test.ts` 仍不改。
 
 ## 计划 / 实际
 
@@ -40,6 +40,7 @@ M1 收尾里这一截：四个空切片、空的 `packages/providers`、ingest �
 | 3 | 空的 `providers`，登记 workspace，并写入巡航用的 paths。`pnpm install` 只更新 lockfile 的 importer | `5c6649d`。lockfile 只加 `packages/providers` 的三条 workspace 链接。paths 增加 `@oi/providers`。规则文本未改 | 同上 |
 | 4 | ADR 0002、0003，改索引。§4.1 补一句。不改矩阵，图上已经是这九条，`repair` 已经没有指向 `quality` | `6eba91f`。未改 `feature-edges.mjs` 与架构图 | 同上 |
 | 5 | 在 `packages/providers/src/index.ts` 临时加上对 `jobs` 入口的导入，跑 `check:deps`，期望非 0 且含 `providers-boundary`。删掉这行，工作区恢复。再跑 `GATE_BASE=origin/main corepack pnpm run check`，期望 0 | 违规样例退出码 1，含 `providers-boundary`。恢复后 `6eba91f` 上 check 退出码 0。`check-one-slice: 4 feature slice(s)` | 同上 |
+| 6 | 把 `origin/main` merge 进本分支。changelog 补 #122。按 RULES §7 同步失真的规格句。再跑 `GATE_BASE=origin/main corepack pnpm run check` | merge `4368b85`（main@4d83106），无冲突。规格提交 `840e291`。该提交上 check 退出码 0，`check-pr-size: 343 non-generated lines` | 同上 |
 
 函数不超过 80 行。不建 `utils`。不改门禁上限（N-08）。预计对 `main` 的非生成 diff 低于 600 行。若超过，提交说明或 `PR_BODY` 加一行 `G12:`。
 
