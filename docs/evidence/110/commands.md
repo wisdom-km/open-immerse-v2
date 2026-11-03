@@ -41,3 +41,5 @@ corepack pnpm run check
 ```
 
 Vitest：1 个文件、1 条通过，失败 0，跳过 0，退出码 0。`pnpm check` 退出码 0。`check-pr-size` 打印 `60 non-generated lines`。没有跑 `pnpm test`。
+
+同一组命令在 `eb5fc2eb94901f216e3cb692a755fa5da82da815` 上重跑。Vitest 仍是 1 个文件、1 条通过，失败 0，跳过 0，退出码 0。`pnpm check` 退出码 0。`check-pr-size` 打印 `103 non-generated lines`。没有跑 `pnpm test`。
