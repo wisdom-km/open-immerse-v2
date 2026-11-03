@@ -54,7 +54,15 @@ DESIGN 的 R14、UIX-69 与决策日志顺序在 `ad299d51734de425f6eb0aed18c138
 GATE_BASE=origin/main corepack pnpm run check
 ```
 
-退出码 0。`check-pr-size: 793 non-generated lines`。其余步骤与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-range.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
+退出码 0。`check-pr-size: 793 non-generated lines`。其余步骤与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-range.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。tip `cbb13926c4d218620f90eebe15760d9c7faf19ee` 再跑退出码 0，`check-pr-size: 801 non-generated lines`。
+
+§3.8.2 改为已批、决策日志补 04:17，写在 `4d48b7d0894c04f2031a7db46cad221b1c63a415`。在该提交上再跑：
+
+```bash
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+退出码 0。`check-pr-size: 802 non-generated lines`。其余步骤与上一节相同。日志在 `/opt/cursor/artifacts/pnpm-check-116-0417.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
 
 ## 链接
 
