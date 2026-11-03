@@ -70,7 +70,7 @@ GATE_BASE=origin/main corepack pnpm run check
 GATE_BASE=origin/main corepack pnpm run check
 ```
 
-退出码 0。`check-pr-size: 843 non-generated lines`。仓库没有 `check-docs` 脚本，这次没有跑。`check-pr-size` 通过，没有为它改提交说明。日志在 `/opt/cursor/artifacts/pnpm-check-116-m4-order.log`。追加本段的提交只改这一节；该提交上再跑一次的退出码写在 PR 描述。
+退出码 0。`check-pr-size: 843 non-generated lines`。仓库没有 `check-docs` 脚本，这次没有跑。`check-pr-size` 通过，没有为它改提交说明。追加本段的提交是 `3a938efe93026b312e14dfbc3bb348d16e63292d`。在该提交上再跑一次，退出码 0，`check-pr-size: 851 non-generated lines`。日志在 `/opt/cursor/artifacts/pnpm-check-116-m4-order.log`。
 
 ## 链接
 
