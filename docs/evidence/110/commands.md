@@ -43,3 +43,18 @@ corepack pnpm run check
 Vitest：1 个文件、1 条通过，失败 0，跳过 0，退出码 0。`pnpm check` 退出码 0。`check-pr-size` 打印 `60 non-generated lines`。没有跑 `pnpm test`。
 
 同一组命令在 `eb5fc2eb94901f216e3cb692a755fa5da82da815` 上重跑。Vitest 仍是 1 个文件、1 条通过，失败 0，跳过 0，退出码 0。`pnpm check` 退出码 0。`check-pr-size` 打印 `103 non-generated lines`。没有跑 `pnpm test`。
+
+## 实现 G1
+
+#108 已合入（`bbb683947eedf1b9f32be723b4c47db426bd55c7`）。本分支 merge `main`，没有 force push。没有改 `.github/workflows/*`。
+
+格式化提交 `574da43`：89 个 `*.ts`、`*.mjs`、`*.js` 文件，+1391 / −370。没有 `*.tsx` 或 `*.cjs` 需要改。提交说明含一行 `G12:`。配置与 `check:format` 在后一个提交 `85bd9e7dc8c98d9b095d0dacd6e0cdd610c004e7`。Prettier 3.6.2，`prettier.config.mjs` 是空配置（默认 `printWidth` 80）。
+
+所在提交 `85bd9e7dc8c98d9b095d0dacd6e0cdd610c004e7`。本地 `main` 已快进到 `origin/main` `bbb6839`。
+
+```bash
+corepack pnpm exec vitest run tools/gate-remediation/g1.test.ts tools/gate-remediation/g3.test.ts tools/gate-remediation/catalog.test.ts tools/gate-remediation/ruff.test.ts
+corepack pnpm run check
+```
+
+Vitest：4 个文件、8 条通过，失败 0，跳过 0，退出码 0。`pnpm check` 退出码 0。`check:format` 打印 `All matched files use Prettier code style!`。`check-file-size` 打印 178 个源文件。`check-pr-size` 打印 `1979 non-generated lines`，格式化提交说明里的 `G12:` 被接受。没有跑 `pnpm test`。

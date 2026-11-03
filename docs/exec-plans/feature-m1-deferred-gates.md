@@ -57,4 +57,4 @@
 
 ## 证据链接
 
-- `docs/evidence/110/`：测量命令与退出码。Prettier 没有 `--write` 进工作区。
+- `docs/evidence/110/`：测量命令与退出码。格式化写在单独的提交里，不改 Markdown 与 `.github`。
