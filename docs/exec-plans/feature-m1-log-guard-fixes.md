@@ -4,6 +4,15 @@
 
 本计划跨 `packages/platform-node` 与 `apps/desktop` 装配根，所以用这份计划。不改功能切片，不改 worker。
 
+## 审查结论
+
+Forge 审查 `1d667de`：通过。Wisdom 2026-11-03 15:45 原文：「run_id 用 UUID（crypto.randomUUID）」。
+
+- 第 1、3 项按本计划实现。
+- 第 2 项不新增豁免。`run_id` 定为 UUID，由 Node.js `crypto.randomUUID()` 生成。下面的 ULID 提议作废。这种 UUID 已经由 `uuidPattern` 放行。
+- 不改 `composition-root.ts`、`vitest.config.ts`。
+- 定向检查只跑相关 vitest 与 `GATE_BASE=origin/main corepack pnpm run check`。不跑全量 `pnpm test`。
+
 ## 现状理解
 
 - 已有行为：`packages/platform-node/src/logging/value-guard.ts` 在 `readDiagEvent` 通过后整值替换。`channel` 走 `scrubToken`，字符集是 `^[a-z0-9_.:-]*$`，长度 ≤ 64。`ingest.onProgress` 含大写 `P`，在 `ipc.oversize` 里变成 `[redacted]`。密钥识别在字符集之前：`authorization` / `bearer` / `sk-` / `oitest_`，GitHub 前缀 `ghp_`、`gho_`、`ghu_`、`ghs_`、`ghr_`、`github_pat_`，`AKIA` 或 `ASIA` 后 16 位，连续 40 位 hex，以及长度 ≥ 20 且香农熵 ≥ 4.0。UUID（`8-4-4-4-12`）与 `ts` 字符集在熵检测处豁免。`api-key-missing` 长 15，不查熵。`run_id` 与 `requestId` 走 `scrubId`：`^[A-Za-z0-9_.:-]+$`，长度 ≤ 128，仍然先过同一套密钥识别。规格示例 ULID `01ARZ3NDEKTSV4RRFFQ69G5FAV` 长 26、熵约 4.181，会被打码。`apps/desktop/src/main/index.ts` 用 `void app.whenReady().then(...)`，回调里在 `createMainWindow()` 之后调用 `startMainLogger()`。`createFileLogger` 构造时跑 `enforceDebugRetention`（同步 `unlinkSync` 等），失败就抛。`void` 只让浮空 Promise 通过 lint，没有挂上 rejection 处理，Node 会发出 `unhandledRejection`。
@@ -26,7 +35,7 @@
 | `apps/desktop/test/run-when-ready.test.ts` | 第 3 项。不启动 Electron | 否 |
 | `ARCHITECTURE.md` §11 | 只在格式被写定之后加一句 `run_id` 的字符串形式 | 否 |
 | `docs/spec-changelog.md` | 同一笔实现提交加一行 | 否 |
-| `docs/evidence/<PR号>/commands.md` | 实现 tip 的命令与摘录 | 否 |
+| `docs/evidence/88/commands.md` | 实现提交的命令与摘录 | 否 |
 
 热点文件：本计划提交不改。实现不改 `apps/desktop/src/main/composition-root.ts`、`apps/desktop/src/renderer/slots.ts`、被两个以上切片 import 的契约、`dependency-cruiser` 配置、`tools/check-file-size/allowlist.json`、根 `package.json`、`pnpm-lock.yaml`。`composition-root.ts` 现 15 行；审查若要求把 catch 挪进去，该文件的 diff 仍 ≤ 30 行（G11）。
 
@@ -40,11 +49,11 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。含现状、文件与热点、三项方案、测试清单、开放问题。先停 |  | 本文件 |
-| 2 | 第 1 项：`channel` 按 §9 格式放行，密钥识别不改 |  | `docs/evidence/<PR号>/commands.md` |
-| 3 | 第 2 项：只豁免审查写定的 `run_id` 格式；没写定则不提交豁免 |  | 同上 |
-| 4 | 第 3 项：`whenReady()` 的 Promise 有 `catch`，测试里 `unhandledRejection` 次数为 0 |  | 同上 |
-| 5 | 格式写定后，`ARCHITECTURE.md` §11 加一句，`docs/spec-changelog.md` 加一行。不改 `diag-events.ts`，不建 `kernel/src/id.ts` |  | 同上 |
+| 1 | 本文件。含现状、文件与热点、三项方案、测试清单、开放问题。先停 | 提交 `1d667de`。Forge 审查通过后才写实现 | 本文件 |
+| 2 | 第 1 项：`channel` 按 §9 格式放行，密钥识别不改 | `channel` 改走 `scrubChannel`：先 `hasHardSecret`，再长度 ≤ 64 与 §9 模式。合上的值不再查熵。小写字符集、九类前缀、hex 长度、熵阈值 20 / 4.0 未改 | `docs/evidence/88/commands.md` |
+| 3 | 第 2 项：只豁免审查写定的 `run_id` 格式；没写定则不提交豁免 | 不新增豁免，不提交 ULID 模式。测试断言 `crypto.randomUUID()` 生成的 `run_id` 原样保留。ULID 样例不新增豁免，也不断言必须打码 | 同上 |
+| 4 | 第 3 项：`whenReady()` 的 Promise 有 `catch`，测试里 `unhandledRejection` 次数为 0 | `runWhenReady` 在同一轮挂上 `catch`。失败用 `stderr.write` 写出 `error.stack ?? error.message`。desktop 的 `types` 为空、`lib` 只有 ES2023，没有 `console` 全局，所以不用上面的 `console.error`；落点仍是 stderr。不 `app.quit()`，不开对话框，不改 `composition-root.ts` | 同上 |
+| 5 | 格式写定后，`ARCHITECTURE.md` §11 加一句，`docs/spec-changelog.md` 加一行。不改 `diag-events.ts`，不建 `kernel/src/id.ts` | §11 与 PRD AC-101 写明 UUID 与 `crypto.randomUUID()`。changelog 加一行。未改 `diag-events.ts`，未建 `kernel/src/id.ts` | 同上 |
 
 函数不超过 80 行，圈复杂度不超过 15，参数不超过 4 个。禁止顶层 `let`（F-06）。不建 `utils.ts`。不改门禁上限，不往 allowlist 加行（N-08）。
 
@@ -71,6 +80,8 @@
 因此 `ingest.onAKIAoitestfake123456` 这种既像 §9 事件、又含 `AKIA`+16 的值仍然打码。`ingest.on` 后面接 40 位 hex 同样打码。带 `ghp_` 的值含下划线，模式对不上，前缀检查也会打码。
 
 ## 第 2 项：run_id 格式
+
+审查结论代替本节的 ULID 提议。实现不在 `isHighEntropy` 里加格式，不豁免 ULID。本节其余段落只保留当时的提议。
 
 规格没写 `run_id` 长什么样。ARCHITECTURE §11 只列字段名。§4.1 的 `kernel/src/id.ts` 没有文件。日志契约计划写明不建 `id.ts`，生成留到以后。现有 UUID 豁免是误伤边界，不是「`run_id` 必须是 UUID」。
 
@@ -105,7 +116,7 @@ export function runWhenReady(
 }
 ```
 
-`index.ts` 把现有回调原样交给 `start`。`onError` 是 `(error) => { console.error(error); }`。`console` 没有被 ESLint 禁掉。不调用 file logger，不 `app.quit()`，不开对话框（窗口已经创建；P5 的模态只用于要用户决定的事，M1 没有诊断页）。
+`index.ts` 把现有回调原样交给 `start`。`onError` 把 `Error` 的 `stack`（没有则 `message`）写到 stderr，其他值用 `String`。计划初稿写的是 `console.error`；desktop 的 `types` 为空，`console` 不是全局，实现改走 `import { stderr } from "node:process"`。不调用 file logger，不 `app.quit()`，不开对话框（窗口已经创建；P5 的模态只用于要用户决定的事，M1 没有诊断页）。
 
 单独文件的原因：`index.ts` 一加载就 import `electron`。desktop 单测今天 import 的是不碰 Electron 的模块（`navigation.test.ts` 这一路）。助手函数不 import `electron`，也不 import `@oi/platform-node`。
 
@@ -123,24 +134,19 @@ export function runWhenReady(
 | 1 | `qa.onQm7w2e9r4t6y8u1i3o5p0a`（长 27，熵约 4.607，符合 §9）作为 `channel` 原样保留。去掉 `qa.on` 后的 `Qm7w2e9r4t6y8u1i3o5p0a`（长 22，熵约 4.459）放在 `run_id` 上仍是 `[redacted]` |
 | 1 | `Ingest.onProgress`、带空格、带 `/`、绝对路径，作为 `channel` 是 `[redacted]` |
 | 1 | `ingest.on` 接 `AKIA`+16，以及 `ingest.on` 接 40 位 hex，都是 `[redacted]`，JSON 里样本出现 0 次 |
-| 2 | 写定格式的规范示例（ULID 则用 `01ARZ3NDEKTSV4RRFFQ69G5FAV`，熵约 4.181）在 `run_id` 与 `requestId` 上原样保留。末位改成 `I` 的 26 位串仍是 `[redacted]`。`81ARZ3NDEKTSV4RRFFQ69G5FAV` 仍是 26 位 Crockford、熵同样约 4.181，但大于 `7ZZZZZZZZZZZZZZZZZZZZZZZZZ`，仍打码。上界本身熵约 0.235，留着不能证明豁免 |
+| 2 | `crypto.randomUUID()` 生成的值在 `run_id` 与 `requestId` 上原样保留。不新增 ULID 豁免，不对 ULID 样例断言必须打码 |
 | 九类 | 现有 `value-guard-secrets.test.ts` 不放宽：`ghp_`、`gho_`、`ghu_`、`ghs_`、`ghr_`、`github_pat_`、`AKIA`+16、`ASIA`+16、40 位 hex（含纯数字与单字符重复），每个字符串字段含 `channel` 与 `run_id`，全部 `[redacted]`。高熵兜底、长度 19 的高熵串、`api-key-missing`、三个 UUID、`2026-11-02T00:00:00.000Z`、长低熵枚举、15 位 AWS 后缀，断言与现在相同 |
 | 3 | `ready` 已 resolve、`start` 同步抛出时，`onError` 收到该值，`process` 的 `unhandledRejection` 次数为 0。监听在 `finally` 里卸下。`start` 正常返回时 `onError` 次数为 0。`ready` 本身 reject 时同样是 0 次 `unhandledRejection`。不 `sleep`，等微任务排空 |
 
-实现 tip 的命令（同一个 tip 的全量只跑一次，RULES §4）：
+实现提交 `bf16effb3174311857d0ff9b944346893e89fd7c` 上的命令（审查结论把全量 `pnpm test` 收成定向 vitest）：
 
 - `corepack pnpm exec vitest run packages/platform-node/test/value-guard.test.ts packages/platform-node/test/value-guard-secrets.test.ts apps/desktop/test/run-when-ready.test.ts`
-- 全量 `corepack pnpm test` 与 `corepack pnpm run check` 在该 tip 各一次。没跑的不写成通过。`test:core` 仍无脚本，写不适用。
+- `GATE_BASE=origin/main corepack pnpm run check`
+- 全量 `corepack pnpm test` 没有跑。`test:core` 仍无脚本，写不适用。
 
 ## 仍开放的问题
 
-按 WORKFLOW 的报告格式。实现停在审查写回本文件之前。
-
-- 触发：规格未定 `run_id` 格式。
-- 停在：本文件第 2 项；`value-guard.ts` 的 `isHighEntropy` 尚未改。
-- 已读：ARCHITECTURE §9、§11、§4.1；RULES §3；PRD AC-101；Issue #81；`value-guard.ts` 与 `value-guard-secrets.test.ts`；ULID 规范 README（2026-11-03）。
-- 现状：UUID 与时间戳已在熵检测处豁免。ULID 规范示例长 26、熵约 4.181，今天会被打码。九类假 key 对不上 Crockford 的 26 位整串。
-- 提问：`run_id` 是否就用 ULID 规范的 26 位 Crockford Base32（大小写不敏感，且不大于 `7ZZZZZZZZZZZZZZZZZZZZZZZZZ`），守卫只豁免这一格式？
+无。`run_id` 格式已由 Wisdom 2026-11-03 15:45 写定，见上面的审查结论。
 
 ## 不做
 
@@ -154,4 +160,4 @@ export function runWhenReady(
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：实现提交再写 `commands.md`。本计划提交没有测试日志。
+- `docs/evidence/88/commands.md`：实现提交 `bf16eff` 的定向 vitest 与 `pnpm run check`。
