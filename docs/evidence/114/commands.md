@@ -42,7 +42,7 @@
 | `corepack pnpm exec vitest run tools/check-docs` | 0 | 4 个文件，15 条测试 |
 | `corepack pnpm exec tsc --noEmit --project tsconfig.json --pretty false` | 0 | 定向类型检查。全量 `pnpm check` 里的 `typecheck` 另记 |
 | `node tools/check-docs/check.mjs` | 0 | 见下表。stdout 如下 |
-| `GATE_BASE=origin/main corepack pnpm run check` |  | 本文件提交之后再跑，退出码补在下一节 |
+| `GATE_BASE=origin/main corepack pnpm run check` | 0 | 在 `59beaaf2e7e788acf3cbcc4d7f630d442b3cd0ff` 上跑。`check-pr-size` 打印 1227 行非生成改动，提交说明里有 `G12:`。工作区干净，`git diff --exit-code` 通过 |
 
 ### 实测发现数
 
