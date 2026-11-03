@@ -68,20 +68,49 @@ function unique(specs) {
 }
 
 export function applySpecifiers(code, mapped) {
-  const specs = [...mapped.keys()].sort(
-    (left, right) => right.length - left.length,
-  );
-  return specs.reduce(
-    (next, spec) => replaceSpecifier(next, spec, mapped),
+  const source = ts.createSourceFile(
+    "schema-emit.mjs",
     code,
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.JS,
   );
+  return applyEdits(code, specifierEdits(source, mapped));
 }
 
-function replaceSpecifier(code, spec, mapped) {
-  const href = mapped.get(spec);
-  if (href === undefined) {
-    return code;
+function specifierEdits(source, mapped) {
+  const edits = [];
+  const visit = (node) => {
+    const edit = specifierEdit(source, node, mapped);
+    if (edit !== undefined) {
+      edits.push(edit);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return edits;
+}
+
+function specifierEdit(source, node, mapped) {
+  if (!hasStringSpecifier(node)) {
+    return undefined;
   }
-  const quoted = JSON.stringify(href);
-  return code.split(`"${spec}"`).join(quoted).split(`'${spec}'`).join(quoted);
+  const href = mapped.get(node.moduleSpecifier.text);
+  if (href === undefined) {
+    return undefined;
+  }
+  return {
+    start: node.moduleSpecifier.getStart(source),
+    end: node.moduleSpecifier.getEnd(),
+    text: JSON.stringify(href),
+  };
+}
+
+function applyEdits(code, edits) {
+  const ordered = [...edits].sort((left, right) => right.start - left.start);
+  return ordered.reduce(
+    (next, edit) =>
+      next.slice(0, edit.start) + edit.text + next.slice(edit.end),
+    code,
+  );
 }
