@@ -12,16 +12,23 @@ function pipCheck(file: string) {
   });
 }
 
-it("allows PSF-2.0 only for the named dev package (G10, RULES §1.5)", () => {
+it("accepts typing_extensions when the license is PSF-2.0", () => {
   const root = mkdtempSync(path.join(tmpdir(), "oi-psf-"));
   try {
-    const allowed = path.join(root, "dev.json");
+    const allowed = path.join(root, "typing-extensions.json");
     writeFileSync(allowed, JSON.stringify([{ Name: "typing_extensions", License: "PSF-2.0" }]));
     const allowedResult = pipCheck(allowed);
     expect(allowedResult.status).toBe(0);
     expect(commandOutput(allowedResult)).not.toContain("gate-remediation:");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
-    const shipped = path.join(root, "runtime.json");
+it("rejects an unlisted package with G10 when the license is PSF-2.0", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "oi-psf-"));
+  try {
+    const shipped = path.join(root, "unlisted.json");
     writeFileSync(shipped, JSON.stringify([{ Name: "oi-worker", License: "PSF-2.0" }]));
     const shippedResult = pipCheck(shipped);
     expect(shippedResult.status).not.toBe(0);
