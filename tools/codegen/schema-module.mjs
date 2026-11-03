@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -7,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import ts from "typescript";
 
 const specifierPattern = /(?:from\s+|import\s+)["']([^"']+)["']/g;
+const dynamicImportPattern = /import\s*\(/;
 
 export async function loadProtocolSchemas(schemaPath) {
   const root = await mkdtemp(path.join(tmpdir(), "oischema-"));
@@ -19,8 +21,19 @@ export async function loadProtocolSchemas(schemaPath) {
   }
 }
 
+function outputPath(root, sourcePath) {
+  const id = createHash("sha256").update(sourcePath).digest("hex").slice(0, 16);
+  return path.join(root, `${id}.codegen.mjs`);
+}
+
+function rejectDynamicImport(code, sourcePath) {
+  if (dynamicImportPattern.test(code)) {
+    throw new Error(`dynamic import: ${sourcePath}`);
+  }
+}
+
 async function emitFile(sourcePath, root, seen) {
-  const output = path.join(root, `${path.basename(sourcePath, ".ts")}.codegen.mjs`);
+  const output = outputPath(root, sourcePath);
   if (seen.has(sourcePath)) {
     return output;
   }
@@ -32,6 +45,7 @@ async function emitFile(sourcePath, root, seen) {
     },
     fileName: sourcePath,
   }).outputText;
+  rejectDynamicImport(transpiled, sourcePath);
   const rewritten = await rewriteSpecifiers(transpiled, sourcePath, root, seen);
   await mkdir(root, { recursive: true });
   await writeFile(output, rewritten);
