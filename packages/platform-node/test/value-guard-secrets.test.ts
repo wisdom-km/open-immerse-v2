@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { expect, it } from "vitest";
 
 import { guardDiagRecord, REDACTED } from "../src/logging/value-guard.js";
@@ -120,6 +122,17 @@ it("AC-101 keeps a uuid run_id when the characters are evenly mixed", () => {
     expect(guardDiagRecord(pipeline({ run_id: runId }))).toMatchObject({ run_id: runId });
     expect(guardDiagRecord(pipeline({ requestId: runId }))).toMatchObject({ requestId: runId });
   }
+});
+
+it("AC-101 keeps a run_id when crypto.randomUUID generated it", () => {
+  const runId = randomUUID();
+  expect(guardDiagRecord(pipeline({ run_id: runId }))).toMatchObject({ run_id: runId });
+  expect(guardDiagRecord(pipeline({ requestId: runId }))).toMatchObject({ requestId: runId });
+});
+
+it("AC-101 replaces a channel when the section 9 shape still carries a provider token", () => {
+  expectRedacted("channel", `ingest.on${awsKey("AKIA", "123456")}`);
+  expectRedacted("channel", `ingest.on${"ab".repeat(20)}`);
 });
 
 it("AC-101 keeps a timestamp and a long low-entropy token when the charset allows them", () => {

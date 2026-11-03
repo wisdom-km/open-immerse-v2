@@ -109,3 +109,58 @@ it("returns undefined when readDiagEvent rejects the record", () => {
   expect(guardDiagRecord({ ...pipeline(), event: "langsmith.trace" })).toBeUndefined();
   expect(guardDiagRecord(null)).toBeUndefined();
 });
+
+function oversize(channel: string): Record<string, unknown> {
+  return {
+    ts: "2026-11-02T00:00:00.000Z",
+    level: "info",
+    feature: "ipc",
+    event: "ipc.oversize",
+    channel,
+    bytes: 1,
+  };
+}
+
+it("AC-101 keeps a channel when the name matches section 9", () => {
+  const channels = [
+    "ingest.onProgress",
+    "translation.onBlockChanged",
+    "settings.onEgressConsentRequired",
+    "jobs.onJobEvent",
+    "markdown.onFileEvent",
+    "quality.onScoringUnavailable",
+    "ingest.openDocument",
+    "formula-source.alignSource",
+    "settings.withdrawEgressConsent",
+    "qa.onQm7w2e9r4t6y8u1i3o5p0a",
+  ];
+  for (const channel of channels) {
+    expect(guardDiagRecord(oversize(channel))).toMatchObject({
+      event: "ipc.oversize",
+      channel,
+    });
+  }
+});
+
+it("AC-101 replaces a channel when the name leaves the section 9 shape", () => {
+  const channels = ["Ingest.onProgress", "ingest.on Progress", "ingest/onProgress"];
+  for (const channel of channels) {
+    const guarded = guardDiagRecord(oversize(channel));
+    expect(guarded).toMatchObject({ channel: REDACTED });
+    expect(JSON.stringify(guarded)).not.toContain(channel);
+  }
+});
+
+it("AC-101 replaces an absolute path when it is stored in channel", () => {
+  const channel = "/tmp/fixture/paper.pdf";
+  const guarded = guardDiagRecord(oversize(channel));
+  expect(guarded).toMatchObject({ channel: REDACTED });
+  expect(JSON.stringify(guarded)).not.toContain(channel);
+});
+
+it("AC-101 replaces a high-entropy tail when it is stored on run_id", () => {
+  const tail = "Qm7w2e9r4t6y8u1i3o5p0a";
+  const guarded = guardDiagRecord(pipeline({ run_id: tail }));
+  expect(guarded).toMatchObject({ run_id: REDACTED });
+  expect(JSON.stringify(guarded)).not.toContain(tail);
+});
