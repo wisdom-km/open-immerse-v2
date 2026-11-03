@@ -25,7 +25,7 @@ it("appends the catalog block only when the command exits non-zero", () => {
   expect(output).toContain("spec:");
 });
 
-it("rejects an unknown id before the wrapped command runs", () => {
+it("reports an unknown id after the command and keeps a failing exit code", () => {
   const format = path.resolve("tools/gate-remediation/format.mjs");
   const passed = spawnSync(
     "node",
@@ -33,16 +33,28 @@ it("rejects an unknown id before the wrapped command runs", () => {
     { encoding: "utf8" },
   );
   expect(passed.status).toBe(2);
-  expect(commandOutput(passed)).toContain("unknown gate id NOT-A-GATE");
-  expect(commandOutput(passed)).not.toContain("ran");
+  expect(passed.stdout).toContain("ran");
+  expect(passed.stderr).toContain("unknown gate id NOT-A-GATE");
+  expect(passed.stderr).not.toContain("at requireGate");
+  expect(commandOutput(passed)).not.toContain("gate-remediation:");
 
   const failed = spawnSync(
     "node",
     [run, "--id", "NOT-A-GATE", "--", "node", "-e", "console.log('ran'); process.exit(7)"],
     { encoding: "utf8" },
   );
-  expect(failed.status).toBe(2);
-  expect(commandOutput(failed)).not.toContain("ran");
+  expect(failed.status).toBe(7);
+  expect(failed.stdout).toContain("ran");
+  expect(failed.stderr).toContain("unknown gate id NOT-A-GATE");
+  expect(failed.stderr).not.toContain("at requireGate");
+  expect(commandOutput(failed)).not.toContain("gate-remediation:");
+
+  const missing = spawnSync("node", [run, "--id", "NOT-A-GATE", "--", "oi-no-such-gate-command"], {
+    encoding: "utf8",
+  });
+  expect(missing.status).toBe(1);
+  expect(missing.stderr).toContain("unknown gate id NOT-A-GATE");
+  expect(commandOutput(missing)).not.toContain("gate-remediation:");
 
   const formatted = spawnSync("node", [format, "--id", "NOT-A-GATE"], { encoding: "utf8" });
   expect(formatted.status).toBe(2);
