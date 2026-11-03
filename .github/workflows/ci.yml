@@ -220,6 +220,18 @@ jobs:
           }
           Write-Output "fixtures/parsing-rules is absent; nothing to run on either side"
 
+      - name: Check deps
+        if: matrix.os == 'windows'
+        shell: bash
+        run: |
+          corepack pnpm run check:deps
+          echo "check:deps exit $?"
+
+      - name: Check deps tests
+        if: matrix.os == 'windows'
+        shell: bash
+        run: corepack pnpm exec vitest run tools/check-deps
+
   desktop-e2e-windows:
     name: desktop-e2e-windows
     runs-on: windows-latest
