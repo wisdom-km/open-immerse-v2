@@ -33,16 +33,16 @@ Forge 对 `a8a97de` 有条件通过。下面各项覆盖同题的草案。
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。草案含文件清单、预计行数、AC → 测试、#76 值约束。先停 |  | 本文件 |
-| 2 | 新包 `@oi/platform-node`（Apache-2.0，`type: module`，`exports` 指向 `./src/index.js`）。`dependencies` 的键恰好是 `@oi/kernel` 与 `@oi/contracts`（`workspace:*`），没有 optional / peer。`value-guard` 值导入 `readDiagEvent`。无其他运行时依赖，不加日志框架。登记：`pnpm-workspace.yaml`、`apps/desktop/package.json`、`tools/check-deps/tsconfig.paths.json`、`vitest.config.ts` 的 include 加 `packages/platform-node/**/*.test.ts`。不放进 `tsconfig.core.json`，不放进 ESLint `coreFiles` |  |  |
-| 3 | `src/logging/log-paths.ts`。用注入的应用数据目录拼接 kernel 的 `PRODUCT_LOG_DIRECTORY` 与 `DEBUG_LOG_DIRECTORY`。路径只来自参数 |  |  |
-| 4 | `src/logging/value-guard.ts`。先值导入并调用 `readDiagEvent`，失败则整条不写。通过后按「值约束」脱敏和长度。`[redacted]` 只导出这一处。有限数字原样。占位符不回扫字符集 |  |  |
-| 5 | `src/logging/debug-retention.ts`。只处理 debug 目录。先删 `mtimeMs < nowMs - DEBUG_LOG_MAX_AGE_MS` 的文件，再按 mtime 从旧到新删，直到 `stat.size` 之和 ≤ `DEBUG_LOG_MAX_BYTES`。单文件仍超过 50 MB 时整文件删除，不截断半行。产品目录不进这个函数 |  |  |
-| 6 | `src/logging/file-logger.ts`。`createFileLogger` 返回 kernel `Logger`。`log` 为同步 `appendFileSync`，返回 `void`。产品目录在记录通过值守卫后始终追加。调试目录仅在 `setDebugMode({ enabled: true })` 之后追加同一条 JSON 行。默认关且从未开启时不创建 debug 目录。写入后把 mtime 设为 `clock.nowMs()`。保留在构造、再次开启、以及每次 debug 写入之后运行。`clearDebugLogs` 使 debug 文件数为 0。`setDebugMode({ enabled: false, deleteFiles })` 按布尔删除或保留。文件名 `<UTC YYYY-MM-DD>.jsonl`。构造时不写文件。同步 IO 失败则抛出（见审查结论）。调试开关只在该实例内。返回 `Logger<DiagEvent>` |  |  |
-| 7 | `src/index.ts` 只再导出 `createFileLogger` 与调用所需的选项类型 |  |  |
-| 8 | 四个单测文件，见审查结论。用例名 `<结果> when <条件>`，对得上的加 `AC-101`。注入 Clock 与临时目录，不 `sleep`。体积用 `truncate` 设定 `stat.size`。假密钥形态用 `oitest_`。不断言源码文本（F-08）。依赖断言读 `package.json`：键恰好两个，且没有 optional / peer |  |  |
-| 9 | 新建 `apps/desktop/src/main/composition-root.ts`，物理行数 ≤30（G11 按新增行计算）。导出 `startMainLogger`，在 `app.whenReady()` 里调用。注入 `app.getPath("userData")` 与 `{ nowMs: () => Date.now() }`。Electron 与 `Date.now` 只出现在装配根。platform-node 不 import `electron` |  |  |
-| 10 | `docs/evidence/77/commands.md`、AC-101 ②③⑤ 与 #76 的测试输出摘录、一条脱敏 JSON 行。命令在实现 tip 各跑一次。截图链到接入 logger 之后那个 tip 的 `desktop-e2e-windows-screenshots`，写明 run ID 与该 tip 的 SHA。不改 workflow，不加 xvfb，不改 `.cursor/install.sh` 与 `.cursor/environment.json` |  |  |
+| 1 | 本文件。草案含文件清单、预计行数、AC → 测试、#76 值约束。先停 | `a8a97de` 只提交本文件。Forge 结论在 `0d86b46`。Wisdom 批准在 `55b1f53` | 本文件 |
+| 2 | 新包 `@oi/platform-node`（Apache-2.0，`type: module`，`exports` 指向 `./src/index.js`）。`dependencies` 的键恰好是 `@oi/kernel` 与 `@oi/contracts`（`workspace:*`），没有 optional / peer。`value-guard` 值导入 `readDiagEvent`。无其他运行时依赖，不加日志框架。登记：`pnpm-workspace.yaml`、`apps/desktop/package.json`、`tools/check-deps/tsconfig.paths.json`、`vitest.config.ts` 的 include 加 `packages/platform-node/**/*.test.ts`。不放进 `tsconfig.core.json`，不放进 ESLint `coreFiles` | `7855bb3` 建包，依赖键恰好那两个。`2f7c18e` 把 kernel、contracts、platform-node 的 `exports.types` 留在 `./src/index.js`，`default` 指到 `./dist/index.js` | `docs/evidence/77/commands.md` |
+| 3 | `src/logging/log-paths.ts`。用注入的应用数据目录拼接 kernel 的 `PRODUCT_LOG_DIRECTORY` 与 `DEBUG_LOG_DIRECTORY`。路径只来自参数 | `7855bb3` | 同上 |
+| 4 | `src/logging/value-guard.ts`。先值导入并调用 `readDiagEvent`，失败则整条不写。通过后按「值约束」脱敏和长度。`[redacted]` 只导出这一处。有限数字原样。占位符不回扫字符集 | `7855bb3`。失败则不写 | 同上 |
+| 5 | `src/logging/debug-retention.ts`。只处理 debug 目录。先删 `mtimeMs < nowMs - DEBUG_LOG_MAX_AGE_MS` 的文件，再按 mtime 从旧到新删，直到 `stat.size` 之和 ≤ `DEBUG_LOG_MAX_BYTES`。单文件仍超过 50 MB 时整文件删除，不截断半行。产品目录不进这个函数 | `7855bb3`。超限整文件删除 | 同上 |
+| 6 | `src/logging/file-logger.ts`。`createFileLogger` 返回 kernel `Logger`。`log` 为同步 `appendFileSync`，返回 `void`。产品目录在记录通过值守卫后始终追加。调试目录仅在 `setDebugMode({ enabled: true })` 之后追加同一条 JSON 行。默认关且从未开启时不创建 debug 目录。写入后把 mtime 设为 `clock.nowMs()`。保留在构造、再次开启、以及每次 debug 写入之后运行。`clearDebugLogs` 使 debug 文件数为 0。`setDebugMode({ enabled: false, deleteFiles })` 按布尔删除或保留。文件名 `<UTC YYYY-MM-DD>.jsonl`。构造时不写文件。同步 IO 失败则抛出（见审查结论）。调试开关只在该实例内。返回 `Logger<DiagEvent>` | `7855bb3`。IO 失败抛出 | 同上 |
+| 7 | `src/index.ts` 只再导出 `createFileLogger` 与调用所需的选项类型 | `7855bb3`。不导出 `REDACTED` | 同上 |
+| 8 | 四个单测文件，见审查结论。用例名 `<结果> when <条件>`，对得上的加 `AC-101`。注入 Clock 与临时目录，不 `sleep`。体积用 `truncate` 设定 `stat.size`。假密钥形态用 `oitest_`。不断言源码文本（F-08）。依赖断言读 `package.json`：键恰好两个，且没有 optional / peer | `7855bb3`。四个文件 30 通过 | 同上 |
+| 9 | 新建 `apps/desktop/src/main/composition-root.ts`，物理行数 ≤30（G11 按新增行计算）。导出 `startMainLogger`，在 `app.whenReady()` 里调用。注入 `app.getPath("userData")` 与 `{ nowMs: () => Date.now() }`。Electron 与 `Date.now` 只出现在装配根。platform-node 不 import `electron` | `7855bb3` 新建 14 行，在 `createMainWindow()` 之后调用。`2f7c18e` 让 `build` 先编译三个包 | 同上 |
+| 10 | `docs/evidence/77/commands.md`、AC-101 ②③⑤ 与 #76 的测试输出摘录、一条脱敏 JSON 行。命令在实现 tip 各跑一次。截图链到接入 logger 之后那个 tip 的 `desktop-e2e-windows-screenshots`，写明 run ID 与该 tip 的 SHA。不改 workflow，不加 xvfb，不改 `.cursor/install.sh` 与 `.cursor/environment.json` | 本提交写入 `commands.md`。截图来自 `2f7c18e` 的 run `41570169318` 与 `41570163017` | `docs/evidence/77/commands.md` |
 
 预计行数（开工前，含空行与注释）：
 
