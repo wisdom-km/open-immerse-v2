@@ -108,7 +108,7 @@ findings: 19
 ```diff
 --- a/.github/workflows/ci.yml
 +++ b/.github/workflows/ci.yml
-@@ -267,3 +267,18 @@ jobs:
+@@ -267,3 +267,19 @@
            name: desktop-e2e-windows-screenshots
            path: apps/desktop/test-results/**/*.png
            if-no-files-found: error
