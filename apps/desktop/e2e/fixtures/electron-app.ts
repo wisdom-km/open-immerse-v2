@@ -20,6 +20,7 @@ export const test = base.extend<{ desktop: Desktop }>({
     // Playwright 的 fixture 变换要求第一个参数是对象解构。本 fixture 不依赖其他 fixture。
     // eslint-disable-next-line no-empty-pattern -- 空解构是 Playwright 要求的形式
     async ({}, use) => {
+      const launchedAt = Date.now();
       const app = await electron.launch({
         executablePath: electronBinary(),
         cwd: desktopRoot,
@@ -27,6 +28,7 @@ export const test = base.extend<{ desktop: Desktop }>({
       });
       try {
         const page = await app.firstWindow();
+        console.log(`electron launch ms: ${String(Date.now() - launchedAt)}`);
         await use({ app, page });
       } finally {
         await app.close();
