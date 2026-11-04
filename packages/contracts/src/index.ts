@@ -38,7 +38,32 @@ export type {
   StoredTranslationBlock,
   TranslationBlockChanged,
 } from "./translation.js";
-export type { FormulaCropDisplay, MdFormulaCrop } from "./markdown.js";
+export type {
+  FormulaCropDisplay,
+  MdBlock,
+  MdCapabilities,
+  MdContext,
+  MdDocument,
+  MdDocumentWindow,
+  MdEdit,
+  MdFileId,
+  MdFileWriter,
+  MdFormulaCrop,
+  MdHeading,
+  MdImageRef,
+  MdInline,
+  MdListItem,
+  MdMathBlocked,
+  MdSource,
+  MdTableAlign,
+  MdVaultId,
+  MdWriteError,
+  MdWriteErrorCode,
+  MdWriteSignal,
+  SourceSpan,
+  WriteFileInput,
+  WriteFileResult,
+} from "./markdown.js";
 export type {
   ApiFormat,
   ChatChunk,
