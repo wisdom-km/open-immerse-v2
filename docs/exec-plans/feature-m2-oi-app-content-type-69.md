@@ -87,9 +87,9 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 只提交本文件 |  | 本文件 |
-| 2 | 按上面实现 `mime-types.ts`、改 `static-file.ts` 与 `protocol-response.ts`、补单元测试与 `csp.spec.ts` 的一条断言。不改 `app-protocol.ts` |  |  |
-| 3 | 只跑交接点名的定向命令。Node 用第 38 行的 PATH。不跑 `pnpm test`，不跑 `pnpm run check`，不跑全量 e2e |  | `docs/evidence/69/commands.md` |
+| 1 | 只提交本文件 | 第一笔 `1a7e966` 只有本文件 | 本文件 |
+| 2 | 按上面实现 `mime-types.ts`、改 `static-file.ts` 与 `protocol-response.ts`、补单元测试与 `csp.spec.ts` 的一条断言。不改 `app-protocol.ts` | `161c16e`。`mime-types.ts` 17 行，表是 `.html`、`.js`、`.mjs`、`.css`、`.svg`、`.png`。`static-file.ts` 用 `contentTypeFor`，`.html` 后缀改为不区分大小写。`headers()` 增加 nosniff。`app-protocol.ts` 未改 | `docs/evidence/69/commands.md` |
+| 3 | 只跑交接点名的定向命令。Node 用第 38 行的 PATH。不跑 `pnpm test`，不跑 `pnpm run check` | 这些命令退出码都是 0。交接里的 e2e 命令原样执行后，Playwright 仍收集了 25 条并全部通过，其中含新的 nosniff 断言。没有再跑一条收窄后的 e2e | `docs/evidence/69/commands.md` |
 
 ## 决策记录（Decision Log）
 
@@ -107,4 +107,4 @@
 
 ## 证据链接
 
-- `docs/evidence/69/commands.md`：实现后写入。本笔提交还没有这份证据。
+- `docs/evidence/69/commands.md`
