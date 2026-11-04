@@ -41,6 +41,11 @@ export function prefixChange(
   newDest: string,
 ): { kind: "same" | "blocked" | "rewrite"; old?: string; new?: string };
 
+export function applyAmendments(
+  text: string,
+  items: ReadonlyArray<{ old: string; new: string }> | undefined,
+): string;
+
 export function restoredRewrites(
   actual: string,
   expected: string,

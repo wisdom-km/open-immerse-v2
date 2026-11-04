@@ -10,6 +10,7 @@ import {
   joinParts,
   markedBody,
   prefixChange,
+  applyAmendments,
   restoredRewrites,
   sliceOnce,
   splitBaseline,
@@ -187,6 +188,16 @@ it("accepts a relative path prefix and nothing else", () => {
     "见 [甲](./a.md)。",
   );
   expect(prose.ok).toBe(false);
+});
+
+it("replaces one unique amendment and rejects a repeated span", () => {
+  expect(applyAmendments("aaXbb", [{ old: "X", new: "Y" }])).toBe("aaYbb");
+  expect(() => applyAmendments("aa", [{ old: "Z", new: "Y" }])).toThrow(
+    /missing/,
+  );
+  expect(() => applyAmendments("XX", [{ old: "X", new: "Y" }])).toThrow(
+    /not unique/,
+  );
 });
 
 it("returns the first differing byte when a slice changes", () => {

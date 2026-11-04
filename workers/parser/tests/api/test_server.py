@@ -1,22 +1,20 @@
 """Start python -m oi_worker, hit health, then stop the process."""
 
 import json
-import os
 import signal
 import subprocess
 import sys
 import threading
+from collections.abc import Callable
 from pathlib import Path
 
 import httpx
-import pytest
 
-PARSER = Path(__file__).resolve().parents[2]
-TOKEN = "oitest_launchhealth"
-# Printed by the test launcher after imports and before main(). The worker
-# itself does not emit this line. main() then blocks in readline, which is
-# before the no-op handlers around uvicorn.serve.
-_BEFORE_HOLD_LINE = "oi-worker-before-hold\n"
+from tests.api.conftest import LAUNCH_TOKEN
+
+TOKEN = LAUNCH_TOKEN
+Spawn = Callable[..., subprocess.Popen[str]]
+Ready = Callable[[Path], None]
 
 
 def _stop(proc: subprocess.Popen[str]) -> None:
@@ -58,81 +56,88 @@ def _read_line(
     return holder[0]
 
 
-def _command_before_hold() -> list[str]:
-    script = (
-        "import sys\n"
-        "from oi_worker.__main__ import main\n"
-        f"sys.stdout.write({_BEFORE_HOLD_LINE!r})\n"
-        "sys.stdout.flush()\n"
-        "main()\n"
-    )
-    command = [sys.executable, "-c", script]
-    assert all(TOKEN not in part for part in command)
-    return command
-
-
-def _spawn(stdin: int | None, command: list[str] | None = None) -> subprocess.Popen[str]:
-    env = dict(os.environ)
-    env.pop("OI_WORKER_PORT", None)
-    env["PYTHONUNBUFFERED"] = "1"
-    assert all(TOKEN not in value for value in env.values())
-    kwargs: dict[str, object] = {}
+def _signal_before_takeover() -> int:
     if sys.platform == "win32":
-        kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
-    else:
-        kwargs["start_new_session"] = True
-    if command is None:
-        command = [sys.executable, "-m", "oi_worker"]
-    assert all(TOKEN not in part for part in command)
-    return subprocess.Popen(
-        command,
-        cwd=PARSER,
-        env=env,
-        stdin=stdin,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        **kwargs,  # type: ignore[arg-type]
-    )
+        return signal.CTRL_BREAK_EVENT
+    return signal.SIGINT
 
 
-def _start() -> subprocess.Popen[str]:
-    proc = _spawn(subprocess.PIPE)
+def _start(spawn: Spawn) -> subprocess.Popen[str]:
+    proc = spawn(subprocess.PIPE)
     assert proc.stdin is not None
     proc.stdin.write(TOKEN + "\n")
     proc.stdin.close()
     return proc
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Windows stop signal is SIGBREAK")
-def test_sigint_ends_the_process_outside_the_uvicorn_hold() -> None:
-    # Do not write the launch token. After the marker, main() is blocked in
-    # readline and cannot install the no-op hold. An immediate SIGINT races
-    # that hold: the signal is swallowed and the server stays up.
-    proc = _spawn(subprocess.PIPE, _command_before_hold())
+def test_sigint_ends_the_process_outside_the_uvicorn_hold(
+    tmp_path: Path,
+    worker_spawn: Spawn,
+    worker_ready: Ready,
+) -> None:
+    # Real entry: python -m oi_worker. The ready file appears only after
+    # main() has installed the quiet handler and before the token is read.
+    ready = tmp_path / "stop-ready"
+    proc = worker_spawn(subprocess.PIPE, extra_env={"OI_WORKER_STOP_READY": str(ready)})
     assert proc.stdin is not None
     assert proc.stdout is not None
     assert proc.stderr is not None
-    waiter: list[threading.Thread] = []
+    code: int | None = None
+    stdout = ""
+    stderr = ""
     try:
-        line = _read_line(proc.stdout, 30, waiter)
-        assert line == _BEFORE_HOLD_LINE
-        proc.send_signal(signal.SIGINT)
+        worker_ready(ready)
+        proc.send_signal(_signal_before_takeover())
         code = proc.wait(timeout=15)
+        stdout = proc.stdout.read()
+        stderr = proc.stderr.read()
     finally:
         if proc.poll() is None:
             proc.kill()
             proc.wait(timeout=5)
-        for thread in waiter:
-            thread.join(timeout=5)
         proc.stdin.close()
-        proc.stdout.read()
-        proc.stderr.read()
-    assert code == -signal.SIGINT
+    assert code == 0
+    assert stdout == ""
+    assert TOKEN not in stdout
+    assert TOKEN not in stderr
+    assert "Traceback" not in stderr
 
 
-def test_exits_nonzero_when_stdin_has_no_token() -> None:
-    proc = _spawn(subprocess.DEVNULL)
+def test_hold_window_exits_zero_and_marks_exited(
+    tmp_path: Path,
+    worker_spawn: Spawn,
+    worker_ready: Ready,
+) -> None:
+    ready = tmp_path / "hold-ready"
+    proc = worker_spawn(subprocess.PIPE, extra_env={"OI_WORKER_HOLD_READY": str(ready)})
+    assert proc.stdin is not None
+    assert proc.stdout is not None
+    assert proc.stderr is not None
+    code: int | None = None
+    stdout = ""
+    stderr = ""
+    try:
+        proc.stdin.write(TOKEN + "\n")
+        proc.stdin.close()
+        worker_ready(ready)
+        proc.send_signal(_signal_before_takeover())
+        code = proc.wait(timeout=15)
+        stdout = proc.stdout.read()
+        stderr = proc.stderr.read()
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait(timeout=5)
+    assert code == 0
+    lines = [line for line in stdout.splitlines() if line]
+    assert json.loads(lines[-1]) == {"event": "exited"}
+    assert TOKEN not in stdout
+    assert TOKEN not in stderr
+    assert "Traceback" not in stderr
+
+
+def test_exits_nonzero_when_stdin_has_no_token(worker_spawn: Spawn) -> None:
+    proc = worker_spawn(subprocess.DEVNULL)
     assert proc.stdout is not None
     assert proc.stderr is not None
     code = proc.wait(timeout=15)
@@ -144,8 +149,10 @@ def test_exits_nonzero_when_stdin_has_no_token() -> None:
     assert "Traceback" not in stderr
 
 
-def test_ac_80_returns_200_without_paths_or_keys_when_the_worker_is_started() -> None:
-    proc = _start()
+def test_ac_80_returns_200_without_paths_or_keys_when_the_worker_is_started(
+    worker_spawn: Spawn,
+) -> None:
+    proc = _start(worker_spawn)
     stderr = ""
     assert proc.stderr is not None
     assert proc.stdout is not None

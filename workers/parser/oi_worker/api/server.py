@@ -1,18 +1,22 @@
-"""Serve the ASGI app on a loopback socket until uvicorn handles a stop signal."""
+"""Serve the ASGI app on a loopback socket until a stop signal ends it."""
 
 import asyncio
 import json
-import signal
 import socket
 import sys
-from collections.abc import Callable
-from typing import cast
 
 import uvicorn
 from fastapi import FastAPI
 
 from oi_worker.api.listen_port import LISTEN_ERROR, resolve_port
 from oi_worker.api.loopback import bind_loopback, bound_port
+from oi_worker.api.stop_signals import (
+    StopNotice,
+    honor_stop,
+    install_hold,
+    restore_handlers,
+    wait_hold_window,
+)
 
 _START_ATTEMPTS = 2000
 _START_PAUSE_S = 0.01
@@ -27,10 +31,11 @@ def serve_local(app: FastAPI, argv: list[str], env: dict[str, str]) -> None:
 
 
 async def _serve(app: FastAPI, sock: socket.socket) -> None:
+    notice = StopNotice()
     server = uvicorn.Server(_config(app, bound_port(sock)))
-    task = asyncio.create_task(_run_until_stop(server, sock))
+    task = asyncio.create_task(_run_until_stop(server, sock, notice))
     try:
-        await _wait_started(server, task)
+        await _wait_started(server, task, notice)
         _report(bound_port(sock))
         await task
         _mark_exit()
@@ -50,52 +55,34 @@ def _config(app: FastAPI, port: int) -> uvicorn.Config:
     )
 
 
-async def _run_until_stop(server: uvicorn.Server, sock: socket.socket) -> None:
-    """Hold stop signals only for uvicorn 0.38.0's re-raise.
+async def _run_until_stop(
+    server: uvicorn.Server,
+    sock: socket.socket,
+    notice: StopNotice,
+) -> None:
+    """Remember a stop that arrives before uvicorn installs its own handler.
 
-    That version saves the handlers it finds, restores them, then re-raises.
-    The hold is the handler it restores, so the re-raise does not set a
-    non-zero status. Re-run the Windows health job on any uvicorn bump.
-    Before this call and after it returns, SIGINT and SIGTERM stay as they
-    were, so an early or late signal still ends the process.
+    uvicorn 0.38.0 saves the handler it finds, restores it, then re-raises.
+    The hold handler only records the signal, so that re-raise does not set a
+    non-zero status. A signal during the hand-off sets ``should_exit`` once
+    the server is up. Tests pin the uvicorn version.
     """
-    previous = _install_exit_handlers()
+    previous = install_hold(notice)
     try:
+        await wait_hold_window(notice)
         await server.serve(sockets=[sock])
     finally:
-        _restore_exit_handlers(previous)
+        restore_handlers(previous)
 
 
-_Handler = Callable[[int, object], object] | int
-
-
-def _install_exit_handlers() -> dict[int, _Handler]:
-    previous: dict[int, _Handler] = {}
-    for signum in _stop_signals():
-        previous[signum] = cast(_Handler, signal.signal(signum, _hold))
-    return previous
-
-
-def _restore_exit_handlers(previous: dict[int, _Handler]) -> None:
-    for signum, handler in previous.items():
-        signal.signal(signum, handler)
-
-
-def _hold(_signum: int, _frame: object) -> None:
-    return None
-
-
-def _stop_signals() -> tuple[int, ...]:
-    signums: list[int] = [signal.SIGINT, signal.SIGTERM]
-    sigbreak = getattr(signal, "SIGBREAK", None)
-    if isinstance(sigbreak, int):
-        signums.append(sigbreak)
-    return tuple(signums)
-
-
-async def _wait_started(server: uvicorn.Server, task: asyncio.Task[None]) -> None:
+async def _wait_started(
+    server: uvicorn.Server,
+    task: asyncio.Task[None],
+    notice: StopNotice,
+) -> None:
     for _ in range(_START_ATTEMPTS):
         if server.started:
+            honor_stop(server, notice)
             return
         if task.done():
             await task

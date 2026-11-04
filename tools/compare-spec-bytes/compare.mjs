@@ -475,11 +475,47 @@ function compareSpan(root, manifest, base, span) {
   return { ...judged, rewrites: linesFor([piece], judged.rewrites) };
 }
 
+export function applyAmendments(text, items) {
+  const list = Array.isArray(items) ? items : [];
+  let next = text;
+  for (const item of list) {
+    if (
+      typeof item?.old !== "string" ||
+      typeof item?.new !== "string" ||
+      item.old.length === 0
+    ) {
+      throw new Error("amendment is incomplete");
+    }
+    const first = next.indexOf(item.old);
+    if (first < 0) {
+      throw new Error("amendment text missing");
+    }
+    if (next.indexOf(item.old, first + item.old.length) >= 0) {
+      throw new Error("amendment text is not unique");
+    }
+    next = `${next.slice(0, first)}${item.new}${next.slice(
+      first + item.old.length,
+    )}`;
+  }
+  return next;
+}
+
+function sourceAmendments(manifest, sourcePath) {
+  const items = manifest.amendments;
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  return items.filter((item) => item.source === sourcePath);
+}
+
 function compareSource(root, manifest, base, source) {
   const checked = sourceParts(source);
   const pieces = checked.parts.map((rel) => readPiece(root, rel, manifest));
   const actual = pieces.map((piece) => piece.body).join("");
-  const expected = gitBytes(root, `${base}:${checked.path}`).toString("utf8");
+  const expected = applyAmendments(
+    gitBytes(root, `${base}:${checked.path}`).toString("utf8"),
+    sourceAmendments(manifest, checked.path),
+  );
   const judged = judgedLine(
     checked.path,
     `${checked.parts.length} parts match ${base}`,
