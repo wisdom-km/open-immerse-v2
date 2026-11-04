@@ -2,7 +2,7 @@
 
 状态：v0.6，规格基线（唯一真相源之一）。变更记录见 [docs/spec-changelog.md](./docs/spec-changelog.md)。
 适用对象：所有人类开发者与 AI Agent。
-同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，Loom 2026-10-30 已入库。结构、状态与「当 seam 返回 X 时显示 Y」按 DESIGN 实现；标「待审批」的颜色、间距、字号不当作定稿。DESIGN 文首若仍写「Loom 交付前 UI 只搭结构」，以本句为准，那一句留给 Loom 删（N-10，本文件不改 DESIGN 正文）。其他人或 Agent **不得**改正文（N-10）。
+同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，Loom 2026-10-30 已入库。结构、状态与「当 seam 返回 X 时显示 Y」按 DESIGN 实现；标「待审批」的颜色、间距、字号不当作定稿。其他人或 Agent **不得**改正文（N-10）。
 
 规则冲突时的优先级：用户（Wisdom）的明确指示 > 本文 > ARCHITECTURE.md > PRD.md 中的实现建议 > `docs/architecture/` 草案。
 
@@ -171,7 +171,7 @@
 - 规格变更（日期、PR、文件、摘要）记在 [docs/spec-changelog.md](./docs/spec-changelog.md)。应用的变更记录从第一次给人安装的构建开始，不写进那份文件（README「三种版本号」）。按任务类型该读哪些文件见 [AGENTS.md](./AGENTS.md)「按任务类型阅读」，只放链接，不在这里复制正文。
 - 引用上游模型、库、API 的能力时附官方链接、锁定的提交或版本、核实日期；未核实的写「未核实」。官方自测的精度与速度数字一律注明「官方自测」，不当作已验证结论。
 - 上游核实结论集中在 `docs/v2-gap-and-changes.md` §2；规格引用它而不是各自重述，避免多处说法漂移。
-- 「待基准定标」「待 Loom 产出」「待用户拍板」三种标记保持原样，直到对应的人给出结论。用户已决定的问题标「已决定（Wisdom 日期）」，并在同一个 PR 改入全部受影响的规格。`DESIGN.md` 与 `docs/design-principles.md` 已于 2026-10-30 入库，不再标「待 Loom 产出」。DESIGN 文首「交付前只搭结构」一句过时，以本文文首为准，正文等 Loom 删。
+- 「待基准定标」「待 Loom 产出」「待用户拍板」三种标记保持原样，直到对应的人给出结论。用户已决定的问题标「已决定（Wisdom 日期）」，并在同一个 PR 改入全部受影响的规格。`DESIGN.md` 与 `docs/design-principles.md` 已于 2026-10-30 入库，不再标「待 Loom 产出」。
 
 ## 8. UI 与业务核心解耦（Q3）
 

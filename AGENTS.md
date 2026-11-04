@@ -8,7 +8,7 @@
 
 先读 [RULES.md](RULES.md) §6（N-01–N-22）和 §9（Definition of Done）。然后只读下表里本任务那一行的节，加上该行点名的验收编号。不要先通读 PRD 与 ARCHITECTURE。
 
-涉及界面时，该行已经指向 [DESIGN.md](DESIGN.md) 与 [docs/design-principles.md](docs/design-principles.md)。标「待审批」的颜色、间距、字号不是定稿。DESIGN 文首若写「交付前只搭结构」，以 RULES 文首为准。`docs/architecture/` 是历史草案，不授权实现。
+涉及界面时，该行已经指向 [DESIGN.md](DESIGN.md) 与 [docs/design-principles.md](docs/design-principles.md)。标「待审批」的颜色、间距、字号不是定稿。`docs/architecture/` 是历史草案，不授权实现。
 
 角色、升级、合入与延期见 [docs/WORKFLOW.md](docs/WORKFLOW.md)。
 
