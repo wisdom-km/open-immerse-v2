@@ -3,4 +3,5 @@ packages:
   - packages/kernel
   - packages/platform-node
   - packages/providers
+  - packages/features/*
   - apps/desktop

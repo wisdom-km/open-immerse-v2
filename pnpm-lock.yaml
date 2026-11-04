@@ -55,6 +55,20 @@ importers:
         specifier: 0.34.52
         version: 0.34.52
 
+  packages/features/budget: {}
+
+  packages/features/formula-source: {}
+
+  packages/features/ingest: {}
+
+  packages/features/jobs:
+    dependencies:
+      '@oi/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+
+  packages/features/markdown: {}
+
   packages/kernel: {}
 
   packages/platform-node:

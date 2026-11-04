@@ -12,6 +12,7 @@ import {
   prefixChange,
   restoredRewrites,
   sliceOnce,
+  splitBaseline,
   stripSplitHeader,
 } from "./compare.mjs";
 
@@ -24,6 +25,31 @@ const root = path.resolve(
 
 function header(label: string) {
   return Buffer.from(`${startMark}\n${label}\n${endMark}\n`, "utf8");
+}
+
+function commitExists(sha: string): boolean {
+  const present = spawnSync("git", [
+    "-C",
+    root,
+    "cat-file",
+    "-e",
+    `${sha}^{commit}`,
+  ]);
+  return present.status === 0;
+}
+
+function ensureSplitBaseline(sha: string): void {
+  if (commitExists(sha)) {
+    return;
+  }
+  const fetched = spawnSync(
+    "git",
+    ["-C", root, "fetch", "--depth=1", "origin", sha],
+    { stdio: "ignore" },
+  );
+  if (fetched.status !== 0 || !commitExists(sha)) {
+    throw new Error(`git fetch failed for ${sha}`);
+  }
 }
 
 const slugScript = `
@@ -134,6 +160,7 @@ it("returns the first differing byte when a slice changes", () => {
 });
 
 it("matches origin/main when the chapter files are joined", () => {
+  ensureSplitBaseline(splitBaseline);
   const result = spawnSync(
     process.execPath,
     [path.join(root, "tools/compare-spec-bytes/compare.mjs")],
@@ -146,12 +173,13 @@ it("matches origin/main when the chapter files are joined", () => {
   }).toMatchObject({ status: 0 });
   expect(result.stdout).toContain("PRD.md");
   expect(result.stdout).toContain("ARCHITECTURE.md");
-  expect(result.stdout).toContain("match origin/main");
+  expect(result.stdout).toContain(`match ${splitBaseline}`);
   expect(result.stdout).toContain("RULES.md span");
   expect(result.stdout).toContain("path prefixes");
 });
 
 it("writes the same prefix manifest that evidence keeps", () => {
+  ensureSplitBaseline(splitBaseline);
   const out = "/tmp/oi-link-rewrites.txt";
   const result = spawnSync(
     process.execPath,
