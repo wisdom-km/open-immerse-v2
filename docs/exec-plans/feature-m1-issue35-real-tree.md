@@ -90,12 +90,12 @@ PRD §8 里本 issue 没有点名、本 PR 也不新做的样例，现有证明�
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。随后按交接实现，PR 保持 Draft | `53c095e` 只有本文件。随后实现。PR #126 保持 Draft | 本文件 |
-| 2 | 先写真实树用例并跑红：探针在树上时门禁非 0 且含 remediation。删探针后再跑，退出码 0。记录进 evidence | ingest 探针退出码 1，含 `feature-dependency-matrix` 与 G5。删除后退出码 0 | [commands.md](../evidence/126/commands.md) |
-| 3 | 用例收进仓库后再跑，期望通过。现有 G13 拷贝用例保持通过 | `7b72767`。真实树 8 passed。全量 238 passed，含原 G13 用例 | 同上 |
-| 4 | 删 `job-id.gen.ts`，manifest 的 `generators` 为空，allowlist 去掉该忽略项。`job-id.ts` 改用 contracts 的 `JobId`。jobs 的 core 测试通过。`pnpm codegen` 后 `git diff` 为空 | `b63dc88`。jobs core 2 passed。`codegen: 0 generators`，其后工作区干净 | 同上 |
-| 5 | 改 `docs/ci-and-environment.md` 与 `docs/backlog.md`。填本表的实际列 | 与步骤 4 同一提交。backlog §4 加了 #35 行 | 同上 |
-| 6 | `GATE_BASE=origin/main corepack pnpm run check` 在 `b63dc88` 上跑一次。失败则只重跑失败项 | 退出码 0。`check-pr-size: 588 non-generated lines`。没有失败项 | 同上 |
+| 1 | 本文件。随后按交接实现，PR 保持 Draft | `5e4cedb` 只有本文件。随后实现。已 rebase 到 `origin/main@dd0630b`。PR #126 保持 Draft | 本文件 |
+| 2 | 先写真实树用例并跑红：探针在树上时门禁非 0 且含 remediation。删探针后再跑，退出码 0。记录进 evidence | 第一次在真实目录上：ingest 探针退出码 1，含 `feature-dependency-matrix` 与 G5。删除后退出码 0。CI 上这条会碰到并行 typecheck，见 D8 | [commands.md](../evidence/126/commands.md) |
+| 3 | 用例收进仓库后再跑，期望通过。现有 G13 拷贝用例保持通过 | `8c47cdc` 写在真实目录。`70d7410` 改到临时 worktree。针对性 11 passed，含 G18 与 g3 | 同上 |
+| 4 | 删 `job-id.gen.ts`，manifest 的 `generators` 为空，allowlist 去掉该忽略项。`job-id.ts` 改用 contracts 的 `JobId`。jobs 的 core 测试通过。`pnpm codegen` 后 `git diff` 为空 | `d75f2ca` 先用相对路径。`70d7410` 改为 `@oi/contracts`。jobs core 2 passed。`codegen: 0 generators` | 同上 |
+| 5 | 改 `docs/ci-and-environment.md` 与 `docs/backlog.md`。填本表的实际列 | backlog 在 `d75f2ca`。第 31 行在 `70d7410` 改成 workspace 导入 | 同上 |
+| 6 | `GATE_BASE=origin/main corepack pnpm run check` 在最终实现 tip 上跑一次。失败则只重跑失败项 | `70d7410`：`pnpm check` 退出码 0，`check-pr-size: 749`，`G12:` 在 `2e3b752`。`pnpm test` 退出码 1，只有 `compare-spec-bytes` 的 2 条，与 main 上 #125 的 CI 相同 | 同上 |
 
 函数不超过 80 行。不建 `utils`。预计对 `main` 的非生成 diff 低于 600 行。若超过，提交说明或 `PR_BODY` 加一行 `G12:`。
 
@@ -128,4 +128,4 @@ PRD §8 里本 issue 没有点名、本 PR 也不新做的样例，现有证明�
 
 ## 证据链接
 
-- [docs/evidence/126/commands.md](../evidence/126/commands.md)：`b63dc88` 上的命令与退出码。Draft PR 是 #126。
+- [docs/evidence/126/commands.md](../evidence/126/commands.md)：rebase 之后的命令与退出码。实现 tip 是 `70d7410`。Draft PR 是 #126。
