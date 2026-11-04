@@ -19,6 +19,7 @@
 | 3 | `node tools/check-docs/check.mjs` 与 `node tools/compare-spec-bytes/compare.mjs` | 两条退出码都是 0。check-docs `findings: 0` | [docs/evidence/148/commands.md](../evidence/148/commands.md) |
 | 4 | 不写实现。Loom 审、Wisdom 批之后才开契约 PR | Loom 已审（[评论 6628805042](https://github.com/wisdom-km/open-immerse-v2/pull/148#issuecomment-6628805042)）。Wisdom 18:50 已批形状。本 PR 仍不写实现 | 本文件 |
 | 5 | 按该审查的必须改与第 4–7 条改本方案，并记入批准表 | 本提交 | [docs/approvals.md](../approvals.md) |
+| 6 | 生成器与 `ipc-router` 同一个 PR。settings 的 `expose` 保持 `false`。事件 `transport` 按下面「事件 transport」解释。§9 四项按 20:25 的批准执行 | 未做 | 实现提交与 `docs/evidence/<PR号>/commands.md` |
 
 ## 决策记录（Decision Log）
 
@@ -30,8 +31,10 @@
 | 顺序是方案 → 契约 PR → 生成器与 `ipc-router` 同一个 PR | 原话「这67的也都按照你的建议去做吧。」 | 2026-11-04 18:29 | Wisdom |
 | 契约 PR 只改 `packages/contracts/src/ipc/**` 与其测试，先合 | [Forge 18:05](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628045811)。Forge 排序，非业主决定；18:29 的原话把这个顺序一并说了 | 2026-11-04 | Forge 排序；Wisdom 18:29 复述了顺序 |
 | 命名带可选子域；`cancelRelocate` 走 `jobs.cancel`；状态型事件配 `get<State>`；进度载荷 `{jobId, done, total, unit}`；`handler_threw` 的 message 只进日志；审查第 4–7 条写入本方案；错误码用 snake_case | 原话「按推荐」 | 2026-11-04 18:50 | Wisdom |
+| 开生成器与 `ipc-router` 同一个 PR，独立分支，与 #154 并行且文件不重叠 | 原话「按照你的建议开吧。」[评论 6630428797](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6630428797)。approvals 补登记属 #153，本 PR 不补 | 2026-11-04 20:19 | Wisdom |
+| §9 四项按推荐：`Readonly` 只加在生成的 `.d.ts`；`AnswerEgressConsentError` 与 `WithdrawEgressConsentError` 保留；不改 PR 行数检查，生成文件计入 600 行；Q4 幂等只是标记、不自动重试；Q5 不改 CI | 原话「按推荐就行。」[评论 6630549198](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6630549198)。approvals 补登记属 #153，本 PR 不补 | 2026-11-04 20:25 | Wisdom |
 
-Q4 的幂等登记位置、Q5 的 CI 列表，18:50 没有改口。
+Q4 的幂等登记位置、Q5 的 CI 列表，18:50 没有改口。20:25 按推荐项执行：幂等只是描述符与注册表里的布尔和生成注释，不自动重试；本系列不改 CI。
 
 ## 3.1 生成的 `window.oi` 形状
 
@@ -287,6 +290,52 @@ compare-spec-bytes 比对的是拆分基线里的 PRD、ARCHITECTURE、RULES 字
 | S19 | Wisdom 18:50，[评论 6628805042](https://github.com/wisdom-km/open-immerse-v2/pull/148#issuecomment-6628805042) | §3.1、§3.6、错误码表、`OiError`。原话「按推荐」在 approvals 18:50 行 |
 
 `docs/architecture/` 里的桌面草案写过「preload 只暴露具体命令」。那是历史草案，不作为本方案的依据。
+
+## 事件 transport
+
+这一节是生成器 PR 对 #153「事件上的 `transport: "invoke"`」的解释。只约束生成器，不改描述符联合，也不实现 `dropped-file`。
+
+| 描述符 | `transport` | 生成器 |
+| --- | --- | --- |
+| `kind: "event"` | 缺省或 `"invoke"` | 生成 `bridge.subscribe(channel, listener)`，返回退订函数。回调参数是载荷，不是 `Result`。事件没有请求体 |
+| `kind: "event"` | `"dropped-file"` 或其他值 | 生成失败，不写输出。`dropped-file` 只对 command 有意义 |
+| `kind: "command"` | 缺省或 `"invoke"` | 生成 `bridge.invoke(channel, payload)`。没有 `request` 时方法无参，载荷是 `undefined` |
+| `kind: "command"` | `"dropped-file"` | 本 PR 不实现拖入。暴露中的该命令使生成失败，不静默当成 `invoke`。描述符联合仍留这个取值，留给以后的 markdown PR |
+
+`expose: false` 的描述符不进入输出，也不因为 transport 不合格而失败。今天 settings 五条都是 `expose: false`，生成结果仍是空的 `oi` 与空注册表。
+
+## 实现 PR 来源核对
+
+开工时重读了 Issue #67 评论（含 [6630549198](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6630549198)）和 `docs/approvals.md` 里 `67`、`preload`、`codegen` 的命中。approvals 第 80、81 行与 18:28、18:29 一致。19:29 之后的批准尚未登记，本 PR 不补。
+
+| # | 来源 | 本 PR 怎么接 |
+| --- | --- | --- |
+| S1 | 方案 §3.3 | 三份生成物、`run.mjs` 与 manifest、hand-edit、G7、allowlist 的 `ignore`、手写 `ipc-router`、键名断言 |
+| S2 | 方案 §3.4 A / Q3 | 生成器与 router 同 PR。空 `oi`、空注册表、零个 `handle` 是预期。不把任何 `expose` 改成 `true` |
+| S3 | 方案 §3.5 | `preload/index.ts` 只做 bridge 与 `exposeInMainWorld`。不改窗口选项，不暴露 `ipcRenderer` |
+| S4 | 方案 §3.1 与 Q6 | `expose: false` 不出现。`sender_rejected` 与 `invalid_payload` 的 `retryable` 为 false；`handler_threw` 为 true。三者无 `detail`、无 `message` |
+| S5 | 方案 Q4、Q5 | 幂等只是布尔与生成注释，不自动重试。不改 `.github/workflows/**` |
+| S6 | 「以后改规格的行」 | 不改 `docs/arch/**`、`RULES.md`、PRD、DESIGN |
+| S7 | Issue #67 评论 6630428797 | 本分支。不改 `packages/features/markdown/**`，不新增 markdown 描述符 |
+| S8 | Issue #67 评论 6628452608 | router 与生成器同一个 PR |
+| S9 | PR #148 评论 6628805042 | 错误形状按已定的 `code` + `retryable` |
+| S10 | Issue #67 评论 6629443868 | `oi-api.d.ts` 放在 desktop |
+| S11 | PR #152 评论 6629915412、6630017391 | C10 见「事件 transport」。C11、C12 见下一行 |
+| S12 | PR #152 评论 6630005815；Issue #67 评论 6630014941、6630083354 | 基线含 #152。`07-00.md` 的 `never` 不在本 PR |
+| S13 | Issue #153「#152 IPC 契约」 | C10 有测试。C11 只在生成的 `.d.ts` 包 `Readonly`。C12 两个错误类型保留。等价断言与 `never` 不在本 PR |
+| S14 | `docs/approvals.md` 第 80、81 行 | 与 S7、S8 一致。本 PR 不补登记 |
+| S15 | `docs/arch/13.md` G7 | `pnpm codegen && git diff --exit-code` |
+| S16 | `docs/arch/09.md` | 发送方是本应用窗口 frame 且来源 `oi-app://`。Fuses（#68）不在范围 |
+| S17 | `docs/arch/06.md` | 三份生成物登记在 `tools/check-file-size/allowlist.json` 的 `ignore`。入口文件仍以 150 行为硬上限 |
+| S18 | pr152 审查第 1、3 条 | 同 S11、S13。审查文件不在本仓库，结论按 Issue #153 |
+| S19 | openai-review 两份 REPORT | 无新增范围 |
+| S20 | Issue #68、#70 | 不改窗口选项、Fuses、打包配置 |
+| S21 | `RULES.md`、`AGENTS.md` | 契约不在本 PR 重写。不手改生成物。不暴露 `writeFile` |
+| S22 | Issue #67 评论 6630549198 | §9 四项已批准，按推荐执行，不再作为开放问题 |
+
+`handler_threw` 的原始 `message` 先去掉绝对路径，再交给装配根注入的日志函数，不进 `Result`。`ipc.oversize` 用现有诊断事件，字段只有通道名、字节数和关联 id。诊断白名单没有 message 字段，本 PR 不改 `packages/contracts` 来加事件。装配根把 oversize 交给已有文件日志，把脱敏后的 handler message 写成一行 JSON 到 stderr。
+
+上面「不做」约束的是方案 PR。第 6 步才写生成器与 router。这一步仍不改 CI、规格正文、`packages/features/**`、approvals、backlog、spec-changelog。
 
 ## 证据链接
 
