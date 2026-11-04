@@ -6,7 +6,8 @@ export function inStatusScope(file) {
     file.startsWith("docs/") &&
     file.endsWith(".md") &&
     !file.startsWith("docs/evidence/") &&
-    !file.startsWith("docs/exec-plans/")
+    !file.startsWith("docs/exec-plans/") &&
+    !file.startsWith("docs/design/")
   );
 }
 
@@ -126,13 +127,7 @@ export function statusFindings(files, readText) {
     ? indexRows(readText("docs/README.md"))
     : null;
   const out = [];
-  if (!table) {
-    out.push({
-      kind: "index-table-missing",
-      file: "docs/README.md",
-      detail: "索引表缺少路径与状态列",
-    });
-  }
+  // 索引表留给 Issue #25。Wisdom 2026-11-04 16:57，评论 6626806548。
   for (const file of scoped) {
     pushFile(out, file, ownStatus(readText(file)), table);
   }

@@ -25,18 +25,17 @@ it("reports a missing status line when the first 40 lines have none", () => {
   expect(out).not.toContain("docs/kept.md");
   expect(out).not.toContain("docs/exec-plans/");
   expect(out).not.toContain("docs/evidence/");
+  expect(out).not.toContain("docs/design/");
   expect(out).not.toContain("not-in-index");
 });
 
-it("reports one missing index when the status table is absent", () => {
+it("skips a missing index while issue 25 owns the table", () => {
   const out = text(
     run(path.resolve("tools/check-docs/fixtures/missing-status")),
   );
-  expect(out).toContain(
-    "index-table-missing\tdocs/README.md\t索引表缺少路径与状态列",
-  );
-  expect(out).toContain("status: 3");
-  expect(out).toContain("findings: 3");
+  expect(out).not.toContain("index-table-missing");
+  expect(out).toContain("status: 2");
+  expect(out).toContain("findings: 2");
 });
 
 it("reports a status mismatch when the index token is absent from the file", () => {

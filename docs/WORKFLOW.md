@@ -1,3 +1,5 @@
+状态：现行
+
 # 工作流
 
 角色、升级、离开 Draft。产品规则在 [RULES.md](../RULES.md)、[ARCHITECTURE.md](../ARCHITECTURE.md)、[PRD.md](../PRD.md)。本文不另写产品规则。不列下面五人以外的 bot。

@@ -1,3 +1,5 @@
+状态：报告
+
 # Open Immerse v2 架构评审（2026-10-30）
 
 评审对象：`main@cfcafdd`（PR #3 合入的规格基线）。
