@@ -55,3 +55,13 @@ GATE_BASE=origin/main corepack pnpm run check
 退出码 0。`check:format` 打印 `All matched files use Prettier code style!`。`check-file-size: 200 source files within hard limits`。dependency-cruiser：`no dependency violations found (105 modules, 183 dependencies cruised)`。npm / pip / 模型许可证通过。`check-one-slice: 0 feature slice(s)`。`check-commits` 通过。`check-hotspots` 通过。`check-pr-size: 428 non-generated lines`。codegen 1 个 generator，随后的 `git diff --exit-code` 通过。日志在 `/opt/cursor/artifacts/check-448de25.log`。
 
 写入本节的提交是 `bd19b16a1129335b094d7efa1c577a36689de382`。相对 `448de25` 增加 27 行、删除 1 行；被删的一行是本分支先前加上的，相对 `origin/main` 的 `check-pr-size` 为 454。在该提交上再跑 `GATE_BASE=origin/main corepack pnpm run check`，退出码 0。日志在 `/opt/cursor/artifacts/check-bd19b16.log`。
+
+## 不 spawn .cmd
+
+Anvil 在 Windows 真机、Node v24 上测 tip `1a28619`，结果 FAIL。Node 修 CVE-2024-27980 之后，不带 shell 直接 spawn `.cmd` 得到 EINVAL。失败的是 `check:format`、`lint`、`typecheck`、`typecheck:core`、`check:license:npm`。同一份报告里 colorama 已通过，G7 没有 CRLF 差异。
+
+改成 `process.execPath` 跑包内 JS 入口。入口用 `createRequire` / `require.resolve` 读 `package.json` 的 `bin`：prettier、eslint、tsc（包名 typescript）。不设 `shell: true`，不转义参数。corepack 不是仓库依赖，`require.resolve("corepack/package.json")` 失败。替代做法是跑 Node 自带的 `corepack.js`：Windows 在 `node.exe` 旁的 `node_modules/corepack/dist/corepack.js`，Unix 在 `bin/../lib/node_modules/corepack/dist/corepack.js`。单测断言最终启动的是 node 加该 JS 文件，不是 `.cmd`。
+
+这次没有在 Windows 真机上跑。由 Anvil 复测。
+
+`98a51f88532161bec063a21bec813a825432861f` 与 `28742de3602f275d14bc3e29c52bcd916a7f539b`。`corepack pnpm exec vitest run tools/spawn-bin/spawn-bin.test.ts` 退出码 0，6 passed。在 `28742de` 上、工作区干净时 `GATE_BASE=origin/main corepack pnpm run check` 退出码 0。`check-pr-size: 580 non-generated lines`。日志在 `/opt/cursor/artifacts/check-28742de.log`。
