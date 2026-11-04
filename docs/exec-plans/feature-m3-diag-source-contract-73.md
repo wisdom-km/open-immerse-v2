@@ -58,13 +58,13 @@
 
 ## 计划 / 实际
 
-计划列在开工前填。实际列在实现提交之后回填。证据写在 `docs/evidence/<PR号>/commands.md`（PR 号要等 Draft 开出来）。
+计划列在开工前填。实际列在 `9f16979` 之后回填。证据在 [docs/evidence/144/commands.md](../evidence/144/commands.md)。
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 只提交本文件，并逐条回答来源核对 |  | 本文件 |
-| 2 | 改 `diag-events.ts` 与测试。不改 `index.ts`、ARCH、worker、platform-node |  | `packages/contracts/src/diag-events.ts` |
-| 3 | 只跑交接列出的定向命令，另对这两个 TS 文件跑 Prettier，避免 CI 的 G1 失败。不跑 e2e，不跑全量 `pnpm test`，不跑 `pnpm run check` |  | `docs/evidence/<PR号>/commands.md` |
+| 1 | 只提交本文件，并逐条回答来源核对 | 第一笔 `52d0026` 只有本文件 | 本文件 |
+| 2 | 改 `diag-events.ts` 与测试。不改 `index.ts`、ARCH、worker、platform-node | `9f16979`。`source?: "worker"`。非法值整条拒绝。numstat 9 增 1 删 | `packages/contracts/src/diag-events.ts` |
+| 3 | 只跑交接列出的定向命令，另对这两个 TS 文件跑 Prettier，避免 CI 的 G1 失败。不跑 e2e，不跑全量 `pnpm test`，不跑 `pnpm run check` | 都在 `9f16979`，退出码 0。另跑了 `tsc -p tsconfig.core.json`，退出码 0 | `docs/evidence/144/commands.md` |
 
 `test:core` 不适用（`package.json` 没有这个脚本）。
 
@@ -92,4 +92,4 @@ Node 用 `.nvmrc` 的 v22.23.4，PATH 前置 `/home/ubuntu/.nvm/versions/node/v2
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：实现提交之后补。
+- [docs/evidence/144/commands.md](../evidence/144/commands.md)
