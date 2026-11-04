@@ -1,6 +1,6 @@
 # PR #148 命令
 
-日期：2026-11-04。工作目录是仓库根。Node v22.23.4（`.nvmrc`），PATH 前置 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin`。基线 `origin/main` `6988420cc9fb68f461d151c069ac4b5965570caf`。计划在 `00faf99`。本文件与计划里的证据链接一起提交后再复查。
+日期：2026-11-04。工作目录是仓库根。Node v22.23.4（`.nvmrc`），PATH 前置 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin`。基线 `origin/main` `6988420cc9fb68f461d151c069ac4b5965570caf`。计划在 `00faf99`。含本文件的提交 `8532884` 上复查，两条命令退出码仍是 0，输出与下表相同。
 
 | 命令 | 退出码 | 备注 |
 | --- | --- | --- |
