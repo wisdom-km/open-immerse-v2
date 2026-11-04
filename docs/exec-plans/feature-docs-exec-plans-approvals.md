@@ -4,7 +4,7 @@
 
 计划必须自包含：只读这一份文件就能接手，不依赖聊天记录。引用规格时写节号并链接到文件。目录用途、命名和何时必写见 [README.md](README.md)。
 
-本文件是分支 `feature/docs-exec-plans-approvals` 的计划。基线 `origin/main@dd0630b`（`dd0630bd19f5aa1e26c068ab846e72f309edb7b2`，PR #125）。任务类型是纯文档 / 规格。UI–core 交接说明写「不适用」（[RULES.md](../../RULES.md) §9）。第一笔提交只有本文件。本任务指示写明计划落盘之后在同一 PR 里实现，做完再开 Draft，不把实现推迟到另一次审查。PR 保持 Draft，不自行标成 Ready，不合入。
+本文件是分支 `feature/docs-exec-plans-approvals` 的计划。基线 `origin/main@dd0630b`（`dd0630bd19f5aa1e26c068ab846e72f309edb7b2`，PR #125）。任务类型是纯文档 / 规格。UI–core 交接说明写「不适用」（[RULES.md](../../RULES.md) §9）。第一笔提交只有本文件。计划没有留到 Forge 审查后再写实现，这是 Cloud 的流程偏差。PR 保持 Draft，不自行标成 Ready，不合入。
 
 ## 现状理解
 
@@ -34,12 +34,12 @@
 | 决定 | 理由 | 日期（Asia/Shanghai） | 谁定的 |
 | --- | --- | --- | --- |
 | 本 PR 加入 `docs/exec-plans/`（自包含计划，带 Decision Log）以及把 `docs/approvals.md` 补到当天已核对的批准。原话：「对，我批准了，你就按照你的建议把它放进下一个文档PR里吧。就这个文档PR结束了，你就把它放进去。」对应 [docs/approvals.md](../approvals.md) 2026-11-04 10:21 行，来源 [issuecomment-6620794911](https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6620794911) | #125 合入之后的下一个文档 PR 做这件事。2026-10-31 第 3 项已批的 ExecPlan 做法，缺的是决策记录入库 | 2026-11-04 10:21 | Wisdom |
-| 计划提交之后在同一 PR 写实现，做完再开 Draft。不把实现留到 Forge 另审这份计划之后 | 本任务指示：「先只提交计划文件……之后再实现。完成后开 Draft PR。」10:21 原话要求放进这个文档 PR。交接正文里的「Forge 审过再写后面的提交」按这条指示做 | 2026-11-04 | Wisdom（本任务指示） |
+| 计划没有留到 Forge 审查后再写后面的提交。这是流程偏差 | RULES §2 要求 Forge 审查通过之前不写实现。`docs/approvals.md` 没有对应行，不记成 Wisdom 的批准 | 2026-11-04 | Cloud |
 | 不建 `active/` 与 `completed/`，不搬动现有 13 份计划 | 交接把子目录标成待定。本任务指示：「不建 active/ 和 completed/ 子目录。」 | 2026-11-04 | Wisdom（本任务指示） |
 | `docs/approvals.md` 增加 10:12 一行。原话：「同意，你把第二条写成你的固定规则吧，然后第一条通知所有bot执行。」对应同文件 2026-11-04 10:12 行，来源 [issuecomment-6622138729](https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6622138729)。不增加「03:35 规则」，不增加 04:02、05:15、05:17 | 10:12 的补记评论已经给出原话。03:35 在 GitHub 上没有原话。04:02、05:15、05:17 本任务指示写明没有标「批准记录」，不收 | 2026-11-04 10:12；本任务指示同日 | Wisdom |
 | 本计划按「来源核对」逐条回应。Cloud 交接之后也要附上计划路径，计划里引用的批准要能在 approvals.md 对上时间 | 10:12 批准的第 2 条：交接含「来源核对」，Cloud 计划逐条回应。10:21 把这件事放进本 PR 的规范，不另写一套门槛 | 2026-11-04 10:12、10:21 | Wisdom |
 
-本表没有「Forge 排序，非业主决定」的行。文件取舍沿用本任务的清单，不另排优先级。
+没有标成「Forge 排序，非业主决定」的行。不等 Forge 审计划就写实现的那一行，作者是 Cloud。其余文件取舍沿用本任务的清单。
 
 ## 来源核对
 
@@ -60,9 +60,9 @@
 | [issues/27#issuecomment-6621420997](https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6621420997)；[pull/125#issuecomment-6621435772](https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6621435772) | 11:05「按推荐就行」 | 补行 11:05。#125 已经合入。本 PR 不重做 catalog、占位页或 `docs/arch/` |
 | [pull/124#issuecomment-6621603309](https://github.com/wisdom-km/open-immerse-v2/pull/124#issuecomment-6621603309)；[issues/123#issuecomment-6621603953](https://github.com/wisdom-km/open-immerse-v2/issues/123#issuecomment-6621603953) | 11:18「批准合入」 | 补行 11:18。合入 #124 @ 9facc97。本 PR 不改 #124 的代码 |
 | [pull/125#issuecomment-6621922357](https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6621922357)、[6622059835](https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6622059835) | 11:40 有条件合入，以及 slug 遗留 | 补行 11:40，原话保留「影影响」。6622059835 是 Forge 的条件核对，不是另一条 Wisdom 原话，写在同一行的来源里。check-docs 的 slug 修复不在本 PR |
-| [issues/61#issuecomment-6621927948](https://github.com/wisdom-km/open-immerse-v2/issues/61#issuecomment-6621927948)；[issues/35#issuecomment-6621928509](https://github.com/wisdom-km/open-immerse-v2/issues/35#issuecomment-6621928509) | 11:41 并行开工；文件冲突禁区 | 补行 11:41。两条评论原话相同。禁碰清单照交接执行，因为 #35 的分支正在改那些文件 |
+| [issues/61#issuecomment-6621927948](https://github.com/wisdom-km/open-immerse-v2/issues/61#issuecomment-6621927948)；[issues/35#issuecomment-6621928509](https://github.com/wisdom-km/open-immerse-v2/issues/35#issuecomment-6621928509) | 11:41 并行开工；文件冲突禁区 | 补行 11:41。两条评论原话相同。范围写上评论里的条件：与当前活跃 PR #125 无文件重叠。禁碰清单照交接执行，因为 #35 的分支正在改那些文件 |
 | PR #125 正文、`docs/spec-changelog.md` | 拆分后的索引；changelog 的行格式 | 必读时核对过：根目录 PRD、ARCHITECTURE 是索引。changelog 新行用现有四列：日期、PR、文件、摘要。规格版本仍写 v0.6 |
-| [issues/27#issuecomment-6622138729](https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6622138729) | 交接写「10:12 先不加」。本任务指示改为加上 | 评论正文是补记，原话在「」内。补行 10:12，插在 10:04 与 10:21 之间。时间用评论里的 10:12，不用评论创建时间 11:57 |
+| [issues/27#issuecomment-6622138729](https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6622138729) | 交接写「10:12 先不加」。本任务指示改为加上 | 评论正文是补记，原话在「」内。补行 10:12，插在 10:04 与 10:21 之间。表内时间用评论里的 10:12。来源列注明这是补记，评论发表于 11:57 |
 
 ## 要写入的文本
 
@@ -145,13 +145,13 @@ Cloud 交接附上该计划文件；计划引用的批准须在 [docs/approvals.
 | 2026-11-04 05:51 | 「批准 #118，macOS 绿了就合入」 | 合入 #118 @ 22caf3f | PR #118 | https://github.com/wisdom-km/open-immerse-v2/pull/118#issuecomment-6616304679 |
 | 2026-11-04 05:52 | 「批准 #121，CI 绿了就合入」 | 合入 #121 @ 08a1357 | PR #121 | https://github.com/wisdom-km/open-immerse-v2/pull/121#issuecomment-6616326125 |
 | 2026-11-04 10:04 | 「批准合入 #122」 | 合入 #122 @ 204eff7 | PR #122 | https://github.com/wisdom-km/open-immerse-v2/pull/122#issuecomment-6620565051 |
-| 2026-11-04 10:12 | 「同意，你把第二条写成你的固定规则吧，然后第一条通知所有bot执行。」 | (1) 所有 bot：Wisdom 批与 issue 相关的范围时，立即在该 issue 评论记录时间、原话、范围和来源；(2) Forge 固定规则：写 Cloud 交接前按 issue 号和关键词检索 issue 评论、审查报告和 docs/approvals.md，交接必须含「来源核对」，Cloud 计划逐条回应，Forge 审 PR 时逐条勾对 | Issue #27 | https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6622138729 |
+| 2026-11-04 10:12 | 「同意，你把第二条写成你的固定规则吧，然后第一条通知所有bot执行。」 | (1) 所有 bot：Wisdom 批与 issue 相关的范围时，立即在该 issue 评论记录时间、原话、范围和来源；(2) Forge 固定规则：写 Cloud 交接前按 issue 号和关键词检索 issue 评论、审查报告和 docs/approvals.md，交接必须含「来源核对」，Cloud 计划逐条回应，Forge 审 PR 时逐条勾对 | Issue #27 | https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6622138729 （补记，评论发表于 2026-11-04 11:57） |
 | 2026-11-04 10:21 | 「对，我批准了，你就按照你的建议把它放进下一个文档PR里吧。就这个文档PR结束了，你就把它放进去。」 | 本 PR：exec-plans 规范 + approvals 中心记录 | 本 PR | https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6620794911 |
 | 2026-11-04 10:27 | 「colorama 按包名放行为 BSD-3-Clause」「Windows CI 暂不改」 | colorama 包名别名 → BSD-3-Clause；worker-health-windows 不改 | PR #124 `package-aliases.json` | https://github.com/wisdom-km/open-immerse-v2/issues/123#issuecomment-6620885462 |
 | 2026-11-04 11:05 | 「按推荐就行」 | #125 三项：catalog 指向章节文件；删 27 个占位页、只改相对路径前缀；正文放 `docs/arch/` 并回退 RULES 第 7/169 行 | PR #125 | https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6621420997 ；https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6621435772 |
 | 2026-11-04 11:18 | 「批准合入」 | 合入 #124 @ 9facc97（Fixes #123） | PR #124 | https://github.com/wisdom-km/open-immerse-v2/pull/124#issuecomment-6621603309 ；https://github.com/wisdom-km/open-immerse-v2/issues/123#issuecomment-6621603953 |
 | 2026-11-04 11:40 | 「风险这个先测试下有没有影响吧，要没有影响咱就批准合入，要有影影响的话，咱们就先修锚点再合。」 | #125 @ 3c2f159 有条件合入：5 个特殊字符锚点在 GitHub 渲染页实测能跳转（Forge 在 bad72bf 核对满足） | PR #125 | https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6621922357 ；https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6622059835 |
-| 2026-11-04 11:41 | 「我看并行的名额还剩两个，它俩是不影响的是吧？就是不影响当前任务的。如果不影响的话，那就都批准。」 | 并行开工 #61 剩余项（1/4/6）与 #35 剩余项（2/3），条件：与当前活跃 PR 无文件重叠 | Issue #61、#35 | https://github.com/wisdom-km/open-immerse-v2/issues/61#issuecomment-6621927948 ；https://github.com/wisdom-km/open-immerse-v2/issues/35#issuecomment-6621928509 |
+| 2026-11-04 11:41 | 「我看并行的名额还剩两个，它俩是不影响的是吧？就是不影响当前任务的。如果不影响的话，那就都批准。」 | 并行开工 #61 剩余项（1/4/6）与 #35 剩余项（2/3），条件是与当前活跃 PR #125 无文件重叠 | Issue #61、#35 | https://github.com/wisdom-km/open-immerse-v2/issues/61#issuecomment-6621927948 ；https://github.com/wisdom-km/open-immerse-v2/issues/35#issuecomment-6621928509 |
 
 表下计数改为：共 33 条批准 + 1 条反馈记录。
 
