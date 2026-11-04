@@ -52,5 +52,15 @@
 | 2026-11-04 14:20 | 「按推荐」 | #136 中 compare-spec-bytes 的 amendments 机制补批，随 #136 合入（选项 1） | PR #136 | https://github.com/wisdom-km/open-immerse-v2/pull/136#issuecomment-6624141225 ；https://github.com/wisdom-km/open-immerse-v2/issues/59#issuecomment-6624141955 |
 | 2026-11-04 14:25 | 「批准合入 136」 | 合入 #136 @ade9f3e | PR #136 | https://github.com/wisdom-km/open-immerse-v2/pull/136#issuecomment-6624220484 |
 | 2026-11-04 14:54 | 「1按你的推荐，然后删掉，然后加入138一起合入。60和119可以并行开，就是你如果审查完之后并行是没有问题的话，那就并行。」 | 在 #138 中删除 AGENTS.md 第 11 行过时的条件句，并随 #138 一起合入。这条不是合入批准 | PR #138 | https://github.com/wisdom-km/open-immerse-v2/pull/138#issuecomment-6624659834 |
+| 2026-11-04 15:02 | 「同意批准」 | 合入 #138 @9c64cfd | PR #138 | https://github.com/wisdom-km/open-immerse-v2/pull/138#issuecomment-6624793605 |
+| 2026-11-04 15:15 | 「只开69吧」 | 只开 #69；只改 apps/desktop/src/main/ 与测试，不改 CI | Issue #69 | https://github.com/wisdom-km/open-immerse-v2/issues/69#issuecomment-6625006385 |
+| 2026-11-04 15:21 | 「按推荐」 | #69：仍只放行 .html；扩展名→MIME 表，未知 application/octet-stream；所有响应加 nosniff | Issue #69 | https://github.com/wisdom-km/open-immerse-v2/issues/69#issuecomment-6625123533 |
+| 2026-11-04 15:28 | 「批准合入139。」 | 合入 #139 @8d38545 | PR #139 | https://github.com/wisdom-km/open-immerse-v2/pull/139#issuecomment-6625234586 |
+| 2026-11-04 15:29 | 「那就是同意开140，然后按照你的建议，等139一合入就开始。」 | 开 #140（①②③），#139 合入后拉分支 | Issue #140 | https://github.com/wisdom-km/open-immerse-v2/issues/140#issuecomment-6625257930 |
+| 2026-11-04 15:36 | 「OK，那就按照你的建议保留吧。」 | #141 .html 后缀不区分大小写保留，按 047c346 原样合入 | PR #141 | https://github.com/wisdom-km/open-immerse-v2/issues/69#issuecomment-6625357913 |
+| 2026-11-04 15:44 | 「按推荐」 | #28 的 5 项改进 + 下一个 docs PR 修 03.md 4 处不一致 | Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6625527767 |
+| 2026-11-04 15:50 | 「批准合入」 | 合入 #141 @047c346（Fixes #69） | PR #141 | https://github.com/wisdom-km/open-immerse-v2/pull/141#issuecomment-6625603468 |
+| 2026-11-04 15:54 | 「按推荐一的内容。」 | 流程：分支落后 main 时默认 merge 同步（不 rebase/force），PR 文件 blob 不变且新 tip CI 绿后 --match-head-commit 合入；不改仓库设置 | 流程 | https://github.com/wisdom-km/open-immerse-v2/pull/141#issuecomment-6625655280 |
+| 2026-11-04 15:57 | 「按你推荐开第一项，第二项等142合入后再开。」 | 开本文档 PR；#73 等 #142 合入后再开 | Issue #28/#42/#73 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6625727777 |
 
-共 44 条批准 + 1 条反馈记录 + 1 条决定
+共 54 条批准 + 1 条反馈记录 + 1 条决定
