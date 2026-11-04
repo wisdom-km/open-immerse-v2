@@ -34,4 +34,12 @@ e2e 的脚本行是 `pnpm run build && playwright test -- e2e/csp.spec.ts`。`e2
 
 `check-docs` 的 9 条 status 都不是本 PR 的文件：`docs/README.md`、`docs/WORKFLOW.md`、`docs/architecture/inputs/pdf_translation_architecture.md`、`docs/ci-and-environment.md`、`docs/design/md-reader.md`、`docs/gate-remediation.md`、`docs/incidents/TEMPLATE.md`、`docs/reviews/2026-10-30-architecture-review.md`。脚本只报告，退出码仍是 0。
 
-写入本文件并回填执行计划的「实际」列之后，再跑一次 `check:size`、`node tools/check-docs/check.mjs` 与 `check:commits`。结果补在下面。
+## 证据提交之后
+
+下面三次跑在 `4dcc709066cbfd0b8c04dd95b851bbc8ddf40033`（本文件和执行计划的「实际」列已经入库）。本段是事后补记。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `corepack pnpm run check:size` | 0 | `check-file-size: 214 source files within hard limits` |
+| `node tools/check-docs/check.mjs` | 0 | report-only。links 0，anchors 0，verbatim 0，status 9。9 条仍是上面那些既有文件 |
+| `corepack pnpm run check:commits` | 0 | 三条提交说明都符合 Conventional Commits |
