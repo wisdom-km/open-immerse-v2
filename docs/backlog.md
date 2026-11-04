@@ -1,6 +1,6 @@
 # 待办与架构评审处理状态
 
-状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-04（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。同日 Electron 外壳延期三条：#66、#67、#68。2026-11-03 补上 #76、#80。同日 10:40 Wisdom 批准 platform-node → contracts 值导入，记在 §12，ARCH §5.1 补 `PN --> C`。同日 PR #85 把 `score_best` / `score_best_batch` 记入 §4，Issue #86。同日核对 #80–#87：#80、#86 已各有一行。#81、#82、#84 已关闭，不加行。补 #83、#87。2026-11-04 补 #102 连着推 main 时 pending 被顶替、#106 缺 `bin.depcruise` 与 macOS 不跑 `check:deps`、#109 空 ID、#111，以及 `desktop-e2e-windows` 仍不是必需检查。G3、G5 已在 §7，不另加行。§10 的暂停句因 M1 已开工改记状态。同日按 Anvil 把 #33 的两条健康检查改记为已是 required（本代理再查分支保护仍是 403，不改设置）。同日 PR #122：§4 条目 4 改为已登记；§7 E-P1-1 记下 ADR 0002、0003，第一批其余项仍未建页。同日 #59：正常停止的退出码在任何阶段都是 0。同日复核 M1-DEFER-G1：#34 的 G1 部分可关闭；§4 补上已处理的 #131、#137，以及一条未处理的 worker 停止信号 polish（M3）。
+状态：v0.6。当前版本仍是 v0.6，本文件不升这个号。变更指针：[spec-changelog.md](./spec-changelog.md)。日期：2026-11-04（Asia/Shanghai）。2026-10-31 补了诊断日志的规格状态（§4 新行、§6 的诊断事件枚举那条 P2-8）。同日把调试日志写成最多 7 天、总量上限 50 MB（先到先清）。§4 另有一行请 Loom 改 MD-16 的 test:core 措辞。同日 13:14 的决定记在 §10，不重开 Q3、Q5、D-D、D-E、W-4。2026-11-02 20:37 起，延期未修的审查或 QA 项按 [WORKFLOW.md](./WORKFLOW.md)「延期」记 Issue 并在 §4 加行。同日补上 #59、#61、#62、#33，并把 #60 写入已有的 `BaseHTTPMiddleware` 行。同日 Electron 外壳延期三条：#66、#67、#68。2026-11-03 补上 #76、#80。同日 10:40 Wisdom 批准 platform-node → contracts 值导入，记在 §12，ARCH §5.1 补 `PN --> C`。同日 PR #85 把 `score_best` / `score_best_batch` 记入 §4，Issue #86。同日核对 #80–#87：#80、#86 已各有一行。#81、#82、#84 已关闭，不加行。补 #83、#87。2026-11-04 补 #102 连着推 main 时 pending 被顶替、#106 缺 `bin.depcruise` 与 macOS 不跑 `check:deps`、#109 空 ID、#111，以及 `desktop-e2e-windows` 仍不是必需检查。G3、G5 已在 §7，不另加行。§10 的暂停句因 M1 已开工改记状态。同日按 Anvil 把 #33 的两条健康检查改记为已是 required（本代理再查分支保护仍是 403，不改设置）。同日 PR #122：§4 条目 4 改为已登记；§7 E-P1-1 记下 ADR 0002、0003，第一批其余项仍未建页。同日 #59：正常停止的退出码在任何阶段都是 0。同日复核 M1-DEFER-G1：#34 的 G1 部分可关闭；§4 补上已处理的 #131、#137，以及一条未处理的 worker 停止信号 polish（M3）。同日补 websocket 透传、#141 三项遗留；P2-9 已处理（#42）。
 用途：逐条记录[架构评审](./reviews/2026-10-30-architecture-review.md)的每个发现由哪个规格 PR 处理、落在规格哪里，以及还没处理、留给哪个里程碑的事。决定的理由见[差异清单](./v2-gap-and-changes.md) §6.6–§6.13；本文只记状态，不重述规格。§5 记 Jev 开关审查（2026-10-30 22:06）各项的处理状态。§8 收录还要等 M0 的项，也记下已经拍板的项（2026-10-31 01:08 建表；同日 D-D、D-E 与 W-4 的过渡默认已决定）。未决的行不代选。2026-11-04：§7 E-P1-8 改为已处理，验收结果格式在 `docs/acceptance/`，不预填数字。
 
 三个规格 PR：
@@ -108,6 +108,8 @@
 | check-docs 标题锚点按 GitHub 规则生成 | 已处理（#131，Fixes #130，合入 2026-11-04 13:49 UTC+8） | #130；#131 |
 | 起子进程的门禁测试设明确超时 | 已处理（#137，#135，合入 2026-11-04 14:11 UTC+8）。只改测试，不改 CI | #135；#137 |
 | `workers/parser/oi_worker/api/server.py` 的 `_run_until_stop` 在 `finally` 里 `restore_handlers(previous)`，把 `install_hold` 之前的处理函数（`stop_signals.arm_quiet_stop` 装的 `_quiet_exit`）恢复回来。serve 结束后若再来第二个停止信号，Windows 上 `_quiet_exit` 走 `os._exit(0)`，可能跳过 stdout 的 `{"event":"exited"}` | 未处理。下一个碰 worker 停止信号的 PR（M3） | PR #136 审查 nit |
+| worker `LaunchBearerMiddleware`（`workers/parser/oi_worker/api/auth.py`）对非 http scope（websocket、lifespan）直接透传，不校验 launch bearer。worker 目前无 websocket 路由，是潜在缺口；以后加 websocket 前须补鉴权 | M3 或首个 websocket 端点之前 | PR #139 Forge 审查。REVIEW.md 不在本仓库；代码见 `auth.py` 第 25–27 行，`app.py` 第 12 行 `add_middleware` |
+| #141 Anvil 未核实三项（转 #69 后续）：mac 上 INDEX.HTML 的行为（Windows 200、Linux 404）；e2e 截图 window-1..3.png 每张 2618B，内容未核实；打包后 assets 下 js/css 的 200 响应实际 Content-Type 未核实（只验了 404 路径） | #69 后续。本 PR 不核实 | #141 评论 6625603468。ANVIL.md 第 17–19 行不在本仓库，三句按交接内联写入 |
 
 ## 5. Jev 开关审查（2026-10-30 22:06）的处理
 
@@ -164,7 +166,7 @@ P0 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）�
 | P2-6 | 第三方模型条款只写到「外发前询问」 | 未处理。外发同意里加一句：本应用不把用户文献或模型输出上传去做训练；回归集只用合成夹具或用户明确放入 `fixtures` 清单的文件。某家 ToS 禁止保存输出时标「未核实」，不编造 | 外发同意的下一次规格整理 |
 | P2-7 | 许可证机器检查还只有包名字符串 | 未处理。保持到 M1。M1 的门禁 PR 必须包含 G10（license-checker 与 pip-licenses），不只保留字符串 grep | M1 |
 | P2-8 | 诊断事件没有枚举 | 规格已写入 ARCHITECTURE §11 @ PR #16（Wisdom 2026-10-31）。白名单方向：外发询问、预算拒绝、上游 5xx 的 request id、评分不可用，以及解析 / OCR / 翻译的 run 日志（`pipeline.run`）。未列入的事件名不得出现在日志调用里。实现是 M1 代码跟进，本 PR 不写 logger | M1 代码（规格在 M0） |
-| P2-9 | `reader` 的会话 hook 可能再长成上帝文件 | 未处理。M2 搭阅读器之前，在 ARCH §4.2 `reader` 行写明 hook 只订阅 `window.oi` 与 `pure.ts`，不保存采用版本或译文正文的副本 | M2 前 |
+| P2-9 | `reader` 的会话 hook 可能再长成上帝文件 | 已处理（本 PR，ARCH §4.2 reader 行，#42） | M2 前 |
 
 ## 7. 工程成熟度（PR #11 第二轮，2026-10-31）
 

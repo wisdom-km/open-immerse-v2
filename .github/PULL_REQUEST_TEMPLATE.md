@@ -18,6 +18,8 @@
 
 任务类型为「UI 改动」时，不得修改 core 目录（domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`）。见 RULES N-16、N-21 与 ARCHITECTURE §2.1。
 
+- [ ] 影响 arch / prd 吗？影响就在同一个 PR 里更新。
+
 ## 测试证据
 
 - 所在提交 SHA：
