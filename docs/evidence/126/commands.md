@@ -40,6 +40,8 @@ PR #126。分支 `feature/m1-issue35-real-tree`。基线已 rebase 到 `origin/m
 | `GATE_BASE=origin/main corepack pnpm run check` | 0 | format、lint、typecheck、typecheck:core、行数（208 个源文件）、dependency-cruiser（104 modules，186 dependencies，无违例）、许可证、G18（1 个功能切片）、Conventional Commits、热点、PR 体量（749 行非生成，历史里有 `G12:`）、codegen（0 generators）。其后 `git diff --exit-code` 通过 |
 | `corepack pnpm test` | 1 | 249 passed，3 skipped，2 failed。94 个文件。失败的两条是 `compare.test.ts` 的 `matches origin/main when the chapter files are joined` 与 `writes the same prefix manifest that evidence keeps`。与 main 的 CI 相同。日志摘要没有列出 3 条 skip 的名字。本机没有 `GITLEAKS_BIN`。上一轮同样是 3 条 skip，来自 `leak.test.ts` 的 detect 用例 |
 
-没有重跑失败项。`compare-spec-bytes` 不在本 PR 的修改范围里。本机没有跑 gitleaks，也没有跑 Python 门禁。Windows 上的路径匹配（正斜杠、8.3）没有在这台 Linux 机器上执行。
+没有重跑失败项。`compare-spec-bytes` 不在本 PR 的修改范围里。本机没有跑 gitleaks，也没有跑 Python 门禁。
+
+`2ec3562` 的 worker-health-windows 上，旧的 G13 用例把 `jobs` 拷进临时目录再拿仓库里的 dependency-cruiser 配置去巡航。`@oi/contracts` 被解析成仓库绝对路径后，Windows 把它拼到临时目录后面（`...\Temp\oi-jobs-...\D:\a\...\packages\contracts\src\index.ts`）。这条用例改到临时 worktree 上跑，配置和 `tsconfig` paths 都在那棵树里。Linux 上的针对性测试见随后的文档提交说明；Windows 结果看 CI。
 
 Node 是 v22.23.4。`corepack pnpm` 来自这支 Node。
