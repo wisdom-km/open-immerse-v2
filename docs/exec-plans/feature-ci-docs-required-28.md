@@ -59,7 +59,7 @@ Wisdom 2026-11-04 16:57 原话「按你的建议执行。」范围见 [评论 66
 | 2 | `tree-paths.mjs`、测试、接入 `check.mjs` 与 `report.mjs`。对仓库跑一次，核对缺失是不是上面 3 条 | `83602be`。仓库上 tree 为 3，路径与试算相同 | 证据目录 |
 | 3 | 缺失不是 0：不改 `03.md`，不建那三个目录，不改退出码，不改 `ci.yml` | `ci.yml` 无改动。`compare.mjs` 退出码 0。临时夹具有 1 条发现时退出码仍是 0 | 证据目录 |
 | 4 | W1、W2 与 7 个文件的状态行。更新 `docs/ci-and-environment.md` 与 `docs/backlog.md` | `62950b1`。status 为 0。`docs/design/**` 与索引表按 16:57 豁免 | 证据目录 |
-| 5 | 定向命令见下。证据写入 `docs/evidence/<PR号>/commands.md`。Draft PR，正文第一行 `Refs #28` | 命令在 `62950b1` 上再跑一遍后写入证据。Draft PR 第一行 `Refs #28` | 证据目录 |
+| 5 | 定向命令见下。证据写入 `docs/evidence/<PR号>/commands.md`。Draft PR，正文第一行 `Refs #28` | 命令跑在 `f667f6b`。Draft PR [#146](https://github.com/wisdom-km/open-immerse-v2/pull/146)，正文第一行 `Refs #28` | [commands.md](../evidence/146/commands.md) |
 
 ## 决策记录（Decision Log）
 
@@ -104,4 +104,4 @@ Wisdom 2026-11-04 16:57 原话「按你的建议执行。」范围见 [评论 66
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：上面几条命令的退出码与摘要。PR 号在开 Draft 之后填。
+- [docs/evidence/146/commands.md](../evidence/146/commands.md)：`f667f6b` 上四条命令的退出码。Draft PR [#146](https://github.com/wisdom-km/open-immerse-v2/pull/146)。
