@@ -1,7 +1,7 @@
 import { readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 
-const HTML = "text/html; charset=utf-8";
+import { contentTypeFor } from "./mime-types.js";
 
 export type StaticResult =
   | {
@@ -24,7 +24,11 @@ export function resolveStaticFile(
   if (filePath === null) {
     return { kind: "missing" };
   }
-  return { kind: "file", body: readBytes(filePath), contentType: HTML };
+  return {
+    kind: "file",
+    body: readBytes(filePath),
+    contentType: contentTypeFor(filePath),
+  };
 }
 
 export function bodyForMethod(
@@ -76,7 +80,7 @@ function relativePath(pathname: string): string | null {
     return null;
   }
   const stripped = decoded.replace(/^[/\\]+/, "");
-  if (stripped.length === 0 || !stripped.endsWith(".html")) {
+  if (stripped.length === 0 || !isHtmlDocument(stripped)) {
     return null;
   }
   const segments = stripped.split(/[/\\]/);
@@ -88,6 +92,10 @@ function relativePath(pathname: string): string | null {
     return null;
   }
   return segments.join(path.sep);
+}
+
+function isHtmlDocument(relative: string): boolean {
+  return relative.toLowerCase().endsWith(".html");
 }
 
 function decodePath(pathname: string): string | null {

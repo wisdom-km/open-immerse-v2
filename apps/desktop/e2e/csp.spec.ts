@@ -24,3 +24,12 @@ test("omits unsafe-eval when the csp header is read", async ({ desktop }) => {
     response?.headers()["content-security-policy"]?.includes("unsafe-eval"),
   ).toBe(false);
 });
+
+test("sends nosniff and html when the oi-app document reloads", async ({
+  desktop,
+}) => {
+  const response = await desktop.page.reload();
+  const headers = response?.headers();
+  expect(headers?.["x-content-type-options"]).toBe("nosniff");
+  expect(headers?.["content-type"]).toBe("text/html; charset=utf-8");
+});

@@ -24,6 +24,12 @@ function withRoot(run: (root: string) => void): void {
       path.join(root, "index.html"),
       "<title>Open Immerse</title>\n",
     );
+    writeFileSync(path.join(root, "INDEX.HTML"), "<title>Upper</title>\n");
+    writeFileSync(path.join(root, "app.js"), "console.log(1)\n");
+    writeFileSync(path.join(root, "app.mjs"), "export {}\n");
+    writeFileSync(path.join(root, "app.css"), "body{}\n");
+    writeFileSync(path.join(root, "icon.svg"), "<svg></svg>\n");
+    writeFileSync(path.join(root, "icon.png"), "png");
     writeFileSync(path.join(outside, "secret.html"), "secret");
     symlinkSync(outside, path.join(root, "linked"), "junction");
     run(root);
@@ -65,6 +71,31 @@ it("serves html inside the renderer root and rejects escapes", () => {
     expect(bodyForMethod("GET", new Uint8Array([1]))).toEqual(
       new Uint8Array([1]),
     );
+
+    const upper = realpathSync(path.join(root, "INDEX.HTML"));
+    expect(resolveInsideRoot(root, "oi-app://app/INDEX.HTML")).toBe(upper);
+    const upperServed = resolveStaticFile(
+      root,
+      "oi-app://app/INDEX.HTML",
+      "GET",
+    );
+    expect(upperServed.kind).toBe("file");
+    if (upperServed.kind === "file") {
+      expect(upperServed.contentType).toBe("text/html; charset=utf-8");
+    }
+
+    for (const name of [
+      "app.js",
+      "app.mjs",
+      "app.css",
+      "icon.svg",
+      "icon.png",
+    ]) {
+      expect(resolveInsideRoot(root, `oi-app://app/${name}`)).toBeNull();
+      expect(resolveStaticFile(root, `oi-app://app/${name}`, "GET").kind).toBe(
+        "missing",
+      );
+    }
   });
 });
 
