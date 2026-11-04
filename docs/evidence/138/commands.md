@@ -43,3 +43,7 @@ corepack pnpm run check:hotspots
 退出码都是 0。`check-commits: subjects match Conventional Commits`。`check-pr-size: 146 non-generated lines`。`check-hotspots: named hotspot diffs are within 30 lines`。
 
 日志在 `/opt/cursor/artifacts/docs-rules-approvals-checks.log`。
+
+## 含本文件
+
+`a3f9996cf1f66914b43547edaf6a68a5756416c1` 已含本文件的上一版。在该提交上再跑 `node tools/check-docs/check.mjs`、`compare-spec-bytes`，以及 `GATE_BASE=origin/main` 下的 `check:commits`、`check:pr-size`、`check:hotspots`。退出码都是 0。check-docs 计数与上一节相同。`check-pr-size: 191 non-generated lines`。
