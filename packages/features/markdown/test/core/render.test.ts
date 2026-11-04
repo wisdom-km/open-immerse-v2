@@ -103,9 +103,9 @@ it("reads inline and display math and blocks an untrusted command", () => {
   const linked = "$\\href{https://example.com}{x}$";
   const linkedMath = extractMath(linked);
   expect(linkedMath.length).toBeGreaterThan(0);
-  expect(
-    linkedMath.every((item) => item.blocked === "untrusted_command"),
-  ).toBe(true);
+  expect(linkedMath.every((item) => item.blocked === "untrusted_command")).toBe(
+    true,
+  );
   for (const context of ["note", "translation", "answer"] as const) {
     const block = render(linked, context).blocks[0];
     expect(block?.t).toBe("paragraph");

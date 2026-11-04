@@ -1,4 +1,11 @@
-import { array, assert, constantFrom, oneof, property, string } from "fast-check";
+import {
+  array,
+  assert,
+  constantFrom,
+  oneof,
+  property,
+  string,
+} from "fast-check";
 import { expect, it } from "vitest";
 
 import type { MdContext } from "@oi/contracts";
@@ -27,7 +34,7 @@ const syntax = constantFrom(
   "[[目标#标题|别名]] ",
   "![[图.png]] ",
   "==高亮== ",
-  "<b onclick=\"x\">粗</b> ",
+  '<b onclick="x">粗</b> ',
   "文字[^1]\n\n[^1]: 注\n\n",
   "😀 ",
   "\n\n",
