@@ -30,5 +30,6 @@ function headers(contentType: string): Record<string, string> {
   return {
     "Content-Type": contentType,
     "Content-Security-Policy": CONTENT_SECURITY_POLICY,
+    "X-Content-Type-Options": "nosniff",
   };
 }
