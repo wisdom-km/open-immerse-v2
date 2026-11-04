@@ -22,12 +22,12 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔提交只有它。来源核对逐条回应 |  | 本文件 |
-| 2 | 在 [RULES.md](../../RULES.md) §9 表、第 238 行「现状理解」之后加一行「UI 上手验收」。不改表里其他行，不改 N-01–N-22。加完立刻跑 `node tools/compare-spec-bytes/compare.mjs`。非 0 就停下，把失败输出写进证据，不加 amendment |  |  |
-| 3 | [.github/PULL_REQUEST_TEMPLATE.md](../../.github/PULL_REQUEST_TEMPLATE.md) 在「UI–core 交接说明」整节之后新开「## UI 上手验收（RULES §9）」，放交接给出的勾选。不改 `.github/` 下其他文件 |  |  |
-| 4 | [docs/spec-changelog.md](../spec-changelog.md) 表首加一行。版本历史那一段（span）不改。规格版本仍是 v0.6。PR 号等开 PR 后填 |  |  |
-| 5 | [docs/approvals.md](../approvals.md) 在 16:34 两行之后加 16:57 一行。第 68 行计数改为 57 条批准。若开工时 main 已不是 f9b34e8，按当时的批准数加 1，并在 PR 里写明 |  |  |
-| 6 | `node tools/check-docs/check.mjs` 发现数不得多于基线 9。`grep -n "上手验收"` 两处都有且互相引用。证据放 `docs/evidence/<PR号>/commands.md`。Draft PR，正文第一行是 `Fixes #24`，前面没有 HTML 注释 |  |  |
+| 1 | 本文件。第一笔提交只有它。来源核对逐条回应 | 提交 `3a31b6c` 只有本文件 | 本文件 |
+| 2 | 在 [RULES.md](../../RULES.md) §9 表、第 238 行「现状理解」之后加一行「UI 上手验收」。不改表里其他行，不改 N-01–N-22。加完立刻跑 `node tools/compare-spec-bytes/compare.mjs`。非 0 就停下，把失败输出写进证据，不加 amendment | 写入第 239 行。compare 退出码 0，未改 manifest | [commands.md](../evidence/145/commands.md) |
+| 3 | [.github/PULL_REQUEST_TEMPLATE.md](../../.github/PULL_REQUEST_TEMPLATE.md) 在「UI–core 交接说明」整节之后新开「## UI 上手验收（RULES §9）」，放交接给出的勾选。不改 `.github/` 下其他文件 | 第 77–81 行。另有一句链回 RULES §9 | `26edf8f` |
+| 4 | [docs/spec-changelog.md](../spec-changelog.md) 表首加一行。版本历史那一段（span）不改。规格版本仍是 v0.6。PR 号等开 PR 后填 | 表首一行，PR 列改为 #145。span 未改 | 本提交 |
+| 5 | [docs/approvals.md](../approvals.md) 在 16:34 两行之后加 16:57 一行。第 68 行计数改为 57 条批准。若开工时 main 已不是 f9b34e8，按当时的批准数加 1，并在 PR 里写明 | 第 67 行。计数在第 69 行，57 条批准。基线仍是 f9b34e8，没有另加批准 | `26edf8f` |
+| 6 | `node tools/check-docs/check.mjs` 发现数不得多于基线 9。`grep -n "上手验收"` 两处都有且互相引用。证据放 `docs/evidence/<PR号>/commands.md`。Draft PR，正文第一行是 `Fixes #24`，前面没有 HTML 注释 | check-docs 退出码 0，发现数 9。grep 两处都有。Draft PR #145 | [commands.md](../evidence/145/commands.md) |
 
 ## 决策记录（Decision Log）
 
@@ -51,7 +51,7 @@
 | 2 | [issues/24#issuecomment-6626807241](https://github.com/wisdom-km/open-immerse-v2/issues/24#issuecomment-6626807241)（16:57） | 开工批准，原话「按你的建议执行。」；amendment 一并批准；不改 CI、不加依赖 | 评论作者是 wisdom-km。原话是「按你的建议执行。」范围写明 #24 开工、两处加这条、amendment 一并批准、不改 CI、不加依赖。步骤 5 按这句写入 approvals，计入批准。不改 `.github/workflows/**`，不加依赖。amendment 只在 compare 非 0 且 Forge 确认之后才加；本计划不预先改 manifest |
 | 3 | [docs/approvals.md](../approvals.md) 第 68 行 | 现在的计数是 56 条批准，加上本条后为 57 | 在 f9b34e8 上第 68 行就是这句。表体 58 行里，反馈 1、决定 1、批准 56。16:57 是新的批准，不是反馈也不是决定。步骤 5 改为「共 57 条批准 + 1 条反馈记录 + 1 条决定」。基线若在写入前变了，按当时批准数加 1，并在 PR 描述写明 |
 | 4 | [RULES.md](../../RULES.md) 第 224–240 行 | §9 的结构 | 第 224 行是该标题。第 227 行说明栏目在 PR 模板、模板开头指向本节。表在第 228–238 行，最后一行是「现状理解」。第 240–242 行是 Draft、Forge、N-03，以及只改文档时交接说明写「不适用」。步骤 2 只在第 238 行后加一行，这三行和表里已有的九行都不改 |
-| 5 | [tools/compare-spec-bytes/manifest.json](../../tools/compare-spec-bytes/manifest.json) 第 118–125 行（spans） | RULES 只比对 spec-changelog 里的迁移段，所以 §9 的改动不会触发 compare（交接写已实测） | span 的 path 是 `RULES.md`，file 是 `docs/spec-changelog.md`，start 是「Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；」，end 是「日期：2026-11-03（Asia/Shanghai）。」，bodyEnd 是 `<!-- /oi-split-body -->`。这段在 changelog 第 13 行，§9 表和表首新行都在它外面。交接说本地加一行后 compare 仍是 exit 0。本计划还没有改 RULES，还没有复跑。步骤 2 改完立刻跑；exit 0 则不改 manifest。非 0 则停下报告，不加替换 |
+| 5 | [tools/compare-spec-bytes/manifest.json](../../tools/compare-spec-bytes/manifest.json) 第 118–125 行（spans） | RULES 只比对 spec-changelog 里的迁移段，所以 §9 的改动不会触发 compare（交接写已实测） | span 的 path 是 `RULES.md`，file 是 `docs/spec-changelog.md`，start 是「Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；」，end 是「日期：2026-11-03（Asia/Shanghai）。」，bodyEnd 是 `<!-- /oi-split-body -->`。这段在 changelog 第 13 行，§9 表和表首新行都在它外面。交接说本地加一行后 compare 仍是 exit 0。步骤 2 改完立刻跑，退出码 0，RULES span 仍是 2795 字节。manifest 未改。见 [commands.md](../evidence/145/commands.md) |
 | 6 | handoffs/28-ci.md（不在本仓库；交接第 1 节已内联） | 28-ci PR1 不碰 approvals、spec-changelog、模板、RULES，没有冲突 | 本仓库没有这份交接文件。交接第 1 节列出的文件是 `tools/check-docs/**`、`ci.yml`、一批 docs 状态行、`ci-and-environment.md`、backlog、它自己的 exec-plan 和 evidence，没有本 PR 的四个文件。本 PR 也不碰那些文件。开工时打开的 PR 只有 [#144](https://github.com/wisdom-km/open-immerse-v2/pull/144)（`feature/m3-diag-source-contract-73`），文件是 `packages/contracts/src/diag-events.ts`、其测试、`docs/exec-plans/feature-m3-diag-source-contract-73.md`、`docs/evidence/144/commands.md`。无重叠。不改 `diag-events.ts` |
 | 7 | [RULES.md](../../RULES.md) §7 / §9「文档同步」 | 改了规格就要在 spec-changelog 里加一行 | §7 写规格变更记在 [docs/spec-changelog.md](../spec-changelog.md)，不升应用变更记录，版本仍是 v0.6。§9「文档同步」要求同一 PR 改掉因此失真的句子和入口，并加一行变更记录，不把正文再抄进第二份文件。步骤 4 在表首加一行，span 内的版本历史不改。入口就是 PR 模板，步骤 3 改它。PRD、ARCHITECTURE、DESIGN 里没有「合入前无人手验收」这种会被本条弄假的句子，不改 |
 
@@ -101,7 +101,7 @@
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：开 PR 后写入。
+- `docs/evidence/145/commands.md`：compare、check-docs、grep。
 
 ## 自检
 
