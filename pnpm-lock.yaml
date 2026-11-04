@@ -67,7 +67,11 @@ importers:
         specifier: workspace:*
         version: link:../../contracts
 
-  packages/features/markdown: {}
+  packages/features/markdown:
+    dependencies:
+      '@oi/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
 
   packages/kernel: {}
 
