@@ -28,8 +28,8 @@ worker 命令的工作目录是 `workers/parser/`。实现提交 `e927abc`。
 
 | 命令 | 退出码 | 备注 |
 | --- | --- | --- |
-| `corepack pnpm run check:size` | 0 | 213 source files within hard limits。`test_app.py` 163 行，测试文件上限 800 |
-| `node tools/check-docs/check.mjs` | 0 | links 0，anchors 0。status 9 条是既有文件，没有本计划，也没有本证据目录 |
-| `corepack pnpm run check:commits` | 0 | 当时范围是 `5ca0b33..e927abc`。subjects match Conventional Commits |
+| `corepack pnpm run check:size` | 0 | 213 source files within hard limits。`test_app.py` 163 行，测试文件上限 800。`e927abc` 与证据提交 `aec38fa` 各跑一次，退出码都是 0 |
+| `node tools/check-docs/check.mjs` | 0 | links 0，anchors 0。status 9 条是既有文件，没有本计划，也没有本证据目录。`aec38fa` 上再跑仍是这 9 条，退出码 0 |
+| `corepack pnpm run check:commits` | 0 | `e927abc` 上范围是 `5ca0b33..e927abc`，退出码 0。`aec38fa` 上再跑，subjects match Conventional Commits，退出码 0 |
 
 原始输出在 `/opt/cursor/artifacts/commands-140.log`。
