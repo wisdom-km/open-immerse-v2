@@ -12,6 +12,7 @@ const groups = {
     "verbatim-marker",
     "verbatim-manifest",
   ]),
+  tree: new Set(["tree-path-missing"]),
 };
 
 function tally(findings, kinds) {
@@ -25,6 +26,7 @@ export function render(findings) {
     `anchors: ${tally(findings, groups.anchors)}`,
     `status: ${tally(findings, groups.status)}`,
     `verbatim: ${tally(findings, groups.verbatim)}`,
+    `tree: ${tally(findings, groups.tree)}`,
     `findings: ${findings.length}`,
   ];
   for (const item of findings) {
