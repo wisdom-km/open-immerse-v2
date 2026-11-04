@@ -4,6 +4,8 @@ export { toHtmlBlocked } from "./domain/html-policy.js";
 export { formulaBlocked, overFormulaBudget } from "./domain/math-policy.js";
 export type { FormulaBudget } from "./domain/math-policy.js";
 export { listOwned, mathCuts } from "./domain/parse/math-syntax.js";
+export { extractMath, renderMarkdown } from "./domain/render-markdown.js";
+export type { ExtractedMath } from "./domain/render-markdown.js";
 export { serialize } from "./domain/source-span.js";
 export { skipRanges } from "./domain/parse/skip-ranges.js";
 export { wikiCuts } from "./domain/parse/wikilink-syntax.js";

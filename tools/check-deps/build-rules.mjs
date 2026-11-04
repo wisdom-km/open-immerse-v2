@@ -188,7 +188,7 @@ function seamRules() {
       "markdown-parser-not-in-renderer",
       { path: `${uiFrom}|^packages/features/[^/]+/src/pure\\.ts$` },
       {
-        path: `^packages/features/markdown/src/domain/parse/|${pkg("markdown-it")}|${pkg("micromark")}|${pkg("mdast")}`,
+        path: `^packages/features/markdown/src/domain/parse/|${pkg("markdown-it")}|${prefix("markdown-it-")}|${pkg("micromark")}|${prefix("micromark-")}|${pkg("mdast")}|${prefix("mdast-")}|${pkg("@types/mdast")}`,
         reachable: true,
       },
     ),
