@@ -34,7 +34,11 @@ G12 的非生成改动超过 600 行（只改 `packages/contracts` 时是 200 �
 
 `tools/check-arch-graph/check.mjs` 把 dependency-cruiser 的 import 图归约成 [ARCH §5.1](arch/05-01.md#51-层间依赖图) 的层，再对照那张图上的边。启动方式复用 `tools/check-deps/launch-depcruise.mjs`，配置仍是根上的 `dependency-cruiser.config.mjs`。不另写一套禁止规则，也不改 `pnpm run check:deps`。
 
-`node` job 在 `Check` 之后跑 `node tools/check-arch-graph/check.mjs`，这一步带 `continue-on-error: true`。默认退出码 0，只报告。`--strict` 时，代码里有而 §5.1 没画的边多于 0 才退出码 1。图上有、代码里还没有的边只提示。不把这条命令加进 `pnpm check`。不改 `package.json`。不把这一步写成分支保护里的必需检查（N-02）。约两周没有误报之后，由 Wisdom 决定是否改成必过。Wisdom 2026-11-04 18:33 原话：「按推荐吧」。
+`unmapped` 是归约后有一端落不进 [§5.1](arch/05-01.md#51-层间依赖图) 节点的边：路径对不上 `tools/check-arch-graph/layer-of.mjs`，或一端仍是 SEAM。它不是「代码有、图上没画」的 undocumented；对不上的文件记在这里，不会被静默丢掉。
+
+`packages/features/*/src/index.ts` 若只含转出语句（`export ... from`、`export * from`、`export type ... from`）或空的 `export {}`，视为穿透：这个文件自己不产生边，边按导入方所在层和最终目标层计算。出现转出以外的语句时记 `arch-index` 并给出文件:行；`layer-of` 仍把它标成 SEAM，不改 §5.1，其它包的 `src/index.ts` 仍是该包那一层。
+
+`node` job 在 `Check` 之后跑 `node tools/check-arch-graph/check.mjs`，这一步带 `continue-on-error: true`。默认退出码 0，只报告。`--strict` 在 undocumented、unmapped 或 index 任一大于 0 时退出码 1，三者都是 0 时退出码 0；图上有、代码里还没有的边只提示，CI 这一步不传 `--strict`。不把这条命令加进 `pnpm check`。不改 `package.json`。不把这一步写成分支保护里的必需检查（N-02）。约两周没有误报之后，由 Wisdom 决定是否改成必过。Wisdom 2026-11-04 18:33 原话：「按推荐吧」。
 
 没有 `test:core` 脚本。core 测试文件是 `packages/features/*/test/core/**/*.ts`，和工具夹具一起由 Vitest 在 Node 环境收集。`packages/features/jobs` 是门禁样例：§4.3 里没有出边的最小切片形状，不是 §4.2 的任务状态机。`sameJobId` 比较两个 `JobId`。`JobId` 与 `parseJobId` 从 `@oi/contracts` 导入（#109）。五个切片在 `pnpm-workspace.yaml` 的 `packages/features/*` 里；`jobs` 声明 `"@oi/contracts": "workspace:*"`。`tools/codegen/manifest.json` 的 `generators` 为空；`run.mjs` 在 schema 存在时仍生成协议。G6 的 Python core forbidden 先覆盖 `mapping.py`、`batching.py`、`http_errors.py`。`reading_order/`、`preprocess/scan_detect.py`、`modular_a/paragraphs.py` 不在这棵树上：RULES §2 把这些路径当成解析规则 PR，必须同时带上 TS 文字层和夹具，且不能再带别的文件。不改分支保护。
 

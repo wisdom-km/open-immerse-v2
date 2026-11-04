@@ -101,7 +101,11 @@ export function run(argv, io) {
     }),
   );
   io.stdout.write(renderReport(report));
-  if (argv.includes("--strict") && report.undocumented.length > 0) {
+  const strictHit =
+    report.undocumented.length > 0 ||
+    report.unmapped.length > 0 ||
+    report.indexes.length > 0;
+  if (argv.includes("--strict") && strictHit) {
     return 1;
   }
   return 0;

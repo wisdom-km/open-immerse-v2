@@ -39,9 +39,9 @@ it("lists a synthetic undocumented edge and keeps missing packages planned", () 
     ],
     unmapped: [
       {
-        from: "SEAM",
+        from: "?",
         to: "DOM",
-        example: "packages/features/jobs/src/index.ts:1",
+        example: "packages/features/jobs/src/notes.ts:4",
       },
     ] satisfies readonly UnmappedEdge[],
   });
@@ -67,7 +67,7 @@ it("lists a synthetic undocumented edge and keeps missing packages planned", () 
   expect(text).toContain("arch-edge-planned\tADP\tWC");
   expect(text).toContain("arch-edge-planned\tWC\tC");
   expect(text).toContain(
-    "arch-edge-unmapped\tSEAM\tDOM\tpackages/features/jobs/src/index.ts:1",
+    "arch-edge-unmapped\t?\tDOM\tpackages/features/jobs/src/notes.ts:4",
   );
   expect(text).not.toContain("arch-edge-undocumented\tC\tK");
   expect(text).not.toContain("arch-edge-planned\tC\tK");
