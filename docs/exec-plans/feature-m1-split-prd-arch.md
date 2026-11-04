@@ -48,6 +48,12 @@
 
 比对脚本只在文件以开始标记开头时，删掉从开始标记到结束标记及其后的一个换行。标记不在原文里。索引和路径占位文件不参与拼接。
 
+## RULES 文首（审查报告第二轮 N7，已批准）
+
+`RULES.md` 第 3 行在「状态：v0.6，规格基线（唯一真相源之一）。」之后，到「日期：2026-11-03（Asia/Shanghai）。」为止，是 v0.2–v0.6 的版本历史和历次 Wisdom 决定。这一段原样搬到 `docs/spec-changelog.md`，放在 `<!-- oi-split-header -->` 与 `<!-- /oi-split-body -->` 之间。文首只留当前版本 v0.6 和指向变更记录的链接。
+
+`tools/compare-spec-bytes/compare.mjs` 用 `manifest.json` 的 `spans` 取出 `origin/main:RULES.md` 里这一段，剥掉变更记录里的文件头后逐字节比较。段内的 `./docs/reviews/2026-10-30-architecture-review.md` 与 `./docs/backlog.md` 不改字；从 `docs/spec-changelog.md` 解析时，用 `docs/docs/` 下的占位文件接住。
+
 ## PRD 文件清单
 
 | 文件 | 原文 |

@@ -114,5 +114,14 @@
         "docs/architecture/16.md"
       ]
     }
+  ],
+  "spans": [
+    {
+      "path": "RULES.md",
+      "file": "docs/spec-changelog.md",
+      "start": "Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；",
+      "end": "日期：2026-11-03（Asia/Shanghai）。",
+      "bodyEnd": "<!-- /oi-split-body -->"
+    }
   ]
 }

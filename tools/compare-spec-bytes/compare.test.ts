@@ -4,7 +4,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 
-import { firstMismatch, joinParts, stripSplitHeader } from "./compare.mjs";
+import {
+  firstMismatch,
+  joinParts,
+  markedBody,
+  sliceOnce,
+  stripSplitHeader,
+} from "./compare.mjs";
 
 const startMark = "<!-- oi-split-header -->";
 const endMark = "<!-- /oi-split-header -->";
@@ -72,6 +78,29 @@ it("joins slices to the original bytes when headers are removed", () => {
   );
 });
 
+it("returns the marked body when the closer follows the header", () => {
+  const body = Buffer.from("Q1原文。", "utf8");
+  const closer = "<!-- /oi-split-body -->";
+  const file = Buffer.concat([
+    header("状态：现行。"),
+    body,
+    Buffer.from(closer, "utf8"),
+  ]);
+  expect(markedBody(file, startMark, endMark, closer).equals(body)).toBe(true);
+});
+
+it("cuts one span when both edges occur once", () => {
+  const bytes = Buffer.from("aaSTARTmiddleENDzz", "utf8");
+  expect(sliceOnce(bytes, "START", "END").toString("utf8")).toBe(
+    "STARTmiddleEND",
+  );
+});
+
+it("throws when the span edge occurs twice", () => {
+  const bytes = Buffer.from("START a START", "utf8");
+  expect(() => sliceOnce(bytes, "START", "END")).toThrow(/not unique/);
+});
+
 it("returns the first differing byte when a slice changes", () => {
   const origin = Buffer.from("alpha\nbeta\n", "utf8");
   const changed = Buffer.from("alpha\nBETA\n", "utf8");
@@ -93,6 +122,7 @@ it("matches origin/main when the chapter files are joined", () => {
   expect(result.stdout).toContain("PRD.md");
   expect(result.stdout).toContain("ARCHITECTURE.md");
   expect(result.stdout).toContain("match origin/main");
+  expect(result.stdout).toContain("RULES.md span");
 });
 
 it("keeps root heading slugs identical to origin/main", () => {

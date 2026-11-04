@@ -36,6 +36,42 @@ export function firstMismatch(actual, expected) {
   return actual.length === expected.length ? -1 : n;
 }
 
+function once(bytes, needle, label) {
+  const first = bytes.indexOf(needle);
+  if (first < 0) {
+    throw new Error(`${label} missing`);
+  }
+  if (bytes.indexOf(needle, first + needle.length) >= 0) {
+    throw new Error(`${label} is not unique`);
+  }
+  return first;
+}
+
+export function sliceOnce(bytes, startText, endText) {
+  const start = Buffer.from(startText, "utf8");
+  const end = Buffer.from(endText, "utf8");
+  const at = once(bytes, start, "span start");
+  const stop = once(bytes, end, "span end");
+  if (stop < at) {
+    throw new Error("span end is before start");
+  }
+  return bytes.subarray(at, stop + end.length);
+}
+
+export function markedBody(bytes, startMark, endMark, bodyEnd) {
+  const open = Buffer.from(`${startMark}\n`, "utf8");
+  const opened = once(bytes, open, "split header start marker");
+  const headerEnd = Buffer.from(`${endMark}\n`, "utf8");
+  const at = bytes.indexOf(headerEnd, opened + open.length);
+  if (at < 0) {
+    throw new Error("split header end marker missing");
+  }
+  const from = at + headerEnd.length;
+  const closer = Buffer.from(bodyEnd, "utf8");
+  const end = once(bytes.subarray(from), closer, "split body end marker");
+  return bytes.subarray(from, from + end);
+}
+
 function assertSafe(rel) {
   const pieces = rel.split("/");
   if (rel.startsWith("/") || rel.includes("\\") || pieces.includes("..")) {
@@ -98,6 +134,49 @@ function option(argv, name, fallback) {
   return value;
 }
 
+function spanList(manifest) {
+  if (manifest.spans === undefined) {
+    return [];
+  }
+  if (!Array.isArray(manifest.spans)) {
+    throw new Error("manifest spans are incomplete");
+  }
+  return manifest.spans;
+}
+
+function spanEntry(span) {
+  if (
+    typeof span?.path !== "string" ||
+    typeof span?.file !== "string" ||
+    typeof span?.start !== "string" ||
+    typeof span?.end !== "string" ||
+    typeof span?.bodyEnd !== "string" ||
+    span.bodyEnd.includes("\n")
+  ) {
+    throw new Error("manifest span is incomplete");
+  }
+  assertSafe(span.path);
+  assertSafe(span.file);
+  return span;
+}
+
+function compareSpan(root, manifest, base, span) {
+  const checked = spanEntry(span);
+  const origin = gitBytes(root, `${base}:${checked.path}`);
+  const expected = sliceOnce(origin, checked.start, checked.end);
+  const actual = markedBody(
+    readFileSync(path.join(root, checked.file)),
+    manifest.headerStart,
+    manifest.headerEnd,
+    checked.bodyEnd,
+  );
+  const at = firstMismatch(actual, expected);
+  if (at >= 0) {
+    return `${checked.path} span differs at byte ${at}`;
+  }
+  return `compare-spec-bytes: ${checked.path} span matches ${base} (${actual.length} bytes)`;
+}
+
 function compareSource(root, manifest, base, source) {
   const checked = sourceParts(source);
   const parts = checked.parts.map((rel) => readFileSync(path.join(root, rel)));
@@ -122,8 +201,15 @@ function main(argv) {
   );
   const manifest = readManifest(readFileSync(manifestPath, "utf8"));
   const failures = [];
-  for (const source of manifest.sources) {
-    const line = compareSource(root, manifest, base, source);
+  const lines = [
+    ...manifest.sources.map((source) =>
+      compareSource(root, manifest, base, source),
+    ),
+    ...spanList(manifest).map((span) =>
+      compareSpan(root, manifest, base, span),
+    ),
+  ];
+  for (const line of lines) {
     if (line.startsWith("compare-spec-bytes:")) {
       console.log(line);
     } else {
