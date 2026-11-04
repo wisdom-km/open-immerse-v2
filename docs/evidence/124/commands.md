@@ -64,4 +64,4 @@ Anvil 在 Windows 真机、Node v24 上测 tip `1a28619`，结果 FAIL。Node �
 
 这次没有在 Windows 真机上跑。由 Anvil 复测。
 
-`98a51f88532161bec063a21bec813a825432861f` 与 `28742de3602f275d14bc3e29c52bcd916a7f539b`。`corepack pnpm exec vitest run tools/spawn-bin/spawn-bin.test.ts` 退出码 0，6 passed。在 `28742de` 上、工作区干净时 `GATE_BASE=origin/main corepack pnpm run check` 退出码 0。`check-pr-size: 580 non-generated lines`。日志在 `/opt/cursor/artifacts/check-28742de.log`。
+`98a51f88532161bec063a21bec813a825432861f` 与 `28742de3602f275d14bc3e29c52bcd916a7f539b`。`corepack pnpm exec vitest run tools/spawn-bin/spawn-bin.test.ts` 退出码 0，6 passed。在 `28742de` 上 `GATE_BASE=origin/main corepack pnpm run check` 退出码 0，`check-pr-size: 580`。含本节的 `ae8d995f7d21bfab532e22711d993441176a4fe1` 上再跑，退出码 0，`check-pr-size: 590`。日志在 `/opt/cursor/artifacts/check-28742de.log` 与 `/opt/cursor/artifacts/check-ae8d995.log`。
