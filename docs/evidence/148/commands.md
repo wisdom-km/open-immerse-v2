@@ -8,3 +8,12 @@
 | `node tools/compare-spec-bytes/compare.mjs` | 0 | `PRD.md` 36 段、`ARCHITECTURE.md` 66 段、`RULES.md` 跨度与 `f8d5d01dc8af81b73689c7229c983192551fa6fe` 一致。`68 path prefixes` |
 
 未跑 `pnpm test`、`pnpm run check`、worker pytest、e2e。`test:core` 不适用（脚本尚未提供）。没有 skip。
+
+## 2026-11-04 方案修订（Loom 审查 6628805042，Wisdom 18:50）
+
+同一 PATH 与同一 `origin/main` 基线。改的是方案、`docs/approvals.md` 三行、`docs/spec-changelog.md` 一行。未改 `docs/arch/**`、`RULES.md`、manifest、CI。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `node tools/check-docs/check.mjs` | 0 | `check-docs: strict`。`links: 0`，`anchors: 0`，`status: 0`，`verbatim: 0`，`tree: 0`，`findings: 0` |
+| `node tools/compare-spec-bytes/compare.mjs` | 0 | `PRD.md` 36 段、`ARCHITECTURE.md` 66 段、`RULES.md` 跨度与 `f8d5d01dc8af81b73689c7229c983192551fa6fe` 一致。`68 path prefixes` |

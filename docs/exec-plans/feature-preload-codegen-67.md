@@ -1,6 +1,6 @@
 # 执行计划
 
-由契约生成 preload，不手写 IPC。本文件只定方案，不写实现。基线 `origin/main@6988420cc9fb68f461d151c069ac4b5965570caf`（PR #146 已合入，`gh pr view 146` 的 `state` 为 `MERGED`）。分支 `feature/preload-codegen-design-67`。路径按 [TEMPLATE.md](TEMPLATE.md)。第一笔提交只有本文件的骨架。Forge 审查通过、Wisdom 批准形状之前不写实现，也不开契约 PR。
+由契约生成 preload，不手写 IPC。本文件只定方案，不写实现。基线 `origin/main@6988420cc9fb68f461d151c069ac4b5965570caf`（PR #146 已合入，`gh pr view 146` 的 `state` 为 `MERGED`）。分支 `feature/preload-codegen-design-67`。路径按 [TEMPLATE.md](TEMPLATE.md)。第一笔提交只有本文件的骨架。形状已由 Wisdom 2026-11-04 18:50 批准。本 PR 仍不写实现，也不开契约 PR。
 
 关联：[Issue #67](https://github.com/wisdom-km/open-immerse-v2/issues/67)。PRD 没有单独的 AC 编号。相关验收是 AC-53、AC-67、AC-79、AC-80、AC-100。
 
@@ -17,42 +17,67 @@
 | 1 | 骨架。第一笔只有本文件 | `52a53ef` | 本文件 |
 | 2 | 写满 §3.1–§3.6 与来源核对 | 本提交 | 本文件 |
 | 3 | `node tools/check-docs/check.mjs` 与 `node tools/compare-spec-bytes/compare.mjs` | 两条退出码都是 0。check-docs `findings: 0` | [docs/evidence/148/commands.md](../evidence/148/commands.md) |
-| 4 | 不写实现。Loom 审、Wisdom 批之后才开契约 PR | 未写实现 | — |
+| 4 | 不写实现。Loom 审、Wisdom 批之后才开契约 PR | Loom 已审（[评论 6628805042](https://github.com/wisdom-km/open-immerse-v2/pull/148#issuecomment-6628805042)）。Wisdom 18:50 已批形状。本 PR 仍不写实现 | 本文件 |
+| 5 | 按该审查的必须改与第 4–7 条改本方案，并记入批准表 | 本提交 | [docs/approvals.md](../approvals.md) |
 
 ## 决策记录（Decision Log）
 
-[docs/approvals.md](../approvals.md) 没有 #67 的行。按 [docs/exec-plans/README.md](README.md)，没记在那里的不算仓库内已批准。本任务禁止改 `docs/approvals.md`，所以下面只引用 issue 上的原话，不把缺行补成批准。
+原话在 [docs/approvals.md](../approvals.md) 里同一时间的那一行。
 
 | 决定 | 理由 | 日期（Asia/Shanghai） | 谁定的 |
 | --- | --- | --- | --- |
-| 先出方案文档，不写代码，不碰当时仍开放的 #146 | 原话「67那个按推荐。」见 [评论](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628434530) | 2026-11-04 | Wisdom |
-| 顺序是方案 → 契约 PR → 生成器与 `ipc-router` 同一个 PR | 原话「这67的也都按照你的建议去做吧。」见 [评论](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628452608)。形状仍等这份方案经 Loom 审、Wisdom 批 | 2026-11-04 | Wisdom |
-| 契约 PR 只改 `packages/contracts/src/ipc/**` 与其测试，先合 | [Forge 18:05](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628045811)。Forge 排序，非业主决定；上一行的原话把这个顺序一并说了 | 2026-11-04 | Forge 排序；Wisdom 18:29 复述了顺序 |
+| 先出方案文档，不写代码，不碰当时仍开放的 #146 | 原话「67那个按推荐。」 | 2026-11-04 18:28 | Wisdom |
+| 顺序是方案 → 契约 PR → 生成器与 `ipc-router` 同一个 PR | 原话「这67的也都按照你的建议去做吧。」 | 2026-11-04 18:29 | Wisdom |
+| 契约 PR 只改 `packages/contracts/src/ipc/**` 与其测试，先合 | [Forge 18:05](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628045811)。Forge 排序，非业主决定；18:29 的原话把这个顺序一并说了 | 2026-11-04 | Forge 排序；Wisdom 18:29 复述了顺序 |
+| 命名带可选子域；`cancelRelocate` 走 `jobs.cancel`；状态型事件配 `get<State>`；进度载荷 `{jobId, done, total, unit}`；`handler_threw` 的 message 只进日志；审查第 4–7 条写入本方案；错误码用 snake_case | 原话「按推荐」 | 2026-11-04 18:50 | Wisdom |
 
-形状命名、退订写法、幂等落点、传输错误是否并进联合、CI 硬编码列表，都还在 §3.6，不是已定事项。
+Q4 的幂等登记位置、Q5 的 CI 列表，18:50 没有改口。
 
 ## 3.1 生成的 `window.oi` 形状
 
-推荐形状（待 §3.6 的 Q1–Q4、Q6 拍板）：
+已定形状（Wisdom 2026-11-04 18:50「按推荐」）：
 
 ```ts
 window.oi.settings.answerEgressConsent(input): Promise<
-  Result<
-    { vendorId: string },
-    { code: "unknown_request" } | TransportError
-  >
+  Result<{ vendorId: string }, SettingsAnswerError>
 >;
 
-window.oi.settings.onEgressConsentRequired(
-  cb: (payload: EgressConsentRequired) => void,
+window.oi.settings.dataDir.get(): Promise<
+  Result<{ name: string; sizeBytes: number; contents: string }, DataDirError>
+>;
+
+window.oi.settings.dataDir.onRelocateProgress(
+  cb: (payload: { jobId: string; done: number; total: number; unit: "bytes" | "pages" }) => void,
 ): () => void;
+
+window.oi.settings.getPendingEgressConsent(): Promise<
+  Result<readonly EgressConsentRequired[], SnapshotError>
+>;
+
+window.oi.jobs.cancel({ jobId }): Promise<Result<{ jobId: string }, JobsCancelError>>;
 ```
 
-命令名是 `window.oi.<切片>.<操作>(请求)`。通道字符串仍是 `<切片>.<操作>`，例如 `settings.answerEgressConsent`。这与 [docs/arch/09.md](../arch/09.md) 的 `<feature>.<command>`、[docs/arch/02-02.md](../arch/02-02.md) 的「一条命令一个方法」、[RULES.md](../../RULES.md) §8.4 的 `<切片>.<操作>` 是同一套名字。renderer 拿不到通道字符串，也没有 `invoke(channel, payload)`。
+命令名是 `window.oi.<切片>.<可选子域>.<操作>(请求)`。没有子域时仍是两级，例如 `window.oi.settings.answerEgressConsent`。有子域时与 [docs/arch/09-01.md](../arch/09-01.md) 的 `settings.dataDir.get` 对齐：方法是 `window.oi.settings.dataDir.get`，通道字符串是 `settings.dataDir.get`。renderer 拿不到通道字符串，也没有 `invoke(channel, payload)`。[docs/arch/09.md](../arch/09.md) 写的 `<feature>.<command>` 与 [RULES.md](../../RULES.md) §8.4 的 `<切片>.<操作>` 都还没有子域这一层。以后要改的行见下文「以后改规格的行」。本 PR 不改那两份正文。
 
-事件名是 `window.oi.<切片>.on<Event>(回调)`，返回退订函数。通道字符串是 `<切片>.on<Event>`，例如 `settings.onEgressConsentRequired`。回调参数是该事件的载荷，不是 `Result`。事件不是一次请求。对比过的另外两种写法在 Q2。
+事件名是 `window.oi.<切片>.<可选子域>.on<Event>(回调)`，返回退订函数。`settings.dataDir.onRelocateProgress` 因此是 `window.oi.settings.dataDir.onRelocateProgress`。回调参数是该事件的载荷，不是 `Result`。事件不是一次请求。Loom 审查第 8 条保留这一点。
 
-返回值一律是 `Promise<Result<响应, 错误>>`。[packages/kernel/src/result.ts](../../packages/kernel/src/result.ts) 的 `Result` 是 `{ ok: true, value }` 或 `{ ok: false, error }`。业务错误是带 `code` 的普通对象，与今天 `settings.ts` 里的 `AnswerEgressConsentError` 相同。preload 与 router 都不把业务失败变成抛出。router 若捕获到处理器抛出的异常，也收成 `Result`，因为 [docs/arch/02-02.md](../arch/02-02.md) 写明 `handle` 抛出的错误到 renderer 只剩 `message`。
+状态型事件不在订阅时补发。每个这样的事件配一条快照命令，名字是 `get<State>`，返回与该事件相同的载荷；可以同时有多条时，返回该载荷的只读数组。挂上界面时先 `get`，再订阅。不使用 `replayLast`。
+
+| 事件 | 快照命令 |
+| --- | --- |
+| `settings.onEgressConsentRequired` | `settings.getPendingEgressConsent` |
+| `edit.onUndoStateChanged` | `edit.getUndoState` |
+| `settings.dataDir.onRelocateProgress` 以及翻译、解析的进度 | `jobs.get({ jobId })`，返回下面的进度载荷 |
+
+`edit.getUndoState` 的字段在 edit 的接口 PR 里定，与 `onUndoStateChanged` 的载荷相同。本方案不另造一份撤销状态。
+
+进度载荷只有 `{ jobId, done, total, unit }`。`unit` 是 `"bytes"` 或 `"pages"`。数据目录迁移用 `"bytes"`，数字是字节数，没有路径、没有文件名。[docs/arch/09-01.md](../arch/09-01.md) 写的「进度事件只含字节数」由此落成这一形状；该行还写着 `cancelRelocate()`，与已定的取消方式不一致，留到以后改规格。解析进度用 `"pages"`，对上 DESIGN「解析 12/30 页」。
+
+取消迁移不生成 `settings.dataDir.cancelRelocate`。`relocate` 返回 `jobId`，取消调用 `jobs.cancel({ jobId })`（[docs/arch/02-04.md](../arch/02-04.md)）。[docs/arch/02-05.md](../arch/02-05.md) 的 jobs 行写的是 `cancelJob`，拼写以后再对齐，本 PR 不改。
+
+返回值一律是 `Promise<Result<响应, 错误>>`。[packages/kernel/src/result.ts](../../packages/kernel/src/result.ts) 的 `Result` 是 `{ ok: true, value }` 或 `{ ok: false, error }`。错误对象只有 `code` 与 `retryable`。`retryable` 是该错误码在描述符里的静态布尔值，router 原样抄进 `Result`，UI 不自己判断能不能重试。没有 `message` 字段。处理器抛出的原始 `Error.message` 只进入日志，供诊断包使用；写入前按 [docs/arch/11.md](../arch/11.md) 去掉绝对路径。renderer 只看到 `code` 与 `retryable`。[docs/arch/02-02.md](../arch/02-02.md) 写明 `handle` 抛出的错误到 renderer 只剩 `message`，所以 router 必须接住异常，不能让它穿过 IPC。
+
+`sender_rejected` 与 `invalid_payload` 的 `retryable` 为 `false`。`handler_threw` 的 `retryable` 为 `true`。这三类都是程序错误：UI 用同一句就地文案「操作没有完成 · 导出诊断包」，文案由 `code` 映射。`retryable` 为 `false` 时不提供重试。`handler_threw` 为 `true` 时可以重试。导出诊断包走已有的诊断命令，不把日志正文放进 `Result`。
 
 ARCH §9 的四项到类型的映射：
 
@@ -60,12 +85,34 @@ ARCH §9 的四项到类型的映射：
 | --- | --- | --- |
 | 请求 schema | `request`（TypeBox，仓库已有 `@sinclair/typebox` 0.34.52） | 方法参数 |
 | 响应 schema | `response` | `Result` 的 `value` |
-| 错误码集合 | `errors` | `Result` 的 `error.code` 联合；字段只有 schema 里写了的普通数据 |
-| 是否幂等 | `idempotent: boolean` | 注册表上的只读标记，并写进该方法的生成注释 |
+| 错误码集合 | `errors`：`{ code, retryable }[]`，`code` 为 snake_case | `Result` 的 `error` 是 `{ code, retryable }`；`retryable` 是该码的字面量 |
+| 是否幂等 | `idempotent: boolean` | 注册表上的只读标记，并写进该方法的生成注释。不自动重试 |
 
-幂等不触发自动重试。[RULES.md](../../RULES.md) §1.1 禁止无上限重试。重复调用的后果仍由用例决定：`answerEgressConsent` 对同一 `requestId` 第二次返回 `unknown_request`，这是 [docs/arch/07-00.md](../arch/07-00.md) 已写的业务码，不是 preload 的策略。`idempotent: true` 只表示「同样的请求再来一次，用例自己保证结果不重复副作用」。Q4 比较了只写注释、写入注册表、preload 自动重试三种落点。
+幂等不触发自动重试。[RULES.md](../../RULES.md) §1.1 禁止无上限重试。重复调用的后果仍由用例决定：`answerEgressConsent` 对同一 `requestId` 第二次返回 `unknown_request`，这是 [docs/arch/07-00.md](../arch/07-00.md) 已写的业务码，不是 preload 的策略。`idempotent: true` 只表示「同样的请求再来一次，用例自己保证结果不重复副作用」。Q4 仍记录登记位置的三个选项；18:50 没有改「不自动重试」。Loom 审查第 10 条保留这一点。
 
-长任务的响应 schema 只有 `jobId`。进度是 `jobs` 的事件。取消是另一次命令 `jobs.cancel`。生成器不把一次 invoke 收成「等完全部进度」。
+跨切片共用的错误码用 snake_case，同义只用一个码。下表是契约与各切片接口 PR 都要遵守的码。`retryable` 是静态值。
+
+| code | retryable | 说明 |
+| --- | --- | --- |
+| `not_found` | false | 资源不存在。`docs/arch/09-01.md` 第 13 行现写 `not-found`，以后改成这个码 |
+| `missing` | false | `library.checkSource` 已用。与 `not_found` 不是同一个码 |
+| `consent_required` | false | 未作答或尚未同意 |
+| `consent_not_granted` | false | 撤回时没有已同意记录 |
+| `budget_exhausted` | false | 就地去改上限，不把这一次调用标成可重试 |
+| `network` | true | DESIGN 已有「网络问题 · 重试」 |
+| `offline` | true | 与 `network` 并列，本方案不合并 |
+| `cancelled` | false | 用户已取消 |
+| `insufficient_space` | false | 载荷只有 `requiredBytes` 与 `availableBytes`，对应 [docs/arch/08-02.md](../arch/08-02.md) 的 1.2 倍，不带路径 |
+| `model_error` | true | DESIGN 已有「模型出错 · 重试」 |
+| `check_failed` | true | DESIGN 已有「校验没过 · 重试」 |
+| `unknown_request` | false | settings 外发已有 |
+| `sender_rejected` | false | 传输。就地「操作没有完成 · 导出诊断包」，不重试 |
+| `invalid_payload` | false | 同上 |
+| `handler_threw` | true | 同一句就地文案，可以重试。`message` 只进日志 |
+
+切片专有的码（如 `not_markdown`、`stale_revision`、`write_disabled`、`outside_vault`）仍写在该切片的描述符里，同样是 snake_case，并带自己的静态 `retryable`。不把它们收成上面这一张表。
+
+长任务的响应 schema 只有 `jobId`。进度走上面的载荷。生成器不把一次 invoke 收成「等完全部进度」。
 
 体积：[docs/arch/11.md](../arch/11.md) 规定单条 IPC 超过默认 1 MB 时记 `ipc.oversize`，字段只有通道名和字节数，不带内容。测量点在 main 的 router，在发给 renderer 之前。字节怎么量以锁定的 Electron 45.2.1 为准，本方案不指定一个未核实的 API。超限只记日志，不改 `Result` 的形状。页面图、PDF、音频仍只传 `assetId`。[docs/arch/04-05.md](../arch/04-05.md) 的块窗口默认取该阈值的一半，用来让 AC-79 的夹具里 `ipc.oversize` 为 0；切开大文档是 markdown 用例的事，不是生成器的事。每次 invoke 在 router 里生成关联用的 id，透传到日志与 worker。它不进 `Result`，除非那条命令的响应 schema 自己包含它。外发同意里的 `requestId` 是事件载荷里的业务 id，和这条关联 id 不是同一个字段。
 
@@ -83,13 +130,14 @@ ARCH §9 的四项到类型的映射：
 
 | 字段 | 作用 |
 | --- | --- |
-| `channel` | `"settings.answerEgressConsent"` 这种字面量 |
+| `channel` | `"settings.answerEgressConsent"` 或 `"settings.dataDir.get"` |
 | `kind` | `"command"` 或 `"event"` |
 | `request` / `response` 或事件的 `payload` | TypeBox schema |
-| `errors` | 错误码字符串元组 |
+| `errors` | `{ code, retryable }[]`。`code` 为 snake_case |
 | `idempotent` | 仅 command。事件不填 |
 | `expose` | `false` 时生成器与 router 都忽略 |
 | `transport` | `"invoke"`（默认）或 `"dropped-file"` |
+| `snapshotOf` | 可选。快照命令指向它对应的事件通道 |
 
 按 [docs/arch/07-00.md](../arch/07-00.md) 的注释，四条命令的幂等初值是：`answerEgressConsent` 否、`withdrawEgressConsent` 否、`setEgressPromptEnabled` 是、`listEgressDestinations` 是。第一份契约 PR 里这四条都 `expose: false`。没有 router 和处理器之前不暴露。事件 `settings.onEgressConsentRequired` 同样 `expose: false`。
 
@@ -97,7 +145,7 @@ ARCH §9 的四项到类型的映射：
 
 G12：只改 `packages/contracts/` 时非生成行数上限是 200（`tools/check-pr-size/check.mjs`）。这份契约 PR 把描述符和四条命令的 schema 写完，若超过 200 行，提交说明或 PR 正文加一行 `G12:`，不改上限。G18：不改 `packages/features/**`，切片数为 0。`contracts/src/ipc/settings.ts` 按 [docs/arch/13.md](../arch/13.md) 是 settings 的契约文件，不是热点。G11 的脚本今天只数名为 `composition-root.ts` 与 `slots.ts` 的文件（`tools/check-hotspots/check.mjs`），还没有按 import 图发现热点。共享描述符文件一旦被两个切片的实现 import，规格上会变成热点，那时每个 PR 不超过 30 行；第一份契约 PR 只有 settings 使用它。
 
-`contracts/src/errors.ts` 在 [docs/arch/04-01.md](../arch/04-01.md) 里，仓库里还没有这个文件。本方案不新建它。命令自己的错误码留在该切片的 ipc 文件里。
+`contracts/src/errors.ts` 在 [docs/arch/04-01.md](../arch/04-01.md) 里，仓库里还没有这个文件。本方案不新建它。共用码表写在本文件，各切片的描述符引用这些 `code` 字符串。命令自己的专有码仍留在该切片的 ipc 文件里。
 
 ## 3.3 生成器
 
@@ -108,7 +156,7 @@ G12：只改 `packages/contracts/` 时非生成行数上限是 200（`tools/chec
 | 输出 | 职责 |
 | --- | --- |
 | `apps/desktop/src/preload/oi.generated.ts` | 导出 `createOi(bridge)`。每个命令闭包自己的通道名，调用 `bridge.invoke`。每个事件调用 `bridge.subscribe` 并返回退订。不 import `electron` |
-| `apps/desktop/src/renderer/oi-api.d.ts` | `Window.oi` 的类型。放在 desktop，不放进 contracts：core 的 tsconfig 没有 DOM（G14） |
+| `apps/desktop/src/renderer/oi-api.d.ts` | `Window.oi` 的类型，并导出 `OiError<Channel>`：每条命令的错误码联合。UI 的文案表写成 `Record<OiError<"settings.answerEgressConsent">, string>` 时，缺一个码就编译失败。放在 desktop，不放进 contracts：core 的 tsconfig 没有 DOM（G14） |
 | `apps/desktop/src/main/ipc/registry.generated.ts` | 暴露中的通道、schema、幂等、kind。router 只注册这张表 |
 
 `apps/desktop/src/preload/index.ts` 保持手写，并且只做两件事：用 `ipcRenderer` 实现 `bridge`，再 `exposeInMainWorld("oi", createOi(bridge))`。通道名不写在这个文件里。它是入口文件，硬上限 150 行（[docs/arch/06.md](../arch/06.md)）。`bridge.invoke` 只在 preload 内部，不挂到 `window.oi`。
@@ -138,7 +186,7 @@ G12：只改 `packages/contracts/` 时非生成行数上限是 200（`tools/chec
 
 生成文件按 [docs/arch/06.md](../arch/06.md) 不计行数，生成器 PR 要在 `tools/check-file-size/allowlist.json` 的 `ignore` 里登记路径和理由。这是 `ignore`，不是要 ADR 到期日的 `exemptions`。G12 的 `generatedPrefixes` 今天只有 `workers/parser/oi_worker/protocol/`。preload 生成物仍计入 600 行。生成器 PR 若因此超过 600，正文写 `G12:`。不在那个 PR 里改 `tools/check-pr-size/check.mjs`（N-08）。要不要把 preload 路径加入 G12 的生成前缀，另案，本方案不实施。
 
-main 端 `ipc-router.ts` 手写，不生成。它做四件事：校验发送方是本应用窗口的 frame，且页面来源是 `oi-app://`（[docs/arch/09.md](../arch/09.md)、[docs/arch/01.md](../arch/01.md)）；用 schema 校验载荷；调用装配根注入的处理器；捕获异常并收成 `Result`。处理器仍是各切片的 `adapters/ipc-handlers.ts`，只做转接（F-02、F-15）。router 不写业务分支。`composition-root.ts` 是 G11 具名热点，接上 router 的改动不超过 30 行。
+main 端 `ipc-router.ts` 手写，不生成。它做这些事：校验发送方是本应用窗口的 frame，且页面来源是 `oi-app://`（[docs/arch/09.md](../arch/09.md)、[docs/arch/01.md](../arch/01.md)）；用 schema 校验载荷；调用装配根注入的处理器；捕获异常并收成只有 `code` 与 `retryable` 的 `Result`。原始 `message` 只写入日志，并先去掉绝对路径。处理器仍是各切片的 `adapters/ipc-handlers.ts`，只做转接（F-02、F-15）。router 不写业务分支。`composition-root.ts` 是 G11 具名热点，接上 router 的改动不超过 30 行。
 
 e2e 的 `JSON.stringify(window.oi) === "{}"` 在值全是函数时仍然成立，因为 `JSON.stringify` 会丢掉函数。生成器 PR 要另加一条按键名列表的断言，不能只留这一条。那是实现 PR 的测试，本 PR 不改 e2e。
 
@@ -170,19 +218,11 @@ Electron Fuses 归 #68，见 [docs/backlog.md](../backlog.md) 与 [docs/arch/09.
 
 设计原则 P7：UI 只根据 `Result` 与事件载荷显示。失败不用抛异常来驱动界面。[docs/design-principles.md](../design-principles.md) 的颜色、间距、字号本方案不取用。
 
-## 3.6 给 Wisdom 的开放问题
+## 3.6 已定事项与仍开放的问题
 
-Q1. 命令方法怎么命名？
+Q1. 已定（2026-11-04 18:50）。命令是 `window.oi.<切片>.<可选子域>.<操作>(请求)`。通道字符串同形，例如 `settings.dataDir.get`。字符串键与通用 `invoke` 不采用。`cancelRelocate` 不作为 IPC 方法，取消走 `jobs.cancel({ jobId })`。
 
-1. `window.oi.<切片>.<操作>(请求)`。推荐。与 §9、§2.2、RULES §8.4 同一套名字，renderer 没有通道字符串。
-2. `window.oi["<切片>.<操作>"](请求)`。键是字符串，调用点容易拼出未生成的通道。
-3. `window.oi.invoke("<切片>.<操作>", 请求)`。这是被 §1 与 §2.2 禁止的通用入口。
-
-Q2. 事件怎么订阅、怎么退订？
-
-1. `window.oi.<切片>.on<Event>(回调)` 返回退订函数。推荐。一个事件一个方法，退订不需要再传通道名。
-2. `window.oi.<切片>.subscribe("on<Event>", 回调)` 返回退订函数。方法是通用的，事件名是字符串。
-3. `window.oi.on("<切片>.on<Event>", 回调)`。跨切片的通用订阅，和 Q1 的第 3 项是同一类口子。
+Q2. 事件订阅保持「一个事件一个方法、返回退订函数」，并套用可选子域：`window.oi.<切片>.<可选子域>.on<Event>(回调)`。通用 `subscribe` / `on(通道字符串)` 不采用。Loom 审查第 8 条保留「回调参数是载荷」。状态型事件另配 `get<State>`，见 §3.1。
 
 Q3. 生成器与 router 怎么交付？
 
@@ -202,11 +242,21 @@ Q5. `ci.yml` 第 212 行的硬编码 vitest 列表怎么处理？
 2. 在生成器 PR 里把新文件加进第 212 行。那一行属于 `worker-health`，不是 preload 的家，而且本系列不改 CI。
 3. 另开 PR，把第 212 行改成目录。可以以后做。不做它，preload 测试也不会缺跑。
 
-Q6. 传输失败要不要进每条命令的错误联合？
+Q6. 已定（2026-11-04 18:50）。传输失败进入每条命令的错误联合，对象只有 `code` 与 `retryable`。`sender_rejected` 与 `invalid_payload` 的 `retryable` 为 `false`。`handler_threw` 为 `true`。原始 `message` 只进日志，不进 `Result`。router 不把异常抛过 IPC。
 
-1. 要。业务码再并上 `sender_rejected`、`invalid_payload`、`handler_threw`，后三个带 `message` 与 `retryable`。推荐。失败仍然是 `Result`，类型里看得到。
-2. 业务码保持契约里写的联合，传输失败也返回 `Result`，但 `code` 不写进类型。UI 会遇到类型里没有的码。
-3. router 继续抛。renderer 只剩 `message`，§2.4 的「错误是数据」在这条路上不成立。
+## 以后改规格的行
+
+compare-spec-bytes 比对的是拆分基线里的 PRD、ARCHITECTURE、RULES 字节。本 PR 不改这些正文，也不改 `tools/compare-spec-bytes/manifest.json`。下面这些句子和已定形状不一致，留给以后的规格 PR，并在那时走 amendment：
+
+| 文件与行 | 现在写的 | 以后改成 |
+| --- | --- | --- |
+| [docs/arch/09.md](../arch/09.md) 通道命名那一条 | `<feature>.<command>` 与 `<feature>.on<Event>` | 允许 `<feature>.<子域>.<command>` 与 `<feature>.<子域>.on<Event>` |
+| [docs/arch/09-01.md](../arch/09-01.md) 第 12 行 | `cancelRelocate()`；「进度事件只含字节数」 | 取消是 `jobs.cancel({ jobId })`。进度载荷是 `{jobId, done, total, unit}`，迁移的 `unit` 为 `bytes`，不含路径 |
+| [docs/arch/09-01.md](../arch/09-01.md) 第 13 行 | 返回 `not-found` | 返回 `not_found` |
+| [docs/arch/02-05.md](../arch/02-05.md) jobs 行 | `cancelJob`、`listJobs`、`onJobEvent` | 与 §2.4 的 `jobs.cancel` 以及本方案的 `jobs.get` 对齐拼写 |
+| [RULES.md](../../RULES.md) §8.4 交接模板里的 seam 例子 | `<切片>.<操作>` | 补上可选子域：`<切片>.<可选子域>.<操作>` |
+
+[DESIGN.md](../../DESIGN.md) 第 378–380、574、590 行已经用 `check_failed`、`network`、`model_error`、`budget_exhausted`、`consent_required`。这些码与上表一致，DESIGN 本 PR 不改（N-10）。
 
 ## 来源核对
 
@@ -216,7 +266,7 @@ Q6. 传输失败要不要进每条命令的错误联合？
 | --- | --- | --- |
 | S1 | Issue #67 正文 | §3.1–§3.3。由契约生成，不手写通道。验收仍是 `pnpm codegen` 之后 `git diff --exit-code` 为 0 |
 | S2 | Forge 18:05，[评论 6628045811](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628045811) | 契约 PR 先行，见 §3.2。形状见 §3.1。router 同 PR 见 §3.4。#146 已合入，不再有「避开 #146 文件」的开放 PR |
-| S3 | Wisdom 18:28，[评论 6628434530](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628434530) | 本 PR 只写方案。Loom 审、Wisdom 批之前不开契约 PR。决策记录写了 `approvals.md` 没有对应行 |
+| S3 | Wisdom 18:28，[评论 6628434530](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628434530) | 本 PR 只写方案。原话已写入 [docs/approvals.md](../approvals.md) 18:28 行 |
 | S4 | [docs/backlog.md](../backlog.md) 外壳三条里的 #67 行 | §3.3。外壳只暴露空 `oi`。现有 codegen 只生成 worker 协议。G7 继续用 `pnpm codegen && git diff --exit-code` |
 | S5 | [docs/arch/09.md](../arch/09.md) 定义四要素 | §3.1 的映射表 |
 | S6 | [docs/arch/09.md](../arch/09.md) 窗口安全与 Fuses | §3.5。Fuses 只写与 #68 的衔接 |
@@ -224,14 +274,15 @@ Q6. 传输失败要不要进每条命令的错误联合？
 | S8 | [RULES.md](../../RULES.md) 契约先行、N-09、N-18、§8.4 | §3.1 命名，§3.2 单独契约 PR，§3.3 不手改生成物，§3.5 不暴露 `writeFile` |
 | S9 | [架构评审](../reviews/2026-10-30-architecture-review.md) P1-7 与 main 发送方校验；[docs/backlog.md](../backlog.md) 的 reader P2-9 | §3.1 体积与 `ipc.oversize`。§3.5 发送方校验。reader 只订阅 `window.oi` 与 `pure.ts`（[v2-full-review](../reviews/v2-full-review.md) P2-9，[docs/arch/04-03.md](../arch/04-03.md)） |
 | S10 | `.github/workflows/ci.yml` 第 212 行 | §3.3 与 Q5。不改 CI |
-| S11 | Wisdom 18:29，[评论 6628452608](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628452608) | 交接写完时这条已在 issue 上。决策记录与 Q3 的推荐项按这句：生成器与 router 同一个 PR；形状等本方案批准后再开工 |
+| S11 | Wisdom 18:29，[评论 6628452608](https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628452608) | 决策记录与 Q3。原话在 approvals 18:29 行。生成器与 router 同一个 PR |
 | S12 | [docs/arch/01.md](../arch/01.md)、[docs/arch/02-02.md](../arch/02-02.md)、[docs/arch/02-04.md](../arch/02-04.md) | preload 只暴露类型化命令与订阅。错误是 `Result`。renderer 只用 `pure.ts` 与 `window.oi` |
 | S13 | [docs/arch/04-05.md](../arch/04-05.md)、[docs/design/md-reader.md](../design/md-reader.md) | `writeFile` 不注册。拖入路径走 `dropped-file`。块窗口对上 `ipc.oversize` |
 | S14 | [docs/arch/07-00.md](../arch/07-00.md)、[docs/v2-gap-and-changes.md](../v2-gap-and-changes.md) | settings 四条命令的幂等初值。设置页的评分开关将来是 `window.oi.quality.*`，不是把规则放进 preload |
 | S15 | [docs/arch/03.md](../arch/03.md)、[docs/arch/05-02.md](../arch/05-02.md) F-11、[docs/arch/12.md](../arch/12.md)、[docs/arch/13.md](../arch/13.md) | 生成物目录、禁止手改、UI 测试用 fake `window.oi`、G7 / G12 / G18 |
 | S16 | [docs/prd/06-01-01.md](../prd/06-01-01.md) AC-53、[docs/prd/06-01-07.md](../prd/06-01-07.md) AC-67、[docs/prd/06-01-10.md](../prd/06-01-10.md) AC-79 与 AC-80、[docs/prd/06-01-12.md](../prd/06-01-12.md) AC-100 | preload 无 `writeFile`。安全基线与 `oi-app://`。IPC 体积。ipc 契约文件不是 G11 热点样例。界面只到 `pure.ts`、contracts、`window.oi` |
 | S17 | [DESIGN.md](../../DESIGN.md) §4.9、§4.10；[docs/design-principles.md](../design-principles.md) P4、P7 | 不返回绝对路径。原生对话框留在 main。PDF 缩放将来是 `reader.setZoom`，不是 Electron 的整窗缩放 role。本方案不改这些正文 |
-| S18 | [docs/approvals.md](../approvals.md)；交接点名的 `openai-review/REPORT.md` 与 `openai-review2/REPORT.md` | `approvals.md` 无 #67。两份 REPORT 不在本仓库，也没有并进 `docs/reviews/`。不另寻仓库外结论 |
+| S18 | 交接点名的 `openai-review/REPORT.md` 与 `openai-review2/REPORT.md` | 两份 REPORT 不在本仓库，也没有并进 `docs/reviews/`。不另寻仓库外结论。#67 的三行批准已写入 [docs/approvals.md](../approvals.md) |
+| S19 | Wisdom 18:50，[评论 6628805042](https://github.com/wisdom-km/open-immerse-v2/pull/148#issuecomment-6628805042) | §3.1、§3.6、错误码表、`OiError`。原话「按推荐」在 approvals 18:50 行 |
 
 `docs/architecture/` 里的桌面草案写过「preload 只暴露具体命令」。那是历史草案，不作为本方案的依据。
 
@@ -241,10 +292,10 @@ Q6. 传输失败要不要进每条命令的错误联合？
 
 ## 自检
 
-- [ ] 影响 arch / prd 吗？不影响。本 PR 不改规格正文，也不改 `docs/spec-changelog.md`。
+- [ ] 影响 arch / prd 吗？不改 arch / prd 正文。批准记在 `docs/approvals.md`，变更记在 `docs/spec-changelog.md`。不一致的规格行列在「以后改规格的行」，本 PR 不改那些句子。
 
 ## 不做
 
-- 不改代码、不改 CI、不改 `manifest.json`、不改 `docs/arch/**`、`RULES.md`、PRD、`DESIGN.md`、`docs/design-principles.md`、`docs/design/**`、`docs/backlog.md`、`docs/approvals.md`、`docs/spec-changelog.md`。
+- 不改代码、不改 CI、不改 `manifest.json`、不改 `docs/arch/**`、`RULES.md`、PRD、`DESIGN.md`、`docs/design-principles.md`、`docs/design/**`、`docs/backlog.md`。
 - 不 force push，不合入，不把 Draft 标成 Ready。
 - 不加登录、订阅或计费。空的 `AccountSession` 仍返回 `not_in_v2`（AC-94），与 preload 生成无关。
