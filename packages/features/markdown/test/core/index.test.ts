@@ -8,9 +8,13 @@ it("exports the source-span seam and not the parser", () => {
     "calloutType",
     "formulaBlocked",
     "headingSlug",
+    "listOwned",
+    "mathCuts",
     "overFormulaBudget",
     "serialize",
+    "skipRanges",
     "toHtmlBlocked",
+    "wikiCuts",
   ]);
   expect(Object.keys(view)).toEqual(["sliceSource"]);
 });
