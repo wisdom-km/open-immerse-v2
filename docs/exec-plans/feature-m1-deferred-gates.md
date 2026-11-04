@@ -46,12 +46,12 @@
 
 ## 计划 / 实际
 
-计划列在开工前填。实际列在 Forge 批准并实现之后填。本文件的实际列先空着。
+计划列在开工前填。G1 的实际列已按 PR #110 与 2026-11-04 的复核填上。G3、G5 的实际列仍是当时的延后，状态不改。
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
 | 1 | 只交这份计划。不改三道门禁，不改工作流，不改 #108 正在改的三份文档 | 计划已提交。实现未写 | `docs/evidence/110/commands.md` |
-| 2 | Forge 若同意拆分：G1 用单独的 PR 接 Prettier，只格式化 89 个代码文件，提交说明含 `G12:`，忽略 Markdown 与 `.github/**` | Forge 批准后就在本 PR 做。格式化是单独提交。配置与 `check:format` 是另一提交。#108 已合入，已 merge `main` | `docs/evidence/110/commands.md` |
+| 2 | Forge 若同意拆分：G1 用单独的 PR 接 Prettier，只格式化 89 个代码文件，提交说明含 `G12:`，忽略 Markdown 与 `.github/**` | 已由 PR #110 接上。`check:format` 是 `pnpm check` 第一步。2026-11-04 在 main@d2dfcb5 本机跑过，0 个文件不符合。只覆盖 `*.ts`、`*.tsx`、`*.mjs`、`*.js`、`*.cjs`。Markdown 与 `.github/**` 不格式化。 | `docs/evidence/110/commands.md` |
 | 3 | G3 保持 `tsc --noEmit`，直到第一个包真的使用 project references。那个 PR 再改 `typecheck.mjs`，不改 `ci.yml` | Forge 批准：现在不做 |  |
 | 4 | G5 等认法写进规格、且 #108 已合入并 merge `main` 之后，再在 `check:deps` 的路径上加检查。不在依赖规则里发明发布/订阅的认法 | Forge 将在之后的文档 PR 写认法。本 PR 不写检查 |  |
 
