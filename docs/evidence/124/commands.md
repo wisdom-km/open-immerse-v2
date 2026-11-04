@@ -54,4 +54,4 @@ GATE_BASE=origin/main corepack pnpm run check
 
 退出码 0。`check:format` 打印 `All matched files use Prettier code style!`。`check-file-size: 200 source files within hard limits`。dependency-cruiser：`no dependency violations found (105 modules, 183 dependencies cruised)`。npm / pip / 模型许可证通过。`check-one-slice: 0 feature slice(s)`。`check-commits` 通过。`check-hotspots` 通过。`check-pr-size: 428 non-generated lines`。codegen 1 个 generator，随后的 `git diff --exit-code` 通过。日志在 `/opt/cursor/artifacts/check-448de25.log`。
 
-写入本节的提交只加记录。相对 `448de25` 增加 27 行、删除 1 行；被删的一行是本分支先前加上的，相对 `origin/main` 的 `check-pr-size` 为 454。该提交上再跑 check 的退出码写在本句末尾：待测。
+写入本节的提交是 `bd19b16a1129335b094d7efa1c577a36689de382`。相对 `448de25` 增加 27 行、删除 1 行；被删的一行是本分支先前加上的，相对 `origin/main` 的 `check-pr-size` 为 454。在该提交上再跑 `GATE_BASE=origin/main corepack pnpm run check`，退出码 0。日志在 `/opt/cursor/artifacts/check-bd19b16.log`。
