@@ -40,6 +40,16 @@
 | 2026-11-04 11:18 | 「批准合入」 | 合入 #124 @ 9facc97（Fixes #123） | PR #124 | https://github.com/wisdom-km/open-immerse-v2/pull/124#issuecomment-6621603309 ；https://github.com/wisdom-km/open-immerse-v2/issues/123#issuecomment-6621603953 |
 | 2026-11-04 11:40 | 「风险这个先测试下有没有影响吧，要没有影响咱就批准合入，要有影影响的话，咱们就先修锚点再合。」 | #125 @ 3c2f159 有条件合入：5 个特殊字符锚点在 GitHub 渲染页实测能跳转（Forge 在 bad72bf 核对满足） | PR #125 | https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6621922357 ；https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6622059835 |
 | 2026-11-04 11:41 | 「我看并行的名额还剩两个，它俩是不影响的是吧？就是不影响当前任务的。如果不影响的话，那就都批准。」 | 并行开工 #61 剩余项（1/4/6）与 #35 剩余项（2/3），条件是与当前活跃 PR #125 无文件重叠 | Issue #61、#35 | https://github.com/wisdom-km/open-immerse-v2/issues/61#issuecomment-6621927948 ；https://github.com/wisdom-km/open-immerse-v2/issues/35#issuecomment-6621928509 |
+| 2026-11-04 13:16 | 「你就按照顺序先开吧，然后能并行的就并行开。」 | 按顺序开遗留项，第一项 check-docs 锚点规则；浅克隆兜底与之合为一个分支 | Issue #130、PR #131 | https://github.com/wisdom-km/open-immerse-v2/issues/130 （正文「批准记录」节） |
+| 2026-11-04 13:28 | 「就是其余几项不用开分支了。」 | 【决定，不计入批准】#28、#61 第 7 项、#33 不开分支 | Issue #28/#61/#33 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6623400438 ；https://github.com/wisdom-km/open-immerse-v2/issues/61#issuecomment-6623400975 ；https://github.com/wisdom-km/open-immerse-v2/issues/33#issuecomment-6623399888 |
 | 2026-11-04 13:31 | 「按推荐，我同意。」 | 开分支修 #59（与 #130 并行；#60 稍后或另批） | Issue #59、PR #136 | https://github.com/wisdom-km/open-immerse-v2/issues/59#issuecomment-6623430891 |
+| 2026-11-04 13:31 | 「按推荐，我同意。」 | #34：Forge 先出方案；涉及 CI 的改动另批 | Issue #34 | https://github.com/wisdom-km/open-immerse-v2/issues/34#issuecomment-6623431479 |
+| 2026-11-04 13:34 | 「开」 | 登记 #132、#133，只登记，不开分支、不改代码 | Issue #132、#133 | https://github.com/wisdom-km/open-immerse-v2/issues/132 ；https://github.com/wisdom-km/open-immerse-v2/issues/133 （正文「批准记录」） |
+| 2026-11-04 13:35 | 「你的建议是删掉吗？如果说你的建议是删掉的话，就删掉吧。」 | 删 RULES.md 两处过时提醒，放进下一个文档 PR | Issue #134、本 PR | https://github.com/wisdom-km/open-immerse-v2/issues/134 （正文「批准记录」） |
+| 2026-11-04 13:47 | 「…我这个同意按推荐。」 | 另开小分支给起子进程的测试设明确超时，只改测试不改 CI | Issue #135、PR #137 | https://github.com/wisdom-km/open-immerse-v2/issues/135#issuecomment-6623647655 |
+| 2026-11-04 13:48 | 「批准合入」 | 合入 #131 @03b9b8c | PR #131 | https://github.com/wisdom-km/open-immerse-v2/pull/131#issuecomment-6623665760 |
+| 2026-11-04 14:10 | 「批准合入137。」 | 合入 #137 @7c6b7a7 | PR #137 | https://github.com/wisdom-km/open-immerse-v2/pull/137#issuecomment-6623985445 |
+| 2026-11-04 14:20 | 「按推荐」 | #136 中 compare-spec-bytes 的 amendments 机制补批，随 #136 合入（选项 1） | PR #136 | https://github.com/wisdom-km/open-immerse-v2/pull/136#issuecomment-6624141225 ；https://github.com/wisdom-km/open-immerse-v2/issues/59#issuecomment-6624141955 |
+| 2026-11-04 14:25 | 「批准合入 136」 | 合入 #136 @ade9f3e | PR #136 | https://github.com/wisdom-km/open-immerse-v2/pull/136#issuecomment-6624220484 |
 
-共 34 条批准 + 1 条反馈记录
+共 43 条批准 + 1 条反馈记录 + 1 条决定
