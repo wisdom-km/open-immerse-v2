@@ -10,9 +10,13 @@ import type { CommandResult, SpawnFn } from "./spawn-bin.mjs";
 
 const JS_BINS = ["prettier", "eslint", "tsc"] as const;
 
-function recordSpawn(
-  calls: { command: string; args: readonly string[]; shell?: boolean }[],
-) {
+interface SpawnCall {
+  command: string;
+  args: readonly string[];
+  shell: boolean | undefined;
+}
+
+function recordSpawn(calls: SpawnCall[]) {
   const spawn: SpawnFn = (command, args, options) => {
     calls.push({ command, args, shell: options?.shell });
     return { status: 0, stdout: "", stderr: "" };
@@ -37,11 +41,7 @@ it("spawns node with the package JS entry and does not spawn a .cmd shim", () =>
   for (const name of JS_BINS) {
     const entry = packageBin(name);
     expect(entry).toBeTruthy();
-    const calls: {
-      command: string;
-      args: readonly string[];
-      shell?: boolean;
-    }[] = [];
+    const calls: SpawnCall[] = [];
     const result = spawnCommand({
       command: name,
       args: ["--version"],
@@ -63,8 +63,7 @@ it("spawns node with the package JS entry and does not spawn a .cmd shim", () =>
 it("passes the prettier glob as argv to the JS entry and does not enable a shell", () => {
   const glob = "**/*.{ts,tsx,mjs,js,cjs}";
   const entry = packageBin("prettier");
-  const calls: { command: string; args: readonly string[]; shell?: boolean }[] =
-    [];
+  const calls: SpawnCall[] = [];
   spawnCommand({
     command: "prettier",
     args: ["--check", glob],
@@ -81,8 +80,7 @@ it("passes the prettier glob as argv to the JS entry and does not enable a shell
 });
 
 it("spawns git directly and does not wrap it as node or .cmd", () => {
-  const calls: { command: string; args: readonly string[]; shell?: boolean }[] =
-    [];
+  const calls: SpawnCall[] = [];
   spawnCommand({
     command: "git",
     args: ["diff", "--exit-code"],
@@ -110,8 +108,7 @@ it("spawns node with corepack.js from the Unix layout", () => {
       "corepack.js",
     ),
   );
-  const calls: { command: string; args: readonly string[]; shell?: boolean }[] =
-    [];
+  const calls: SpawnCall[] = [];
   spawnCommand({
     command: "corepack",
     args: ["pnpm", "licenses", "list", "--json"],
@@ -131,8 +128,7 @@ it("spawns node.exe with corepack.js beside it on the Windows layout", () => {
   const execPath = "C:\\Program Files\\nodejs\\node.exe";
   const entry =
     "C:\\Program Files\\nodejs\\node_modules\\corepack\\dist\\corepack.js";
-  const calls: { command: string; args: readonly string[]; shell?: boolean }[] =
-    [];
+  const calls: SpawnCall[] = [];
   const result = spawnCommand({
     command: "corepack",
     args: ["pnpm", "licenses", "list", "--json"],
