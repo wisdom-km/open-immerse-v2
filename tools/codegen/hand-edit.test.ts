@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -109,6 +110,117 @@ it(
       git(root, ["add", "."]);
       git(root, ["commit", "-m", "chore: hand edit"]);
       generate(root, output);
+      const drifted = spawnSync(
+        "node",
+        [
+          path.resolve("tools/gate-remediation/run.mjs"),
+          "--id",
+          "G7",
+          "--cwd",
+          root,
+          "--",
+          "git",
+          "diff",
+          "--exit-code",
+        ],
+        { encoding: "utf8" },
+      );
+      expect(drifted.status).not.toBe(0);
+      expect(commandOutput(drifted)).toContain(remediationBlock("G7"));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  },
+);
+
+const preloadOutputs = [
+  "preload/oi.generated.ts",
+  "renderer/oi-api.d.ts",
+  "main/registry.generated.ts",
+] as const;
+
+const preloadFixture = `
+import { Type } from "@sinclair/typebox";
+
+const closed = { additionalProperties: false } as const;
+
+export const openDocument = {
+  channel: "library.open",
+  kind: "command" as const,
+  request: Type.Object({ id: Type.String() }, closed),
+  response: Type.Object({ name: Type.String() }, closed),
+  errors: [{ code: "not_found", retryable: false }],
+  idempotent: true,
+  expose: true,
+  transport: "invoke" as const,
+};
+
+export const hiddenWrite = {
+  channel: "markdown.writeFile",
+  kind: "command" as const,
+  response: Type.Object({ saved: Type.Boolean() }, closed),
+  errors: [],
+  idempotent: false,
+  expose: false,
+  transport: "invoke" as const,
+};
+`;
+
+function writePreloadFixture(root: string): readonly string[] {
+  mkdirSync(path.join(root, "ipc"), { recursive: true });
+  writeFileSync(path.join(root, "ipc", "sample.ts"), preloadFixture);
+  writeFileSync(
+    path.join(root, "manifest.json"),
+    JSON.stringify({
+      generators: [
+        {
+          id: "preload",
+          kind: "preload",
+          input: "ipc",
+          outputs: preloadOutputs,
+        },
+      ],
+    }),
+  );
+  return preloadOutputs.map((item) => path.join(root, item));
+}
+
+function generatePreload(root: string): void {
+  execFileSync(
+    "node",
+    [codegen, "--root", root, "--manifest", path.join(root, "manifest.json")],
+    { cwd: repo, stdio: "pipe" },
+  );
+}
+
+function generatedText(outputs: readonly string[]): string {
+  return outputs.map((file) => readFileSync(file, "utf8")).join("\n");
+}
+
+it(
+  "codegen leaves a diff when generated preload is hand edited (G7)",
+  { timeout: 60_000 },
+  () => {
+    const root = mkdtempSync(path.join(tmpdir(), "oi-preload-"));
+    try {
+      const outputs = writePreloadFixture(root);
+      generatePreload(root);
+      expect(generatedText(outputs)).not.toMatch(
+        /writeFile|ipcRenderer|exposeInMainWorld/u,
+      );
+      git(root, ["init"]);
+      git(root, ["config", "user.email", "gate@example.com"]);
+      git(root, ["config", "user.name", "gate"]);
+      git(root, ["add", "."]);
+      git(root, ["commit", "-m", "chore: generated"]);
+      const target = outputs[0];
+      if (target === undefined) {
+        throw new Error("preload output");
+      }
+      writeFileSync(target, `${readFileSync(target, "utf8")} `);
+      git(root, ["add", "."]);
+      git(root, ["commit", "-m", "chore: hand edit"]);
+      generatePreload(root);
       const drifted = spawnSync(
         "node",
         [

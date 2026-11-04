@@ -1,3 +1,14 @@
 {
-  "generators": []
+  "generators": [
+    {
+      "id": "preload",
+      "kind": "preload",
+      "input": "packages/contracts/src/ipc",
+      "outputs": [
+        "apps/desktop/src/preload/oi.generated.ts",
+        "apps/desktop/src/renderer/oi-api.d.ts",
+        "apps/desktop/src/main/ipc/registry.generated.ts"
+      ]
+    }
+  ]
 }
