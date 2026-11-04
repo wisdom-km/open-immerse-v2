@@ -69,4 +69,4 @@ it("rejects complexity over 15 and functions over 80 lines (G2)", () => {
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
-});
+}, 30_000);

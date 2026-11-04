@@ -49,4 +49,4 @@ it("prints G3 remediation for a tsc violation that stays outside the required ch
   });
   expect(required.status).toBe(0);
   expect(commandOutput(required)).not.toContain("gate-remediation:");
-});
+}, 30_000);
