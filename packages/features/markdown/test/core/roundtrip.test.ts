@@ -45,6 +45,13 @@ const markdown = oneof(
   },
 );
 
+it("round-trips a display formula that crosses a blank line", () => {
+  const source = "$$ # 标题\n\n$$\ny\n$$\n\n";
+  for (const context of contexts) {
+    expect(serialize(renderMarkdown(source, context), source)).toBe(source);
+  }
+});
+
 it("round-trips generated markdown in every context", () => {
   assert(
     property(markdown, constantFrom(...contexts), (source, context) => {

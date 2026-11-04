@@ -43,7 +43,7 @@ export function mapFlow(node: MdastNode, state: ReadState): readonly MdBlock[] {
 }
 
 function mapParagraph(node: MdastNode, state: ReadState): MdBlock[] {
-  return splitPieces(mapPhrasingSequence(node.children ?? [], state));
+  return splitPieces(phrasing(node, state));
 }
 
 function splitPieces(pieces: readonly Piece[]): MdBlock[] {
@@ -87,7 +87,7 @@ function mapHeading(node: MdastNode, state: ReadState): MdBlock[] {
   if (level === undefined) {
     return mapParagraph(node, state);
   }
-  const inline = mapPhrasingSequence(node.children ?? [], state).map(asInline);
+  const inline = phrasing(node, state).map(asInline);
   const text = inline.map((item) => inlineText(item)).join("");
   const id = headingSlug(text, state.used);
   state.used.add(id);
@@ -165,7 +165,15 @@ function mapTable(node: MdastNode, state: ReadState): MdBlock {
 }
 
 function mapCell(node: MdastNode, state: ReadState): readonly MdInline[] {
-  return mapPhrasingSequence(node.children ?? [], state).map(asInline);
+  return phrasing(node, state).map(asInline);
+}
+
+function phrasing(node: MdastNode, state: ReadState): readonly Piece[] {
+  return mapPhrasingSequence(
+    node.children ?? [],
+    state,
+    nodeSpan(node, state.base),
+  );
 }
 
 function alignOf(value: "left" | "right" | "center" | null): MdTableAlign {

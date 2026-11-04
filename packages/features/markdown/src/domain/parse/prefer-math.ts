@@ -64,10 +64,11 @@ export function preferMath(
   pieces: readonly Piece[],
   source: string,
   cuts: readonly SyntaxCut[],
+  block: SourceSpan,
 ): readonly Piece[] {
   let current: readonly Piece[] = pieces;
   for (const cut of cuts) {
-    if (cut.kind === "math") {
+    if (cut.kind === "math" && covers(block, cut.src)) {
       current = spliceMath(current, source, cut);
     }
   }

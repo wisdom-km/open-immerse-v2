@@ -51,13 +51,18 @@ export function mapPhrasing(
 export function mapPhrasingSequence(
   nodes: readonly MdastNode[],
   state: InlineState,
+  block: SourceSpan,
 ): readonly Piece[] {
   const pieces = nodes.flatMap((child) => mapPhrasing(child, state));
-  return preferMath(pieces, state.source, state.cuts);
+  return preferMath(pieces, state.source, state.cuts, block);
 }
 
 function childrenOf(node: MdastNode, state: InlineState): readonly MdInline[] {
-  return mapPhrasingSequence(node.children ?? [], state).map(asInline);
+  return mapPhrasingSequence(
+    node.children ?? [],
+    state,
+    nodeSpan(node, state.base),
+  ).map(asInline);
 }
 
 export function asInline(piece: Piece): MdInline {
