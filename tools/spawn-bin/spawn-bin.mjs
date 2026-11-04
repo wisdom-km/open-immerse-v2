@@ -1,33 +1,36 @@
 import { spawnSync } from "node:child_process";
 
-// Node 在 Windows 上只给无扩展名的命令补 .exe。prettier、eslint、tsc、corepack
-// 是 .cmd。补 .cmd，不用 shell：check 的参数含 * 与 {}，交给 cmd 会被展开。
+import { corepackBin } from "./corepack-bin.mjs";
+import { packageBin } from "./package-bin.mjs";
 
-function needsCmdShim(platform, command, result) {
-  if (platform !== "win32") {
-    return false;
-  }
-  if (
-    command.includes(".") ||
-    command.includes("/") ||
-    command.includes("\\")
-  ) {
-    return false;
-  }
-  return result.error?.code === "ENOENT";
+function missingCorepack() {
+  const message = "corepack.js was not found next to node";
+  return {
+    status: null,
+    stdout: "",
+    stderr: `${message}\n`,
+    error: { code: "ENOENT", message },
+  };
 }
 
+// 用当前 Node 跑包里的 JS 入口。不经过 shell，glob 留在 argv 里。
+// 不 spawn .cmd：Node 修 CVE-2024-27980 之后那样做会 EINVAL。
 export function spawnCommand(input) {
-  const platform = input.platform ?? process.platform;
   const spawn = input.spawn ?? spawnSync;
   const options = input.options ?? {};
-  const first = spawn(input.command, input.args, options);
-  if (!needsCmdShim(platform, input.command, first)) {
-    return first;
+  const args = input.args;
+  const entry = packageBin(input.command);
+  if (entry) {
+    const execPath = input.execPath ?? process.execPath;
+    return spawn(execPath, [entry, ...args], options);
   }
-  const retry = spawn(`${input.command}.cmd`, input.args, options);
-  if (retry.error?.code === "ENOENT") {
-    return first;
+  if (input.command === "corepack") {
+    const execPath = input.execPath ?? process.execPath;
+    const corepack = corepackBin(execPath, input.pathApi, input.exists);
+    if (!corepack) {
+      return missingCorepack();
+    }
+    return spawn(execPath, [corepack, ...args], options);
   }
-  return retry;
+  return spawn(input.command, args, options);
 }

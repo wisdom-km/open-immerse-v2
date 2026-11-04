@@ -1,131 +1,172 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+import process from "node:process";
 import { expect, it } from "vitest";
 
+import { corepackBin } from "./corepack-bin.mjs";
+import { packageBin } from "./package-bin.mjs";
 import { spawnCommand } from "./spawn-bin.mjs";
 import type { CommandResult, SpawnFn } from "./spawn-bin.mjs";
 
-const SHIMS = ["prettier", "corepack", "eslint", "tsc"] as const;
+const JS_BINS = ["prettier", "eslint", "tsc"] as const;
 
-function win32Lookup(command: string): CommandResult {
-  const executables = new Set(["git", "node", "uv"]);
-  const shims = new Set(SHIMS.map((name) => `${name}.cmd`));
-  if (executables.has(command) || shims.has(command)) {
+function recordSpawn(
+  calls: { command: string; args: readonly string[]; shell?: boolean }[],
+) {
+  const spawn: SpawnFn = (command, args, options) => {
+    calls.push({ command, args, shell: options?.shell });
     return { status: 0, stdout: "", stderr: "" };
-  }
-  return {
-    status: null,
-    stdout: "",
-    stderr: "",
-    error: { code: "ENOENT", message: `spawn ${command} ENOENT` },
   };
+  return spawn;
 }
 
-function spawnWithoutCmd(
-  spawn: SpawnFn,
+function assertNodeEntry(
   command: string,
   args: readonly string[],
-): CommandResult {
-  return spawn(command, args, {});
+  entry: string,
+) {
+  expect(command).toBe(process.execPath);
+  expect(args[0]).toBe(entry);
+  expect(entry.endsWith(".cmd")).toBe(false);
+  expect(entry).not.toMatch(/[/\\]\.bin[/\\]/);
+  expect(path.isAbsolute(entry)).toBe(true);
+  expect(existsSync(entry)).toBe(true);
 }
 
-it("returns ENOENT on win32 when a shim is spawned once without .cmd", () => {
-  for (const command of SHIMS) {
-    const old = spawnWithoutCmd(win32Lookup, command, ["--check"]);
-    expect(old.status).toBeNull();
-    expect(old.error?.code).toBe("ENOENT");
-  }
-});
-
-it("spawns the .cmd shim on win32 after the bare name is missing", () => {
-  for (const command of SHIMS) {
-    const seen: string[] = [];
-    const spawn: SpawnFn = (file, args) => {
-      seen.push(`${file} ${args.join(" ")}`);
-      return win32Lookup(file);
-    };
+it("spawns node with the package JS entry and does not spawn a .cmd shim", () => {
+  for (const name of JS_BINS) {
+    const entry = packageBin(name);
+    expect(entry).toBeTruthy();
+    const calls: {
+      command: string;
+      args: readonly string[];
+      shell?: boolean;
+    }[] = [];
     const result = spawnCommand({
-      command,
-      args: ["--check"],
-      platform: "win32",
-      spawn,
+      command: name,
+      args: ["--version"],
+      spawn: recordSpawn(calls),
     });
     expect(result.status).toBe(0);
-    expect(seen).toEqual([`${command} --check`, `${command}.cmd --check`]);
+    expect(calls).toHaveLength(1);
+    const call = calls[0];
+    if (!call || !entry) {
+      throw new Error("missing spawn");
+    }
+    assertNodeEntry(call.command, call.args, entry);
+    expect(call.args.slice(1)).toEqual(["--version"]);
+    expect(call.shell).toBeUndefined();
+    expect(call.command.endsWith(".cmd")).toBe(false);
   }
 });
 
-it("keeps the bare name on linux", () => {
-  const seen: string[] = [];
-  const spawn: SpawnFn = (command) => {
-    seen.push(command);
-    if (command === "prettier") {
-      return { status: 0, stdout: "", stderr: "" };
-    }
-    return {
-      status: null,
-      stdout: "",
-      stderr: "",
-      error: { code: "ENOENT", message: `spawn ${command} ENOENT` },
-    };
-  };
-  const result = spawnCommand({
-    command: "prettier",
-    args: ["--check"],
-    platform: "linux",
-    spawn,
-  });
-  expect(result.status).toBe(0);
-  expect(seen).toEqual(["prettier"]);
-});
-
-it("does not append .cmd when win32 already resolves an .exe name", () => {
-  const seen: string[] = [];
-  const spawn: SpawnFn = (command) => {
-    seen.push(command);
-    return win32Lookup(command);
-  };
-  const result = spawnCommand({
-    command: "git",
-    args: ["diff", "--exit-code"],
-    platform: "win32",
-    spawn,
-  });
-  expect(result.status).toBe(0);
-  expect(seen).toEqual(["git"]);
-});
-
-it("passes the prettier glob as argv and does not enable a shell", () => {
+it("passes the prettier glob as argv to the JS entry and does not enable a shell", () => {
   const glob = "**/*.{ts,tsx,mjs,js,cjs}";
-  let shell: boolean | undefined;
-  const spawn: SpawnFn = (command, args, options) => {
-    if (command === "prettier.cmd") {
-      expect(args).toEqual(["--check", glob]);
-      shell = options?.shell;
-      return { status: 0, stdout: "", stderr: "" };
-    }
-    return win32Lookup(command);
-  };
-  const result = spawnCommand({
+  const entry = packageBin("prettier");
+  const calls: { command: string; args: readonly string[]; shell?: boolean }[] =
+    [];
+  spawnCommand({
     command: "prettier",
     args: ["--check", glob],
-    platform: "win32",
-    spawn,
+    options: { encoding: "utf8" },
+    spawn: recordSpawn(calls),
   });
-  expect(result.status).toBe(0);
-  expect(shell).toBeUndefined();
+  expect(calls).toEqual([
+    {
+      command: process.execPath,
+      args: [entry, "--check", glob],
+      shell: undefined,
+    },
+  ]);
 });
 
-it("returns the bare ENOENT when the .cmd shim is also missing", () => {
-  const spawn: SpawnFn = (command) => ({
-    status: null,
-    stdout: "",
-    stderr: "",
-    error: { code: "ENOENT", message: `spawn ${command} ENOENT` },
+it("spawns git directly and does not wrap it as node or .cmd", () => {
+  const calls: { command: string; args: readonly string[]; shell?: boolean }[] =
+    [];
+  spawnCommand({
+    command: "git",
+    args: ["diff", "--exit-code"],
+    spawn: recordSpawn(calls),
   });
+  expect(calls).toEqual([
+    {
+      command: "git",
+      args: ["diff", "--exit-code"],
+      shell: undefined,
+    },
+  ]);
+});
+
+it("spawns node with corepack.js from the Unix layout", () => {
+  const entry = corepackBin(process.execPath);
+  expect(entry).toBe(
+    path.resolve(
+      path.dirname(process.execPath),
+      "..",
+      "lib",
+      "node_modules",
+      "corepack",
+      "dist",
+      "corepack.js",
+    ),
+  );
+  const calls: { command: string; args: readonly string[]; shell?: boolean }[] =
+    [];
+  spawnCommand({
+    command: "corepack",
+    args: ["pnpm", "licenses", "list", "--json"],
+    spawn: recordSpawn(calls),
+  });
+  expect(calls).toHaveLength(1);
+  const call = calls[0];
+  if (!call || !entry) {
+    throw new Error("missing corepack");
+  }
+  assertNodeEntry(call.command, call.args, entry);
+  expect(call.args.slice(1)).toEqual(["pnpm", "licenses", "list", "--json"]);
+  expect(call.shell).toBeUndefined();
+});
+
+it("spawns node.exe with corepack.js beside it on the Windows layout", () => {
+  const execPath = "C:\\Program Files\\nodejs\\node.exe";
+  const entry =
+    "C:\\Program Files\\nodejs\\node_modules\\corepack\\dist\\corepack.js";
+  const calls: { command: string; args: readonly string[]; shell?: boolean }[] =
+    [];
   const result = spawnCommand({
-    command: "missing",
+    command: "corepack",
+    args: ["pnpm", "licenses", "list", "--json"],
+    execPath,
+    pathApi: path.win32,
+    exists: (candidate) => candidate === entry,
+    spawn: recordSpawn(calls),
+  });
+  expect(result.status).toBe(0);
+  expect(calls).toEqual([
+    {
+      command: execPath,
+      args: [entry, "pnpm", "licenses", "list", "--json"],
+      shell: undefined,
+    },
+  ]);
+  expect(entry.endsWith(".cmd")).toBe(false);
+});
+
+it("returns ENOENT when corepack.js is not next to node", () => {
+  const calls: string[] = [];
+  const spawn: SpawnFn = (command) => {
+    calls.push(command);
+    return { status: 0, stdout: "", stderr: "" };
+  };
+  const result: CommandResult = spawnCommand({
+    command: "corepack",
     args: [],
-    platform: "win32",
+    execPath: "C:\\node.exe",
+    pathApi: path.win32,
+    exists: () => false,
     spawn,
   });
-  expect(result.error?.message).toBe("spawn missing ENOENT");
+  expect(calls).toEqual([]);
+  expect(result.error?.code).toBe("ENOENT");
+  expect(result.error?.message).toBe("corepack.js was not found next to node");
 });

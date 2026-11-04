@@ -12,6 +12,12 @@ export interface SpawnOptions {
   readonly shell?: boolean;
 }
 
+export interface PathApi {
+  dirname(path: string): string;
+  join(...parts: string[]): string;
+  resolve(...parts: string[]): string;
+}
+
 export type SpawnFn = (
   command: string,
   args: readonly string[],
@@ -21,7 +27,9 @@ export type SpawnFn = (
 export function spawnCommand(input: {
   readonly command: string;
   readonly args: readonly string[];
-  readonly platform?: string;
+  readonly execPath?: string;
+  readonly pathApi?: PathApi;
+  readonly exists?: (candidate: string) => boolean;
   readonly spawn?: SpawnFn;
   readonly options?: SpawnOptions;
 }): CommandResult;
