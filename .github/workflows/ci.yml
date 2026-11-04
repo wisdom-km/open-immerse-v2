@@ -77,6 +77,10 @@ jobs:
         env:
           GATE_BASE: origin/main
 
+      - name: Arch graph
+        continue-on-error: true
+        run: node tools/check-arch-graph/check.mjs
+
       - name: Unit tests
         run: corepack pnpm test
         env:
