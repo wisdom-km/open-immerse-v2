@@ -4,6 +4,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+// #125（dd0630bd）的父提交。拆分前的三份规格在这一笔。
+// be998cc 是再上一笔（#122），不是 #125 的父提交；三份文件字节相同。
+// Issue #128 在 be998cc 上记过 13/13。默认不再跟 origin/main。
+export const splitBaseline = "f8d5d01dc8af81b73689c7229c983192551fa6fe";
+
 export function stripSplitHeader(bytes, startMark, endMark) {
   const start = Buffer.from(`${startMark}\n`, "utf8");
   if (
@@ -514,7 +519,7 @@ function emit(results, rewritesPath) {
 
 function main(argv) {
   const root = path.resolve(option(argv, "--root", process.cwd()));
-  const base = option(argv, "--base", "origin/main");
+  const base = option(argv, "--base", splitBaseline);
   const manifestPath = path.resolve(
     option(
       argv,
