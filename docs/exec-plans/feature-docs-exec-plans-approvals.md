@@ -18,14 +18,14 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔提交只有它。决策记录至少有 10:21 一行。来源核对逐条回应 |  |  |
-| 2 | 新增 `docs/exec-plans/README.md`。覆盖用途、门槛（只链 RULES §2）、命名、自包含、Decision Log、批准须在 approvals.md 有行、交接附计划。不建 `active/`、`completed/`，不搬动 13 份计划 |  |  |
-| 3 | `TEMPLATE.md` 在「计划 / 实际」之后、「证据链接」之前加「决策记录（Decision Log）」。文首加一句自包含要求并指向 README。已有三节文字不改 |  |  |
-| 4 | `AGENTS.md` 加一句指针，不复制规则正文 |  |  |
-| 5 | RULES §2 第 78 行那条后补一句；§9「现状理解」行的依据列加 README 链接。N-01–N-22 条文 diff 为 0 |  |  |
-| 6 | `docs/approvals.md` 按时间追加 12 行（交接清单 11 行，加上 10:12）。计数改为 33 条批准 + 1 条反馈。旧 22 行 diff 为 0 |  |  |
-| 7 | `docs/spec-changelog.md` 加本 PR 一行，摘要含 Wisdom 2026-11-04 10:21 原文 |  |  |
-| 8 | `GATE_BASE=origin/main corepack pnpm run check` 与 `node tools/check-docs/check.mjs` 退出码 0。结果写入 `docs/evidence/<PR号>/commands.md`。开 Draft PR，描述首行 `Refs #27` |  |  |
+| 1 | 本文件。第一笔提交只有它。决策记录至少有 10:21 一行。来源核对逐条回应 | `cf83455` 只有本文件。`26bc8a5` 把待写入根目录的示例链接放进代码块，避免 check-docs 报 missing-file | 本文件 |
+| 2 | 新增 `docs/exec-plans/README.md`。覆盖用途、门槛（只链 RULES §2）、命名、自包含、Decision Log、批准须在 approvals.md 有行、交接附计划。不建 `active/`、`completed/`，不搬动 13 份计划 | `2c8edf2`。没有 `active/`、`completed/`，13 份计划未改 | [docs/evidence/127/commands.md](../evidence/127/commands.md) |
+| 3 | `TEMPLATE.md` 在「计划 / 实际」之后、「证据链接」之前加「决策记录（Decision Log）」。文首加一句自包含要求并指向 README。已有三节文字不改 | `2c8edf2`。三节正文与 `origin/main` 相同 | 同上 |
+| 4 | `AGENTS.md` 加一句指针，不复制规则正文 | `2c8edf2`。「按任务类型阅读」那段末尾一句 | 同上 |
+| 5 | RULES §2 第 78 行那条后补一句；§9「现状理解」行的依据列加 README 链接。N-01–N-22 条文 diff 为 0 | `2c8edf2`。§6 的 N-01–N-22 与 `origin/main` 逐字相同 | 同上 |
+| 6 | `docs/approvals.md` 按时间追加 12 行（交接清单 11 行，加上 10:12）。计数改为 33 条批准 + 1 条反馈。旧 22 行 diff 为 0 | `2c8edf2`。04:22 及以前的行未改。计数是 33 条批准 + 1 条反馈 | 同上 |
+| 7 | `docs/spec-changelog.md` 加本 PR 一行，摘要含 Wisdom 2026-11-04 10:21 原文 | 本提交。摘要含 10:21 原文。版本历史标记之内未改 | 同上 |
+| 8 | `GATE_BASE=origin/main corepack pnpm run check` 与 `node tools/check-docs/check.mjs` 退出码 0。结果写入 `docs/evidence/<PR号>/commands.md`。开 Draft PR，描述首行 `Refs #27` | `26bc8a5` 上门禁与 check-docs 退出码都是 0。Draft PR [#127](https://github.com/wisdom-km/open-immerse-v2/pull/127)，描述首行 `Refs #27` | 同上 |
 
 ## 决策记录（Decision Log）
 
@@ -185,4 +185,4 @@ Cloud 交接附上该计划文件；计划引用的批准须在 [docs/approvals.
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：命令与退出码。PR 号在开 Draft 之后填进「实际」列。
+- [docs/evidence/127/commands.md](../evidence/127/commands.md)：`26bc8a5` 上 `GATE_BASE=origin/main corepack pnpm run check` 与 `node tools/check-docs/check.mjs` 的退出码。Draft PR [#127](https://github.com/wisdom-km/open-immerse-v2/pull/127)。
