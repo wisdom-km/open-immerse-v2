@@ -34,6 +34,7 @@ type Envelope = {
   readonly ts: string;
   readonly level: string;
   readonly feature: string;
+  readonly source?: "worker";
 };
 
 export type DiagEvent = Envelope &
@@ -112,7 +113,14 @@ function readEnvelope(record: Record<string, unknown>): Envelope | undefined {
   if (ts === undefined || level === undefined || feature === undefined) {
     return undefined;
   }
-  return { ts, level, feature };
+  // 键缺失则不带 source。其他值拒绝整条，不静默丢掉。
+  if (!Object.hasOwn(record, "source")) {
+    return { ts, level, feature };
+  }
+  if (record.source !== "worker") {
+    return undefined;
+  }
+  return { ts, level, feature, source: "worker" };
 }
 
 function readEvent(
