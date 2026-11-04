@@ -76,6 +76,6 @@
 
 ## UI 上手验收（RULES §9）
 
-条件在 [RULES.md](../RULES.md) §9「UI 上手验收」。
+条件在 RULES.md §9「UI 上手验收」。
 
 - [ ] 任务类型为「UI 改动」：Loom 或 Wisdom 已上手验收，结论：____（验收人、时间）。非 UI 改动写「不适用」
