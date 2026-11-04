@@ -16,11 +16,11 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件与 Draft PR 写下文件清单、章节对应和锚点处理 |  |  |
-| 2 | 按标题边界做字节切片，只加可剥离的文件头 |  |  |
-| 3 | 根目录索引保留全部旧标题；章节内的相对链接用路径占位文件接住 |  |  |
-| 4 | `tools/compare-spec-bytes/` 对照 `origin/main`；`check-docs` 证明链接和锚点 |  |  |
-| 5 | 指针、changelog 一行、`GATE_BASE=origin/main corepack pnpm run check` |  |  |
+| 1 | 本文件与 Draft PR 写下文件清单、章节对应和锚点处理 | Draft PR #125，第一笔只有本文件 | [#125](https://github.com/wisdom-km/open-immerse-v2/pull/125) |
+| 2 | 按标题边界做字节切片，只加可剥离的文件头 | PRD 36 个文件，ARCHITECTURE 66 个文件 | `compare.mjs` 退出码 0 |
+| 3 | 根目录索引保留全部旧标题；章节内的相对链接用路径占位文件接住 | 索引标题与原文 slug 相同；25 个路径占位；两份镜像索引 | `check-docs` links 0、anchors 0 |
+| 4 | `tools/compare-spec-bytes/` 对照 `origin/main`；`check-docs` 证明链接和锚点 | 8 个测试通过 | `docs/evidence/125/commands.md` |
+| 5 | 指针、changelog 一行、`GATE_BASE=origin/main corepack pnpm run check` | 指针与 changelog 已写。`032ab1d` 上门禁退出码 0 | `docs/evidence/125/commands.md` |
 
 ## 切分边界
 
@@ -171,4 +171,4 @@
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：实现提交之后补命令、退出码和 `check-docs` 计数。
+- `docs/evidence/125/commands.md`：命令、退出码和 `check-docs` 计数。
