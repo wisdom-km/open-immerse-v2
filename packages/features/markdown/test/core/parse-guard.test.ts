@@ -35,11 +35,15 @@ function parseInWorker(source: string): Promise<number> {
   });
 }
 
-it("parses nested quotes, a long dollar run, and an unclosed tag in a worker", async () => {
-  const nested = `${">".repeat(200)} a`;
-  const dollars = "$".repeat(4000);
-  const unclosed = "<div><span>未闭合";
-  expect(await parseInWorker(nested)).toBeGreaterThan(0);
-  expect(await parseInWorker(dollars)).toBeGreaterThan(0);
-  expect(await parseInWorker(unclosed)).toBeGreaterThan(0);
-}, testLimitMs);
+it(
+  "parses nested quotes, a long dollar run, and an unclosed tag in a worker",
+  async () => {
+    const nested = `${">".repeat(200)} a`;
+    const dollars = "$".repeat(4000);
+    const unclosed = "<div><span>未闭合";
+    expect(await parseInWorker(nested)).toBeGreaterThan(0);
+    expect(await parseInWorker(dollars)).toBeGreaterThan(0);
+    expect(await parseInWorker(unclosed)).toBeGreaterThan(0);
+  },
+  testLimitMs,
+);
