@@ -53,4 +53,38 @@ GATE_BASE=origin/main corepack pnpm run check
 
 退出码 0。`check:format` 打印 `All matched files use Prettier code style!`。`check-file-size: 198 source files within hard limits`。dependency-cruiser：`no dependency violations found (105 modules, 183 dependencies cruised)`。`check-commits` 通过。`check-pr-size: 7110 non-generated lines`（提交说明里有 `G12:`）。codegen 1 个 generator，随后的 `git diff --exit-code` 通过。日志在 `/opt/cursor/artifacts/pnpm-check-125.log`。
 
-写入本文件的提交补上本路径，并改执行计划的实际列。该提交上再跑一次的退出码写在 PR 描述。
+写入本文件的提交补上本路径，并改执行计划的实际列。该提交 `4d0ef08bb0b9aa5b4df00f9657564c6fbbcf2e71` 上再跑 `GATE_BASE=origin/main corepack pnpm run check`，退出码 0，`check-pr-size: 7166 non-generated lines`。
+
+## RULES 文首
+
+审查报告第二轮 N7。在 `a82d3a0` 上跑。
+
+```bash
+node tools/compare-spec-bytes/compare.mjs
+```
+
+退出码 0。除上面两份全文外，还有：
+
+```text
+compare-spec-bytes: RULES.md span matches origin/main (2795 bytes)
+```
+
+这一段是 `origin/main:RULES.md` 里从「Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；」到「日期：2026-11-03（Asia/Shanghai）。」。`docs/spec-changelog.md` 在文件头结束标记之后、`<!-- /oi-split-body -->` 之前的字节与它相同。
+
+```bash
+corepack pnpm exec vitest run tools/compare-spec-bytes/compare.test.ts
+```
+
+退出码 0。11 passed。
+
+```bash
+node tools/check-docs/check.mjs
+```
+
+退出码 0。`links: 0`，`anchors: 0`，`status: 9`，`verbatim: 0`，`findings: 9`。比上一节少一条：`docs/spec-changelog.md` 前 40 行现在有搬运文件头里的状态行，不再是 `status-line-missing`。其余八条 `status-line-missing` 与一条 `index-table-missing` 还在。没有新的断链。
+
+```bash
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+在 `a82d3a0` 上退出码 0。`check-pr-size: 7324 non-generated lines`。日志在 `/opt/cursor/artifacts/pnpm-check-125-n7.log`。补记本段的提交上再跑一次的退出码写在 PR 描述。
