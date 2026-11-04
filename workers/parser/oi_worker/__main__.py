@@ -5,10 +5,11 @@ import sys
 
 from oi_worker.api.app import create_app
 from oi_worker.api.launch_token import read_launch_token
-from oi_worker.api.server import serve_local
+from oi_worker.api.server import arm_quiet_stop, serve_local
 
 
 def main(argv: list[str] | None = None) -> None:
+    arm_quiet_stop()
     token = read_launch_token()
     args = sys.argv[1:] if argv is None else argv
     serve_local(create_app("local", token), args, dict(os.environ))
