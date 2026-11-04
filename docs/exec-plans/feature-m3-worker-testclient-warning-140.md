@@ -67,10 +67,10 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 只提交本文件 |  | 本文件 |
-| 2 | 在 `5ca0b33` 上复现收集失败，退出码 2，行号 `testclient.py:51` | 未改代码已跑过，退出码 2 | `docs/evidence/140/commands.md` |
-| 3 | `test_app.py` 改用 httpx `ASGITransport`。断言语义保留。不改生产代码，不改依赖与锁文件 |  | `workers/parser/tests/api/test_app.py` |
-| 4 | 只跑交接列出的定向命令。不跑全量 pytest，不跑 `pnpm test`，不跑 `pnpm run check` |  | `docs/evidence/140/commands.md` |
+| 1 | 只提交本文件 | 第一笔 `03b6644` 只有本文件 | 本文件 |
+| 2 | 在 `5ca0b33` 上复现收集失败，退出码 2，行号 `testclient.py:51` | 未改代码已跑过，退出码 2。警告原文是 `anyio.abc.BlockingPortal` 别名弃用 | `docs/evidence/140/commands.md` |
+| 3 | `test_app.py` 改用 httpx `ASGITransport`。断言语义保留。不改生产代码，不改依赖与锁文件 | `e927abc` 只改这个测试文件。原有 9 个用例函数都在，参数化仍是 6 个坏协议头，共 14 条。`_run` 另断言该次请求 0 条 `DeprecationWarning` | `workers/parser/tests/api/test_app.py` |
+| 4 | 只跑交接列出的定向命令。不跑全量 pytest，不跑 `pnpm test`，不跑 `pnpm run check` | 跑在 `e927abc`。四文件加 `-W error::DeprecationWarning` 为 29 passed，pytest 没有 warning 行。`rg -n TestClient tests` 无输出 | `docs/evidence/140/commands.md` |
 
 `test:core` 不适用（`package.json` 没有这个脚本）。
 
