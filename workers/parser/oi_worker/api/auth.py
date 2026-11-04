@@ -1,33 +1,35 @@
-"""Require the launch bearer on every request, including health. ARCHITECTURE §10.1."""
+"""Require the launch bearer on every HTTP request, including health.
+
+Non-HTTP scopes are forwarded unchanged. A matching request is forwarded with
+the original receive and send callables, so a later SSE route can flush each
+chunk. ARCHITECTURE §10.1 and §10.2.
+"""
 
 import hashlib
 import hmac
-from collections.abc import Awaitable, Callable
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
-from starlette.types import ASGIApp
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 AUTH_CODE = "auth.bearer"
 UNAUTHORIZED = 401
 
 
-class LaunchBearerMiddleware(BaseHTTPMiddleware):
+class LaunchBearerMiddleware:
     def __init__(self, app: ASGIApp, token: str) -> None:
-        super().__init__(app)
+        self._app = app
         self._token = token
 
-    async def dispatch(
-        self,
-        request: Request,
-        call_next: Callable[[Request], Awaitable[Response]],
-    ) -> Response:
-        denied = authorization_failure(request, self._token)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self._app(scope, receive, send)
+            return
+        denied = authorization_failure(Request(scope), self._token)
         if denied is not None:
-            return denied
-        return await call_next(request)
+            await denied(scope, receive, send)
+            return
+        await self._app(scope, receive, send)
 
 
 def authorization_failure(request: Request, token: str) -> JSONResponse | None:
