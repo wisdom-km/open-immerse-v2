@@ -1,5 +1,4 @@
-import { spawnSync } from "node:child_process";
-
+import { spawnCommand } from "../spawn-bin/spawn-bin.mjs";
 import { remediationBlock, requireGate } from "./format.mjs";
 
 function option(argv, name) {
@@ -11,10 +10,9 @@ function option(argv, name) {
 }
 
 function runChild(command, args, cwd) {
-  return spawnSync(command, args, {
-    cwd,
-    encoding: "utf8",
-  });
+  const options =
+    cwd === undefined ? { encoding: "utf8" } : { encoding: "utf8", cwd };
+  return spawnCommand({ command, args, options });
 }
 
 function catalogError(id) {

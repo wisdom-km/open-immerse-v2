@@ -47,6 +47,12 @@
       "reported": "Mozilla Public License 2.0 (MPL 2.0)",
       "spdx": "MPL-2.0",
       "reason": "pip-licenses 不报 SPDX。LICENSE 是 MPL-2.0。httpx 的传递依赖，随运行时依赖发布。CA 证书是包内独立的 cacert.pem。"
+    },
+    {
+      "name": "colorama",
+      "reported": "BSD License",
+      "spdx": "BSD-3-Clause",
+      "reason": "pip-licenses 报 BSD License。标签 0.4.6 的 LICENSE.txt 是三条条件的 BSD，对应 BSD-3-Clause。pytest 在 sys_platform == 'win32' 时的传递依赖，只在开发环境。"
     }
   ]
 }

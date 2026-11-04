@@ -1,5 +1,4 @@
 import {
-  copyFile,
   mkdir,
   mkdtemp,
   readdir,
@@ -12,6 +11,7 @@ import path from "node:path";
 
 import { canonicalJson } from "./canonical-json.mjs";
 import { assertPinned, run } from "./command.mjs";
+import { copyLf } from "./line-endings.mjs";
 import { loadProtocolSchemas } from "./schema-module.mjs";
 
 const generatorFlags = [
@@ -123,7 +123,7 @@ async function formatModels(parserRoot, modelDir) {
   uv(parserRoot, ["ruff", "check", "--no-cache", "--config", config, ...files]);
 }
 
-async function publishModels(outputDir, modelDir) {
+export async function publishModels(outputDir, modelDir) {
   await mkdir(outputDir, { recursive: true });
   const staged = (await readdir(modelDir))
     .filter((name) => name.endsWith(".py"))
@@ -135,6 +135,6 @@ async function publishModels(outputDir, modelDir) {
     }
   }
   for (const name of staged) {
-    await copyFile(path.join(modelDir, name), path.join(outputDir, name));
+    await copyLf(path.join(modelDir, name), path.join(outputDir, name));
   }
 }
