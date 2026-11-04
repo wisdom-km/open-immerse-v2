@@ -20,11 +20,11 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔提交只有它。来源核对逐条回应。§2.4 写明仓库不改 | 待做 | 本文件 |
-| 2 | [docs/approvals.md](../approvals.md) 按时间加 15 行。13 行来自交接表（其中 2 行标【决定，不计入批准】），再加 16:46「批准合入」与 16:48「1」。17:28、18:33 不重复。文末改为「共 77 条批准 + 1 条反馈记录 + 3 条决定」 | 待做 | 本文件「要写入的文本」 |
-| 3 | [docs/backlog.md](../backlog.md) 第 89、91、109 行与文首状态句 | 待做 | 本文件 |
-| 4 | PR 模板第 79 行改为纯文本 | 待做 | 本文件 |
-| 5 | `node tools/check-docs/check.mjs` 与 `node tools/compare-spec-bytes/compare.mjs`。退出码写入 `docs/evidence/<PR号>/commands.md`。Draft PR，正文第一行 `Refs #28` | 待做 | `docs/evidence/<PR号>/commands.md` |
+| 1 | 本文件。第一笔提交只有它。来源核对逐条回应。§2.4 写明仓库不改 | `75d82cc` 只有本文件 | 本文件 |
+| 2 | [docs/approvals.md](../approvals.md) 按时间加 15 行。13 行来自交接表（其中 2 行标【决定，不计入批准】），再加 16:46「批准合入」与 16:48「1」。17:28、18:33 不重复。文末改为「共 77 条批准 + 1 条反馈记录 + 3 条决定」 | `41ffc57`。日期行 81 = 77 批准 + 1 反馈 + 3 决定 | 本文件「要写入的文本」 |
+| 3 | [docs/backlog.md](../backlog.md) 第 89、91、109 行与文首状态句 | `67c45f0`。#67 进行中，#73 已处理，#28 补上合入 SHA 与 unmapped=0 | 本文件 |
+| 4 | PR 模板第 79 行改为纯文本 | `9abeb5d`。第 79 行无相对链接 | 本文件 |
+| 5 | `node tools/check-docs/check.mjs` 与 `node tools/compare-spec-bytes/compare.mjs`。退出码写入 `docs/evidence/<PR号>/commands.md`。Draft PR，正文第一行 `Refs #28` | 两条退出码都是 0。check-docs `findings: 0`。Draft PR #150，正文第一行 `Refs #28` | [commands.md](../evidence/150/commands.md) |
 
 ## 决策记录（Decision Log）
 
@@ -152,7 +152,7 @@
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：步骤 5 之后写入 `commands.md`。
+- `docs/evidence/150/`：[commands.md](../evidence/150/commands.md)
 
 ## 自检
 
