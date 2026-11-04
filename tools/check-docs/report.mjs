@@ -19,9 +19,9 @@ function tally(findings, kinds) {
   return findings.filter((item) => kinds.has(item.kind)).length;
 }
 
-export function render(findings) {
+export function render(findings, reportOnly = false) {
   const lines = [
-    "check-docs: report-only",
+    reportOnly ? "check-docs: report-only" : "check-docs: strict",
     `links: ${tally(findings, groups.links)}`,
     `anchors: ${tally(findings, groups.anchors)}`,
     `status: ${tally(findings, groups.status)}`,

@@ -22,6 +22,7 @@ function option(argv, name) {
 }
 
 export function run(argv, stdout, cwd) {
+  const reportOnly = argv.includes("--report-only");
   const root = option(argv, "--root");
   const verbatim =
     option(argv, "--verbatim") ?? path.join(here, "verbatim.json");
@@ -38,10 +39,14 @@ export function run(argv, stdout, cwd) {
           : []),
       ]
     : [{ kind: "git-list", file: ".", detail: "git ls-files 失败" }];
-  stdout.write(render(findings));
+  stdout.write(render(findings, reportOnly));
+  if (reportOnly || findings.length === 0) {
+    return 0;
+  }
+  return 1;
 }
 
 const invoked = process.argv[1];
 if (invoked && import.meta.url === pathToFileURL(invoked).href) {
-  run(process.argv.slice(2), process.stdout, process.cwd());
+  process.exitCode = run(process.argv.slice(2), process.stdout, process.cwd());
 }

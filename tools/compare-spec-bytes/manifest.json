@@ -164,6 +164,21 @@
       "source": "ARCHITECTURE.md",
       "old": "`ui/hooks/use-document-session.ts` |",
       "new": "`ui/hooks/use-document-session.ts` 会话 hook 只订阅 `window.oi` 与 `pure.ts`，不保存采用版本或译文正文的副本 |"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│  ├─ providers/                      # 各服务商的契约测试样例（合成数据，不含真实 Key 与论文页面，§7.9.7）\n",
+      "new": "│  ├─ providers/                      # 计划中。各服务商的契约测试样例（合成数据，不含真实 Key 与论文页面，§7.9.7）\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│  ├─ parsing-rules/                  # 解析规则集的两侧对拍夹具：reading-order/、scan-detect/、paragraphs/（合成几何与文字，§7.10）\n",
+      "new": "│  ├─ parsing-rules/                  # 计划中。解析规则集的两侧对拍夹具：reading-order/、scan-detect/、paragraphs/（合成几何与文字，§7.10）\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│  └─ corpus/                         # 基准论文清单（只存清单与 sha256，不存 PDF）\n",
+      "new": "│  └─ corpus/                         # 计划中。基准论文清单（只存清单与 sha256，不存 PDF）\n"
     }
   ]
 }

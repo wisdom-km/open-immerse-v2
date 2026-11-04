@@ -15,7 +15,7 @@ function text(result: { stdout: string | Buffer | null | undefined }) {
 it("reports a missing tree path when the name is absent", () => {
   const result = run(path.resolve("tools/check-docs/fixtures/tree-paths"));
   const out = text(result);
-  expect(result.status).toBe(0);
+  expect(result.status).toBe(1);
   expect(out).toContain("tree-path-missing\tdocs/arch/03.md\tmissing.md");
   expect(out).toContain("tree: 1");
 });

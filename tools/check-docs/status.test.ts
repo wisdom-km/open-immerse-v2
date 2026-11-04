@@ -15,7 +15,7 @@ function text(result: { stdout: string | Buffer | null | undefined }) {
 it("reports a missing status line when the first 40 lines have none", () => {
   const result = run(path.resolve("tools/check-docs/fixtures/missing-status"));
   const out = text(result);
-  expect(result.status).toBe(0);
+  expect(result.status).toBe(1);
   expect(out).toContain(
     "status-line-missing\tdocs/README.md\t前 40 行没有状态行",
   );

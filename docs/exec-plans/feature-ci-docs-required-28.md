@@ -60,6 +60,7 @@ Wisdom 2026-11-04 16:57 原话「按你的建议执行。」范围见 [评论 66
 | 3 | 缺失不是 0：不改 `03.md`，不建那三个目录，不改退出码，不改 `ci.yml` | `ci.yml` 无改动。`compare.mjs` 退出码 0。临时夹具有 1 条发现时退出码仍是 0 | 证据目录 |
 | 4 | W1、W2 与 7 个文件的状态行。更新 `docs/ci-and-environment.md` 与 `docs/backlog.md` | `62950b1`。status 为 0。`docs/design/**` 与索引表按 16:57 豁免 | 证据目录 |
 | 5 | 定向命令见下。证据写入 `docs/evidence/<PR号>/commands.md`。Draft PR，正文第一行 `Refs #28` | 命令跑在 `f667f6b`。Draft PR [#146](https://github.com/wisdom-km/open-immerse-v2/pull/146)，正文第一行 `Refs #28` | [commands.md](../evidence/146/commands.md) |
+| 6 | 17:28「按推荐」：三行标「计划中」，manifest 三条替换，去掉 `continue-on-error`，发现数大于 0 时退出码 1 | 不建那三个目录。不改分支保护 | 证据目录后半 |
 
 ## 决策记录（Decision Log）
 
@@ -70,6 +71,7 @@ Wisdom 2026-11-04 16:57 原话「按你的建议执行。」范围见 [评论 66
 | W2：本 PR 不报 `index-table-missing`，索引表留给 #25 | 同上。不在本 PR 关闭 #25 | 2026-11-04 16:57 | Wisdom，同一条评论 |
 | 不删 `continue-on-error`，默认仍是发现数大于 0 也退出 0 | 交接写：目录树检查在 `f9b34e8` 上发现数不是 0 就停下，不改 `03.md`。试算是 3 条。改 `03.md` 会碰 compare-spec-bytes 的 manifest，交接禁止。建 `fixtures/parsing-rules/` 会让健康检查在「目录出现却没跑它」时失败 | 2026-11-04 | 交接的停下条件。不是新的业主决定 |
 | 不把 `CI / docs-report` 设为必需检查 | Issue #28 正文与 N-02。16:57 评论又写了一遍：由 Wisdom 在 GitHub 设置里操作 | 2026-11-04 | Wisdom |
+| 三行标「计划中」，去掉 `continue-on-error`，发现数大于 0 时退出码 1 | 原话「按推荐」。不建目录。上面那条「不删 continue-on-error」到此为止。分支保护仍不改 | 2026-11-04 17:28 | Wisdom，[评论 6627414506](https://github.com/wisdom-km/open-immerse-v2/pull/146#issuecomment-6627414506) |
 
 15:44「按推荐」已在 [docs/approvals.md](../approvals.md) 第 61 行，批准的是评论 6625527114 的 5 项改进。本 PR 只用其中第 1、2 项，并且第 1 项的「去掉 continue-on-error」被上面的停下条件挡住。第 4 项已由 #143 写入 PR 模板。第 5 项（AGENTS.md 过期提醒）不在本交接的文件清单里，不做。
 
