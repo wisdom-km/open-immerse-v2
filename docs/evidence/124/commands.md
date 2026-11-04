@@ -28,4 +28,30 @@ GATE_BASE=origin/main corepack pnpm run check
 
 退出码 0。`check:format` 打印 `All matched files use Prettier code style!`。eslint 与两次 tsc 无输出、退出码 0。`check-file-size: 199 source files within hard limits`。dependency-cruiser：`no dependency violations found (105 modules, 183 dependencies cruised)`。`check-core-tests: core tests stay on the node project`。npm / pip / 模型许可证通过。`check-one-slice: 0 feature slice(s)`。`check-commits` 通过。`check-hotspots` 通过。`check-pr-size: 333 non-generated lines`。codegen 1 个 generator，随后的 `git diff --exit-code` 通过。日志在 `/opt/cursor/artifacts/check-78ab6de.log`。
 
-本文件这一笔只加记录。包含本文件的 tip 上再跑一次同一命令的退出码写在 PR 描述。
+`98ee03a8d896d454a5421296ca63a81162cf3442` 只加本文件。在该提交上再跑 `GATE_BASE=origin/main corepack pnpm run check`，退出码 0。`check-pr-size: 364 non-generated lines`。其余步骤与上面相同。日志在 `/opt/cursor/artifacts/check-98ee03a.log`。
+
+## colorama 按包名映射
+
+Wisdom 2026-11-04 10:27：`colorama` 按包名放行为 BSD-3-Clause，写法与 httpx、Jinja2 相同。不对 `BSD License` 做全局映射。Windows CI 不改，未改 `.github/workflows/**`。未改 `whitelist.json`、`dev-only.json`、RULES §1.5。
+
+标签 0.4.6 的 `LICENSE.txt` 是三条 BSD（保留版权声明、二进制再分发带声明、不得用版权持有人名义背书），对应 SPDX `BSD-3-Clause`。这条写在 `tools/check-license/package-aliases.json` 的 `reason` 里。别名文件用 `reason` 字段，没有另加注释。
+
+规格变更记录：不加行。`docs/spec-changelog.md` 只记规格文档。这次不改 PRD、ARCHITECTURE、RULES、DESIGN。BSD-3-Clause 已在白名单。映射沿用已有的按包名别名，不改 G10 的句子。
+
+代码提交是 `448de25780f622005e5f726621631aee9fea60ad`。
+
+```bash
+corepack pnpm exec vitest run tools/check-license/package-aliases.test.ts
+```
+
+退出码 0。1 个文件，3 passed，失败 0，跳过 0。Type Errors: no errors。开始于 02:31:09，耗时 239ms。`colorama` 报 `BSD License` 时映射为 `BSD-3-Clause`，`check-pip --from-json` 退出码 0。`not-colorama` 报同一字样时原样返回，门禁退出码非 0，输出含 `not-colorama: BSD License` 与 G10。`grimp` 仍映射为 `BSD-2-Clause`。
+
+在 `448de25` 上、工作区干净、当时还没有本节时跑：
+
+```bash
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+退出码 0。`check:format` 打印 `All matched files use Prettier code style!`。`check-file-size: 200 source files within hard limits`。dependency-cruiser：`no dependency violations found (105 modules, 183 dependencies cruised)`。npm / pip / 模型许可证通过。`check-one-slice: 0 feature slice(s)`。`check-commits` 通过。`check-hotspots` 通过。`check-pr-size: 428 non-generated lines`。codegen 1 个 generator，随后的 `git diff --exit-code` 通过。日志在 `/opt/cursor/artifacts/check-448de25.log`。
+
+写入本节的提交只加记录。相对 `448de25` 增加 27 行、删除 1 行；被删的一行是本分支先前加上的，相对 `origin/main` 的 `check-pr-size` 为 454。该提交上再跑 check 的退出码写在本句末尾：待测。
