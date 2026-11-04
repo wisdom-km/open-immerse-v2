@@ -1,5 +1,5 @@
 import type { MermaidEdge } from "./parse-mermaid.mjs";
-import type { ReducedEdge, UnmappedEdge } from "./reduce.mjs";
+import type { IndexFinding, ReducedEdge, UnmappedEdge } from "./reduce.mjs";
 
 export interface UndocumentedEdge {
   readonly from: string;
@@ -17,6 +17,7 @@ export interface GraphReport {
   readonly undocumented: readonly UndocumentedEdge[];
   readonly planned: readonly PlannedEdge[];
   readonly unmapped: readonly UnmappedEdge[];
+  readonly indexes: readonly IndexFinding[];
 }
 
 export function compareGraph(
@@ -24,6 +25,7 @@ export function compareGraph(
   reduced: {
     readonly edges: readonly ReducedEdge[];
     readonly unmapped: readonly UnmappedEdge[];
+    readonly indexes?: readonly IndexFinding[];
   },
 ): GraphReport;
 

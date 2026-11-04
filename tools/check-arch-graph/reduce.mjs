@@ -1,4 +1,5 @@
 import { layerOf } from "./layer-of.mjs";
+import { classifyFeatureIndex, isFeatureIndex } from "./passthrough.mjs";
 
 const thirdParty = new Set([
   "npm",
@@ -128,26 +129,72 @@ function addUnmapped(map, item) {
   }
 }
 
-function absorbDep(source, from, dep, bag) {
-  if (isThirdParty(dep)) {
-    return;
+function collectIndexes(cruise, readText) {
+  const passthrough = new Set();
+  const indexes = [];
+  for (const mod of cruise.modules ?? []) {
+    const source = norm(mod.source);
+    if (!isFeatureIndex(source)) {
+      continue;
+    }
+    const verdict = classifyFeatureIndex(readText(source));
+    if (verdict.kind === "impure") {
+      indexes.push({ example: `${source}:${verdict.line}` });
+      continue;
+    }
+    passthrough.add(source);
   }
-  const ref = depRef(dep);
+  return { passthrough, indexes };
+}
+
+function moduleMap(cruise) {
+  const map = new Map();
+  for (const mod of cruise.modules ?? []) {
+    map.set(norm(mod.source), mod);
+  }
+  return map;
+}
+
+function followTargets(indexSource, bag, seen) {
+  if (seen.has(indexSource)) {
+    return [];
+  }
+  seen.add(indexSource);
+  const mod = bag.bySource.get(indexSource);
+  const found = [];
+  for (const dep of mod?.dependencies ?? []) {
+    if (isThirdParty(dep)) {
+      continue;
+    }
+    const ref = depRef(dep);
+    const key = norm(ref);
+    if (bag.passthrough.has(key)) {
+      found.push(...followTargets(key, bag, seen));
+      continue;
+    }
+    found.push(ref);
+  }
+  return found;
+}
+
+function recordEdge(from, ref, meta, bag) {
   const to = layerOf(ref);
   if (to.kind === "excluded" || to.kind === "external") {
     return;
   }
-  const typeOnly = (dep.dependencyTypes ?? []).includes("type-only");
-  const example = `${source}:${lineOf(bag.readText(source), dep.module, typeOnly)}`;
   const item = {
     from: token(from),
     to: token(to),
-    example,
-    typeOnly,
+    example: meta.example,
+    typeOnly: meta.typeOnly,
     viaPure: isPure(ref),
   };
   if (from.kind !== "layer" || to.kind !== "layer") {
-    addUnmapped(bag.unmapped, { from: item.from, to: item.to, example });
+    addUnmapped(bag.unmapped, {
+      from: item.from,
+      to: item.to,
+      example: meta.example,
+    });
     return;
   }
   if (item.from === item.to) {
@@ -156,8 +203,31 @@ function absorbDep(source, from, dep, bag) {
   addEdge(bag.edges, item);
 }
 
+function absorbDep(source, from, dep, bag) {
+  if (isThirdParty(dep)) {
+    return;
+  }
+  const ref = depRef(dep);
+  const typeOnly = (dep.dependencyTypes ?? []).includes("type-only");
+  const meta = {
+    typeOnly,
+    example: `${source}:${lineOf(bag.readText(source), dep.module, typeOnly)}`,
+  };
+  const key = norm(ref);
+  if (bag.passthrough.has(key)) {
+    for (const target of followTargets(key, bag, new Set())) {
+      recordEdge(from, target, meta, bag);
+    }
+    return;
+  }
+  recordEdge(from, ref, meta, bag);
+}
+
 function absorbModule(mod, bag) {
   const source = norm(mod.source);
+  if (bag.passthrough.has(source)) {
+    return;
+  }
   const from = layerOf(source);
   if (from.kind === "excluded") {
     return;
@@ -173,15 +243,27 @@ function byPair(left, right) {
   );
 }
 
+function byExample(left, right) {
+  return left.example.localeCompare(right.example);
+}
+
 export function reduceCruise(cruise, readText) {
   const edges = new Map();
   const unmapped = new Map();
-  const bag = { readText, edges, unmapped };
+  const collected = collectIndexes(cruise, readText);
+  const bag = {
+    readText,
+    edges,
+    unmapped,
+    passthrough: collected.passthrough,
+    bySource: moduleMap(cruise),
+  };
   for (const mod of cruise.modules ?? []) {
     absorbModule(mod, bag);
   }
   return {
     edges: [...edges.values()].sort(byPair),
     unmapped: [...unmapped.values()].sort(byPair),
+    indexes: [...collected.indexes].sort(byExample),
   };
 }

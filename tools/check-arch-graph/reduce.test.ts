@@ -78,7 +78,7 @@ it("drops tests, e2e, npm, node builtins, and same-layer edges", () => {
   expect(reduced.unmapped).toEqual([]);
 });
 
-it("keeps a type-only contracts to kernel edge and a seam re-export", () => {
+it("keeps a type-only contracts to kernel edge and drops a pure index re-export", () => {
   const reduced = reduceCruise(
     cruise([
       {
@@ -118,13 +118,8 @@ it("keeps a type-only contracts to kernel edge and a seam re-export", () => {
       example: "packages/contracts/src/diag-events.ts:1",
     },
   ]);
-  expect(reduced.unmapped).toEqual([
-    {
-      from: "SEAM",
-      to: "DOM",
-      example: "packages/features/jobs/src/index.ts:1",
-    },
-  ]);
+  expect(reduced.unmapped).toEqual([]);
+  expect(reduced.indexes).toEqual([]);
 });
 
 it("marks pure.ts as the UI to domain gate and prefers a value-import line", () => {

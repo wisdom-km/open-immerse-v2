@@ -33,6 +33,14 @@ function byPair(left, right) {
   );
 }
 
+function byExample(left, right) {
+  return left.example.localeCompare(right.example);
+}
+
+function indexFix(example) {
+  return `修复：包根 src/index.ts 只允许转出语句（export ... from、export * from、export type ... from）或空的 export {}。${example} 不是转出。把这一行移出该文件。锚点：docs/ci-and-environment.md#依赖图对照`;
+}
+
 function fixLine(item) {
   if (item.reason === "value-import") {
     return `修复：docs/arch/05-01.md §5.1 的 ${item.from} → ${item.to} 只允许 type-only。把这处改成 import type，或走 ARCH amendment。锚点：${anchor}`;
@@ -74,6 +82,7 @@ export function compareGraph(drawn, reduced) {
     undocumented: undocumented.sort(byPair),
     planned: planned.sort(byPair),
     unmapped: [...reduced.unmapped].sort(byPair),
+    indexes: [...(reduced.indexes ?? [])].sort(byExample),
   };
 }
 
@@ -82,6 +91,7 @@ export function renderReport(result) {
     `arch-graph: undocumented ${result.undocumented.length}`,
     `arch-graph: planned ${result.planned.length}`,
     `arch-graph: unmapped ${result.unmapped.length}`,
+    `arch-graph: index ${result.indexes.length}`,
   ];
   for (const item of result.undocumented) {
     lines.push(
@@ -94,6 +104,10 @@ export function renderReport(result) {
   }
   for (const item of result.unmapped) {
     lines.push(`arch-edge-unmapped\t${item.from}\t${item.to}\t${item.example}`);
+  }
+  for (const item of result.indexes) {
+    lines.push(`arch-index\t${item.example}`);
+    lines.push(indexFix(item.example));
   }
   return `${lines.join("\n")}\n`;
 }

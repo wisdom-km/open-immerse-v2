@@ -121,10 +121,8 @@ it("exits 1 when the mermaid file or cruise JSON cannot be read", () => {
   });
 });
 
-it("exits 0 against the repository graph and prints the three counts", () => {
-  const stdout: string[] = [];
-  const stderr: string[] = [];
-  const code = run([], {
+function repoIo(stdout: string[], stderr: string[]): CheckIo {
+  return {
     spawn: spawnSync,
     stdout: {
       write(text: string) {
@@ -139,11 +137,160 @@ it("exits 0 against the repository graph and prints the three counts", () => {
     cwd: process.cwd(),
     readFile: (file: string) => readFileSync(file, "utf8"),
     exists: existsSync,
-  });
+  };
+}
+
+function withRoot(
+  files: Readonly<Record<string, string>>,
+  check: (root: string) => void,
+): void {
+  const root = mkdtempSync(path.join(tmpdir(), "arch-graph-"));
+  try {
+    for (const [rel, text] of Object.entries(files)) {
+      const file = path.join(root, rel);
+      mkdirSync(path.dirname(file), { recursive: true });
+      writeFileSync(file, text);
+    }
+    check(root);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+it("exits 0 against the repository graph and prints the four counts", () => {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const code = run([], repoIo(stdout, stderr));
   expect(stderr.join("")).toBe("");
   expect(code).toBe(0);
   const text = stdout.join("");
-  expect(text).toMatch(/^arch-graph: undocumented \d+\n/);
-  expect(text).toMatch(/arch-graph: planned \d+\n/);
-  expect(text).toMatch(/arch-graph: unmapped \d+\n/);
+  expect(text).toContain("arch-graph: undocumented 0\n");
+  expect(text).toContain("arch-graph: planned 22\n");
+  expect(text).toContain("arch-graph: unmapped 0\n");
+  expect(text).toContain("arch-graph: index 0\n");
+});
+
+it("exits 0 in strict mode against the repository graph", () => {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const code = run(["--strict"], repoIo(stdout, stderr));
+  expect(stderr.join("")).toBe("");
+  expect(code).toBe(0);
+  const text = stdout.join("");
+  expect(text).toContain("arch-graph: undocumented 0\n");
+  expect(text).toContain("arch-graph: unmapped 0\n");
+});
+
+it("exits 1 in strict mode when only an unmapped edge is present", () => {
+  const cruise = {
+    modules: [
+      {
+        source: "packages/features/jobs/src/notes.ts",
+        dependencies: [
+          {
+            module: "@oi/contracts",
+            resolved: "packages/contracts/src/index.ts",
+            dependencyTypes: ["aliased", "import"],
+          },
+        ],
+      },
+    ],
+  };
+  withRoot(
+    {
+      "docs-arch.md": "```mermaid\nDOM --> C\n```\n",
+      "cruise.json": JSON.stringify(cruise),
+      "packages/features/jobs/src/notes.ts":
+        'import { JobId } from "@oi/contracts";\n',
+    },
+    (root) => {
+      const stdout: string[] = [];
+      const args = [
+        "--mermaid",
+        "docs-arch.md",
+        "--cruise-json",
+        "cruise.json",
+      ];
+      expect(run(args, ioFor(root, stdout, []))).toBe(0);
+      expect(stdout.join("")).toContain(
+        "arch-edge-unmapped\t?\tC\tpackages/features/jobs/src/notes.ts:1",
+      );
+      expect(run(["--strict", ...args], ioFor(root, [], []))).toBe(1);
+    },
+  );
+});
+
+it("exits 0 in strict mode when a pure index re-export has no importer", () => {
+  const cruise = {
+    modules: [
+      {
+        source: "packages/features/jobs/src/index.ts",
+        dependencies: [
+          {
+            module: "./domain/job-id.js",
+            resolved: "packages/features/jobs/src/domain/job-id.ts",
+            dependencyTypes: ["local", "export"],
+          },
+        ],
+      },
+    ],
+  };
+  withRoot(
+    {
+      "docs-arch.md": "```mermaid\nDOM --> C\n```\n",
+      "cruise.json": JSON.stringify(cruise),
+      "packages/features/jobs/src/index.ts":
+        'export { parseJobId } from "./domain/job-id.js";\n',
+    },
+    (root) => {
+      const stdout: string[] = [];
+      const code = run(
+        [
+          "--strict",
+          "--mermaid",
+          "docs-arch.md",
+          "--cruise-json",
+          "cruise.json",
+        ],
+        ioFor(root, stdout, []),
+      );
+      expect(code).toBe(0);
+      const text = stdout.join("");
+      expect(text).toContain("arch-graph: unmapped 0\n");
+      expect(text).toContain("arch-graph: index 0\n");
+      expect(text).not.toContain("arch-edge-unmapped");
+    },
+  );
+});
+
+it("reports a feature index that contains a statement other than a re-export", () => {
+  const cruise = {
+    modules: [
+      {
+        source: "packages/features/jobs/src/index.ts",
+        dependencies: [],
+      },
+    ],
+  };
+  withRoot(
+    {
+      "docs-arch.md": "```mermaid\nDOM --> C\n```\n",
+      "cruise.json": JSON.stringify(cruise),
+      "packages/features/jobs/src/index.ts": "export const ready = 1;\n",
+    },
+    (root) => {
+      const stdout: string[] = [];
+      const args = [
+        "--mermaid",
+        "docs-arch.md",
+        "--cruise-json",
+        "cruise.json",
+      ];
+      expect(run(args, ioFor(root, stdout, []))).toBe(0);
+      expect(stdout.join("")).toContain(
+        "arch-index\tpackages/features/jobs/src/index.ts:1",
+      );
+      expect(run(["--strict", ...args], ioFor(root, [], []))).toBe(1);
+    },
+  );
 });

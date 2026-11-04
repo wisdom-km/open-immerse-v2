@@ -29,10 +29,15 @@ export interface UnmappedEdge {
   readonly example: string;
 }
 
+export interface IndexFinding {
+  readonly example: string;
+}
+
 export function reduceCruise(
   cruise: CruiseResult,
   readText: (rel: string) => string,
 ): {
   readonly edges: readonly ReducedEdge[];
   readonly unmapped: readonly UnmappedEdge[];
+  readonly indexes: readonly IndexFinding[];
 };
