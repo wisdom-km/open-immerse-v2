@@ -164,7 +164,7 @@ G12：只改 `packages/contracts/` 时非生成行数上限是 200（`tools/chec
 | `apps/desktop/src/renderer/oi-api.d.ts` | `Window.oi` 的类型，并导出 `OiError<Channel>`：每条命令的错误码联合。UI 的文案表写成 `Record<OiError<"settings.answerEgressConsent">, string>` 时，缺一个码就编译失败。放在 desktop，不放进 contracts：core 的 tsconfig 没有 DOM（G14） |
 | `apps/desktop/src/main/ipc/registry.generated.ts` | 暴露中的通道、schema、幂等、kind。router 只注册这张表 |
 
-`apps/desktop/src/preload/index.ts` 保持手写，并且只做两件事：用 `ipcRenderer` 实现 `bridge`，再 `exposeInMainWorld("oi", createOi(bridge))`。通道名不写在这个文件里。它是入口文件，硬上限 150 行（[docs/arch/06.md](../arch/06.md)）。`bridge.invoke` 只在 preload 内部，不挂到 `window.oi`。
+`apps/desktop/src/preload/index.ts` 保持手写，并且只做两件事：用 `ipcRenderer` 实现 `bridge`，再 `exposeInMainWorld("oi", createOi(bridge))`。通道名不写在这个文件里。它是入口文件，硬上限 150 行（[docs/arch/06.md](../arch/06.md)）。`bridge.invoke` 只在 preload 内部，不挂到 `window.oi`。沙箱 preload 不能 `require` 同目录的另一个文件。`apps/desktop/scripts/use-cjs-preload.mjs` 在改名为 `index.cjs` 时，把编译后的 `oi.generated.js` 内联进这一个文件。源码仍是两个文件。
 
 `run.mjs` 在现有协议生成之外调用 preload 生成。`manifest.json` 增加一条，不走今天的字节复制：
 
