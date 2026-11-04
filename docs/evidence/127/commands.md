@@ -30,4 +30,4 @@ GATE_BASE=origin/main corepack pnpm run check
 
 `c66496606382143ac88e5e36991dff9b6a0a20ea` 已含本文件的上一版。在该提交上再跑两条命令：check-docs 退出码 0，计数与上一节相同；`GATE_BASE=origin/main corepack pnpm run check` 退出码 0，`check-pr-size: 261 non-generated lines`。日志在 `/opt/cursor/artifacts/check-docs-127.log` 与 `/opt/cursor/artifacts/pnpm-check-127.log`。
 
-补上本段之后再跑，`check-pr-size: 000 non-generated lines`，check 与 check-docs 的退出码都是 0。这一行只改数字，不增加行数。
+补上本段之后再跑，`check-pr-size: 267 non-generated lines`，check 与 check-docs 的退出码都是 0。这一行只改数字，不增加行数。
