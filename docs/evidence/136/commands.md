@@ -43,3 +43,38 @@ echo "pass=$pass fail=$fail"
 rebase 到 `88857a5` 时 `tools/compare-spec-bytes/compare.test.ts` 自动合上。合上之后又跑了上面的 vitest 与 pytest，都是退出码 0。
 
 写入本文件、changelog 与执行计划的「实际」列之后，又跑了一次 `corepack pnpm exec vitest run tools/compare-spec-bytes/compare.test.ts`，退出码 0，14 passed。这次还覆盖新的 Markdown 链接。
+
+## 审查修订（Windows ReadFile）
+
+`worker-health-windows` run 41782174824 / job 126416156028 在 `8be3dea` 上失败：`test_sigint_ends_the_process_outside_the_uvicorn_hold` 的 `proc.wait(timeout=15)` 超时。修订在本提交的工作树上测过，还没推送时的记录如下。工作目录是 `workers/parser/`。没有改 `.github/`、`api/auth.py`、`app.py`。没有重跑 `pnpm check`（这次只动 worker 与执行计划、本证据）。Windows 的 SIGBREAK 仍不在这台 Linux 上跑。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `node ../../tools/gate-remediation/run.mjs --id G1 -- uv run ruff format --check`（七个改过的 Python 文件） | 0 | 7 files already formatted |
+| `node ../../tools/gate-remediation/run.mjs --id G2 -- uv run ruff check`（同上） | 0 | All checks passed |
+| `node ../../tools/gate-remediation/run.mjs --id G3-pyright -- uv run pyright` | 0 | 0 errors, 0 warnings, 0 informations。提示 1.1.414 可用，未升级 |
+| `node ../../tools/gate-remediation/run.mjs --id G8 -- uv run pytest tests/api/test_server.py tests/api/test_entry_signals.py tests/api/test_stop_signals.py tests/api/test_launch_token.py` | 0 | 17 passed in 1.85s |
+| 见下方循环 | 0 | pass=10，fail=0 |
+
+循环：
+
+```bash
+pass=0
+fail=0
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  if uv run pytest -q \
+    tests/api/test_server.py::test_sigint_ends_the_process_outside_the_uvicorn_hold \
+    tests/api/test_server.py::test_hold_window_exits_zero_and_marks_exited \
+    tests/api/test_server.py::test_exits_nonzero_when_stdin_has_no_token \
+    tests/api/test_entry_signals.py::test_real_entry_sigterm_exits_zero_before_the_token_is_read \
+    >/tmp/oi-repeat-$i.log 2>&1
+  then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1))
+  fi
+done
+echo "pass=$pass fail=$fail"
+```
+
+结束行是 `pass=10 fail=0`。

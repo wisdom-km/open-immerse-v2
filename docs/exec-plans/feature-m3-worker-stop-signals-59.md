@@ -71,6 +71,7 @@
 | 2 | `arm_quiet_stop`、`_hold` 记信号、窗口里置 `should_exit`；测试改约定码并覆盖真实入口与 SIGBREAK | `main()` 先调用 `arm_quiet_stop()`。`_hold` 改为当次 `_StopNotice`。`should_exit` 只在 `server.started` 之后置。在 `serve()` 之前置会让 lifespan 打印回溯。真实入口测试在 `test_server.py`，SIGTERM 在 `test_entry_signals.py` | `docs/evidence/136/commands.md` |
 | 3 | 更新 §10.1、§10.5、backlog、changelog、approvals，以及 compare-spec-bytes 的两条 amendment | 已写入。amendment 各替换一次。compare 测试 14 条通过 | 同上 |
 | 4 | 针对性 pytest（含原先那条连续重复）、`vitest run tools/compare-spec-bytes/compare.test.ts`，然后一次 `GATE_BASE=origin/main corepack pnpm run check` | pytest 15 passed。停止信号三条连续 20 次，pass=20 fail=0。compare 14 passed。`pnpm check` 在 `07b9eb2` 退出码 0。Windows 未在本机跑 | 同上 |
+| 5 | 审查指出 Windows 上 CTRL_BREAK 打不断 `ReadFile`。产品代码里改成可打断的读令牌，并把停止逻辑移出 `server.py` | 令牌在守护线程读取，主线程 `Event.wait(0.05)` 轮询。停止逻辑在 `api/stop_signals.py`。`_spawn` / `wait_ready` 收到 `tests/api/conftest.py`。compare-spec-bytes 保留 | `docs/evidence/136/commands.md` 的审查修订一节 |
 
 不跑全量 `pnpm test`。`test:core` 不适用（`package.json` 没有这个脚本）。不跑全量 pytest。Windows 用例在本环境跑不到，交给 `worker-health-windows`。
 
@@ -79,13 +80,18 @@
 | 决定 | 理由 | 日期（Asia/Shanghai） | 谁定的 |
 | --- | --- | --- | --- |
 | 开分支修 #59，与 #130 并行，#60 稍后或另批 | Wisdom 原话「按推荐，我同意。」见 [Issue #59 评论](https://github.com/wisdom-km/open-immerse-v2/issues/59#issuecomment-6623430891)。实现提交把同一句写入 [docs/approvals.md](../approvals.md) | 2026-11-04 13:31 | Wisdom |
-| 正常停止的退出码在任何阶段都是 0 | 交接写明这个约定，并要求写进 §10.1 与 §10.5。批准范围是按推荐修 #59 | 2026-11-04 | 交接；Wisdom 已同意开分支 |
+| 正常停止的退出码在任何阶段都是 0。批准范围=按推荐修 #59（推荐含 0） | 交接写明这个约定，并要求写进 §10.1 与 §10.5。推荐本身包含退出码 0。Wisdom 同意的是按该推荐修 #59 | 2026-11-04 | 交接；Wisdom 已同意开分支 |
 | 第一笔之后同一 PR 里写实现，不等另一次审查 | 交接写明计划提交之后就修，并开 Draft。批准已经在 Issue #59 | 2026-11-04 | 交接 |
 | 分支用 `feature/m3-worker-stop-signals-59` | 交接点名。RULES §2 的功能分支前缀也是 `feature/` | 2026-11-04 | 交接 |
 | 测试同步用 `OI_WORKER_STOP_READY` 与 `OI_WORKER_HOLD_READY`，不用包装脚本，也不把同步写进规格 | 真实入口是 `python -m oi_worker`。包装脚本的标记打在 `main()` 之前，信号会抢在处理函数之前。就绪文件在处理装上之后才出现。这两个变量不是密钥，不进 §15.4 | 2026-11-04 | 本计划 |
 | Windows 的 SIGBREAK 用例留在 `test_server.py`，不改 CI | 健康检查作业只收集这个文件。交接禁止改 `.github/` | 2026-11-04 | 交接；与仓库工作流一致 |
 | 规格正文用 amendment 对准拆分基线，不改基线 commit | `compare-spec-bytes` 把章节拼回 `f8d5d01` 的 `ARCHITECTURE.md`。只允许这两次唯一替换，其他正文漂移仍失败 | 2026-11-04 | 本计划 |
 | 停止标记放在当次 serve 的对象上 | RULES §5 第 4 条：不新增模块级可变状态 | 2026-11-04 | 本计划 |
+| Windows 上读令牌不占住主线程 | `worker-health-windows`（run 41782174824 / job 126416156028）在 `test_sigint_ends_the_process_outside_the_uvicorn_hold` 的 `proc.wait(timeout=15)` 超时。Python 处理函数要等主线程回到字节码才跑；主线程卡在 `read_launch_token()` 的 stdin `ReadFile` 时，CTRL_BREAK 打不断它。令牌改由守护线程读，主线程用 `Event.wait(0.05)` 轮询，处理函数才能跑。Windows 上这个接管前的处理函数调用 `os._exit(0)`，避免退出时还卡在守护线程的 `ReadFile`。它会在 uvicorn 的 hold 处理装上时被换掉，所以接管后的 `{"event":"exited"}` 仍走原来的路径。不装常驻的控制台处理。缺令牌仍由主线程重新抛出 `SystemExit(1)` | 2026-11-04 | Forge 审查；按推荐的产品代码修法 |
+| 停止信号逻辑放在 `api/stop_signals.py`，`server.py` 只编排 uvicorn | 审查要求把停止逻辑移出 `server.py`。两处都在 `oi_worker.api`，分层不变。`honor_stop` 只认带 `should_exit` 的对象，不引用 uvicorn | 2026-11-04 | Forge 审查 |
+| `OI_WORKER_STOP_READY` 与 `OI_WORKER_HOLD_READY` 在代码注释里标明只给测试 | 审查要求写明这两个钩子。生产与桌面监管都不设置。未设置则不写文件、不等待 | 2026-11-04 | Forge 审查 |
+| `_spawn` 与 `wait_ready` 收到 `tests/api/conftest.py` | 审查要求去掉 `test_server.py` 与 `test_entry_signals.py` 里的两份拷贝。SIGTERM 在 Windows 上的 `skipif` 保留：`TerminateProcess` 捕不到处理函数 | 2026-11-04 | Forge 审查 |
+| `tools/compare-spec-bytes/` 留在本 PR，不拆走 | 审查要求交接文件清单之外的改动另开后续，除非改规格后不留就会让比较失败。§10.1 与 §10.5 的正文改动必须配两条 amendment，否则 `compare.test.ts` 失败。因此保留，并在 PR 说明里单独列出给 Wisdom | 2026-11-04 | Forge 审查；保留是因为比较门禁需要它 |
 
 ## 证据链接
 

@@ -1,18 +1,20 @@
 """Start python -m oi_worker, hit health, then stop the process."""
 
 import json
-import os
 import signal
 import subprocess
 import sys
 import threading
-import time
+from collections.abc import Callable
 from pathlib import Path
 
 import httpx
 
-PARSER = Path(__file__).resolve().parents[2]
-TOKEN = "oitest_launchhealth"
+from tests.api.conftest import LAUNCH_TOKEN
+
+TOKEN = LAUNCH_TOKEN
+Spawn = Callable[..., subprocess.Popen[str]]
+Ready = Callable[[Path], None]
 
 
 def _stop(proc: subprocess.Popen[str]) -> None:
@@ -60,59 +62,23 @@ def _signal_before_takeover() -> int:
     return signal.SIGINT
 
 
-def _wait_ready(path: Path, timeout: float = 15) -> None:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        if path.is_file():
-            return
-        time.sleep(0.02)
-    raise AssertionError("ready file")
-
-
-def _spawn(
-    stdin: int | None,
-    command: list[str] | None = None,
-    extra_env: dict[str, str] | None = None,
-) -> subprocess.Popen[str]:
-    env = dict(os.environ)
-    env.pop("OI_WORKER_PORT", None)
-    if extra_env is not None:
-        env.update(extra_env)
-    env["PYTHONUNBUFFERED"] = "1"
-    assert all(TOKEN not in value for value in env.values())
-    kwargs: dict[str, object] = {}
-    if sys.platform == "win32":
-        kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
-    else:
-        kwargs["start_new_session"] = True
-    if command is None:
-        command = [sys.executable, "-m", "oi_worker"]
-    assert all(TOKEN not in part for part in command)
-    return subprocess.Popen(
-        command,
-        cwd=PARSER,
-        env=env,
-        stdin=stdin,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        **kwargs,  # type: ignore[arg-type]
-    )
-
-
-def _start() -> subprocess.Popen[str]:
-    proc = _spawn(subprocess.PIPE)
+def _start(spawn: Spawn) -> subprocess.Popen[str]:
+    proc = spawn(subprocess.PIPE)
     assert proc.stdin is not None
     proc.stdin.write(TOKEN + "\n")
     proc.stdin.close()
     return proc
 
 
-def test_sigint_ends_the_process_outside_the_uvicorn_hold(tmp_path: Path) -> None:
+def test_sigint_ends_the_process_outside_the_uvicorn_hold(
+    tmp_path: Path,
+    worker_spawn: Spawn,
+    worker_ready: Ready,
+) -> None:
     # Real entry: python -m oi_worker. The ready file appears only after
     # main() has installed the quiet handler and before the token is read.
     ready = tmp_path / "stop-ready"
-    proc = _spawn(subprocess.PIPE, extra_env={"OI_WORKER_STOP_READY": str(ready)})
+    proc = worker_spawn(subprocess.PIPE, extra_env={"OI_WORKER_STOP_READY": str(ready)})
     assert proc.stdin is not None
     assert proc.stdout is not None
     assert proc.stderr is not None
@@ -120,7 +86,7 @@ def test_sigint_ends_the_process_outside_the_uvicorn_hold(tmp_path: Path) -> Non
     stdout = ""
     stderr = ""
     try:
-        _wait_ready(ready)
+        worker_ready(ready)
         proc.send_signal(_signal_before_takeover())
         code = proc.wait(timeout=15)
         stdout = proc.stdout.read()
@@ -137,9 +103,13 @@ def test_sigint_ends_the_process_outside_the_uvicorn_hold(tmp_path: Path) -> Non
     assert "Traceback" not in stderr
 
 
-def test_hold_window_exits_zero_and_marks_exited(tmp_path: Path) -> None:
+def test_hold_window_exits_zero_and_marks_exited(
+    tmp_path: Path,
+    worker_spawn: Spawn,
+    worker_ready: Ready,
+) -> None:
     ready = tmp_path / "hold-ready"
-    proc = _spawn(subprocess.PIPE, extra_env={"OI_WORKER_HOLD_READY": str(ready)})
+    proc = worker_spawn(subprocess.PIPE, extra_env={"OI_WORKER_HOLD_READY": str(ready)})
     assert proc.stdin is not None
     assert proc.stdout is not None
     assert proc.stderr is not None
@@ -149,7 +119,7 @@ def test_hold_window_exits_zero_and_marks_exited(tmp_path: Path) -> None:
     try:
         proc.stdin.write(TOKEN + "\n")
         proc.stdin.close()
-        _wait_ready(ready)
+        worker_ready(ready)
         proc.send_signal(_signal_before_takeover())
         code = proc.wait(timeout=15)
         stdout = proc.stdout.read()
@@ -166,8 +136,8 @@ def test_hold_window_exits_zero_and_marks_exited(tmp_path: Path) -> None:
     assert "Traceback" not in stderr
 
 
-def test_exits_nonzero_when_stdin_has_no_token() -> None:
-    proc = _spawn(subprocess.DEVNULL)
+def test_exits_nonzero_when_stdin_has_no_token(worker_spawn: Spawn) -> None:
+    proc = worker_spawn(subprocess.DEVNULL)
     assert proc.stdout is not None
     assert proc.stderr is not None
     code = proc.wait(timeout=15)
@@ -179,8 +149,10 @@ def test_exits_nonzero_when_stdin_has_no_token() -> None:
     assert "Traceback" not in stderr
 
 
-def test_ac_80_returns_200_without_paths_or_keys_when_the_worker_is_started() -> None:
-    proc = _start()
+def test_ac_80_returns_200_without_paths_or_keys_when_the_worker_is_started(
+    worker_spawn: Spawn,
+) -> None:
+    proc = _start(worker_spawn)
     stderr = ""
     assert proc.stderr is not None
     assert proc.stdout is not None
