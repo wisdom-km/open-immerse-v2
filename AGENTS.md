@@ -14,7 +14,7 @@
 
 ## 按任务类型阅读
 
-下表是要读的节，不复制那些文件的正文。任务类型的定义在 RULES §8.3（UI 改动 / seam 变更 / core 改动）。纯文档、worker、日志、环境、移植 v1 规则不是那三选一，交接说明按 RULES §9 写「不适用」。§ 号在根索引里点标题进入正文。
+下表是要读的节，不复制那些文件的正文。任务类型的定义在 RULES §8.3（UI 改动 / seam 变更 / core 改动）。纯文档、worker、日志、环境、移植 v1 规则不是那三选一，交接说明按 RULES §9 写「不适用」。§ 号在根索引里点标题进入正文。超过 300 行或跨模块的任务，先按 [docs/exec-plans/README.md](docs/exec-plans/README.md) 写计划；交接附上该计划文件；批准以 [docs/approvals.md](docs/approvals.md) 为准。
 
 | 任务类型 | 要读的节 |
 | --- | --- |
