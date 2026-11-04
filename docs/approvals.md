@@ -64,9 +64,13 @@
 | 2026-11-04 15:57 | 「按你推荐开第一项，第二项等142合入后再开。」 | 开本文档 PR；#73 等 #142 合入后再开 | Issue #28/#42/#73 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6625727777 |
 | 2026-11-04 16:34 | 「按推荐批准加上这几条登记，然后你让云端补上，CI转了以后你再复审。」 | #143：`tools/compare-spec-bytes/manifest.json` 为 ARCHITECTURE 目录树改动与 reader 行加唯一替换，并补 spec-changelog 文件列。不改基线 f8d5d01，不改 compare.mjs，不改 CI | PR #143 | https://github.com/wisdom-km/open-immerse-v2/pull/143#issuecomment-6626391244 |
 | 2026-11-04 16:34 | 「批准合入142。」 | 合入 #142 @8bd22dc（Fixes #140）。落后 main 时按 15:54 已批流程 merge 同步、核 blob、CI 全绿后按新 tip 合入 | PR #142 | https://github.com/wisdom-km/open-immerse-v2/pull/142#issuecomment-6626395133 |
+| 2026-11-04 16:57 | 「按你的建议执行。」 | #28：CI 第 1–3 项拆两 PR。PR1 做 check-docs 必过与 docs/arch 路径存在检查；PR2 做依赖图对照 ARCH §5，等 PR1 合入后开。check-docs 的状态行豁免 `docs/design/**`。`docs/README.md` 的索引表留给 #25。分支保护由 Wisdom 本人设 | Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6626806548 |
 | 2026-11-04 16:57 | 「按你的建议执行。」 | #24 开工：RULES §9 与 PR 模板加「UI 改动合入前须由 Loom 或 Wisdom 上手验收」；改 RULES 所需的 compare-spec-bytes amendment 一并批准；不改 CI、不加依赖 | Issue #24 | https://github.com/wisdom-km/open-immerse-v2/issues/24#issuecomment-6626807241 |
+| 2026-11-04 17:28 | 「按推荐」 | #146：`fixtures/providers/`、`fixtures/parsing-rules/`、`fixtures/corpus/` 三行标「计划中」，manifest 加对应替换，然后去掉 check-docs 的 `continue-on-error` | PR #146 | https://github.com/wisdom-km/open-immerse-v2/pull/146#issuecomment-6627414506 |
+| 2026-11-04 18:28 | 「批准合入146」 | 合入 #146 @516e3d4（Refs #28）。CI 转绿后合入 | PR #146 | https://github.com/wisdom-km/open-immerse-v2/pull/146#issuecomment-6628433888 |
 | 2026-11-04 18:28 | 「67那个按推荐。」 | 先让 Cloud 出一份 window.oi preload 生成形状的方案文档（命令/事件订阅命名、返回包装、ipc-router 与生成器同 PR 交付的建议），只写方案文档，不写代码，不碰 #146 的文件；方案再由 Loom 审、Wisdom 批后才开契约 PR | Issue #67、PR #148 | https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628434530 |
 | 2026-11-04 18:29 | 「这67的也都按照你的建议去做吧。」 | ①window.oi 生成形状先由 Loom + Cloud 出方案，Wisdom 批后再开工；②生成器与 main 端 ipc-router 放同一个 PR 交付，避免「前端能调、后端没接」的中间状态。顺序：方案文档 → 契约 PR（RULES.md:64，单独先合）→ 生成器 + ipc-router PR | Issue #67、PR #148 | https://github.com/wisdom-km/open-immerse-v2/issues/67#issuecomment-6628452608 |
+| 2026-11-04 18:33 | 「按推荐吧」 | #28 第 3 项可以改 `.github/workflows/ci.yml`。在 `node` job 的 Check 后面加一步，`continue-on-error: true`，只报告不拦合入。首跑「代码有、图上没有」的边本 PR 不修，只列出来。不加依赖，不改 `package.json` / `pnpm-lock.yaml` | Issue #28、PR #149 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6628516445 |
 | 2026-11-04 18:50 | 「按推荐」 | 三条必须改的改法照 Forge 的建议（命名 `<切片>.<可选子域>.<操作>`、`cancelRelocate` 改走 `jobs.cancel`、有状态事件加 `get<State>` 快照、进度 payload `{jobId,done,total,unit}`、`handler_threw` 的 message 只写日志）；4–7 条本次一并写进方案；错误码统一 snake_case | PR #148 | https://github.com/wisdom-km/open-immerse-v2/pull/148#issuecomment-6628805042 |
 
-共 60 条批准 + 1 条反馈记录 + 1 条决定
+共 64 条批准 + 1 条反馈记录 + 1 条决定
