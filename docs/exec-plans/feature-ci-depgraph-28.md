@@ -133,11 +133,13 @@ PR 保持 Draft。描述第一行是 `Refs #28`，不写 `Fixes #28`（report-on
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件作为第一笔提交 | | |
-| 2 | `tools/check-arch-graph/`：`parse-mermaid.mjs`、`layer-of.mjs`、`reduce.mjs`、`compare.mjs`、`check.mjs`，各带 `*.test.ts`。启动复用 `../check-deps/launch-depcruise.mjs`。不放进 `tools/check-deps/`，避免和已经进 `pnpm run check` 的入口混在一起 | | |
-| 3 | 不改 `package.json`。CI 在 `node` job 的 Check 之后加一步 `node tools/check-arch-graph/check.mjs`，`continue-on-error: true`。不加入 `check` 脚本 | | |
-| 4 | 更新 `docs/ci-and-environment.md`、`docs/backlog.md` 第 109 行、`docs/approvals.md` 四行、`docs/spec-changelog.md` 一行。证据 `docs/evidence/<PR号>/commands.md` | | |
-| 5 | 定向检查：本工具、`tools/check-deps` 的 Vitest、eslint、`check:deps`、`check-file-size`、`compare-spec-bytes`、`check-docs`。不反复跑全量 | | |
+| 1 | 本文件作为第一笔提交 | 提交 `696c8ef`，只有本文件 | 本文件 |
+| 2 | `tools/check-arch-graph/`：`parse-mermaid.mjs`、`layer-of.mjs`、`reduce.mjs`、`compare.mjs`、`check.mjs`，各带 `*.test.ts`。启动复用 `../check-deps/launch-depcruise.mjs`。不放进 `tools/check-deps/`，避免和已经进 `pnpm run check` 的入口混在一起 | 五个模块、声明文件和测试都在 `tools/check-arch-graph/`。提交 `d5d386a` | 证据目录的 Vitest 一节 |
+| 3 | 不改 `package.json`。CI 在 `node` job 的 Check 之后加一步 `node tools/check-arch-graph/check.mjs`，`continue-on-error: true`。不加入 `check` 脚本 | `.github/workflows/ci.yml` 的 `node` job 在 Check 与 Unit tests 之间加了 `Arch graph` | 工作流文件 |
+| 4 | 更新 `docs/ci-and-environment.md`、`docs/backlog.md` 第 109 行、`docs/approvals.md` 四行、`docs/spec-changelog.md` 一行。证据 `docs/evidence/<PR号>/commands.md` | ci-and-environment 加了「依赖图对照」。backlog 第 109 行改成已接上、只报告。approvals 补 16:57（#28）、17:28、18:28、18:33，批准数 61。changelog 与证据在 PR 号出来后写入 | 证据目录 |
+| 5 | 定向检查：本工具、`tools/check-deps` 的 Vitest、eslint、`check:deps`、`check-file-size`、`compare-spec-bytes`、`check-docs`。不反复跑全量 | 见证据目录。不跑全量 `pnpm check` / `pnpm test`，留给 CI 这个 tip 的一次 | 证据目录 |
+
+实现时 `node tools/check-arch-graph/check.mjs` 在 main 工作区上的输出：undocumented 0，planned 22，unmapped 1（`SEAM → DOM`，`packages/features/jobs/src/index.ts:1`）。与预跑计数一致。没有要改的产品代码。
 
 工具放在 `tools/check-arch-graph/` 而不是 `tools/check-deps/arch-graph/`：这一项是反向对照，不是禁止规则。`docs/arch/03.md` 的 tools 树本 PR 不改（改 arch 要 amendment）。新目录暂时不在那棵树上，留给下一个改 §3 的文档 PR。check-docs 只要求树上列出的路径存在，不要求每个现有目录都上树。
 
@@ -174,4 +176,4 @@ arch-edge-unmapped	<FROM>	<TO>	<文件:行>
 
 ## 自检
 
-- [ ] 影响 arch / prd 吗？影响就在同一个 PR 里更新。本 PR 不改 `docs/arch/**` 与 `docs/prd/**`。CI 与 backlog 的句子在 `docs/ci-and-environment.md`、`docs/backlog.md`、`docs/spec-changelog.md` 更新。
+- [x] 影响 arch / prd 吗？影响就在同一个 PR 里更新。本 PR 不改 `docs/arch/**` 与 `docs/prd/**`。CI 与 backlog 的句子在 `docs/ci-and-environment.md`、`docs/backlog.md`、`docs/spec-changelog.md` 更新。
