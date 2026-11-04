@@ -1,5 +1,7 @@
 import { Buffer } from "node:buffer";
 
+export const splitBaseline: string;
+
 export function stripSplitHeader(
   bytes: Buffer,
   startMark: string,
