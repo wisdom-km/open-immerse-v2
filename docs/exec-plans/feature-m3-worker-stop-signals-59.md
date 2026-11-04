@@ -67,10 +67,10 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 只提交本文件 |  | 本文件 |
-| 2 | `arm_quiet_stop`、`_hold` 记信号、窗口里置 `should_exit`；测试改约定码并覆盖真实入口与 SIGBREAK |  | `docs/evidence/<PR号>/commands.md` |
-| 3 | 更新 §10.1、§10.5、backlog、changelog、approvals，以及 compare-spec-bytes 的两条 amendment |  | 同上 |
-| 4 | 针对性 pytest（含原先那条连续重复）、`vitest run tools/compare-spec-bytes/compare.test.ts`，然后一次 `GATE_BASE=origin/main corepack pnpm run check` |  | 同上 |
+| 1 | 只提交本文件 | 第一笔只有本文件 | 本文件 |
+| 2 | `arm_quiet_stop`、`_hold` 记信号、窗口里置 `should_exit`；测试改约定码并覆盖真实入口与 SIGBREAK | `main()` 先调用 `arm_quiet_stop()`。`_hold` 改为当次 `_StopNotice`。`should_exit` 只在 `server.started` 之后置。在 `serve()` 之前置会让 lifespan 打印回溯。真实入口测试在 `test_server.py`，SIGTERM 在 `test_entry_signals.py` | `docs/evidence/136/commands.md` |
+| 3 | 更新 §10.1、§10.5、backlog、changelog、approvals，以及 compare-spec-bytes 的两条 amendment | 已写入。amendment 各替换一次。compare 测试 14 条通过 | 同上 |
+| 4 | 针对性 pytest（含原先那条连续重复）、`vitest run tools/compare-spec-bytes/compare.test.ts`，然后一次 `GATE_BASE=origin/main corepack pnpm run check` | pytest 15 passed。停止信号三条连续 20 次，pass=20 fail=0。compare 14 passed。`pnpm check` 在 `07b9eb2` 退出码 0。Windows 未在本机跑 | 同上 |
 
 不跑全量 `pnpm test`。`test:core` 不适用（`package.json` 没有这个脚本）。不跑全量 pytest。Windows 用例在本环境跑不到，交给 `worker-health-windows`。
 
@@ -89,4 +89,4 @@
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：实现提交之后写入。PR 号以开出的 Draft 为准。
+- `docs/evidence/136/commands.md`

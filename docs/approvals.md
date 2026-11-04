@@ -40,6 +40,6 @@
 | 2026-11-04 11:18 | 「批准合入」 | 合入 #124 @ 9facc97（Fixes #123） | PR #124 | https://github.com/wisdom-km/open-immerse-v2/pull/124#issuecomment-6621603309 ；https://github.com/wisdom-km/open-immerse-v2/issues/123#issuecomment-6621603953 |
 | 2026-11-04 11:40 | 「风险这个先测试下有没有影响吧，要没有影响咱就批准合入，要有影影响的话，咱们就先修锚点再合。」 | #125 @ 3c2f159 有条件合入：5 个特殊字符锚点在 GitHub 渲染页实测能跳转（Forge 在 bad72bf 核对满足） | PR #125 | https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6621922357 ；https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6622059835 |
 | 2026-11-04 11:41 | 「我看并行的名额还剩两个，它俩是不影响的是吧？就是不影响当前任务的。如果不影响的话，那就都批准。」 | 并行开工 #61 剩余项（1/4/6）与 #35 剩余项（2/3），条件是与当前活跃 PR #125 无文件重叠 | Issue #61、#35 | https://github.com/wisdom-km/open-immerse-v2/issues/61#issuecomment-6621927948 ；https://github.com/wisdom-km/open-immerse-v2/issues/35#issuecomment-6621928509 |
-| 2026-11-04 13:31 | 「按推荐，我同意。」 | 开分支修 #59（与 #130 并行；#60 稍后或另批） | Issue #59 | https://github.com/wisdom-km/open-immerse-v2/issues/59#issuecomment-6623430891 |
+| 2026-11-04 13:31 | 「按推荐，我同意。」 | 开分支修 #59（与 #130 并行；#60 稍后或另批） | Issue #59、PR #136 | https://github.com/wisdom-km/open-immerse-v2/issues/59#issuecomment-6623430891 |
 
 共 34 条批准 + 1 条反馈记录
