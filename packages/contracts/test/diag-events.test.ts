@@ -177,3 +177,81 @@ it("keeps the channel name and byte count when ipc.oversize is read", () => {
     }).ok,
   ).toBe(false);
 });
+
+it("omits source when the key is absent", () => {
+  const read = readDiagEvent({ ...envelope, event: "egress.ask" });
+  expect(read).toEqual({
+    ok: true,
+    value: { ...envelope, event: "egress.ask" },
+  });
+  expect(read.ok && Object.hasOwn(read.value, "source")).toBe(false);
+});
+
+const workerEvents = [
+  { fields: { event: "egress.ask" }, extra: { body: forbidden[0] } },
+  { fields: { event: "budget.refused" }, extra: { note: forbidden[1] } },
+  {
+    fields: { event: "scoring.unavailable" },
+    extra: { detail: forbidden[2] },
+  },
+  {
+    fields: { event: "upstream.server_error", requestId: "req-1" },
+    extra: { body: forbidden[0] },
+  },
+  {
+    fields: { event: "ipc.oversize", channel: "document.open", bytes: 4 },
+    extra: { payload: forbidden[0] },
+  },
+  {
+    fields: {
+      event: "pipeline.run",
+      run_id: "run-1",
+      route: "multimodal-layout",
+      step: "parse",
+      status: "done",
+      error_class: "",
+      duration_ms: 12,
+    },
+    extra: { body: forbidden[0] },
+  },
+] as const;
+
+it("keeps source worker and drops other keys when each whitelist event includes it", () => {
+  for (const item of workerEvents) {
+    expect(
+      readDiagEvent({
+        ...envelope,
+        ...item.fields,
+        source: "worker",
+        ...item.extra,
+      }),
+    ).toEqual({
+      ok: true,
+      value: { ...envelope, ...item.fields, source: "worker" },
+    });
+  }
+});
+
+it("rejects the event when source is not the worker literal", () => {
+  for (const source of ["main", "", 1, null, {}]) {
+    expect(readDiagEvent({ ...envelope, event: "egress.ask", source })).toEqual(
+      { ok: false, error: { code: "diag_event_rejected" } },
+    );
+  }
+});
+
+it("rejects a source literal other than worker when the event is typed", () => {
+  const allowed: DiagEvent = {
+    ...envelope,
+    event: "egress.ask",
+    source: "worker",
+  };
+  expectTypeOf(allowed.source).toEqualTypeOf<"worker" | undefined>();
+  const rejected: DiagEvent = {
+    ...envelope,
+    event: "egress.ask",
+    // @ts-expect-error source only allows the literal worker
+    source: "main",
+  };
+  expectTypeOf(rejected).toExtend<DiagEvent>();
+});

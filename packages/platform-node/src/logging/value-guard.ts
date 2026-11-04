@@ -111,15 +111,26 @@ function scrubNamed(
 }
 
 function envelope(event: DiagEvent): {
-  ts: string;
-  level: string;
-  feature: string;
+  readonly ts: string;
+  readonly level: string;
+  readonly feature: string;
+  readonly source?: "worker";
 } {
   return {
     ts: scrubTimestamp(event.ts),
     level: scrubToken(event.level),
     feature: scrubToken(event.feature),
+    ...sourceField(event),
   };
+}
+
+function sourceField(
+  event: DiagEvent,
+): { readonly source: "worker" } | Record<string, never> {
+  if (event.source !== "worker") {
+    return {};
+  }
+  return { source: "worker" };
 }
 
 function scrubToken(value: string): string {
