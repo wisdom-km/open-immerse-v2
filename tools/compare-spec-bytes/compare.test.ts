@@ -52,6 +52,43 @@ function ensureSplitBaseline(sha: string): void {
   }
 }
 
+function originMainPresent(): boolean {
+  const present = spawnSync(
+    "git",
+    [
+      "-C",
+      root,
+      "rev-parse",
+      "--verify",
+      "--quiet",
+      "refs/remotes/origin/main",
+    ],
+    { stdio: "ignore" },
+  );
+  return present.status === 0;
+}
+
+function ensureOriginMain(): void {
+  if (originMainPresent()) {
+    return;
+  }
+  const fetched = spawnSync(
+    "git",
+    [
+      "-C",
+      root,
+      "fetch",
+      "--depth=1",
+      "origin",
+      "main:refs/remotes/origin/main",
+    ],
+    { stdio: "ignore" },
+  );
+  if (fetched.status !== 0 || !originMainPresent()) {
+    throw new Error("git fetch failed for origin/main");
+  }
+}
+
 const slugScript = `
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -201,6 +238,7 @@ it("writes the same prefix manifest that evidence keeps", () => {
 });
 
 it("keeps root heading slugs identical to origin/main", () => {
+  ensureOriginMain();
   const result = spawnSync(
     process.execPath,
     ["--input-type=module", "-e", slugScript],
@@ -235,19 +273,11 @@ const read = (rel) => readFileSync(rel, "utf8");
 const found = linkFindings(files, process.cwd(), read);
 const missingFile = found.filter((item) => item.kind === "missing-file");
 const anchors = found.filter((item) => item.kind === "missing-anchor");
-const githubIds = new Set([
-  "./docs/arch/09.md#9-ipc-协议renderer--main",
-  "./docs/arch/09-01.md#91-v2-桌面端-ui-新增-seam已采纳adr-0001wisdom-2026-11-04",
-  "./docs/arch/14-01.md#141-发生了什么数据来自旧仓库只读审查见-v1-审查-3",
-  "./docs/prd/03-03.md#33-设置模型能力的本地--api与面壁开放平台q9wisdom-2026-10-30-18371844",
-  "./docs/prd/03-06.md#36-v2-桌面端-ui-带来的范围补充已采纳adr-0001wisdom-2026-11-04",
-]);
-const unexpected = anchors.filter((item) => !githubIds.has(item.detail));
 const status = statusFindings(files, read).filter(
   (item) => item.kind === "status-line-missing" && item.file.startsWith("docs/prd/"),
 );
-if (missingFile.length > 0 || unexpected.length > 0 || anchors.length !== githubIds.size || status.length > 0) {
-  console.error(JSON.stringify({ missingFile, unexpected, anchors, status }, null, 2));
+if (missingFile.length > 0 || anchors.length > 0 || status.length > 0) {
+  console.error(JSON.stringify({ missingFile, anchors, status }, null, 2));
   process.exit(1);
 }
 console.log("links 0");
@@ -266,5 +296,5 @@ it("reports no broken link when tracked and new markdown are checked", () => {
     stdout: result.stdout,
   }).toMatchObject({ status: 0 });
   expect(result.stdout).toContain("links 0");
-  expect(result.stdout).toContain("anchors 5");
+  expect(result.stdout).toContain("anchors 0");
 });

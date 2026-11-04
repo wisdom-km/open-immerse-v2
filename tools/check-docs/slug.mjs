@@ -1,6 +1,3 @@
-const punct =
-  /[!"#$%&'()*+,./:;<=>?@[\]^`{|}~。，「」『』（）：、；？！·…—–‐‑‒―〜～･]/g;
-
 function fenceMark(line) {
   const match = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(line);
   if (!match) {
@@ -47,8 +44,11 @@ function plainHeading(text) {
 }
 
 export function slugify(text) {
-  const cleaned = plainHeading(text).toLowerCase().replace(punct, "");
-  return cleaned.trim().replace(/\s+/g, "-");
+  const cleaned = plainHeading(text)
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}\p{Pc} -]/gu, "");
+  return cleaned.replace(/ /g, "-");
 }
 
 function headingText(line) {
