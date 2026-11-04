@@ -4,7 +4,7 @@
 适用对象：所有人类开发者与 AI Agent。
 同级规格：[PRD.md](./PRD.md)（做什么）、[ARCHITECTURE.md](./ARCHITECTURE.md)（怎么搭）。视觉与交互：[DESIGN.md](./DESIGN.md)、[docs/design-principles.md](./docs/design-principles.md)，Loom 2026-10-30 已入库。结构、状态与「当 seam 返回 X 时显示 Y」按 DESIGN 实现；标「待审批」的颜色、间距、字号不当作定稿。DESIGN 文首若仍写「Loom 交付前 UI 只搭结构」，以本句为准，那一句留给 Loom 删（N-10，本文件不改 DESIGN 正文）。其他人或 Agent **不得**改正文（N-10）。
 
-规则冲突时的优先级：用户（Wisdom）的明确指示 > 本文 > ARCHITECTURE.md > PRD.md 中的实现建议 > 文件名带「草案」的 `docs/architecture/` 文件。
+规则冲突时的优先级：用户（Wisdom）的明确指示 > 本文 > ARCHITECTURE.md > PRD.md 中的实现建议 > `docs/architecture/` 草案。
 
 ---
 
@@ -166,7 +166,7 @@
 ## 7. 文档规则
 
 - 全部文档用中文。代码标识符、命令、路径保持原文。
-- 规格的唯一真相源是根目录的 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`；设计规格是 `DESIGN.md` 与 `docs/design-principles.md`（Loom 2026-10-30 已入库），以及 `docs/design/` 下 Loom 的功能级设计文档（目前是 Markdown 阅读方案 `md-reader.md`）。设计文档与规格冲突时，需求、验收、里程碑、架构以规格为准，界面细节以设计文档为准；校正写在设计文档的「入库说明」里。PRD.md 与 ARCHITECTURE.md 的正文在 `docs/prd/` 与 `docs/architecture/` 的章节文件里；根目录这两份是章节索引，旧锚点落在同名标题上。`docs/architecture/` 里文件名带「草案」的是历史草案。
+- 规格的唯一真相源是根目录的 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`；设计规格是 `DESIGN.md` 与 `docs/design-principles.md`（Loom 2026-10-30 已入库），以及 `docs/design/` 下 Loom 的功能级设计文档（目前是 Markdown 阅读方案 `md-reader.md`）。设计文档与规格冲突时，需求、验收、里程碑、架构以规格为准，界面细节以设计文档为准；校正写在设计文档的「入库说明」里。`docs/architecture/` 是历史草案。
 - 修改规格必须在同一个 PR 同步修改受影响的其他规格与 CI 配置；结构性变更配 ADR。
 - 规格变更（日期、PR、文件、摘要）记在 [docs/spec-changelog.md](./docs/spec-changelog.md)。应用的变更记录从第一次给人安装的构建开始，不写进那份文件（README「三种版本号」）。按任务类型该读哪些文件见 [AGENTS.md](./AGENTS.md)「按任务类型阅读」，只放链接，不在这里复制正文。
 - 引用上游模型、库、API 的能力时附官方链接、锁定的提交或版本、核实日期；未核实的写「未核实」。官方自测的精度与速度数字一律注明「官方自测」，不当作已验证结论。

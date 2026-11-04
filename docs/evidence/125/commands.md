@@ -87,4 +87,32 @@ node tools/check-docs/check.mjs
 GATE_BASE=origin/main corepack pnpm run check
 ```
 
-在 `a82d3a0` 上退出码 0。`check-pr-size: 7324 non-generated lines`。日志在 `/opt/cursor/artifacts/pnpm-check-125-n7.log`。补记本段的提交上再跑一次的退出码写在 PR 描述。
+在 `a82d3a0` 上退出码 0。`check-pr-size: 7324 non-generated lines`。日志在 `/opt/cursor/artifacts/pnpm-check-125-n7.log`。补记本段的提交 `9c826ee` 上再跑同一门禁，退出码 0，`check-pr-size: 7358 non-generated lines`。
+
+## Forge F1–F3、F5、F8
+
+Wisdom 2026-11-04 11:05 批准。章节正文在 `docs/arch/`。占位页已删。相对链接只改路径前缀。
+
+```bash
+node tools/compare-spec-bytes/compare.mjs --rewrites docs/evidence/125/link-rewrites.txt
+```
+
+退出码 0。PRD 36 段、194695 字节；ARCHITECTURE 66 段、360198 字节；RULES 文首 2795 字节。`68 path prefixes`。`docs/evidence/125/link-rewrites.txt` 是这次写出的 68 行，每行是 `文件:行 旧路径 → 新路径`。
+
+```bash
+node tools/check-docs/check.mjs
+```
+
+退出码 0。`links: 0`，`anchors: 0`，`status: 9`，`verbatim: 0`，`findings: 9`。`links: 0` 就是 0 个 `missing-file`。九条仍是原来的索引表和状态行，没有占位页。
+
+```bash
+corepack pnpm test
+```
+
+退出码 0。86 个文件，229 passed，3 skipped。日志在 `/opt/cursor/artifacts/pnpm-test-125-forge.log`。
+
+```bash
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+这一笔提交上的退出码写在下一节。

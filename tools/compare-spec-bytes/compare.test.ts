@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
@@ -8,6 +9,8 @@ import {
   firstMismatch,
   joinParts,
   markedBody,
+  prefixChange,
+  restoredRewrites,
   sliceOnce,
   stripSplitHeader,
 } from "./compare.mjs";
@@ -101,6 +104,28 @@ it("throws when the span edge occurs twice", () => {
   expect(() => sliceOnce(bytes, "START", "END")).toThrow(/not unique/);
 });
 
+it("accepts a relative path prefix and nothing else", () => {
+  const expected = "见 [甲](./docs/a.md) 与 [乙](./b.md#x)。";
+  const actual = "见 [甲](../../docs/a.md) 与 [乙](../../b.md#x)。";
+  const judged = restoredRewrites(actual, expected);
+  expect(judged.ok).toBe(true);
+  expect(judged.rewrites.map((item) => `${item.old} → ${item.new}`)).toEqual([
+    "./docs/a.md → ../../docs/a.md",
+    "./b.md#x → ../../b.md#x",
+  ]);
+  expect(prefixChange("./a.md", "../../b.md").kind).toBe("blocked");
+  const renamed = restoredRewrites(
+    "见 [甲](../../b.md)。",
+    "见 [甲](./a.md)。",
+  );
+  expect(renamed.ok).toBe(false);
+  const prose = restoredRewrites(
+    "改了正文 [甲](./a.md)。",
+    "见 [甲](./a.md)。",
+  );
+  expect(prose.ok).toBe(false);
+});
+
 it("returns the first differing byte when a slice changes", () => {
   const origin = Buffer.from("alpha\nbeta\n", "utf8");
   const changed = Buffer.from("alpha\nBETA\n", "utf8");
@@ -123,6 +148,28 @@ it("matches origin/main when the chapter files are joined", () => {
   expect(result.stdout).toContain("ARCHITECTURE.md");
   expect(result.stdout).toContain("match origin/main");
   expect(result.stdout).toContain("RULES.md span");
+  expect(result.stdout).toContain("path prefixes");
+});
+
+it("writes the same prefix manifest that evidence keeps", () => {
+  const out = "/tmp/oi-link-rewrites.txt";
+  const result = spawnSync(
+    process.execPath,
+    [
+      path.join(root, "tools/compare-spec-bytes/compare.mjs"),
+      "--rewrites",
+      out,
+    ],
+    { encoding: "utf8", cwd: root },
+  );
+  expect(result.status).toBe(0);
+  const fresh = readFileSync(out, "utf8");
+  const kept = readFileSync(
+    path.join(root, "docs/evidence/125/link-rewrites.txt"),
+    "utf8",
+  );
+  expect(fresh).toBe(kept);
+  expect(fresh.trim().split("\n")).toHaveLength(68);
 });
 
 it("keeps root heading slugs identical to origin/main", () => {

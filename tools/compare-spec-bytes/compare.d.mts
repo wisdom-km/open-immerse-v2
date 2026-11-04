@@ -26,3 +26,24 @@ export function markedBody(
   endMark: string,
   bodyEnd: string,
 ): Buffer;
+
+export function linkDestSpans(text: string): Array<{
+  destStart: number;
+  destEnd: number;
+  dest: string;
+  next: number;
+}>;
+
+export function prefixChange(
+  oldDest: string,
+  newDest: string,
+): { kind: "same" | "blocked" | "rewrite"; old?: string; new?: string };
+
+export function restoredRewrites(
+  actual: string,
+  expected: string,
+): {
+  ok: boolean;
+  at?: number;
+  rewrites: Array<{ index: number; old: string; new: string }>;
+};

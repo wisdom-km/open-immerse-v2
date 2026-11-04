@@ -52,7 +52,19 @@
 
 `RULES.md` 第 3 行在「状态：v0.6，规格基线（唯一真相源之一）。」之后，到「日期：2026-11-03（Asia/Shanghai）。」为止，是 v0.2–v0.6 的版本历史和历次 Wisdom 决定。这一段原样搬到 `docs/spec-changelog.md`，放在 `<!-- oi-split-header -->` 与 `<!-- /oi-split-body -->` 之间。文首只留当前版本 v0.6 和指向变更记录的链接。
 
-`tools/compare-spec-bytes/compare.mjs` 用 `manifest.json` 的 `spans` 取出 `origin/main:RULES.md` 里这一段，剥掉变更记录里的文件头后逐字节比较。段内的 `./docs/reviews/2026-10-30-architecture-review.md` 与 `./docs/backlog.md` 不改字；从 `docs/spec-changelog.md` 解析时，用 `docs/docs/` 下的占位文件接住。
+`tools/compare-spec-bytes/compare.mjs` 用 `manifest.json` 的 `spans` 取出 `origin/main:RULES.md` 里这一段，剥掉变更记录里的文件头后比较。这一段里的两个相对链接只改路径前缀，见下面 Forge F2。
+
+## Forge 审查（Wisdom 2026-11-04 11:05 批准）
+
+来源是 tip `9c826ee` 的 Forge 报告 F1–F3、F5、F8，以及 #125 上 11:05 的批准评论。
+
+| 项 | 修法 |
+| --- | --- |
+| F1 | 只改 `tools/gate-remediation/catalog.json` 的 spec 引用，指向 `docs/arch/` 里的章节文件。编号和文义不变。不改 `catalog.test.ts`。 |
+| F2 | 删掉全部占位跳转页，包括 `docs/docs/`、`docs/prd/docs/`、`docs/architecture/docs/`，以及 `docs/prd/ARCHITECTURE.md`、`docs/architecture/PRD.md`。搬过去的正文只重写相对链接的路径前缀。比对工具只允许这一种差异，并把每一处写进 `docs/evidence/125/link-rewrites.txt`。 |
+| F3 | 章节正文放在 `docs/arch/`。`docs/architecture/` 只留历史草案。`RULES.md` 第 7 行和第 169 行恢复成 `origin/main`。`README.md`、`docs/architecture/README.md` 恢复。索引里只改指向 `docs/arch/` 的路径。 |
+| F5 | `AGENTS.md`「按任务类型阅读」表头加一句：§ 号在根索引里点标题进入正文。不改 RULES 正文。 |
+| F8 | `docs/spec-changelog.md` 这一行的文件清单改成最终实际文件。 |
 
 ## PRD 文件清单
 
@@ -99,72 +111,72 @@
 
 | 文件 | 原文 |
 | --- | --- |
-| `docs/architecture/00-preamble.md` | 文首，第一个二级标题之前 |
-| `docs/architecture/00.md` | 0. 设计目标 |
-| `docs/architecture/01.md` | 1. 进程拓扑 |
-| `docs/architecture/02.md` | 2. 分层 |
-| `docs/architecture/02-01.md` | 2.1 UI 与业务核心解耦（Q3，Wisdom 2026-10-30 原文） |
-| `docs/architecture/02-02.md` | 2.2 调研依据 |
-| `docs/architecture/02-03.md` | 2.3 术语落到代码 |
-| `docs/architecture/02-04.md` | 2.4 seam 的形状规则 |
-| `docs/architecture/02-05.md` | 2.5 与 5 层、18 个切片的映射 |
-| `docs/architecture/02-06.md` | 2.6 示例 seam |
-| `docs/architecture/03.md` | 3. 目录结构 |
-| `docs/architecture/03-01.md` | 3.1 每个功能切片的内部结构（统一模板） |
-| `docs/architecture/04.md` | 4. 模块清单与单文件职责 |
-| `docs/architecture/04-01.md` | 4.1 公共包 |
-| `docs/architecture/04-02.md` | 4.2 功能切片 |
-| `docs/architecture/04-03.md` | 4.3 切片之间的依赖（允许的方向） |
-| `docs/architecture/04-04.md` | 4.4 预留切片 writing（Q5） |
-| `docs/architecture/04-05.md` | 4.5 Markdown 阅读（markdown 切片，含 #### 4.5.1–4.5.8） |
-| `docs/architecture/05.md` | 5. 依赖方向与禁止事项 |
-| `docs/architecture/05-01.md` | 5.1 层间依赖图 |
-| `docs/architecture/05-02.md` | 5.2 禁止事项（CI 强制或评审一票否决） |
-| `docs/architecture/05-03.md` | 5.3 UI 组合：插槽而不是互相 import |
-| `docs/architecture/06.md` | 6. 文件与函数大小 |
-| `docs/architecture/07.md` | 7. 引擎抽象接口 |
-| `docs/architecture/07-00.md` | 7.0 模型能力的默认来源：API 优先（Wisdom 2026-10-30 18:44） |
-| `docs/architecture/07-01.md` | 7.1 总体流水线 |
-| `docs/architecture/07-02.md` | 7.2 Python 侧引擎接口（worker 内部） |
-| `docs/architecture/07-03.md` | 7.3 TS 侧端口（application 层） |
-| `docs/architecture/07-04.md` | 7.4 质量评估的部署（Q9） |
-| `docs/architecture/07-05.md` | 7.5 公式候选优先级链（Q1、Q4） |
-| `docs/architecture/07-06.md` | 7.6 公式来源模块 formula-source（Q4） |
-| `docs/architecture/07-07.md` | 7.7 云 OCR 识别来源（Q1） |
-| `docs/architecture/07-08.md` | 7.8 预算闸门：所有付费调用先预留（架构评审 P0-3） |
-| `docs/architecture/07-09.md` | 7.9 服务商适配层（Wisdom 2026-10-30 19:45、19:46，含 #### 7.9.1–7.9.8） |
-| `docs/architecture/07-10.md` | 7.10 阅读顺序（Wisdom 2026-10-30 21:12） |
-| `docs/architecture/07-11.md` | 7.11 BabelDOC 借鉴与防御（Wisdom 2026-10-30 21:12） |
-| `docs/architecture/07-12.md` | 7.12 处理路线：独立积木与声明式组合（Wisdom 2026-10-30 22:41、22:44、22:45） |
-| `docs/architecture/07-13.md` | 7.13 评分、路线、外发与预算的汇合（Wisdom 2026-10-31 13:14） |
-| `docs/architecture/08.md` | 8. 数据模型与存储 |
-| `docs/architecture/08-01.md` | 8.1 权威数据 |
-| `docs/architecture/08-02.md` | 8.2 桌面存储布局 |
-| `docs/architecture/08-03.md` | 8.3 配置与密钥隔离 |
-| `docs/architecture/08-04.md` | 8.4 版本与升级（架构评审 P1-9） |
-| `docs/architecture/09.md` | 9. IPC 协议（renderer ↔ main） |
-| `docs/architecture/09-01.md` | 9.1 v2 桌面端 UI 新增 seam（已采纳，ADR 0001，Wisdom 2026-11-04） |
-| `docs/architecture/10.md` | 10. Python worker 协议（oi-parse/1） |
-| `docs/architecture/10-01.md` | 10.1 传输 |
-| `docs/architecture/10-02.md` | 10.2 端点 |
-| `docs/architecture/10-03.md` | 10.3 worker 内部结构 |
-| `docs/architecture/10-04.md` | 10.4 协议版本与升级（架构评审 P1-9） |
-| `docs/architecture/10-05.md` | 10.5 本机 worker 的监管状态机（架构评审 P2-6） |
-| `docs/architecture/11.md` | 11. 可观测性 |
-| `docs/architecture/12.md` | 12. 测试策略 |
-| `docs/architecture/12-01.md` | 12.1 评测记录 |
-| `docs/architecture/13.md` | 13. CI 门禁 |
-| `docs/architecture/14.md` | 14. v1 教训：一个 16,641 行的文件是怎么长出来的，v2 怎么从制度上防止 |
-| `docs/architecture/14-01.md` | 14.1 发生了什么（标题内已有 v1 审查链接） |
-| `docs/architecture/14-02.md` | 14.2 造成的问题 |
-| `docs/architecture/14-03.md` | 14.3 根因 |
-| `docs/architecture/14-04.md` | 14.4 v2 的制度性防线 |
-| `docs/architecture/15.md` | 15. 开发环境 |
-| `docs/architecture/15-01.md` | 15.1 版本 |
-| `docs/architecture/15-02.md` | 15.2 云端 Agent 的 environment.json |
-| `docs/architecture/15-03.md` | 15.3 常用命令（M1 落地后） |
-| `docs/architecture/15-04.md` | 15.4 开发机与密钥（API 优先，Wisdom 2026-10-30 18:44） |
-| `docs/architecture/16.md` | 16. 决策记录与变更 |
+| `docs/arch/00-preamble.md` | 文首，第一个二级标题之前 |
+| `docs/arch/00.md` | 0. 设计目标 |
+| `docs/arch/01.md` | 1. 进程拓扑 |
+| `docs/arch/02.md` | 2. 分层 |
+| `docs/arch/02-01.md` | 2.1 UI 与业务核心解耦（Q3，Wisdom 2026-10-30 原文） |
+| `docs/arch/02-02.md` | 2.2 调研依据 |
+| `docs/arch/02-03.md` | 2.3 术语落到代码 |
+| `docs/arch/02-04.md` | 2.4 seam 的形状规则 |
+| `docs/arch/02-05.md` | 2.5 与 5 层、18 个切片的映射 |
+| `docs/arch/02-06.md` | 2.6 示例 seam |
+| `docs/arch/03.md` | 3. 目录结构 |
+| `docs/arch/03-01.md` | 3.1 每个功能切片的内部结构（统一模板） |
+| `docs/arch/04.md` | 4. 模块清单与单文件职责 |
+| `docs/arch/04-01.md` | 4.1 公共包 |
+| `docs/arch/04-02.md` | 4.2 功能切片 |
+| `docs/arch/04-03.md` | 4.3 切片之间的依赖（允许的方向） |
+| `docs/arch/04-04.md` | 4.4 预留切片 writing（Q5） |
+| `docs/arch/04-05.md` | 4.5 Markdown 阅读（markdown 切片，含 #### 4.5.1–4.5.8） |
+| `docs/arch/05.md` | 5. 依赖方向与禁止事项 |
+| `docs/arch/05-01.md` | 5.1 层间依赖图 |
+| `docs/arch/05-02.md` | 5.2 禁止事项（CI 强制或评审一票否决） |
+| `docs/arch/05-03.md` | 5.3 UI 组合：插槽而不是互相 import |
+| `docs/arch/06.md` | 6. 文件与函数大小 |
+| `docs/arch/07.md` | 7. 引擎抽象接口 |
+| `docs/arch/07-00.md` | 7.0 模型能力的默认来源：API 优先（Wisdom 2026-10-30 18:44） |
+| `docs/arch/07-01.md` | 7.1 总体流水线 |
+| `docs/arch/07-02.md` | 7.2 Python 侧引擎接口（worker 内部） |
+| `docs/arch/07-03.md` | 7.3 TS 侧端口（application 层） |
+| `docs/arch/07-04.md` | 7.4 质量评估的部署（Q9） |
+| `docs/arch/07-05.md` | 7.5 公式候选优先级链（Q1、Q4） |
+| `docs/arch/07-06.md` | 7.6 公式来源模块 formula-source（Q4） |
+| `docs/arch/07-07.md` | 7.7 云 OCR 识别来源（Q1） |
+| `docs/arch/07-08.md` | 7.8 预算闸门：所有付费调用先预留（架构评审 P0-3） |
+| `docs/arch/07-09.md` | 7.9 服务商适配层（Wisdom 2026-10-30 19:45、19:46，含 #### 7.9.1–7.9.8） |
+| `docs/arch/07-10.md` | 7.10 阅读顺序（Wisdom 2026-10-30 21:12） |
+| `docs/arch/07-11.md` | 7.11 BabelDOC 借鉴与防御（Wisdom 2026-10-30 21:12） |
+| `docs/arch/07-12.md` | 7.12 处理路线：独立积木与声明式组合（Wisdom 2026-10-30 22:41、22:44、22:45） |
+| `docs/arch/07-13.md` | 7.13 评分、路线、外发与预算的汇合（Wisdom 2026-10-31 13:14） |
+| `docs/arch/08.md` | 8. 数据模型与存储 |
+| `docs/arch/08-01.md` | 8.1 权威数据 |
+| `docs/arch/08-02.md` | 8.2 桌面存储布局 |
+| `docs/arch/08-03.md` | 8.3 配置与密钥隔离 |
+| `docs/arch/08-04.md` | 8.4 版本与升级（架构评审 P1-9） |
+| `docs/arch/09.md` | 9. IPC 协议（renderer ↔ main） |
+| `docs/arch/09-01.md` | 9.1 v2 桌面端 UI 新增 seam（已采纳，ADR 0001，Wisdom 2026-11-04） |
+| `docs/arch/10.md` | 10. Python worker 协议（oi-parse/1） |
+| `docs/arch/10-01.md` | 10.1 传输 |
+| `docs/arch/10-02.md` | 10.2 端点 |
+| `docs/arch/10-03.md` | 10.3 worker 内部结构 |
+| `docs/arch/10-04.md` | 10.4 协议版本与升级（架构评审 P1-9） |
+| `docs/arch/10-05.md` | 10.5 本机 worker 的监管状态机（架构评审 P2-6） |
+| `docs/arch/11.md` | 11. 可观测性 |
+| `docs/arch/12.md` | 12. 测试策略 |
+| `docs/arch/12-01.md` | 12.1 评测记录 |
+| `docs/arch/13.md` | 13. CI 门禁 |
+| `docs/arch/14.md` | 14. v1 教训：一个 16,641 行的文件是怎么长出来的，v2 怎么从制度上防止 |
+| `docs/arch/14-01.md` | 14.1 发生了什么（标题内已有 v1 审查链接） |
+| `docs/arch/14-02.md` | 14.2 造成的问题 |
+| `docs/arch/14-03.md` | 14.3 根因 |
+| `docs/arch/14-04.md` | 14.4 v2 的制度性防线 |
+| `docs/arch/15.md` | 15. 开发环境 |
+| `docs/arch/15-01.md` | 15.1 版本 |
+| `docs/arch/15-02.md` | 15.2 云端 Agent 的 environment.json |
+| `docs/arch/15-03.md` | 15.3 常用命令（M1 落地后） |
+| `docs/arch/15-04.md` | 15.4 开发机与密钥（API 优先，Wisdom 2026-10-30 18:44） |
+| `docs/arch/16.md` | 16. 决策记录与变更 |
 
 ## 比对脚本与指针
 
