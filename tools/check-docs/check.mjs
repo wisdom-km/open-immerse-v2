@@ -6,9 +6,11 @@ import { listMarkdown } from "./list-files.mjs";
 import { readText } from "./read-text.mjs";
 import { render } from "./report.mjs";
 import { statusFindings } from "./status.mjs";
+import { treePathFindings } from "./tree-paths.mjs";
 import { verbatimFindings } from "./verbatim.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const treeDoc = "docs/arch/03.md";
 
 function option(argv, name) {
   const index = argv.indexOf(name);
@@ -20,6 +22,7 @@ function option(argv, name) {
 }
 
 export function run(argv, stdout, cwd) {
+  const reportOnly = argv.includes("--report-only");
   const root = option(argv, "--root");
   const verbatim =
     option(argv, "--verbatim") ?? path.join(here, "verbatim.json");
@@ -31,12 +34,19 @@ export function run(argv, stdout, cwd) {
         ...linkFindings(files, base, read),
         ...statusFindings(files, read),
         ...verbatimFindings(base, verbatim),
+        ...(files.includes(treeDoc)
+          ? treePathFindings(read(treeDoc), base)
+          : []),
       ]
     : [{ kind: "git-list", file: ".", detail: "git ls-files 失败" }];
-  stdout.write(render(findings));
+  stdout.write(render(findings, reportOnly));
+  if (reportOnly || findings.length === 0) {
+    return 0;
+  }
+  return 1;
 }
 
 const invoked = process.argv[1];
 if (invoked && import.meta.url === pathToFileURL(invoked).href) {
-  run(process.argv.slice(2), process.stdout, process.cwd());
+  process.exitCode = run(process.argv.slice(2), process.stdout, process.cwd());
 }

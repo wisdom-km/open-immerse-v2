@@ -1,3 +1,5 @@
+状态：现行
+
 # 门禁失败时的改正说明
 
 工具原来的报错保持原样。失败时再在后面追加一段说明：编号、问题、改法、规格位置。文案只在 `tools/gate-remediation/catalog.json`。脚本调用 `tools/gate-remediation/format.mjs` 或 `run.mjs`，不另写一份。下表由这个文件生成，测试核对表和脚本没有漂移。

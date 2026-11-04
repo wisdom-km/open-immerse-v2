@@ -28,7 +28,7 @@ it("accepts a pair when the bytes match", () => {
 it("reports a mismatch when the bytes differ", () => {
   const result = run("mismatch.json");
   const out = text(result);
-  expect(result.status).toBe(0);
+  expect(result.status).toBe(1);
   expect(out).toContain("verbatim-mismatch\tdiff-a.md\tdiff-b.md");
   expect(out).toContain("verbatim: 1");
 });
@@ -44,6 +44,6 @@ it("accepts a marked span when the bytes outside it differ", () => {
 it("reports a missing marker when the end line is absent", () => {
   const result = run("marker.json");
   const out = text(result);
-  expect(result.status).toBe(0);
+  expect(result.status).toBe(1);
   expect(out).toContain("verbatim-marker\tmark-a.md\tmark-missing.md");
 });

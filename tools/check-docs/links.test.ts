@@ -37,7 +37,7 @@ process.stdout.write(slugify(${JSON.stringify(heading)}));
 it("reports a missing file when the link target is absent", () => {
   const result = run(["--root", fixture("missing-file")]);
   const out = text(result);
-  expect(result.status).toBe(0);
+  expect(result.status).toBe(1);
   expect(out).toContain("missing-file\tpage.md\tmissing.md");
   expect(out).toContain("missing-file\tpage.md\t/etc/passwd");
   expect(out).toContain("missing-file\tpage.md\t../outside.md");
@@ -50,7 +50,7 @@ it("reports a missing file when the link target is absent", () => {
 it("skips an external link when the scheme is https", () => {
   const result = run(["--root", fixture("missing-file")]);
   const out = text(result);
-  expect(result.status).toBe(0);
+  expect(result.status).toBe(1);
   expect(out).not.toContain("example.invalid");
   expect(out).not.toContain("mailto:");
 });
@@ -58,7 +58,7 @@ it("skips an external link when the scheme is https", () => {
 it("reports a missing anchor when the slug is absent", () => {
   const result = run(["--root", fixture("missing-anchor")]);
   const out = text(result);
-  expect(result.status).toBe(0);
+  expect(result.status).toBe(1);
   expect(out).toContain("missing-anchor\tpage.md\t#no-such");
   expect(out).toContain("missing-anchor\tpage.md\tother.md#absent");
   expect(out).toContain("missing-anchor\tpage.md\t#not-a-heading");
