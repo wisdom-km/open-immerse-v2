@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { copyGenerators } from "./copy.mjs";
+import { generatePreloadSet } from "./preload-generate.mjs";
 import { generateProtocol } from "./protocol.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
@@ -20,6 +21,11 @@ const manifestPath = path.resolve(
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const generators = manifest.generators ?? [];
 await copyGenerators(root, generators);
+for (const generator of generators) {
+  if (generator.kind === "preload") {
+    await generatePreloadSet(root, generator);
+  }
+}
 
 const schemaFlag = process.argv.includes("--protocol-schema");
 const schemaPath = schemaFlag
