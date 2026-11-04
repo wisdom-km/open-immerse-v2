@@ -68,6 +68,6 @@
 | 2026-11-04 16:57 | 「按你的建议执行。」 | #24 开工：RULES §9 与 PR 模板加「UI 改动合入前须由 Loom 或 Wisdom 上手验收」；改 RULES 所需的 compare-spec-bytes amendment 一并批准；不改 CI、不加依赖 | Issue #24 | https://github.com/wisdom-km/open-immerse-v2/issues/24#issuecomment-6626807241 |
 | 2026-11-04 17:28 | 「按推荐」 | #146：`fixtures/providers/`、`fixtures/parsing-rules/`、`fixtures/corpus/` 三行标「计划中」，manifest 加对应替换，然后去掉 check-docs 的 `continue-on-error` | PR #146 | https://github.com/wisdom-km/open-immerse-v2/pull/146#issuecomment-6627414506 |
 | 2026-11-04 18:28 | 「批准合入146」 | 合入 #146 @516e3d4（Refs #28）。CI 转绿后合入 | PR #146 | https://github.com/wisdom-km/open-immerse-v2/pull/146#issuecomment-6628433888 |
-| 2026-11-04 18:33 | 「按推荐吧」 | #28 第 3 项可以改 `.github/workflows/ci.yml`。在 `node` job 的 Check 后面加一步，`continue-on-error: true`，只报告不拦合入。首跑「代码有、图上没有」的边本 PR 不修，只列出来。不加依赖，不改 `package.json` / `pnpm-lock.yaml` | Issue #28、本 PR | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6628516445 |
+| 2026-11-04 18:33 | 「按推荐吧」 | #28 第 3 项可以改 `.github/workflows/ci.yml`。在 `node` job 的 Check 后面加一步，`continue-on-error: true`，只报告不拦合入。首跑「代码有、图上没有」的边本 PR 不修，只列出来。不加依赖，不改 `package.json` / `pnpm-lock.yaml` | Issue #28、PR #149 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6628516445 |
 
 共 61 条批准 + 1 条反馈记录 + 1 条决定
