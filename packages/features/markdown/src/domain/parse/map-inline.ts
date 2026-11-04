@@ -4,6 +4,7 @@ import { toHtmlBlocked } from "../html-policy.js";
 import { cutText, type Piece, type SyntaxCut } from "./cut-text.js";
 import type { MdastNode } from "./mdast-node.js";
 import { nodeSpan } from "./node-span.js";
+import { preferMath } from "./prefer-math.js";
 
 type InlineState = Readonly<{
   source: string;
@@ -47,11 +48,16 @@ export function mapPhrasing(
   }
 }
 
+export function mapPhrasingSequence(
+  nodes: readonly MdastNode[],
+  state: InlineState,
+): readonly Piece[] {
+  const pieces = nodes.flatMap((child) => mapPhrasing(child, state));
+  return preferMath(pieces, state.source, state.cuts);
+}
+
 function childrenOf(node: MdastNode, state: InlineState): readonly MdInline[] {
-  const pieces = (node.children ?? []).flatMap((child) =>
-    mapPhrasing(child, state),
-  );
-  return pieces.map(asInline);
+  return mapPhrasingSequence(node.children ?? [], state).map(asInline);
 }
 
 export function asInline(piece: Piece): MdInline {

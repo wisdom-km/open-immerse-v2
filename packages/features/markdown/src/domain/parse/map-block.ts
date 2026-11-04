@@ -10,7 +10,7 @@ import { calloutType } from "../callout-syntax.js";
 import { headingSlug } from "../heading-slug.js";
 import { toHtmlBlocked } from "../html-policy.js";
 import type { LiftMath, Piece } from "./cut-text.js";
-import { asInline, inlineText, mapPhrasing } from "./map-inline.js";
+import { asInline, inlineText, mapPhrasingSequence } from "./map-inline.js";
 import type { MdastNode } from "./mdast-node.js";
 import { nodeSpan } from "./node-span.js";
 import type { ReadState } from "./read-state.js";
@@ -43,10 +43,7 @@ export function mapFlow(node: MdastNode, state: ReadState): readonly MdBlock[] {
 }
 
 function mapParagraph(node: MdastNode, state: ReadState): MdBlock[] {
-  const pieces = (node.children ?? []).flatMap((child) =>
-    mapPhrasing(child, state),
-  );
-  return splitPieces(pieces);
+  return splitPieces(mapPhrasingSequence(node.children ?? [], state));
 }
 
 function splitPieces(pieces: readonly Piece[]): MdBlock[] {
@@ -90,9 +87,7 @@ function mapHeading(node: MdastNode, state: ReadState): MdBlock[] {
   if (level === undefined) {
     return mapParagraph(node, state);
   }
-  const inline = (node.children ?? []).flatMap((child) =>
-    mapPhrasing(child, state).map(asInline),
-  );
+  const inline = mapPhrasingSequence(node.children ?? [], state).map(asInline);
   const text = inline.map((item) => inlineText(item)).join("");
   const id = headingSlug(text, state.used);
   state.used.add(id);
@@ -170,9 +165,7 @@ function mapTable(node: MdastNode, state: ReadState): MdBlock {
 }
 
 function mapCell(node: MdastNode, state: ReadState): readonly MdInline[] {
-  return (node.children ?? []).flatMap((child) =>
-    mapPhrasing(child, state).map(asInline),
-  );
+  return mapPhrasingSequence(node.children ?? [], state).map(asInline);
 }
 
 function alignOf(value: "left" | "right" | "center" | null): MdTableAlign {

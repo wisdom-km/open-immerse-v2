@@ -1,7 +1,6 @@
 import { fromMarkdown } from "mdast-util-from-markdown";
 import type { MdBlock, MdContext, MdHeading } from "@oi/contracts";
 
-import { absorbListMath } from "./absorb-list-math.js";
 import type { SyntaxCut } from "./cut-text.js";
 import { markdownExtensions } from "./extensions.js";
 import { mapFlow } from "./map-block.js";
@@ -42,5 +41,5 @@ export function readMarkdown(
   const mapped = (root.children ?? []).flatMap((child) =>
     mapFlow(child, state),
   );
-  return { blocks: absorbListMath(mapped, state), headings };
+  return { blocks: mapped, headings };
 }

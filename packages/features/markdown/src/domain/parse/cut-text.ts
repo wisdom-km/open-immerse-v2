@@ -45,7 +45,7 @@ function wikiPiece(cut: WikiCut): MdInline {
   };
 }
 
-function pieceFor(source: string, cut: SyntaxCut): Piece {
+export function cutPiece(source: string, cut: SyntaxCut): Piece {
   if (cut.kind === "wiki") {
     return wikiPiece(cut);
   }
@@ -79,7 +79,7 @@ function splitText(
       continue;
     }
     pushText(source, pieces, cursor, cut.src.start);
-    pieces.push(pieceFor(source, cut));
+    pieces.push(cutPiece(source, cut));
     cursor = cut.src.end;
   }
   pushText(source, pieces, cursor, src.end);

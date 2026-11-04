@@ -101,27 +101,26 @@ it("reads inline and display math and blocks an untrusted command", () => {
   const blocked = extractMath("$\\href{x}{y}$");
   expect(blocked[0]?.blocked).toBe("untrusted_command");
   const linked = "$\\href{https://example.com}{x}$";
+  const linkedMath = extractMath(linked);
+  expect(linkedMath.length).toBeGreaterThan(0);
   expect(
-    extractMath(linked).every((item) => item.blocked === "untrusted_command"),
+    linkedMath.every((item) => item.blocked === "untrusted_command"),
   ).toBe(true);
+  for (const context of ["note", "translation", "answer"] as const) {
+    const block = render(linked, context).blocks[0];
+    expect(block?.t).toBe("paragraph");
+    if (block?.t !== "paragraph") {
+      continue;
+    }
+    const math = block.inline.filter((item) => item.t === "math");
+    expect(math).toHaveLength(1);
+    expect(math[0]?.blocked).toBe("untrusted_command");
+    roundTrip(linked, context);
+  }
   roundTrip(source);
-  roundTrip(linked);
 });
 
-it("keeps a display formula inside the preceding list item", () => {
-  const source = "1. 第一\n\n$$\na\n$$\n2. 第二";
-  const doc = render(source);
-  expect(doc.blocks).toHaveLength(1);
-  const list = doc.blocks[0];
-  expect(list?.t).toBe("list");
-  if (list?.t !== "list") {
-    return;
-  }
-  expect(list.items).toHaveLength(2);
-  expect(list.start).toBeUndefined();
-  expect(list.items[0]?.blocks.map((block) => block.t)).toContain("math");
-  expect(list.items[1]?.blocks.map((block) => block.t)).not.toContain("math");
-  roundTrip(source);
+it("leaves unpaired dollars as text", () => {
   const unpaired = "前文 $$ 后文\n\n价格 $5 没有配对";
   expect(extractMath(unpaired)).toEqual([]);
   roundTrip(unpaired);
@@ -156,6 +155,7 @@ it("resolves images and wikilinks only outside translation context", () => {
     expect(linked.inline.map((item) => item.t)).toContain("wikilink");
   }
   const plain = render(wiki, "translation").blocks[0];
+  expect(plain?.t).toBe("paragraph");
   if (plain?.t === "paragraph") {
     expect(plain.inline.every((item) => item.t !== "wikilink")).toBe(true);
   }
