@@ -14,19 +14,15 @@ it("finds inline math and a list-owned display formula", () => {
   const cuts = mathCuts(source, skipRanges(source));
   expect(cuts).toHaveLength(1);
   const display = cuts[0];
-  if (!display) {
-    return;
-  }
-  expect(display.display).toBe(true);
-  expect(listOwned(source, display.src.start)).toBe(true);
+  expect(display).toBeDefined();
+  expect(display?.display).toBe(true);
+  expect(listOwned(source, display?.src.start ?? 0)).toBe(true);
   const inline = "行内 $x$ 与\n\n$$\ny\n$$";
   const both = mathCuts(inline, skipRanges(inline));
   expect(both.map((cut) => cut.display)).toEqual([false, true]);
   const owned = both[1];
-  if (!owned) {
-    return;
-  }
-  expect(listOwned(inline, owned.src.start)).toBe(false);
+  expect(owned).toBeDefined();
+  expect(listOwned(inline, owned?.src.start ?? 0)).toBe(false);
 });
 
 it("leaves unpaired dollars and highlight marks as plain text", () => {
