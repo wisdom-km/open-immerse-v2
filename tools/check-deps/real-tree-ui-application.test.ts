@@ -2,43 +2,41 @@ import { expect, it } from "vitest";
 
 import { remediationBlock } from "../gate-remediation/block.js";
 import {
-  cruiseRepo,
+  cruiseRoot,
   removeEmptyDir,
   removeProbe,
   writeProbe,
 } from "./real-tree-cruise.js";
-import { withRealTreeLock } from "./real-tree-lock.js";
+import { withWorktree } from "./real-tree-worktree.js";
 
 const application = "packages/features/jobs/src/application/_gate-use-job.ts";
 const ui = "packages/features/markdown/src/ui/_gate-ui-application.ts";
 
-function cleanup(): void {
-  removeProbe(application);
-  removeProbe(ui);
-  removeEmptyDir("packages/features/jobs/src/application");
-  removeEmptyDir("packages/features/markdown/src/ui");
+function cleanup(root: string): void {
+  removeProbe(root, application);
+  removeProbe(root, ui);
+  removeEmptyDir(root, "packages/features/jobs/src/application");
+  removeEmptyDir(root, "packages/features/markdown/src/ui");
 }
 
 it("rejects markdown ui when it imports the jobs application (G15)", () => {
-  withRealTreeLock(() => {
-    try {
-      writeProbe(application, "export const id = 1;\n");
-      writeProbe(
-        ui,
-        [
-          'import { id } from "../../../jobs/src/application/_gate-use-job.ts";',
-          "export const used = id;",
-          "",
-        ].join("\n"),
-      );
-      const failed = cruiseRepo();
-      expect(failed.status).not.toBe(0);
-      expect(failed.output).toContain("ui-through-seam");
-      expect(failed.output).toContain(remediationBlock("G15"));
-    } finally {
-      cleanup();
-    }
-    const passed = cruiseRepo();
+  withWorktree((root) => {
+    writeProbe(root, application, "export const id = 1;\n");
+    writeProbe(
+      root,
+      ui,
+      [
+        'import { id } from "../../../jobs/src/application/_gate-use-job.ts";',
+        "export const used = id;",
+        "",
+      ].join("\n"),
+    );
+    const failed = cruiseRoot(root);
+    expect(failed.status).not.toBe(0);
+    expect(failed.output).toContain("ui-through-seam");
+    expect(failed.output).toContain(remediationBlock("G15"));
+    cleanup(root);
+    const passed = cruiseRoot(root);
     expect(passed.status).toBe(0);
     expect(passed.output).not.toContain("gate-remediation:");
   });

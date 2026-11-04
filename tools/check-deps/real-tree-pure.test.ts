@@ -4,103 +4,91 @@ import { expect, it } from "vitest";
 
 import { remediationBlock } from "../gate-remediation/block.js";
 import {
-  cruiseRepo,
+  cruiseRoot,
   removeEmptyDir,
   removeProbe,
   writeProbe,
 } from "./real-tree-cruise.js";
-import { withRealTreeLock } from "./real-tree-lock.js";
+import { withWorktree } from "./real-tree-worktree.js";
 
-const purePath = path.resolve("packages/features/jobs/src/pure.ts");
+const pureRelative = "packages/features/jobs/src/pure.ts";
 const uiPure = "packages/features/jobs/src/ui/_gate-reads-pure.ts";
 const uiDomain = "packages/features/jobs/src/ui/_gate-reads-domain.ts";
 const application = "packages/features/jobs/src/application/_gate-pure-app.ts";
 
-function restorePure(original: string): void {
-  writeFileSync(purePath, original);
-}
-
-function expectPass(): void {
-  const passed = cruiseRepo();
+function expectPass(root: string): void {
+  const passed = cruiseRoot(root);
   expect(passed.status).toBe(0);
   expect(passed.output).not.toContain("gate-remediation:");
 }
 
-function expectRule(rule: string): void {
-  const failed = cruiseRepo();
+function expectRule(root: string, rule: string): void {
+  const failed = cruiseRoot(root);
   expect(failed.status).not.toBe(0);
   expect(failed.output).toContain(rule);
   expect(failed.output).toContain(remediationBlock("G15"));
 }
 
 it("accepts jobs ui when it imports this slice pure.ts", () => {
-  withRealTreeLock(() => {
-    try {
-      writeProbe(
-        uiPure,
-        [
-          'import { sameJobId } from "../pure.ts";',
-          "export const used = sameJobId;",
-          "",
-        ].join("\n"),
-      );
-      expectPass();
-    } finally {
-      removeProbe(uiPure);
-      removeEmptyDir("packages/features/jobs/src/ui");
-    }
-    expectPass();
+  withWorktree((root) => {
+    writeProbe(
+      root,
+      uiPure,
+      [
+        'import { sameJobId } from "../pure.ts";',
+        "export const used = sameJobId;",
+        "",
+      ].join("\n"),
+    );
+    expectPass(root);
+    removeProbe(root, uiPure);
+    removeEmptyDir(root, "packages/features/jobs/src/ui");
+    expectPass(root);
   });
 }, 120_000);
 
 it("rejects jobs pure.ts when it imports application (G15)", () => {
-  withRealTreeLock(() => {
+  withWorktree((root) => {
+    const purePath = path.join(root, pureRelative);
     const original = readFileSync(purePath, "utf8");
-    try {
-      writeProbe(application, "export const id = 1;\n");
-      writeFileSync(
-        purePath,
-        `${original}import { id } from "./application/_gate-pure-app.ts";\nexport const bad = id;\n`,
-      );
-      expectRule("pure-seam-stays-pure");
-    } finally {
-      restorePure(original);
-      removeProbe(application);
-      removeEmptyDir("packages/features/jobs/src/application");
-    }
-    expectPass();
+    writeProbe(root, application, "export const id = 1;\n");
+    writeFileSync(
+      purePath,
+      `${original}import { id } from "./application/_gate-pure-app.ts";\nexport const bad = id;\n`,
+    );
+    expectRule(root, "pure-seam-stays-pure");
+    writeFileSync(purePath, original);
+    removeProbe(root, application);
+    removeEmptyDir(root, "packages/features/jobs/src/application");
+    expectPass(root);
   });
 }, 120_000);
 
 it("rejects jobs pure.ts when it imports node:fs (G15)", () => {
-  withRealTreeLock(() => {
+  withWorktree((root) => {
+    const purePath = path.join(root, pureRelative);
     const original = readFileSync(purePath, "utf8");
-    try {
-      writeFileSync(purePath, `${original}import "node:fs";\n`);
-      expectRule("pure-seam-stays-pure");
-    } finally {
-      restorePure(original);
-    }
-    expectPass();
+    writeFileSync(purePath, `${original}import "node:fs";\n`);
+    expectRule(root, "pure-seam-stays-pure");
+    writeFileSync(purePath, original);
+    expectPass(root);
   });
 }, 120_000);
 
 it("rejects jobs ui when it imports this slice domain (G15)", () => {
-  withRealTreeLock(() => {
-    try {
-      writeProbe(
-        uiDomain,
-        [
-          'import { sameJobId } from "../domain/job-id.ts";',
-          "export const used = sameJobId;",
-          "",
-        ].join("\n"),
-      );
-      expectRule("ui-through-seam");
-    } finally {
-      removeProbe(uiDomain);
-      removeEmptyDir("packages/features/jobs/src/ui");
-    }
-    expectPass();
+  withWorktree((root) => {
+    writeProbe(
+      root,
+      uiDomain,
+      [
+        'import { sameJobId } from "../domain/job-id.ts";',
+        "export const used = sameJobId;",
+        "",
+      ].join("\n"),
+    );
+    expectRule(root, "ui-through-seam");
+    removeProbe(root, uiDomain);
+    removeEmptyDir(root, "packages/features/jobs/src/ui");
+    expectPass(root);
   });
 }, 120_000);

@@ -45,12 +45,14 @@ PRD §8 里本 issue 没有点名、本 PR 也不新做的样例，现有证明�
 - D5（2026-11-04）：G18 只读已提交的 `base...HEAD`。未提交的写入不会让它失败。证明放在本仓库的临时 worktree（完整树，含现有五个切片），在临时分支上提交探针，跑 `tools/check-one-slice/check.mjs`，再删分支与 worktree。不在功能分支上 `reset`，不改写已推送历史（N-01）。测试文件放在 `tools/check-one-slice/real-tree.test.ts`，与 G18 脚本放在一起。`tools/check-deps/real-tree-*.test.ts` 只放巡航用例。
 - D6（2026-11-04）：`pure.ts` 的边界用现行规则证明，不改 `build-rules.mjs`。能：本切片 `src/ui` 导入本切片 `pure.ts`（`ui-through-seam` 不禁 `pure.ts`）。不能：`pure.ts` 导入 `application`；`pure.ts` 导入 `node:fs`（`pure-seam-stays-pure` 的 `reachable` 与 shell IO）；本切片 `src/ui` 导入本切片 `domain`。`markdown-parser-not-in-renderer` 已在规则里，本 PR 不另造解析器探针。
 - D7（2026-11-04）：禁碰清单整份遵守。需要新的 remediation 目录条目或 `docs/spec-changelog.md` 行时只写进 PR 正文。`docs/ci-and-environment.md` 与 `docs/backlog.md` 不在 #125 的文件列表里，本 PR 改这两份。不改 `docs/approvals.md`。
+- D8（2026-11-04）：Forge 审查 PR #126 失败。CI 的 node job 里 G18 临时提交没有作者身份（exit 128），并行的 `tools/typecheck.mjs` 又看见写进真实切片目录的 `_gate-*` 和被改过的 `jobs/src/pure.ts`。D4 里「写进当前工作区」作废。巡航探针与 G18 一样只写临时 worktree，跑完删除。临时 `git commit` 使用 `-c user.name=oi-gate` 与 `-c user.email=oi-gate@example.com`，再加 `-c commit.gpgsign=false`。不改全局 config，也不写 worktree 的 local config（worktree 与主仓库共用 config）。`git worktree remove --force <path>` 用创建时的路径；失败时再用 realpath 对上 porcelain 里的路径（正斜杠、8.3 短路径）。
+- D9（2026-11-04）：Wisdom 2026-11-04 12:17 在 #35 说「按推荐吧」，采用选项 2。这覆盖 D2 里「不把 jobs 加进 workspace、用相对路径」以及 D8 末尾「相对导入先不动」。五个切片加入 `pnpm-workspace.yaml`（`packages/features/*`）。只有 `jobs` 的 package.json 声明 `"@oi/contracts": "workspace:*"`，因为目前只有它导入 contracts。`job-id.ts` 改为 `import { parseJobId, type JobId } from "@oi/contracts"`。不改 dependency-cruiser 规则，不加「禁止深层相对导入」的规则。`pnpm-lock.yaml` 随这次 workspace 变更更新。不改 `packages/contracts/**`，不另写解析器。审查要求把本分支 rebase 到 `origin/main@dd0630b`，因此用 `--force-with-lease` 更新已推送分支。D5 的「不在功能分支上 reset」仍然成立。
 
 ## 不改的文件
 
-`PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`AGENTS.md`、`docs/spec-changelog.md`、`tools/gate-remediation/catalog.json`、`docs/gate-remediation.md`、`docs/prd/**`、`docs/arch/**`、`tools/compare-spec-bytes/**`、`docs/approvals.md`、`packages/contracts/**`、`DESIGN.md`、`docs/design-principles.md`、`docs/design/**`、`.cursor/environment.json`、`.cursor/install.sh`、`.github/workflows/**`、`dependency-cruiser.config.mjs`、`tools/check-deps/build-rules.mjs`、`tools/check-deps/feature-edges.mjs`、`pnpm-lock.yaml`、`pnpm-workspace.yaml`、根 `package.json`。
+`PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`AGENTS.md`、`docs/spec-changelog.md`、`tools/gate-remediation/catalog.json`、`docs/gate-remediation.md`、`docs/prd/**`、`docs/arch/**`、`tools/compare-spec-bytes/**`、`docs/approvals.md`、`packages/contracts/**`、`DESIGN.md`、`docs/design-principles.md`、`docs/design/**`、`.cursor/environment.json`、`.cursor/install.sh`、`.github/workflows/**`、`dependency-cruiser.config.mjs`、`tools/check-deps/build-rules.mjs`、`tools/check-deps/feature-edges.mjs`、根 `package.json`。
 
-不新增运行时依赖。不写密钥。不改门禁上限，不往 allowlist 加豁免。
+`pnpm-workspace.yaml` 与 `pnpm-lock.yaml` 按 D9 改。不新增第三方运行时依赖。不写密钥。不改门禁上限，不往 allowlist 加豁免。不加深层相对导入的禁令。
 
 ## 要改的文件与热点声明
 
@@ -62,9 +64,13 @@ PRD §8 里本 issue 没有点名、本 PR 也不新做的样例，现有证明�
 | `tools/check-deps/real-tree-ingest.test.ts` | `jobs` 导入 `ingest` 的 `index.ts`。期望 `feature-dependency-matrix` 与 G5 remediation。删除后通过 | 否 |
 | `tools/check-deps/real-tree-cross-slice.test.ts` | `markdown` 导入 `jobs` 的 `domain/job-id.ts`。期望 `no-cross-feature-internals` 与 G5 remediation。删除后通过 | 否 |
 | `tools/check-deps/real-tree-pure.test.ts` | D6 的四条：能导入本切片 `pure.ts`；不能从 `pure.ts` 到 `application`；不能从 `pure.ts` 到 `node:fs`；不能从 `src/ui` 到本切片 `domain` | 否 |
-| `tools/check-deps/real-tree-lock.ts` | 探针期间的互斥。巡航与写文件在 `real-tree-cruise.ts`，避免每条用例各写一份 spawn | 否 |
+| `tools/check-deps/real-tree-lock.ts` | 串行化临时 worktree 的添加和删除。探针只写在 worktree 里 | 否 |
+| `tools/check-deps/real-tree-worktree.ts` | 建临时 worktree、带身份的提交、按路径或 realpath 删除 | 否 |
 | `tools/check-one-slice/real-tree.test.ts` | 临时 worktree。同一切片的 ui 与 domain 一次提交通过。再提交第二个切片的 `src` 则 G18 remediation。删掉后通过 | 否 |
-| `packages/features/jobs/src/domain/job-id.ts` | `JobId` 与 `parseJobId` 来自 contracts。`sameJobId` 比较两个 `JobId` | 否 |
+| `packages/features/jobs/src/domain/job-id.ts` | `JobId` 与 `parseJobId` 从 `@oi/contracts` 导入。`sameJobId` 比较两个 `JobId` | 否 |
+| `packages/features/jobs/package.json` | `"@oi/contracts": "workspace:*"` | 否 |
+| `pnpm-workspace.yaml` | 加上 `packages/features/*` | 否。D9 |
+| `pnpm-lock.yaml` | 跟上 workspace | 否。锁文件不进 G12 行数 |
 | `packages/features/jobs/src/index.ts`、`pure.ts` | 再导出 `sameJobId`、`parseJobId`、`JobId` | 否。二者是 seam，不是 G11 点名的装配根 |
 | `packages/features/jobs/test/core/job-id.test.ts` | 经 `index.ts` 取 `parseJobId` 与 `sameJobId`。相等为 true，不等为 false | 否 |
 | `packages/features/jobs/README.md` | 公开 API 写上再导出的 `JobId` | 否 |
@@ -95,26 +101,26 @@ PRD §8 里本 issue 没有点名、本 PR 也不新做的样例，现有证明�
 
 ## 真实树用例
 
-每条都在 `finally` 里删除探针。断言两段：写入时失败并含 `gate-remediation:` 块；删除后 `tools/check-deps/check.mjs` 或 `tools/check-one-slice/check.mjs` 退出码 0，且输出不含 `gate-remediation:`。
+探针写在临时 worktree 里，不写当前检出。`tools/check-deps/check.mjs` 用主仓库的脚本路径，cwd 是 worktree。断言两段：写入时失败并含 `gate-remediation:` 块；在同一 worktree 里删除后再跑，退出码 0，且输出不含 `gate-remediation:`。worktree 在 `finally` 里删除。
 
-探针文件名以 `_gate-` 开头，只在测试进程内存在。
+探针文件名以 `_gate-` 开头。
 
-1. UI 导入另一切片的 application：在 `markdown/src/ui/` 写入导入 `jobs/src/application/` 下探针的文件。规则名 `ui-through-seam`，remediation 为 G15。
-2. 导入 ingest：在 `jobs/src/domain/` 写入对 `ingest/src/index.ts` 的导入。`jobs` 的出边是空的。规则名 `feature-dependency-matrix`，remediation 为 G5。
-3. 跨切片内部：在 `markdown/src/domain/` 写入对 `jobs/src/domain/job-id.ts` 的导入。`markdown` → `jobs` 的 `index.ts` 是矩阵允许的，内部文件不是。规则名 `no-cross-feature-internals`，remediation 为 G5。
-4. `pure.ts`：按 D6。改 `pure.ts` 的用例先读出原文，`finally` 写回。
-5. G18：worktree 里先提交 `jobs` 的 ui 与 domain，对提交前的 SHA 跑检查，期望通过。再提交 `markdown` 的 `src`，期望 `more than one feature slice` 与 G18 remediation。`git reset --hard` 只发生在该 worktree。然后检查再次通过。
+1. UI 导入另一切片的 application：在 worktree 的 `markdown/src/ui/` 写入导入 `jobs/src/application/` 下探针的文件。规则名 `ui-through-seam`，remediation 为 G15。
+2. 导入 ingest：在 worktree 的 `jobs/src/domain/` 写入对 `ingest/src/index.ts` 的导入。`jobs` 的出边是空的。规则名 `feature-dependency-matrix`，remediation 为 G5。
+3. 跨切片内部：在 worktree 的 `markdown/src/domain/` 写入对 `jobs/src/domain/job-id.ts` 的导入。`markdown` → `jobs` 的 `index.ts` 是矩阵允许的，内部文件不是。规则名 `no-cross-feature-internals`，remediation 为 G5。
+4. `pure.ts`：按 D6。改的是 worktree 里的副本。绿跑之前把原文写回该副本。
+5. G18：同一 worktree 里先提交 `jobs` 的 ui 与 domain，对提交前的 SHA 跑检查，期望通过。再提交 `markdown` 的 `src`，期望 `more than one feature slice` 与 G18 remediation。提交带 `-c user.name` 与 `-c user.email`。`git reset --hard` 只发生在该 worktree。然后检查再次通过。
 
 ## 条目 3 的形状
 
 `packages/features/jobs/src/domain/job-id.ts`：
 
-- `export { parseJobId, type JobId } from "../../../../contracts/src/ids.js"`
+- `import { parseJobId, type JobId } from "@oi/contracts"`
 - `sameJobId(left: JobId, right: JobId): boolean` 仍是 `left === right`
 - `src/index.ts` 与 `src/pure.ts` 再导出这三项
 - core 测试只导入 `src/index.ts`。字符串经 `parseJobId` 变成 `JobId` 再比较
 
-`docs/ci-and-environment.md` 第 31 行改为：`jobs` 仍是没有出边的门禁样例，不是 §4.2 的任务状态机；`JobId` 来自 `packages/contracts/src/ids.ts`；复制生成器已删除；`generators` 为空时 `run.mjs` 仍生成协议。G6 那几句不动。
+`docs/ci-and-environment.md` 第 31 行改为：`jobs` 仍是没有出边的门禁样例，不是 §4.2 的任务状态机；`JobId` 从 `@oi/contracts` 导入；五个切片在 workspace 里；复制生成器已删除；`generators` 为空时 `run.mjs` 仍生成协议。G6 那几句不动。
 
 `docs/backlog.md` §4 加一行 #35：条目 1、4 已收口；条目 2、3 由本分支收口。
 

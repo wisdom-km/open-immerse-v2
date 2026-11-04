@@ -46,7 +46,7 @@ function acquireLock(): void {
   }
 }
 
-/** Serializes probes that write into the working tree. */
+/** Serializes temp worktree add and remove on this repo. */
 export function withRealTreeLock(run: () => void): void {
   acquireLock();
   try {

@@ -1,4 +1,4 @@
-import { parseJobId, type JobId } from "../../../../contracts/src/ids.js";
+import { parseJobId, type JobId } from "@oi/contracts";
 
 export { parseJobId };
 export type { JobId };
