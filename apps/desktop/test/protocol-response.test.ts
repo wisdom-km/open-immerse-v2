@@ -30,6 +30,7 @@ it("returns 405 when POST targets an html file inside the root", async () => {
   await withPage((root) => {
     const response = respond(root, "oi-app://app/index.html", "POST");
     expect(response.status).toBe(405);
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
   });
 });
 
@@ -37,6 +38,15 @@ it("returns 404 when the html file is missing", async () => {
   await withPage((root) => {
     const response = respond(root, "oi-app://app/missing.html", "GET");
     expect(response.status).toBe(404);
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+  });
+});
+
+it("returns 404 when the path escapes the root", async () => {
+  await withPage((root) => {
+    const response = respond(root, "oi-app://app/%2e%2e%2fsecret.html", "GET");
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
   });
 });
 
@@ -48,6 +58,7 @@ it("returns 404 when a directory link points outside the root", () => {
     symlinkSync(outside, path.join(root, "linked"), "junction");
     const response = respond(root, "oi-app://app/linked/secret.html", "GET");
     expect(response.status).toBe(404);
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
   } finally {
     rmSync(root, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });
@@ -68,5 +79,56 @@ it("returns 200 when GET reads an html file inside the root", async () => {
     expect(response.headers.get("content-security-policy")).toBe(
       CONTENT_SECURITY_POLICY,
     );
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+  });
+});
+
+it("returns 200 without a body when HEAD reads an html file", async () => {
+  await withPage(async (root) => {
+    const response = respond(root, "oi-app://app/index.html", "HEAD");
+    const body = new Uint8Array(await response.arrayBuffer());
+    expect(response.status).toBe(200);
+    expect(body.byteLength).toBe(0);
+    expect(response.headers.get("content-type")).toBe(
+      "text/html; charset=utf-8",
+    );
+    expect(response.headers.get("content-security-policy")).toBe(
+      CONTENT_SECURITY_POLICY,
+    );
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+  });
+});
+
+it("returns 200 when GET reads html with an uppercase extension", async () => {
+  const root = mkdtempSync(path.join(tmpdir(), "oi-app-"));
+  try {
+    writeFileSync(path.join(root, "INDEX.HTML"), PAGE);
+    const response = respond(root, "oi-app://app/INDEX.HTML", "GET");
+    const body = new Uint8Array(await response.arrayBuffer());
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe(
+      "text/html; charset=utf-8",
+    );
+    expect(body).toEqual(
+      new Uint8Array(readFileSync(path.join(root, "INDEX.HTML"))),
+    );
+    expect(response.headers.get("content-security-policy")).toBe(
+      CONTENT_SECURITY_POLICY,
+    );
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+it("returns 404 when the path is not an html document", async () => {
+  await withPage((root) => {
+    writeFileSync(path.join(root, "a.js"), "console.log(1)\n");
+    writeFileSync(path.join(root, "a.exe"), "x");
+    for (const name of ["a.js", "a.exe"]) {
+      const response = respond(root, `oi-app://app/${name}`, "GET");
+      expect(response.status).toBe(404);
+      expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    }
   });
 });
