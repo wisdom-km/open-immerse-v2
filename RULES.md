@@ -236,6 +236,7 @@ Wisdom 2026-10-30 23:56 在不改上面五条原文的前提下写死：核心�
 | 文档同步 | 改了规格的，同一 PR 改掉因此失真的其他规格句子和入口指针，并在规格变更记录里加一行。不把正文再抄进第二份文件 | §7；[docs/spec-changelog.md](./docs/spec-changelog.md) |
 | 自审 | 描述里用 §2 第 8 条的三列，只含这次碰到的规则 | §2 第 8 条 |
 | 现状理解 | 小任务有三行。超过 300 行或跨模块的，第一笔提交是执行计划，Forge 审查通过之前没有实现提交 | §2 第 9 条；[docs/exec-plans/TEMPLATE.md](./docs/exec-plans/TEMPLATE.md)；[docs/exec-plans/README.md](./docs/exec-plans/README.md) |
+| UI 上手验收 | 任务类型为「UI 改动」的 PR，合入前由 Loom 或 Wisdom 实际上手体验，并在 PR 里留下结论（通过 / 不通过 + 一句理由）。没有 UI 改动的写「不适用」 | 本节；[.github/PULL_REQUEST_TEMPLATE.md](./.github/PULL_REQUEST_TEMPLATE.md)「UI 上手验收」 |
 
 PR 仍先开 Draft（§2）。上表未齐就保持 Draft。Forge 审查通过之前不离开 Draft。合入由 Wisdom 决定（N-03）。
 
