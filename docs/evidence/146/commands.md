@@ -50,3 +50,47 @@ corepack pnpm exec vitest run tools/check-docs/
 退出码 0。5 个文件，25 个测试通过，类型错误 0。Vitest 5.0.5。
 
 没有跑 e2e，没有跑全量 `pnpm test` 或 `pnpm check`。
+
+## 2026-11-04 17:28 之后
+
+下面几条跑在 `979bb8d7db19482115d2a919e67cd2608b1551b3`。三个目录没有创建。
+
+### check-docs
+
+```
+node tools/check-docs/check.mjs
+```
+
+退出码 0。
+
+```
+check-docs: strict
+links: 0
+anchors: 0
+status: 0
+verbatim: 0
+tree: 0
+findings: 0
+```
+
+临时目录（未提交）里放 `docs/note.md`，链到不存在的 `no-such.md`，再 `node tools/check-docs/check.mjs --root <临时目录>`。退出码 1。输出含 `missing-file	docs/note.md	no-such.md` 与 `findings: 1`，首行 `check-docs: strict`。同一目录加 `--report-only` 时退出码 0，首行 `check-docs: report-only`。
+
+### compare-spec-bytes
+
+```
+node tools/compare-spec-bytes/compare.mjs
+```
+
+退出码 0。PRD 36 段、ARCHITECTURE 66 段、RULES 一段，对得上 `f8d5d01dc8af81b73689c7229c983192551fa6fe`。
+
+### eslint、prettier、vitest
+
+```
+corepack pnpm exec eslint --max-warnings 0 tools/check-docs/*.mjs tools/check-docs/*.test.ts
+corepack pnpm exec prettier --check tools/check-docs/check.mjs tools/check-docs/report.mjs tools/check-docs/*.test.ts
+corepack pnpm exec vitest run tools/check-docs/
+```
+
+退出码都是 0。Vitest 5 个文件，26 个测试通过。
+
+没有跑 e2e，没有跑全量 `pnpm test` 或 `pnpm check`。
