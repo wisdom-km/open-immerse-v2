@@ -62,10 +62,10 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 只提交本文件 |  | 本文件 |
-| 2 | `auth.py` 改为纯 ASGI；保留 `bearer_matches` 与 `authorization_failure`；不改 `app.py` |  |  |
-| 3 | 新增 `tests/api/test_auth_streaming.py`：第一块先到、错误令牌 401 且下游未被调用、非 HTTP 透传、该路径 0 条 `DeprecationWarning` |  |  |
-| 4 | 只跑交接列出的定向命令。不跑全量 pytest，不跑 `pnpm test`，不跑 `pnpm run check` |  | `docs/evidence/60/commands.md` |
+| 1 | 只提交本文件 | 第一笔只有本文件 | 本文件 |
+| 2 | `auth.py` 改为纯 ASGI；保留 `bearer_matches` 与 `authorization_failure`；不改 `app.py` | `LaunchBearerMiddleware` 不再继承 `BaseHTTPMiddleware`。非 HTTP 原样转发。HTTP 仍用 `authorization_failure`，通过时把原来的 `receive` / `send` 交给下游。`app.py` 未改 | `workers/parser/oi_worker/api/auth.py` |
+| 3 | 新增 `tests/api/test_auth_streaming.py`：第一块先到、错误令牌 401 且下游未被调用、非 HTTP 透传、该路径 0 条 `DeprecationWarning` | 三条测试都在这个文件里。路由只用 `add_api_route` 装在测试里的 `FastAPI()` 上。httpx `ASGITransport` 会等完整响应，所以客户端是测试里的 ASGI `send` | `workers/parser/tests/api/test_auth_streaming.py` |
+| 4 | 只跑交接列出的定向命令。不跑全量 pytest，不跑 `pnpm test`，不跑 `pnpm run check` | 已跑。带 `-W error::DeprecationWarning` 的整条命令退出码 2：收集 `test_app.py` 时 `starlette/testclient.py:51` 的既有 `BlockingPortal` 警告变成错误。去掉这个开关后 auth / streaming / app / health 为 29 passed。`test_auth.py`、`test_auth_streaming.py`、`test_health.py` 加 `-W error` 为 15 passed、0 warning | `docs/evidence/60/commands.md` |
 
 `test:core` 不适用（`package.json` 没有这个脚本）。
 
@@ -78,6 +78,8 @@
 | 分支用 `feature/m3-worker-asgi-auth-60` | 交接点名。RULES §2 的功能分支前缀也是 `feature/` | 2026-11-04 | 交接 |
 | 不改 backlog 第 83 行，不改 approvals 第 43 行 | 交接写明这两行由 Forge 之后的文档 PR 同步 | 2026-11-04 | 交接 |
 | 401 仍用现有 `authorization_failure`，不另开文件 | 职责还是启动令牌。`JSONResponse` 的 ASGI 调用不读请求体 | 2026-11-04 | 本计划 |
+| 流式测试不用 httpx `ASGITransport` 当客户端 | 0.28.1 的该传输要等 `app()` 整个返回才把块交给调用方，测不到「第一块先到」。测试里的 ASGI `send` 在下游还停着时就能看见第一块 | 2026-11-04 | 本计划 |
+| 不改 `test_app.py` 来消掉 `BlockingPortal` 警告 | 这条警告在改动前就有，来自 Starlette `TestClient`，不在本 PR 可改文件里。新测试断言自己的路径 0 条 `DeprecationWarning` | 2026-11-04 | 本计划 |
 
 ## 证据链接
 
