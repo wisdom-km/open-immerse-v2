@@ -17,3 +17,12 @@
 | --- | --- | --- |
 | `node tools/check-docs/check.mjs` | 0 | `check-docs: strict`。`links: 0`，`anchors: 0`，`status: 0`，`verbatim: 0`，`tree: 0`，`findings: 0` |
 | `node tools/compare-spec-bytes/compare.mjs` | 0 | `PRD.md` 36 段、`ARCHITECTURE.md` 66 段、`RULES.md` 跨度与 `f8d5d01dc8af81b73689c7229c983192551fa6fe` 一致。`68 path prefixes` |
+
+## 2026-11-04 Loom 复审（评论 6628967539）
+
+同一 PATH 与同一基线。只改方案里的错误对象 `detail`、快照表的 `jobs.list()`、DESIGN 行号、`not_configured`，以及 changelog 的 #148 摘要。未改 `docs/arch/**`、`RULES.md`、manifest、CI、DESIGN.md。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `node tools/check-docs/check.mjs` | 0 | `check-docs: strict`。`links: 0`，`anchors: 0`，`status: 0`，`verbatim: 0`，`tree: 0`，`findings: 0` |
+| `node tools/compare-spec-bytes/compare.mjs` | 0 | `PRD.md` 36 段、`ARCHITECTURE.md` 66 段、`RULES.md` 跨度与 `f8d5d01dc8af81b73689c7229c983192551fa6fe` 一致。`68 path prefixes` |

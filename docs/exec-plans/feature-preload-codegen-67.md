@@ -67,7 +67,8 @@ window.oi.jobs.cancel({ jobId }): Promise<Result<{ jobId: string }, JobsCancelEr
 | --- | --- |
 | `settings.onEgressConsentRequired` | `settings.getPendingEgressConsent` |
 | `edit.onUndoStateChanged` | `edit.getUndoState` |
-| `settings.dataDir.onRelocateProgress` 以及翻译、解析的进度 | `jobs.get({ jobId })`，返回下面的进度载荷 |
+| `settings.dataDir.onRelocateProgress` 以及翻译、解析的进度 | 已知 `jobId` 时用 `jobs.get({ jobId })`，返回下面的进度载荷 |
+| 重新打开任务浮层（DESIGN.md 第 343 行）、标题栏任务摘要（第 335 行），或回到迁移页时手里没有 `jobId` | `jobs.list()`，返回进度载荷的只读数组 |
 
 `edit.getUndoState` 的字段在 edit 的接口 PR 里定，与 `onUndoStateChanged` 的载荷相同。本方案不另造一份撤销状态。
 
@@ -75,9 +76,9 @@ window.oi.jobs.cancel({ jobId }): Promise<Result<{ jobId: string }, JobsCancelEr
 
 取消迁移不生成 `settings.dataDir.cancelRelocate`。`relocate` 返回 `jobId`，取消调用 `jobs.cancel({ jobId })`（[docs/arch/02-04.md](../arch/02-04.md)）。[docs/arch/02-05.md](../arch/02-05.md) 的 jobs 行写的是 `cancelJob`，拼写以后再对齐，本 PR 不改。
 
-返回值一律是 `Promise<Result<响应, 错误>>`。[packages/kernel/src/result.ts](../../packages/kernel/src/result.ts) 的 `Result` 是 `{ ok: true, value }` 或 `{ ok: false, error }`。错误对象只有 `code` 与 `retryable`。`retryable` 是该错误码在描述符里的静态布尔值，router 原样抄进 `Result`，UI 不自己判断能不能重试。没有 `message` 字段。处理器抛出的原始 `Error.message` 只进入日志，供诊断包使用；写入前按 [docs/arch/11.md](../arch/11.md) 去掉绝对路径。renderer 只看到 `code` 与 `retryable`。[docs/arch/02-02.md](../arch/02-02.md) 写明 `handle` 抛出的错误到 renderer 只剩 `message`，所以 router 必须接住异常，不能让它穿过 IPC。
+返回值一律是 `Promise<Result<响应, 错误>>`。[packages/kernel/src/result.ts](../../packages/kernel/src/result.ts) 的 `Result` 是 `{ ok: true, value }` 或 `{ ok: false, error }`。错误对象的固定字段是 `code` 与 `retryable`。个别码再带 `detail`，字段只来自该码在描述符里的 schema，并且不含路径、不含文件名。`sender_rejected`、`invalid_payload`、`handler_threw` 不带 `detail`。`retryable` 是该错误码在描述符里的静态布尔值，router 原样抄进 `Result`，UI 不自己判断能不能重试。没有 `message` 字段。处理器抛出的原始 `Error.message` 只进入日志，供诊断包使用；写入前按 [docs/arch/11.md](../arch/11.md) 去掉绝对路径。renderer 看到的是 `code`、`retryable`，以及该码声明了的 `detail`。[docs/arch/02-02.md](../arch/02-02.md) 写明 `handle` 抛出的错误到 renderer 只剩 `message`，所以 router 必须接住异常，不能让它穿过 IPC。
 
-`sender_rejected` 与 `invalid_payload` 的 `retryable` 为 `false`。`handler_threw` 的 `retryable` 为 `true`。这三类都是程序错误：UI 用同一句就地文案「操作没有完成 · 导出诊断包」，文案由 `code` 映射。`retryable` 为 `false` 时不提供重试。`handler_threw` 为 `true` 时可以重试。导出诊断包走已有的诊断命令，不把日志正文放进 `Result`。
+`sender_rejected` 与 `invalid_payload` 的 `retryable` 为 `false`。`handler_threw` 的 `retryable` 为 `true`。这三类都是程序错误，描述符不写 `detail`：UI 用同一句就地文案「操作没有完成 · 导出诊断包」，文案由 `code` 映射。`retryable` 为 `false` 时不提供重试。`handler_threw` 为 `true` 时可以重试。导出诊断包走已有的诊断命令，不把日志正文放进 `Result`。
 
 ARCH §9 的四项到类型的映射：
 
@@ -85,7 +86,7 @@ ARCH §9 的四项到类型的映射：
 | --- | --- | --- |
 | 请求 schema | `request`（TypeBox，仓库已有 `@sinclair/typebox` 0.34.52） | 方法参数 |
 | 响应 schema | `response` | `Result` 的 `value` |
-| 错误码集合 | `errors`：`{ code, retryable }[]`，`code` 为 snake_case | `Result` 的 `error` 是 `{ code, retryable }`；`retryable` 是该码的字面量 |
+| 错误码集合 | `errors`：`{ code, retryable, detail? }[]`。`code` 为 snake_case。`detail` 可选，是该码的 TypeBox schema，字段不含路径。不写 `detail` 时错误对象只有 `code` 与 `retryable`。三个传输码不写 `detail` | `Result` 的 `error` 是 `{ code, retryable }`，再交叉该码的 `detail`；`retryable` 是该码的字面量 |
 | 是否幂等 | `idempotent: boolean` | 注册表上的只读标记，并写进该方法的生成注释。不自动重试 |
 
 幂等不触发自动重试。[RULES.md](../../RULES.md) §1.1 禁止无上限重试。重复调用的后果仍由用例决定：`answerEgressConsent` 对同一 `requestId` 第二次返回 `unknown_request`，这是 [docs/arch/07-00.md](../arch/07-00.md) 已写的业务码，不是 preload 的策略。`idempotent: true` 只表示「同样的请求再来一次，用例自己保证结果不重复副作用」。Q4 仍记录登记位置的三个选项；18:50 没有改「不自动重试」。Loom 审查第 10 条保留这一点。
@@ -96,13 +97,14 @@ ARCH §9 的四项到类型的映射：
 | --- | --- | --- |
 | `not_found` | false | 资源不存在。`docs/arch/09-01.md` 第 13 行现写 `not-found`，以后改成这个码 |
 | `missing` | false | `library.checkSource` 已用。与 `not_found` 不是同一个码 |
+| `not_configured` | false | 未选服务。DESIGN.md 第 633、644 行已用这个名字。就地去设置，不重试 |
 | `consent_required` | false | 未作答或尚未同意 |
 | `consent_not_granted` | false | 撤回时没有已同意记录 |
 | `budget_exhausted` | false | 就地去改上限，不把这一次调用标成可重试 |
 | `network` | true | DESIGN 已有「网络问题 · 重试」 |
-| `offline` | true | 与 `network` 并列，本方案不合并 |
+| `offline` | true | 与 `network` 并列，本方案不合并。DESIGN 只有「网络问题」一句。`offline` 的文案留给 DESIGN 下次修订，本 PR 不写 |
 | `cancelled` | false | 用户已取消 |
-| `insufficient_space` | false | 载荷只有 `requiredBytes` 与 `availableBytes`，对应 [docs/arch/08-02.md](../arch/08-02.md) 的 1.2 倍，不带路径 |
+| `insufficient_space` | false | `detail` 只有 `requiredBytes` 与 `availableBytes`，对应 [docs/arch/08-02.md](../arch/08-02.md) 的 1.2 倍，不带路径 |
 | `model_error` | true | DESIGN 已有「模型出错 · 重试」 |
 | `check_failed` | true | DESIGN 已有「校验没过 · 重试」 |
 | `unknown_request` | false | settings 外发已有 |
@@ -133,7 +135,7 @@ ARCH §9 的四项到类型的映射：
 | `channel` | `"settings.answerEgressConsent"` 或 `"settings.dataDir.get"` |
 | `kind` | `"command"` 或 `"event"` |
 | `request` / `response` 或事件的 `payload` | TypeBox schema |
-| `errors` | `{ code, retryable }[]`。`code` 为 snake_case |
+| `errors` | `{ code, retryable, detail? }[]`。`detail` 可选，无路径字段。三个传输码不写 `detail` |
 | `idempotent` | 仅 command。事件不填 |
 | `expose` | `false` 时生成器与 router 都忽略 |
 | `transport` | `"invoke"`（默认）或 `"dropped-file"` |
@@ -186,7 +188,7 @@ G12：只改 `packages/contracts/` 时非生成行数上限是 200（`tools/chec
 
 生成文件按 [docs/arch/06.md](../arch/06.md) 不计行数，生成器 PR 要在 `tools/check-file-size/allowlist.json` 的 `ignore` 里登记路径和理由。这是 `ignore`，不是要 ADR 到期日的 `exemptions`。G12 的 `generatedPrefixes` 今天只有 `workers/parser/oi_worker/protocol/`。preload 生成物仍计入 600 行。生成器 PR 若因此超过 600，正文写 `G12:`。不在那个 PR 里改 `tools/check-pr-size/check.mjs`（N-08）。要不要把 preload 路径加入 G12 的生成前缀，另案，本方案不实施。
 
-main 端 `ipc-router.ts` 手写，不生成。它做这些事：校验发送方是本应用窗口的 frame，且页面来源是 `oi-app://`（[docs/arch/09.md](../arch/09.md)、[docs/arch/01.md](../arch/01.md)）；用 schema 校验载荷；调用装配根注入的处理器；捕获异常并收成只有 `code` 与 `retryable` 的 `Result`。原始 `message` 只写入日志，并先去掉绝对路径。处理器仍是各切片的 `adapters/ipc-handlers.ts`，只做转接（F-02、F-15）。router 不写业务分支。`composition-root.ts` 是 G11 具名热点，接上 router 的改动不超过 30 行。
+main 端 `ipc-router.ts` 手写，不生成。它做这些事：校验发送方是本应用窗口的 frame，且页面来源是 `oi-app://`（[docs/arch/09.md](../arch/09.md)、[docs/arch/01.md](../arch/01.md)）；用 schema 校验载荷；调用装配根注入的处理器；捕获异常并收成 `{ code: "handler_threw", retryable: true }`，不带 `detail`。原始 `message` 只写入日志，并先去掉绝对路径。处理器仍是各切片的 `adapters/ipc-handlers.ts`，只做转接（F-02、F-15）。router 不写业务分支。`composition-root.ts` 是 G11 具名热点，接上 router 的改动不超过 30 行。
 
 e2e 的 `JSON.stringify(window.oi) === "{}"` 在值全是函数时仍然成立，因为 `JSON.stringify` 会丢掉函数。生成器 PR 要另加一条按键名列表的断言，不能只留这一条。那是实现 PR 的测试，本 PR 不改 e2e。
 
@@ -242,7 +244,7 @@ Q5. `ci.yml` 第 212 行的硬编码 vitest 列表怎么处理？
 2. 在生成器 PR 里把新文件加进第 212 行。那一行属于 `worker-health`，不是 preload 的家，而且本系列不改 CI。
 3. 另开 PR，把第 212 行改成目录。可以以后做。不做它，preload 测试也不会缺跑。
 
-Q6. 已定（2026-11-04 18:50）。传输失败进入每条命令的错误联合，对象只有 `code` 与 `retryable`。`sender_rejected` 与 `invalid_payload` 的 `retryable` 为 `false`。`handler_threw` 为 `true`。原始 `message` 只进日志，不进 `Result`。router 不把异常抛过 IPC。
+Q6. 已定（2026-11-04 18:50）：传输失败进入每条命令的错误联合。固定字段是 `code` 与 `retryable`。`sender_rejected` 与 `invalid_payload` 的 `retryable` 为 `false`。`handler_threw` 为 `true`。这三个传输码不带 `detail`。业务码可以带描述符里写明的、不含路径的 `detail`，例如 `insufficient_space` 的 `requiredBytes` 与 `availableBytes`。原始 `message` 只进日志，不进 `Result`。router 不把异常抛过 IPC。
 
 ## 以后改规格的行
 
@@ -253,10 +255,10 @@ compare-spec-bytes 比对的是拆分基线里的 PRD、ARCHITECTURE、RULES 字
 | [docs/arch/09.md](../arch/09.md) 通道命名那一条 | `<feature>.<command>` 与 `<feature>.on<Event>` | 允许 `<feature>.<子域>.<command>` 与 `<feature>.<子域>.on<Event>` |
 | [docs/arch/09-01.md](../arch/09-01.md) 第 12 行 | `cancelRelocate()`；「进度事件只含字节数」 | 取消是 `jobs.cancel({ jobId })`。进度载荷是 `{jobId, done, total, unit}`，迁移的 `unit` 为 `bytes`，不含路径 |
 | [docs/arch/09-01.md](../arch/09-01.md) 第 13 行 | 返回 `not-found` | 返回 `not_found` |
-| [docs/arch/02-05.md](../arch/02-05.md) jobs 行 | `cancelJob`、`listJobs`、`onJobEvent` | 与 §2.4 的 `jobs.cancel` 以及本方案的 `jobs.get` 对齐拼写 |
+| [docs/arch/02-05.md](../arch/02-05.md) jobs 行 | `cancelJob`、`listJobs`、`onJobEvent` | 与 §2.4 的 `jobs.cancel` 以及本方案的 `jobs.get`、`jobs.list` 对齐拼写 |
 | [RULES.md](../../RULES.md) §8.4 交接模板里的 seam 例子 | `<切片>.<操作>` | 补上可选子域：`<切片>.<可选子域>.<操作>` |
 
-[DESIGN.md](../../DESIGN.md) 第 378–380、574、590 行已经用 `check_failed`、`network`、`model_error`、`budget_exhausted`、`consent_required`。这些码与上表一致，DESIGN 本 PR 不改（N-10）。
+[DESIGN.md](../../DESIGN.md) 第 378 行用 `check_failed`；第 387 行用 `consent_required`；第 640、644 行用 `network`、`model_error`、`budget_exhausted`（第 644 行还有 `consent_required`、`not_configured`）。第 574、590 行是中文文案，没有这些码名。这些码与上表一致，DESIGN 本 PR 不改（N-10）。`offline` 的一句文案同样留给 DESIGN，见上面的码表。
 
 ## 来源核对
 
