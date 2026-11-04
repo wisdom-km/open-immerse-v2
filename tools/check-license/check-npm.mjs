@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
 
 import { writeRemediation } from "../gate-remediation/format.mjs";
+import { spawnCommand } from "../spawn-bin/spawn-bin.mjs";
 import { licenseAllowed } from "./policy.mjs";
 
 function packagesFromPnpm(report) {
@@ -22,8 +22,10 @@ function reportFromArgs(argv) {
   if (fromJson !== -1) {
     return JSON.parse(readFileSync(argv[fromJson + 1], "utf8"));
   }
-  const result = spawnSync("corepack", ["pnpm", "licenses", "list", "--json"], {
-    encoding: "utf8",
+  const result = spawnCommand({
+    command: "corepack",
+    args: ["pnpm", "licenses", "list", "--json"],
+    options: { encoding: "utf8" },
   });
   if (result.status !== 0) {
     process.stderr.write(result.stderr ?? "");
