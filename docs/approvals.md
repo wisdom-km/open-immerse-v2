@@ -28,5 +28,17 @@
 | 2026-11-04 04:17 | 「前六条我都有印象」 | 追认 02:20/02:29/02:35/02:54/02:57/03:00 | 见各行 | Forge 聊天 |
 | 2026-11-04 04:19 | 「加，docs/approvals.md 随下一个文档 PR 加」 | 建立本文件 | docs/approvals.md | Forge 聊天选项卡 |
 | 2026-11-04 04:22 | 「术语抽取放 M4，单独开一个 PR，排在翻译接入之后」 | 术语抽取里程碑与顺序 | PRD §8 M4、ADR 决定 1 | Forge 聊天选项卡 |
+| 2026-11-04 05:26 | 「A」 | #61 第 4 条方案 A：oi-parse/1 运行时校验留在 contracts，作为接受的例外 | ARCHITECTURE §4.1（PR #122） | https://github.com/wisdom-km/open-immerse-v2/issues/61#issuecomment-6615827081 |
+| 2026-11-04 05:50 | 「批准 #120，macOS 绿了就合入」 | 合入 #120 @ ee05407（必需检查绿后） | PR #120 | https://github.com/wisdom-km/open-immerse-v2/pull/120#issuecomment-6616303827 |
+| 2026-11-04 05:51 | 「批准 #118，macOS 绿了就合入」 | 合入 #118 @ 22caf3f | PR #118 | https://github.com/wisdom-km/open-immerse-v2/pull/118#issuecomment-6616304679 |
+| 2026-11-04 05:52 | 「批准 #121，CI 绿了就合入」 | 合入 #121 @ 08a1357 | PR #121 | https://github.com/wisdom-km/open-immerse-v2/pull/121#issuecomment-6616326125 |
+| 2026-11-04 10:04 | 「批准合入 #122」 | 合入 #122 @ 204eff7 | PR #122 | https://github.com/wisdom-km/open-immerse-v2/pull/122#issuecomment-6620565051 |
+| 2026-11-04 10:12 | 「同意，你把第二条写成你的固定规则吧，然后第一条通知所有bot执行。」 | (1) 所有 bot：Wisdom 批与 issue 相关的范围时，立即在该 issue 评论记录时间、原话、范围和来源；(2) Forge 固定规则：写 Cloud 交接前按 issue 号和关键词检索 issue 评论、审查报告和 docs/approvals.md，交接必须含「来源核对」，Cloud 计划逐条回应，Forge 审 PR 时逐条勾对 | Issue #27 | https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6622138729 |
+| 2026-11-04 10:21 | 「对，我批准了，你就按照你的建议把它放进下一个文档PR里吧。就这个文档PR结束了，你就把它放进去。」 | 本 PR：exec-plans 规范 + approvals 中心记录 | 本 PR | https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6620794911 |
+| 2026-11-04 10:27 | 「colorama 按包名放行为 BSD-3-Clause」「Windows CI 暂不改」 | colorama 包名别名 → BSD-3-Clause；worker-health-windows 不改 | PR #124 `package-aliases.json` | https://github.com/wisdom-km/open-immerse-v2/issues/123#issuecomment-6620885462 |
+| 2026-11-04 11:05 | 「按推荐就行」 | #125 三项：catalog 指向章节文件；删 27 个占位页、只改相对路径前缀；正文放 `docs/arch/` 并回退 RULES 第 7/169 行 | PR #125 | https://github.com/wisdom-km/open-immerse-v2/issues/27#issuecomment-6621420997 ；https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6621435772 |
+| 2026-11-04 11:18 | 「批准合入」 | 合入 #124 @ 9facc97（Fixes #123） | PR #124 | https://github.com/wisdom-km/open-immerse-v2/pull/124#issuecomment-6621603309 ；https://github.com/wisdom-km/open-immerse-v2/issues/123#issuecomment-6621603953 |
+| 2026-11-04 11:40 | 「风险这个先测试下有没有影响吧，要没有影响咱就批准合入，要有影影响的话，咱们就先修锚点再合。」 | #125 @ 3c2f159 有条件合入：5 个特殊字符锚点在 GitHub 渲染页实测能跳转（Forge 在 bad72bf 核对满足） | PR #125 | https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6621922357 ；https://github.com/wisdom-km/open-immerse-v2/pull/125#issuecomment-6622059835 |
+| 2026-11-04 11:41 | 「我看并行的名额还剩两个，它俩是不影响的是吧？就是不影响当前任务的。如果不影响的话，那就都批准。」 | 并行开工 #61 剩余项（1/4/6）与 #35 剩余项（2/3），条件：与当前活跃 PR 无文件重叠 | Issue #61、#35 | https://github.com/wisdom-km/open-immerse-v2/issues/61#issuecomment-6621927948 ；https://github.com/wisdom-km/open-immerse-v2/issues/35#issuecomment-6621928509 |
 
-共 21 条批准 + 1 条反馈记录
+共 33 条批准 + 1 条反馈记录

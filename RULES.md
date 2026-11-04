@@ -75,7 +75,7 @@
   8. 自审：只列这次 diff 碰到的规则，不列没碰到的。每行一条：`ID | 结论 | 文件:行`。结论只写「遵守」或「违反」。`文件:行` 是 diff 里对得上的位置。
   9. 现状理解：小任务写三行（现在已有的行为、相关的节、还没做的部分）。改动超过 300 行，或跨模块（多于一个切片，或同时改 TS 与 worker）时，不在描述里展开，改为执行计划的链接。
 - 上面第 1–9 条是描述里要有的栏目。怎样算这个 PR 做完，见 §9。栏目与 §9 对得上，不在描述里再写一套完成条件。
-- 超过 300 行，或跨模块的任务，先复制 [docs/exec-plans/TEMPLATE.md](./docs/exec-plans/TEMPLATE.md) 为 `docs/exec-plans/<分支名>.md`。第一笔提交只有这份计划。Forge 审查通过之前不写实现。小任务不用这份计划。
+- 超过 300 行，或跨模块的任务，先复制 [docs/exec-plans/TEMPLATE.md](./docs/exec-plans/TEMPLATE.md) 为 `docs/exec-plans/<分支名>.md`。第一笔提交只有这份计划。Forge 审查通过之前不写实现。小任务不用这份计划。Cloud 交接附上该计划文件；计划引用的批准须在 [docs/approvals.md](./docs/approvals.md) 有行。
 - 合入由 Wisdom 决定（N-03）。任何人与 Agent 不自行合入。仓库操作只在「合入」之后合入锁定的 SHA（[docs/WORKFLOW.md](./docs/WORKFLOW.md)）。
 - **解析规则集的例外**（ARCHITECTURE §7.10）：改阅读顺序、扫描页判定或段落切分的规则时，TS `parsing/domain/text-layer/`、worker 对应的纯规则模块与 `fixtures/parsing-rules/` 必须在同一个 PR 里改；这是唯一允许一个 PR 同时动 TS 切片与 worker 的情形，PR 里不得夹带其他改动。
 
@@ -235,7 +235,7 @@ Wisdom 2026-10-30 23:56 在不改上面五条原文的前提下写死：核心�
 | 不动 N-10 / N-11 文件 | diff 里没有 `DESIGN.md`、`docs/design-principles.md`、`docs/design/**` 的正文，也没有 `.cursor/environment.json`、`.cursor/install.sh`。这两份环境文件 Agent 不得改；要改须 Wisdom 批准，并在描述里写明是哪一次。#15 是一次性例外 | N-10、N-11 |
 | 文档同步 | 改了规格的，同一 PR 改掉因此失真的其他规格句子和入口指针，并在规格变更记录里加一行。不把正文再抄进第二份文件 | §7；[docs/spec-changelog.md](./docs/spec-changelog.md) |
 | 自审 | 描述里用 §2 第 8 条的三列，只含这次碰到的规则 | §2 第 8 条 |
-| 现状理解 | 小任务有三行。超过 300 行或跨模块的，第一笔提交是执行计划，Forge 审查通过之前没有实现提交 | §2 第 9 条；[docs/exec-plans/TEMPLATE.md](./docs/exec-plans/TEMPLATE.md) |
+| 现状理解 | 小任务有三行。超过 300 行或跨模块的，第一笔提交是执行计划，Forge 审查通过之前没有实现提交 | §2 第 9 条；[docs/exec-plans/TEMPLATE.md](./docs/exec-plans/TEMPLATE.md)；[docs/exec-plans/README.md](./docs/exec-plans/README.md) |
 
 PR 仍先开 Draft（§2）。上表未齐就保持 Draft。Forge 审查通过之前不离开 Draft。合入由 Wisdom 决定（N-03）。
 
