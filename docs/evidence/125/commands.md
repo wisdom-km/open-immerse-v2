@@ -134,4 +134,4 @@ node tools/compare-spec-bytes/compare.mjs
 node tools/check-docs/check.mjs
 ```
 
-比对退出码 0，三组字节与上面相同，68 处路径前缀不变。`check-docs` 退出码 0。`links: 0`。`anchors: 5`，就是上面这 5 个：check-docs 自己的 slug 规则没改，所以它仍按旧片段报 missing-anchor。其余发现仍是 9 条状态行和索引表。这一笔提交上的 `GATE_BASE=origin/main corepack pnpm run check` 退出码补在下一节。
+比对退出码 0，三组字节与上面相同，68 处路径前缀不变。`check-docs` 退出码 0。`links: 0`。`anchors: 5`，就是上面这 5 个：check-docs 自己的 slug 规则没改，所以它仍按旧片段报 missing-anchor。其余发现仍是 9 条状态行和索引表。在 `1d6c4e0` 上 `GATE_BASE=origin/main corepack pnpm run check` 退出码 0。`check-pr-size: 7619 non-generated lines`。日志在 `/opt/cursor/artifacts/pnpm-check-125-anchors.log`。
