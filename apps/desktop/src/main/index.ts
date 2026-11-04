@@ -33,8 +33,8 @@ runWhenReady(app.whenReady(), startDesktop, reportReadyFailure);
 function startDesktop(): void {
   handleAppProtocol(rendererRoot(fileURLToPath(import.meta.url)));
   denyPermissions();
-  createMainWindow();
   startMainLogger();
+  createMainWindow();
 }
 
 function reportReadyFailure(error: unknown): void {
