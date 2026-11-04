@@ -5,6 +5,9 @@ import { copyLf } from "./line-endings.mjs";
 
 export async function copyGenerators(root, generators) {
   for (const generator of generators) {
+    if (generator.kind === "preload") {
+      continue;
+    }
     const inputPath = path.join(root, generator.input);
     const outputPath = path.join(root, generator.output);
     await mkdir(path.dirname(outputPath), { recursive: true });
