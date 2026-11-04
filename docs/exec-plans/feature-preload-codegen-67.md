@@ -19,7 +19,7 @@
 | 3 | `node tools/check-docs/check.mjs` 与 `node tools/compare-spec-bytes/compare.mjs` | 两条退出码都是 0。check-docs `findings: 0` | [docs/evidence/148/commands.md](../evidence/148/commands.md) |
 | 4 | 不写实现。Loom 审、Wisdom 批之后才开契约 PR | Loom 已审（[评论 6628805042](https://github.com/wisdom-km/open-immerse-v2/pull/148#issuecomment-6628805042)）。Wisdom 18:50 已批形状。本 PR 仍不写实现 | 本文件 |
 | 5 | 按该审查的必须改与第 4–7 条改本方案，并记入批准表 | 本提交 | [docs/approvals.md](../approvals.md) |
-| 6 | 生成器与 `ipc-router` 同一个 PR。settings 的 `expose` 保持 `false`。事件 `transport` 按下面「事件 transport」解释。§9 四项按 20:25 的批准执行 | 未做 | 实现提交与 `docs/evidence/<PR号>/commands.md` |
+| 6 | 生成器与 `ipc-router` 同一个 PR。settings 的 `expose` 保持 `false`。事件 `transport` 按下面「事件 transport」解释。§9 四项按 20:25 的批准执行 | `bd47855`、`c5f7b08`。空 `oi`、空注册表、0 个 handle。e2e 里 `window.oi` 为 `{}` | [docs/evidence/158/commands.md](../evidence/158/commands.md) |
 
 ## 决策记录（Decision Log）
 
