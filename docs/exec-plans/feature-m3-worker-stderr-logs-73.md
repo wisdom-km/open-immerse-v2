@@ -69,16 +69,16 @@
 
 ## 计划 / 实际
 
-计划列在开工前填。实际列在实现提交之后回填。证据写在 `docs/evidence/<PR号>/commands.md`。
+计划列在开工前填。实际列在实现提交之后回填。证据写在 [docs/evidence/147/commands.md](../evidence/147/commands.md)。
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 只提交本文件，并逐条回答来源核对 |  | 本文件 |
-| 2 | ARCH §11 第 24 行加行格式；manifest 加一条唯一替换；spec-changelog 加一行 |  | `docs/arch/11.md` |
-| 3 | `envelope()` 保留 `source: "worker"` |  | `packages/platform-node/src/logging/value-guard.ts` |
-| 4 | `readWorkerStderrLine` 与测试；从 `index.ts` 导出 |  | `packages/platform-node/src/logging/worker-stderr.ts` |
-| 5 | `emit_diag` 与 pytest |  | `workers/parser/oi_worker/diag_log.py` |
-| 6 | 只跑下面的定向命令。不跑全量 `pnpm test`、全量 pytest、`pnpm run check`、e2e |  | `docs/evidence/<PR号>/commands.md` |
+| 1 | 只提交本文件，并逐条回答来源核对 | 第一笔 `79ea7fd` 只有本文件 | 本文件 |
+| 2 | ARCH §11 第 24 行加行格式；manifest 加一条唯一替换；spec-changelog 加一行 | `f12cd76`。第 24 行加行格式。manifest 一条替换。changelog 一行 | `docs/arch/11.md` |
+| 3 | `envelope()` 保留 `source: "worker"` | `f12cd76`。`source` 为 `"worker"` 时保留，缺省时不写这个键 | `packages/platform-node/src/logging/value-guard.ts` |
+| 4 | `readWorkerStderrLine` 与测试；从 `index.ts` 导出 | `f12cd76`。超过 8192 字节不解析。其他 `source` 整行丢弃，不改写 | `packages/platform-node/src/logging/worker-stderr.ts` |
+| 5 | `emit_diag` 与 pytest | `f12cd76`。未知事件不抛、不写 stdout、不写 `source` | `workers/parser/oi_worker/diag_log.py` |
+| 6 | 只跑下面的定向命令。不跑全量 `pnpm test`、全量 pytest、`pnpm run check`、e2e | 都在 `f12cd76`，退出码 0。Vitest 48 通过。pytest 12 通过。check-docs findings 仍是 9 | [docs/evidence/147/commands.md](../evidence/147/commands.md) |
 
 `test:core` 不适用（`package.json` 没有这个脚本）。
 
@@ -108,4 +108,4 @@
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：实现提交之后写入命令与退出码。
+- [docs/evidence/147/commands.md](../evidence/147/commands.md)：命令跑在 `f12cd76`。
