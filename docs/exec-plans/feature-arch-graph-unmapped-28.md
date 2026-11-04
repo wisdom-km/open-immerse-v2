@@ -72,10 +72,10 @@ arch-index	<文件:行>
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
 | 1 | 本文件作为第一笔提交 | 提交 `9ddb528`，只有本文件 | 本文件 |
-| 2 | 新增 `passthrough.mjs` 与声明、测试。`reduce.mjs` 用它穿透或报 `arch-index`。`compare.mjs` 把 index 打进报告。`check.mjs` 的 `--strict` 同时看 undocumented、unmapped、index | 提交 `7f21dd3`。`layer-of.mjs` 与 `parse-mermaid.mjs` 未改 | 证据目录的 Vitest 一节 |
-| 3 | 更新 `compare.test.ts` 第 40–43、70 行；更新 `reduce.test.ts` 的纯转出期望。补三条：纯转出穿透成功；含逻辑的 index 报 `arch-index`；经 index 的 UI→domain 仍是 undocumented（`bypasses-pure`）。夹具证明 `--strict` 在 unmapped 大于 0 时退出 1，等于 0 时退出 0 | 同上。`compare.test.ts` 的 unmapped 样例改为 `packages/features/jobs/src/notes.ts:4`。夹具与仓库图的 `--strict` 都按预期退出 | 证据目录 |
+| 2 | 新增 `passthrough.mjs` 与声明、测试。`reduce.mjs` 用它穿透或报 `arch-index`。`compare.mjs` 把 index 打进报告。`check.mjs` 的 `--strict` 同时看 undocumented、unmapped、index | 提交 `7f21dd3`。`layer-of.mjs` 与 `parse-mermaid.mjs` 未改 | [commands.md](../evidence/151/commands.md) 的 Vitest 一节 |
+| 3 | 更新 `compare.test.ts` 第 40–43、70 行；更新 `reduce.test.ts` 的纯转出期望。补三条：纯转出穿透成功；含逻辑的 index 报 `arch-index`；经 index 的 UI→domain 仍是 undocumented（`bypasses-pure`）。夹具证明 `--strict` 在 unmapped 大于 0 时退出 1，等于 0 时退出 0 | 同上。`compare.test.ts` 的 unmapped 样例改为 `packages/features/jobs/src/notes.ts:4`。夹具与仓库图的 `--strict` 都按预期退出 | [commands.md](../evidence/151/commands.md) |
 | 4 | `docs/ci-and-environment.md`「依赖图对照」补 unmapped、穿透、`--strict` 各一两句。不改 CI 工作流 | 三句已写入该节。`.github/workflows/**` 无 diff | `docs/ci-and-environment.md` |
-| 5 | 定向：`vitest run tools/check-arch-graph`，以及 `node tools/check-arch-graph/check.mjs` 与 `--strict`。不跑全量 `pnpm check` / `pnpm test`（归 Anvil）。证据 `docs/evidence/<PR号>/commands.md` | 见证据目录。main 工作区：undocumented 0、planned 22、unmapped 0、index 0。两条命令退出码都是 0。planned 没有变化 | `docs/evidence/<PR号>/commands.md` |
+| 5 | 定向：`vitest run tools/check-arch-graph`，以及 `node tools/check-arch-graph/check.mjs` 与 `--strict`。不跑全量 `pnpm check` / `pnpm test`（归 Anvil）。证据 `docs/evidence/<PR号>/commands.md` | 见证据目录。main 工作区：undocumented 0、planned 22、unmapped 0、index 0。两条命令退出码都是 0。planned 没有变化 | [commands.md](../evidence/151/commands.md) |
 
 交接写「G12 200 行」。规格里的 200 行只在「只改 `packages/contracts`」时触发（[docs/arch/13.md](../arch/13.md) G12；[docs/ci-and-environment.md](../ci-and-environment.md) 门禁）。本 PR 不改 contracts。非生成 diff 超过 600 行才要在提交说明写 `G12:`。单文件硬上限仍是 §6 的 600（测试 800），不调上限（N-08）。新逻辑放 `passthrough.mjs`，不堆进 `check.mjs`。
 
@@ -93,7 +93,7 @@ arch-index	<文件:行>
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：Draft PR 开出后按 PR 号补上。本段先不链到还不存在的路径。
+- `docs/evidence/151/`：[commands.md](../evidence/151/commands.md)
 
 ## 自检
 
