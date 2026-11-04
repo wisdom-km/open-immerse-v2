@@ -116,15 +116,23 @@ Cloud 交接附上该计划文件的路径。
 
 「按任务类型阅读」下、表格之前的那段末尾加一句：
 
+```text
 超过 300 行或跨模块的任务，先按 [docs/exec-plans/README.md](docs/exec-plans/README.md) 写计划；交接附上该计划文件；批准以 [docs/approvals.md](docs/approvals.md) 为准。
+```
 
 ### RULES.md
 
 §2 这一条的末尾补一句，前面的句子不动：
 
+```text
 Cloud 交接附上该计划文件；计划引用的批准须在 [docs/approvals.md](./docs/approvals.md) 有行。
+```
 
-§9 表「现状理解」行的「已有条文」列，在 TEMPLATE 链接之后加上：[docs/exec-plans/README.md](./docs/exec-plans/README.md)。
+§9 表「现状理解」行的「已有条文」列，在 TEMPLATE 链接之后加上：
+
+```text
+[docs/exec-plans/README.md](./docs/exec-plans/README.md)
+```
 
 ### approvals.md 追加的 12 行
 
