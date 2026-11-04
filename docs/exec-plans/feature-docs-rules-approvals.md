@@ -18,13 +18,13 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔提交只有它。来源核对逐条回应。决策记录含 13:35，以及 13:28 记成决定、不计入批准 |  |  |
-| 2 | 删 `RULES.md` 第 5 行那一句过时提醒，该行其余保留。删第 174 行末句，该行其余保留。不改 DESIGN |  |  |
-| 3 | `feature-m1-deferred-gates.md`：G1 行的实际列改成 PR #110 已接上与 2026-11-04 复核；第 49 行「实际列先空着」改成与现状一致。G3、G5 两行不改 |  |  |
-| 4 | `docs/backlog.md`：M1-DEFER-G1 补 2026-11-04 复核和「#34 的 G1 部分可关闭」。第 84 行 #136 不改。§4 加 #131、#137（已处理）和一条未处理的停止信号 polish。G3、G5 两行不改 |  |  |
-| 5 | `docs/approvals.md` 按时间插入 10 行。13:16、13:28 插在现有 13:31（#59）之前；另一条 13:31（#34）紧跟在 #59 那一行之后。13:28 标【决定，不计入批准】。计数改为 43 条批准 + 1 条反馈记录 + 1 条决定。旧行不改 |  |  |
-| 6 | `docs/spec-changelog.md` 在表首加本 PR 一行。版本历史标记之内不改。规格版本仍是 v0.6 |  |  |
-| 7 | 只跑文档相关检查：`node tools/check-docs/check.mjs`，以及 `pnpm check` 里看 diff 的 `check:commits`、`check:pr-size`、`check:hotspots`。不跑全量测试。结果写入 `docs/evidence/<PR号>/commands.md`。Draft PR，正文含 `Fixes #134`、`Refs #34`、`Refs #131`、`Refs #136`、`Refs #137`、`Refs #135` |  |  |
+| 1 | 本文件。第一笔提交只有它。来源核对逐条回应。决策记录含 13:35，以及 13:28 记成决定、不计入批准 | `89b089d` 只有本文件 | 本文件 |
+| 2 | 删 `RULES.md` 第 5 行那一句过时提醒，该行其余保留。删第 174 行末句，该行其余保留。不改 DESIGN | `7d4b24f`。`rg "只搭结构" RULES.md` 无匹配。DESIGN.md 不在 diff 里 | [docs/evidence/138/commands.md](../evidence/138/commands.md) |
+| 3 | `feature-m1-deferred-gates.md`：G1 行的实际列改成 PR #110 已接上与 2026-11-04 复核；第 49 行「实际列先空着」改成与现状一致。G3、G5 两行不改 | `7d4b24f`。G3、G5 两行与 `origin/main` 相同 | 同上 |
+| 4 | `docs/backlog.md`：M1-DEFER-G1 补 2026-11-04 复核和「#34 的 G1 部分可关闭」。第 84 行 #136 不改。§4 加 #131、#137（已处理）和一条未处理的停止信号 polish。G3、G5 两行不改 | `7d4b24f`。第 84 行未改。G3、G5 未改 | 同上 |
+| 5 | `docs/approvals.md` 按时间插入 10 行。13:16、13:28 插在现有 13:31（#59）之前；另一条 13:31（#34）紧跟在 #59 那一行之后。13:28 标【决定，不计入批准】。计数改为 43 条批准 + 1 条反馈记录 + 1 条决定。旧行不改 | `7d4b24f`。43 条批准 + 1 条反馈 + 1 条决定。13:31 #59 仍在 #34 之前 | 同上 |
+| 6 | `docs/spec-changelog.md` 在表首加本 PR 一行。版本历史标记之内不改。规格版本仍是 v0.6 | 本提交把「本 PR」改成 #138。版本历史标记之内未改 | 同上 |
+| 7 | 只跑文档相关检查：`node tools/check-docs/check.mjs`，以及 `pnpm check` 里看 diff 的 `check:commits`、`check:pr-size`、`check:hotspots`。不跑全量测试。结果写入 `docs/evidence/<PR号>/commands.md`。Draft PR，正文含 `Fixes #134`、`Refs #34`、`Refs #131`、`Refs #136`、`Refs #137`、`Refs #135` | `7d4b24f` 上检查见证据。Draft PR [#138](https://github.com/wisdom-km/open-immerse-v2/pull/138) | 同上 |
 
 ## 决策记录（Decision Log）
 
@@ -115,4 +115,4 @@ M1-DEFER-G1 的状态格在现有句号之后补：「2026-11-04 复核：main@d
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：实现提交之后写入。
+- [docs/evidence/138/commands.md](../evidence/138/commands.md)：检查命令与退出码。Draft PR [#138](https://github.com/wisdom-km/open-immerse-v2/pull/138)。
