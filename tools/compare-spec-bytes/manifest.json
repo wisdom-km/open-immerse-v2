@@ -134,6 +134,36 @@
       "source": "ARCHITECTURE.md",
       "old": "- **退出。** 应用退出时先取消在途作业，再请求 worker 结束，超时后强制结束；退出后本机 worker 进程数为 0。",
       "new": "- **退出。** 应用退出时先取消在途作业，再请求 worker 结束，超时后强制结束；退出后本机 worker 进程数为 0。\n- **正常停止。** 本机 worker 收到 `SIGINT`、`SIGTERM` 或 Windows 的 `SIGBREAK` 而停止时，退出码是 0。这包括读令牌、尚未听，以及已经在听（§10.1）。监管进程把这个 0 当成正常停止，不把 130 或 143 当成正常停止的约定。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│     ├─ src/renderer/                # 应用外壳：路由、布局插槽、全局 Provider\n",
+      "new": "│     ├─ src/renderer/                # 当前只有 index.html；路由、布局插槽、全局 Provider 为计划中\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│  ├─ worker-client/                  # oi-parse/1 的 TS 客户端（本机 / 远程共用）\n",
+      "new": "│  ├─ worker-client/                  # 计划中。oi-parse/1 的 TS 客户端（本机 / 远程共用）\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│  ├─ ui-kit/                         # 设计令牌与基础组件（按 Loom 的 DESIGN.md 实现）；markdown/ 为共享 MarkdownView（§4.5.4）\n",
+      "new": "│  ├─ ui-kit/                         # 计划中。设计令牌与基础组件（按 Loom 的 DESIGN.md 实现）；markdown/ 为共享 MarkdownView（§4.5.4）\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│     ├─ ingest/                   # 无界面的流水线编排（§4.2）\n│     ├─ library/  document/  parsing/  jobs/  budget/\n│     ├─ formula/  formula-source/  quality/  repair/  translation/\n│     ├─ markdown/  reader/  notes/  qa/  voice/\n│     └─ settings/  diagnostics/       # writing/ 为预留位，v2 不建目录（§4.4）\n",
+      "new": "│     ├─ budget/  formula-source/  ingest/  jobs/  markdown/  # 已建\n│     ├─ library/  document/  parsing/  formula/  translation/  # 计划中\n│     ├─ quality/  repair/            # 计划中。ADR 0003 删的是 repair → quality，不是这两个切片（§4.2）\n│     ├─ reader/  notes/  qa/  voice/ # 计划中\n│     └─ settings/  diagnostics/      # 计划中。writing/ 为预留位，v2 不建目录（§4.4）\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "└─ tools/\n   ├─ check-file-size/                # 行数门禁\n   ├─ check-hotspots/                 # 热点文件登记校验\n   └─ codegen/                        # run.mjs 生成 workers/parser/oi_worker/protocol/，datamodel-code-generator 钉 0.87.0（tools/codegen/pin.json）\n",
+      "new": "└─ tools/\n   ├─ check-commits/\n   ├─ check-core-tests/\n   ├─ check-deps/\n   ├─ check-docs/\n   ├─ check-file-size/                # 行数门禁\n   ├─ check-format/\n   ├─ check-hotspots/                 # 热点文件登记校验\n   ├─ check-license/\n   ├─ check-one-slice/\n   ├─ check-pr-size/\n   ├─ check-secrets/\n   ├─ codegen/                        # run.mjs 生成 workers/parser/oi_worker/protocol/，datamodel-code-generator 钉 0.87.0（tools/codegen/pin.json）\n   ├─ compare-spec-bytes/\n   ├─ eslint/\n   ├─ gate-fixtures/\n   ├─ gate-remediation/\n   ├─ spawn-bin/\n   ├─ tsconfig-core/\n   ├─ typecheck.mjs\n   └─ vitest-collect/\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "`ui/hooks/use-document-session.ts` |",
+      "new": "`ui/hooks/use-document-session.ts` 会话 hook 只订阅 `window.oi` 与 `pure.ts`，不保存采用版本或译文正文的副本 |"
     }
   ]
 }

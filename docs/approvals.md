@@ -62,5 +62,7 @@
 | 2026-11-04 15:50 | 「批准合入」 | 合入 #141 @047c346（Fixes #69） | PR #141 | https://github.com/wisdom-km/open-immerse-v2/pull/141#issuecomment-6625603468 |
 | 2026-11-04 15:54 | 「按推荐一的内容。」 | 流程：分支落后 main 时默认 merge 同步（不 rebase/force），PR 文件 blob 不变且新 tip CI 绿后 --match-head-commit 合入；不改仓库设置 | 流程 | https://github.com/wisdom-km/open-immerse-v2/pull/141#issuecomment-6625655280 |
 | 2026-11-04 15:57 | 「按你推荐开第一项，第二项等142合入后再开。」 | 开本文档 PR；#73 等 #142 合入后再开 | Issue #28/#42/#73 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6625727777 |
+| 2026-11-04 16:34 | 「按推荐批准加上这几条登记，然后你让云端补上，CI转了以后你再复审。」 | #143：`tools/compare-spec-bytes/manifest.json` 为 ARCHITECTURE 目录树改动与 reader 行加唯一替换，并补 spec-changelog 文件列。不改基线 f8d5d01，不改 compare.mjs，不改 CI | PR #143 | https://github.com/wisdom-km/open-immerse-v2/pull/143#issuecomment-6626391244 |
+| 2026-11-04 16:34 | 「批准合入142。」 | 合入 #142 @8bd22dc（Fixes #140）。落后 main 时按 15:54 已批流程 merge 同步、核 blob、CI 全绿后按新 tip 合入 | PR #142 | https://github.com/wisdom-km/open-immerse-v2/pull/142#issuecomment-6626395133 |
 
-共 54 条批准 + 1 条反馈记录 + 1 条决定
+共 56 条批准 + 1 条反馈记录 + 1 条决定

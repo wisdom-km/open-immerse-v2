@@ -43,4 +43,33 @@ compare-spec-bytes: RULES.md span matches f8d5d01dc8af81b73689c7229c983192551fa6
 compare-spec-bytes: ARCHITECTURE.md differs at byte 37817
 ```
 
-基线 `f8d5d01` 上拼回的 ARCHITECTURE.md 是 360814 字节，本分支是 361595 字节。第一处差异是 `docs/arch/03.md` 的 renderer 注释，从「应用外壳：路由、布局插槽、全局 Provider」改成「当前只有 index.html；路由、布局插槽、全局 Provider 为计划中」。没有改比对工具，没有加 amendment。`pnpm test` 会收集 `tools/compare-spec-bytes/compare.test.ts`，CI 里这条预期失败。
+基线 `f8d5d01` 上拼回的 ARCHITECTURE.md 是 360814 字节，本分支是 361595 字节。第一处差异是 `docs/arch/03.md` 的 renderer 注释，从「应用外壳：路由、布局插槽、全局 Provider」改成「当前只有 index.html；路由、布局插槽、全局 Provider 为计划中」。当时没有改比对工具。
+
+## 16:34 登记之后
+
+Wisdom 2026-11-04 16:34 批准在 `tools/compare-spec-bytes/manifest.json` 的 `amendments` 里为有意改动加唯一替换。基线 `f8d5d01`、`compare.mjs`、CI 都没有改。六条都是 `source: ARCHITECTURE.md`：renderer 注释、`worker-client/`、`ui-kit/`、功能切片五行、`tools/` 目录清单、reader 行末的会话 hook 句。每条 `old` 在基线全文里只出现一次。
+
+```bash
+node tools/compare-spec-bytes/compare.mjs
+```
+
+退出码 0。
+
+```text
+compare-spec-bytes: PRD.md 36 parts match f8d5d01dc8af81b73689c7229c983192551fa6fe (194695 bytes)
+compare-spec-bytes: ARCHITECTURE.md 66 parts match f8d5d01dc8af81b73689c7229c983192551fa6fe (361463 bytes)
+compare-spec-bytes: RULES.md span matches f8d5d01dc8af81b73689c7229c983192551fa6fe (2795 bytes)
+compare-spec-bytes: 68 path prefixes
+```
+
+```bash
+node tools/check-docs/check.mjs
+```
+
+退出码 0。`findings: 9`，与基线相同，没有新增。
+
+```bash
+corepack pnpm exec vitest run tools/compare-spec-bytes/compare.test.ts
+```
+
+退出码 0。Node v22.23.4。Vitest v5.0.5：1 个文件，14 个测试通过。没有跑全量 `pnpm test` 或 `pnpm check`。

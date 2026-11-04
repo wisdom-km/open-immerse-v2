@@ -27,7 +27,8 @@
 | 5 | [docs/approvals.md](../approvals.md) 在 14:54 之后加 10 行。15:44 计入批准。计数改为 54 条批准 + 1 条反馈记录 + 1 条决定 | 56 行日期记录：54 条批准 + 1 条反馈 + 1 条决定。15:28 用 `pull/139` | `49114de` |
 | 6 | PR 模板在「## 测试证据」前加自检勾选。执行计划模板文末加「自检」节与同一行 | 两处都已加交接那句 | `49114de` |
 | 7 | [docs/spec-changelog.md](../spec-changelog.md) 表首加一行。版本历史标记之内不改。规格版本仍是 v0.6 | 表首一行，PR 列改为 #143。版本历史标记之内未改 | 本提交与 `49114de` |
-| 8 | `node tools/check-docs/check.mjs` 与 `node tools/compare-spec-bytes/compare.mjs`。发现数不得高于基线 9。arch 正文变化若让逐字比对失败，记在证据里，不改工具。Draft PR，正文第一行 `Fixes #42`，第二行 `Refs #28` | check-docs 退出码 0，发现数 9。compare 退出码 1，ARCHITECTURE.md 字节 37817。Draft PR #143 | [commands.md](../evidence/143/commands.md) |
+| 8 | `node tools/check-docs/check.mjs` 与 `node tools/compare-spec-bytes/compare.mjs`。发现数不得高于基线 9。arch 正文变化若让逐字比对失败，记在证据里，不改工具。Draft PR，正文第一行 `Fixes #42`，第二行 `Refs #28` | check-docs 退出码 0，发现数 9。当时 compare 退出码 1，ARCHITECTURE.md 字节 37817。Draft PR #143 | [commands.md](../evidence/143/commands.md) |
+| 9 | Forge FAIL（评论 6626056165）必须修第 1 条。Wisdom 16:34 批准后，在 `tools/compare-spec-bytes/manifest.json` 为目录树五处与 reader 行各加一条唯一替换。不改基线，不改 compare.mjs，不改 CI。补 changelog 文件列。approvals 加 16:34 两行。compare 退出码 0，只跑 `compare.test.ts` | 六条替换，old 在基线全文各出现一次。16:34 两行都计入，总数 56（Forge 写的 55 只含登记这一条；「批准合入142。」按合入惯例另计） | [commands.md](../evidence/143/commands.md) |
 
 ## 决策记录（Decision Log）
 
@@ -39,6 +40,7 @@
 | 15:44「按推荐」计入批准，不标【决定，不计入批准】 | 评论 6625527767 的标题是「批准记录」，写了批准范围。表里其他「按推荐」都计入。现有不计入的行都自带【反馈】或【决定】标记。15:44 没有这个标记 | 2026-11-04 15:44 | Wisdom 的原话；记法按 approvals 现有惯例 |
 | 目录树不删除 `quality/`、`repair/`，改为计划中 | 审计评论把 ADR 0003 读成切片已移除。ADR 0003 与 §4.3 写的是删除 `repair → quality`。§4.2 与 PRD §10 仍有这两个切片。目录未建，与其他未建切片一样标计划中。删名字会让 §3 与 §4.2 新产生不一致 | 2026-11-04 | 本计划按来源核对；不是新的业主决定 |
 | 不改 `tools/compare-spec-bytes/` | 交接写明不改工具。arch 正文一改，拼接字节会对不上拆分基线。差异记在证据里，不在本 PR 加 amendment | 2026-11-04 | 交接范围 |
+| 补上六条 amendment。原话：「按推荐批准加上这几条登记，然后你让云端补上，CI转了以后你再复审。」 | Forge FAIL 必须修第 1 条。批准范围是目录树相关行与 reader 行的唯一替换，外加 changelog 文件列。这一行取代上面「不改工具」对本 PR 的约束。基线、compare.mjs、CI 仍不改。同一分钟「批准合入142。」另计，总数 56 | 2026-11-04 16:34 | Wisdom |
 | 计划没有留到 Forge 审查后再写后面的提交。这是流程偏差 | [RULES.md](../../RULES.md) §2 要求 Forge 审查通过之前不写实现。交接要求提交计划后改正文。approvals 没有把「跳过 Forge 再写」单独批准 | 2026-11-04 | Cloud |
 
 ## 来源核对
