@@ -51,5 +51,6 @@
 | 2026-11-04 14:10 | 「批准合入137。」 | 合入 #137 @7c6b7a7 | PR #137 | https://github.com/wisdom-km/open-immerse-v2/pull/137#issuecomment-6623985445 |
 | 2026-11-04 14:20 | 「按推荐」 | #136 中 compare-spec-bytes 的 amendments 机制补批，随 #136 合入（选项 1） | PR #136 | https://github.com/wisdom-km/open-immerse-v2/pull/136#issuecomment-6624141225 ；https://github.com/wisdom-km/open-immerse-v2/issues/59#issuecomment-6624141955 |
 | 2026-11-04 14:25 | 「批准合入 136」 | 合入 #136 @ade9f3e | PR #136 | https://github.com/wisdom-km/open-immerse-v2/pull/136#issuecomment-6624220484 |
+| 2026-11-04 14:54 | 「1按你的推荐，然后删掉，然后加入138一起合入。60和119可以并行开，就是你如果审查完之后并行是没有问题的话，那就并行。」 | 在 #138 中删除 AGENTS.md 第 11 行过时的条件句，并随 #138 一起合入。这条不是合入批准 | PR #138 | https://github.com/wisdom-km/open-immerse-v2/pull/138#issuecomment-6624659834 |
 
-共 43 条批准 + 1 条反馈记录 + 1 条决定
+共 44 条批准 + 1 条反馈记录 + 1 条决定

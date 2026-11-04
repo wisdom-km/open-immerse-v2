@@ -47,3 +47,14 @@ corepack pnpm run check:hotspots
 ## 含本文件
 
 `a3f9996cf1f66914b43547edaf6a68a5756416c1` 已含本文件的上一版。在该提交上再跑 `node tools/check-docs/check.mjs`、`compare-spec-bytes`，以及 `GATE_BASE=origin/main` 下的 `check:commits`、`check:pr-size`、`check:hotspots`。退出码都是 0。check-docs 计数与上一节相同。`check-pr-size: 191 non-generated lines`。
+
+## 14:54 批准之后
+
+删掉 `AGENTS.md` 第 11 行那句条件提醒，并补上批准行之后再跑：
+
+```bash
+node tools/check-docs/check.mjs
+node tools/compare-spec-bytes/compare.mjs
+```
+
+退出码都是 0。check-docs 仍是 links 0、anchors 0、status 9、verbatim 0、findings 9。字节对比仍对准 `f8d5d01`。
