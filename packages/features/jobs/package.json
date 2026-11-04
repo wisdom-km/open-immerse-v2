@@ -2,5 +2,8 @@
   "name": "@oi/feature-jobs",
   "private": true,
   "license": "Apache-2.0",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@oi/contracts": "workspace:*"
+  }
 }
