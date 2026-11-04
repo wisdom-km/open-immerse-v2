@@ -20,14 +20,14 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔提交只有它。来源核对逐条回应。`quality/`、`repair/` 不从目录树删除 |  | 本文件 |
-| 2 | 改 [docs/arch/03.md](../arch/03.md) 四处：renderer 注释、`worker-client/` 与 `ui-kit/` 标计划中、切片区分已建与计划中、`tools/` 补齐。`quality/`、`repair/` 留在计划中，并注明 ADR 0003 删的是边 |  |  |
-| 3 | [docs/arch/04-02.md](../arch/04-02.md) `reader` 行写上会话 hook 边界（Fixes #42） |  |  |
-| 4 | [docs/backlog.md](../backlog.md)：第 167 行 P2-9 改为已处理；§4 表末加 websocket 透传与 #141 三项；文首状态行末补一句 |  |  |
-| 5 | [docs/approvals.md](../approvals.md) 在 14:54 之后加 10 行。15:44 计入批准。计数改为 54 条批准 + 1 条反馈记录 + 1 条决定 |  |  |
-| 6 | PR 模板在「## 测试证据」前加自检勾选。执行计划模板文末加「自检」节与同一行 |  |  |
-| 7 | [docs/spec-changelog.md](../spec-changelog.md) 表首加一行。版本历史标记之内不改。规格版本仍是 v0.6 |  |  |
-| 8 | `node tools/check-docs/check.mjs` 与 `node tools/compare-spec-bytes/compare.mjs`。发现数不得高于基线 9。arch 正文变化若让逐字比对失败，记在证据里，不改工具。Draft PR，正文第一行 `Fixes #42`，第二行 `Refs #28` |  |  |
+| 1 | 本文件。第一笔提交只有它。来源核对逐条回应。`quality/`、`repair/` 不从目录树删除 | 提交 `17a779a` 只有本文件 | 本文件 |
+| 2 | 改 [docs/arch/03.md](../arch/03.md) 四处：renderer 注释、`worker-client/` 与 `ui-kit/` 标计划中、切片区分已建与计划中、`tools/` 补齐。`quality/`、`repair/` 留在计划中，并注明 ADR 0003 删的是边 | 已写入。`vitest-collect/` 是目录 | `49114de` |
+| 3 | [docs/arch/04-02.md](../arch/04-02.md) `reader` 行写上会话 hook 边界（Fixes #42） | 已写入文件格末尾 | `49114de` |
+| 4 | [docs/backlog.md](../backlog.md)：第 167 行 P2-9 改为已处理；§4 表末加 websocket 透传与 #141 三项；文首状态行末补一句 | 已改。§3 第 53 行另一个 P2-9 未动 | `49114de` |
+| 5 | [docs/approvals.md](../approvals.md) 在 14:54 之后加 10 行。15:44 计入批准。计数改为 54 条批准 + 1 条反馈记录 + 1 条决定 | 56 行日期记录：54 条批准 + 1 条反馈 + 1 条决定。15:28 用 `pull/139` | `49114de` |
+| 6 | PR 模板在「## 测试证据」前加自检勾选。执行计划模板文末加「自检」节与同一行 | 两处都已加交接那句 | `49114de` |
+| 7 | [docs/spec-changelog.md](../spec-changelog.md) 表首加一行。版本历史标记之内不改。规格版本仍是 v0.6 | 表首一行，PR 列改为 #143。版本历史标记之内未改 | 本提交与 `49114de` |
+| 8 | `node tools/check-docs/check.mjs` 与 `node tools/compare-spec-bytes/compare.mjs`。发现数不得高于基线 9。arch 正文变化若让逐字比对失败，记在证据里，不改工具。Draft PR，正文第一行 `Fixes #42`，第二行 `Refs #28` | check-docs 退出码 0，发现数 9。compare 退出码 1，ARCHITECTURE.md 字节 37817。Draft PR #143 | [commands.md](../evidence/143/commands.md) |
 
 ## 决策记录（Decision Log）
 
