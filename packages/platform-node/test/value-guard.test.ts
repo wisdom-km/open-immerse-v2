@@ -177,3 +177,14 @@ it("AC-101 replaces a high-entropy tail when it is stored on run_id", () => {
   expect(guarded).toMatchObject({ run_id: REDACTED });
   expect(JSON.stringify(guarded)).not.toContain(tail);
 });
+
+it("keeps source worker when the record includes that literal", () => {
+  expect(guardDiagRecord({ ...pipeline(), source: "worker" })).toMatchObject({
+    source: "worker",
+    event: "pipeline.run",
+  });
+});
+
+it("returns undefined when source is not the worker literal", () => {
+  expect(guardDiagRecord({ ...pipeline(), source: "main" })).toBeUndefined();
+});
