@@ -4,7 +4,7 @@ Open Immerse v2：把英文学术 PDF 做成可对照、可追溯、公式不走
 
 没有上下文时按 [AGENTS.md](AGENTS.md) 读：先 [RULES.md](RULES.md) §6 与 §9，再只读该任务类型的节和点名的验收编号。不要先通读 PRD 与 ARCHITECTURE，也不要跳到历史草案。
 
-与根目录三份规格冲突时，以规格为准（优先级见 RULES 文首）。不要实现矢量重绘、浏览器扩展、手机客户端、订阅计费。标「待审批」的视觉数值不是定稿。[docs/architecture/](docs/architecture/README.md) 是历史草案，不授权实现。
+与根目录三份规格冲突时，以规格为准（优先级见 RULES 文首）。不要实现矢量重绘、浏览器扩展、手机客户端、订阅计费。标「待审批」的视觉数值不是定稿。[docs/architecture/README.md](docs/architecture/README.md) 与文件名带「草案」的文件是历史草案，不授权实现。章节正文从根目录规格索引进入。
 
 给 Agent 的短指针在 [AGENTS.md](AGENTS.md)。角色与升级见 [docs/WORKFLOW.md](docs/WORKFLOW.md)。贡献方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
@@ -21,7 +21,7 @@ Open Immerse v2：把英文学术 PDF 做成可对照、可追溯、公式不走
 
 ## 历史草案
 
-[docs/architecture/](docs/architecture/README.md) 是早期输入。其中的需求表（含手机平台、账号式能力）不授权实现。冲突时以根目录 `PRD.md`、`ARCHITECTURE.md`、`RULES.md` 为准。
+[docs/architecture/README.md](docs/architecture/README.md) 与文件名带「草案」的文件是早期输入。其中的需求表（含手机平台、账号式能力）不授权实现。冲突时以根目录 `PRD.md`、`ARCHITECTURE.md`、`RULES.md` 为准。ARCHITECTURE 的章节正文也放在 `docs/architecture/`，从根目录索引进入，不是草案。
 
 [docs/README.md](docs/README.md) 的「历史 / 愿景」收录架构重设计 v1.1，不作为 v2 需求。
 
