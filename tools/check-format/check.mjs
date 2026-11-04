@@ -1,9 +1,11 @@
-import { spawnSync } from "node:child_process";
+import { spawnCommand } from "../spawn-bin/spawn-bin.mjs";
 
 const extensions = "**/*.{ts,tsx,mjs,js,cjs}";
 
-const result = spawnSync("prettier", ["--check", extensions], {
-  encoding: "utf8",
+const result = spawnCommand({
+  command: "prettier",
+  args: ["--check", extensions],
+  options: { encoding: "utf8" },
 });
 process.stdout.write(result.stdout ?? "");
 process.stderr.write(result.stderr ?? "");

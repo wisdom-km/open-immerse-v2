@@ -1,8 +1,8 @@
-import { spawnSync } from "node:child_process";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 
 import { writeRemediation } from "./gate-remediation/format.mjs";
+import { spawnCommand } from "./spawn-bin/spawn-bin.mjs";
 
 const SKIP_DIRECTORIES = new Set(["node_modules", "dist", "coverage"]);
 
@@ -34,11 +34,11 @@ if (!(await containsTypeScript(process.cwd()))) {
   process.exit(0);
 }
 
-const result = spawnSync(
-  "tsc",
-  ["--noEmit", "--pretty", "false", "--project", "tsconfig.json"],
-  { stdio: "inherit" },
-);
+const result = spawnCommand({
+  command: "tsc",
+  args: ["--noEmit", "--pretty", "false", "--project", "tsconfig.json"],
+  options: { stdio: "inherit" },
+});
 if ((result.status ?? 1) !== 0) {
   if (result.error) {
     console.error(result.error.message);
