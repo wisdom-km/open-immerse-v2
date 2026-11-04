@@ -14,6 +14,8 @@
 
 ## 现状理解
 
+下面三行是开工时的状态。做完的部分在下表「实际」列。
+
 - 已有行为：`packages/contracts/src/ipc/settings.ts` 手写 `SettingsEgressCommands`（四条 `Promise<Result<...>>`）、五条 `SettingsEgressChannel` 字面量、`SettingsEgressEventPayload = EgressConsentRequired`，以及 `JevRoute`。没有请求 schema，没有幂等，没有 `expose`。错误类型来自 `egress.ts`：`unknown_request` 与 `consent_not_granted` 只有 `code`，后两条命令的错误是 `never`。`packages/contracts/src/index.ts` 第 70–77 行再导出这些名字。`vitest.config.ts` 的 `include` 已有 `packages/contracts/**/*.test.ts`。`@sinclair/typebox` 0.34.52 已在 `@oi/contracts` 的依赖里。仓库没有 `contracts/src/errors.ts`。
 - 相关的节：[feature-preload-codegen-67.md](feature-preload-codegen-67.md) §3.1、§3.2、§3.6 与「以后改规格的行」；[docs/arch/09.md](../arch/09.md)；[docs/arch/09-01.md](../arch/09-01.md)；[docs/arch/02-02.md](../arch/02-02.md)；[docs/arch/02-04.md](../arch/02-04.md)；[docs/arch/02-05.md](../arch/02-05.md)；[docs/arch/07-00.md](../arch/07-00.md) 外发同意类型块里的幂等注释；[docs/arch/06.md](../arch/06.md)；[docs/arch/11.md](../arch/11.md)；[docs/arch/13.md](../arch/13.md)。[RULES.md](../../RULES.md) §2 契约先行、§3 第 3 条、N-09、N-18、§8.4。[DESIGN.md](../../DESIGN.md) §4.9 与 [docs/design-principles.md](../design-principles.md) 的 P7。验收原文在 [docs/prd/06-01-01.md](../prd/06-01-01.md)、[docs/prd/06-01-07.md](../prd/06-01-07.md)、[docs/prd/06-01-10.md](../prd/06-01-10.md)、[docs/prd/06-01-12.md](../prd/06-01-12.md)。
 - 还没做的部分：没有描述符类型。`SettingsEgressCommands` 还不是从描述符推导的。生成器、`oi-api.d.ts`、`ipc-router` 都不在本 PR。
@@ -24,11 +26,11 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 第一笔只有本文件 |  |  |
-| 2 | 新增 `ipc/descriptor.ts`（描述符类型）与 `ipc/error-codes.ts`（本 PR 用到的共用码字符串）。`settings.ts` 用描述符写出四条命令和 `settings.onEgressConsentRequired`，`SettingsEgressCommands` 由描述符推导，导出名不变。`index.ts` 的再导出段不动 |  |  |
-| 3 | 新增 `packages/contracts/test/ipc-settings.test.ts`。现有 `settings-egress.test.ts` 若因错误形状带上 `retryable` 与传输码而不再精确相等，只改断言，不改 `egress.ts` |  |  |
-| 4 | 定向检查：vitest 这一份新测试和被改的 contracts 测试；`tsc -p tsconfig.core.json --noEmit`；`node tools/check-pr-size/check.mjs`；`node tools/check-file-size/check.mjs`；`node tools/check-docs/check.mjs` |  |  |
-| 5 | Draft PR。正文第一行 `Refs #67`。不 force push，不 rebase，不改 CI |  |  |
+| 1 | 第一笔只有本文件 | `9754416` | 本文件 |
+| 2 | 新增 `ipc/descriptor.ts`（描述符类型）与 `ipc/error-codes.ts`（本 PR 用到的共用码字符串）。`settings.ts` 用描述符写出四条命令和 `settings.onEgressConsentRequired`，`SettingsEgressCommands` 由描述符推导，导出名不变。`index.ts` 的再导出段不动 | `6f1bc3b` | `packages/contracts/src/ipc/` |
+| 3 | 新增 `packages/contracts/test/ipc-settings.test.ts`。现有 `settings-egress.test.ts` 若因错误形状带上 `retryable` 与传输码而不再精确相等，只改断言，不改 `egress.ts` | `6f1bc3b`。断言已改，`egress.ts` 未改 | `packages/contracts/test/ipc-settings.test.ts` |
+| 4 | 定向检查：vitest 这一份新测试和被改的 contracts 测试；`tsc -p tsconfig.core.json --noEmit`；`node tools/check-pr-size/check.mjs`；`node tools/check-file-size/check.mjs`；`node tools/check-docs/check.mjs` | 在 `6f1bc3b` 上退出码都是 0。对照 `origin/main` 非生成 729 行，提交说明含 `G12:` | [docs/evidence/152/commands.md](../evidence/152/commands.md) |
+| 5 | Draft PR。正文第一行 `Refs #67`。不 force push，不 rebase，不改 CI | Draft [PR #152](https://github.com/wisdom-km/open-immerse-v2/pull/152) | 同左 |
 
 ## 本 PR 怎么落 C1–C8
 
@@ -93,8 +95,8 @@
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：开 PR 后按号写入命令与退出码。
+- [docs/evidence/152/commands.md](../evidence/152/commands.md)：定向检查的命令与退出码。PR #152。
 
 ## 自检
 
-- [ ] 影响 arch / prd 吗？不改 arch / prd 正文。不一致的规格行仍留在方案的「以后改规格的行」，本 PR 不改那些句子。
+- [x] 影响 arch / prd 吗？不改 arch / prd 正文。不一致的规格行仍留在方案的「以后改规格的行」，本 PR 不改那些句子。
