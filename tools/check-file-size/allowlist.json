@@ -15,6 +15,18 @@
     {
       "pattern": "fixtures/protocol/**",
       "reason": "协议样例。ARCHITECTURE §6 不计行数。"
+    },
+    {
+      "pattern": "apps/desktop/src/preload/oi.generated.ts",
+      "reason": "preload 生成物。docs/arch/06.md 生成文件不计行数。"
+    },
+    {
+      "pattern": "apps/desktop/src/renderer/oi-api.d.ts",
+      "reason": "preload 生成物。docs/arch/06.md 生成文件不计行数。"
+    },
+    {
+      "pattern": "apps/desktop/src/main/ipc/registry.generated.ts",
+      "reason": "preload 生成物。docs/arch/06.md 生成文件不计行数。"
     }
   ],
   "exemptions": []
