@@ -204,18 +204,26 @@ const files = [...new Set([
   ...listed(["ls-files", "-z", "--others", "--exclude-standard", "--", "*.md"]),
 ])].filter((file) => !file.startsWith("tools/check-docs/fixtures/")).sort();
 const read = (rel) => readFileSync(rel, "utf8");
-const links = linkFindings(files, process.cwd(), read).filter(
-  (item) => item.kind === "missing-file" || item.kind === "missing-anchor",
-);
+const found = linkFindings(files, process.cwd(), read);
+const missingFile = found.filter((item) => item.kind === "missing-file");
+const anchors = found.filter((item) => item.kind === "missing-anchor");
+const githubIds = new Set([
+  "./docs/arch/09.md#9-ipc-协议renderer--main",
+  "./docs/arch/09-01.md#91-v2-桌面端-ui-新增-seam已采纳adr-0001wisdom-2026-11-04",
+  "./docs/arch/14-01.md#141-发生了什么数据来自旧仓库只读审查见-v1-审查-3",
+  "./docs/prd/03-03.md#33-设置模型能力的本地--api与面壁开放平台q9wisdom-2026-10-30-18371844",
+  "./docs/prd/03-06.md#36-v2-桌面端-ui-带来的范围补充已采纳adr-0001wisdom-2026-11-04",
+]);
+const unexpected = anchors.filter((item) => !githubIds.has(item.detail));
 const status = statusFindings(files, read).filter(
   (item) => item.kind === "status-line-missing" && item.file.startsWith("docs/prd/"),
 );
-if (links.length > 0 || status.length > 0) {
-  console.error(JSON.stringify({ links, status }, null, 2));
+if (missingFile.length > 0 || unexpected.length > 0 || anchors.length !== githubIds.size || status.length > 0) {
+  console.error(JSON.stringify({ missingFile, unexpected, anchors, status }, null, 2));
   process.exit(1);
 }
 console.log("links 0");
-console.log("anchors 0");
+console.log("anchors " + String(anchors.length));
 `;
 
 it("reports no broken link when tracked and new markdown are checked", () => {
@@ -230,5 +238,5 @@ it("reports no broken link when tracked and new markdown are checked", () => {
     stdout: result.stdout,
   }).toMatchObject({ status: 0 });
   expect(result.stdout).toContain("links 0");
-  expect(result.stdout).toContain("anchors 0");
+  expect(result.stdout).toContain("anchors 5");
 });

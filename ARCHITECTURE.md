@@ -122,9 +122,9 @@
 
 ### [8.4 版本与升级（架构评审 P1-9）](./docs/arch/08-04.md#84-版本与升级架构评审-p1-9)
 
-## [9. IPC 协议（renderer ↔ main）](./docs/arch/09.md#9-ipc-协议renderer-↔-main)
+## [9. IPC 协议（renderer ↔ main）](./docs/arch/09.md#9-ipc-协议renderer--main)
 
-### [9.1 v2 桌面端 UI 新增 seam**【已采纳，ADR 0001，Wisdom 2026-11-04】**](./docs/arch/09-01.md#91-v2-桌面端-ui-新增-seam【已采纳adr-0001wisdom-2026-11-04】)
+### [9.1 v2 桌面端 UI 新增 seam**【已采纳，ADR 0001，Wisdom 2026-11-04】**](./docs/arch/09-01.md#91-v2-桌面端-ui-新增-seam已采纳adr-0001wisdom-2026-11-04)
 
 ## [10. Python worker 协议（oi-parse/1）](./docs/arch/10.md#10-python-worker-协议oi-parse1)
 
@@ -150,7 +150,7 @@
 
 ### 14.1 发生了什么（数据来自旧仓库只读审查，见 [v1 审查](./docs/v1-review.md) §3）
 
-[本节原文](./docs/arch/14-01.md#141-发生了什么数据来自旧仓库只读审查见-v1-审查-§3)
+[本节原文](./docs/arch/14-01.md#141-发生了什么数据来自旧仓库只读审查见-v1-审查-3)
 
 ### [14.2 造成的问题](./docs/arch/14-02.md#142-造成的问题)
 

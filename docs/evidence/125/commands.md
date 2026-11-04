@@ -115,4 +115,23 @@ corepack pnpm test
 GATE_BASE=origin/main corepack pnpm run check
 ```
 
-在 `b10c47f` 上退出码 0。`check-pr-size: 7592 non-generated lines`。日志在 `/opt/cursor/artifacts/pnpm-check-125-forge.log`。
+在 `b10c47f` 上退出码 0。`check-pr-size: 7592 non-generated lines`。日志在 `/opt/cursor/artifacts/pnpm-check-125-forge.log`。证据提交 `3c2f159` 上再跑同一门禁，退出码 0，仍是 7592。
+
+## GitHub 标题 id
+
+Wisdom 2026-11-04 11:40：先修锚点再合。只改根索引 `PRD.md`、`ARCHITECTURE.md` 里的链接片段。章节正文和 `link-rewrites.txt` 的 68 行没有改。
+
+按 GitHub 的规则（转小写；只留字母、数字、中文、空格、连字符、下划线；空格变连字符）核对了本 PR 新增或改过的链接。对不上的只有这 5 处：
+
+- `ARCHITECTURE.md:125` `9-ipc-协议renderer-↔-main` → `9-ipc-协议renderer--main`
+- `ARCHITECTURE.md:127` `91-v2-桌面端-ui-新增-seam【已采纳adr-0001wisdom-2026-11-04】` → `91-v2-桌面端-ui-新增-seam已采纳adr-0001wisdom-2026-11-04`
+- `ARCHITECTURE.md:153` `141-发生了什么数据来自旧仓库只读审查见-v1-审查-§3` → `141-发生了什么数据来自旧仓库只读审查见-v1-审查-3`
+- `PRD.md:15` `33-设置模型能力的本地-api与面壁开放平台q9wisdom-2026-10-30-18371844` → `33-设置模型能力的本地--api与面壁开放平台q9wisdom-2026-10-30-18371844`
+- `PRD.md:21` `36-v2-桌面端-ui-带来的范围补充【已采纳adr-0001wisdom-2026-11-04】` → `36-v2-桌面端-ui-带来的范围补充已采纳adr-0001wisdom-2026-11-04`
+
+```bash
+node tools/compare-spec-bytes/compare.mjs
+node tools/check-docs/check.mjs
+```
+
+比对退出码 0，三组字节与上面相同，68 处路径前缀不变。`check-docs` 退出码 0。`links: 0`。`anchors: 5`，就是上面这 5 个：check-docs 自己的 slug 规则没改，所以它仍按旧片段报 missing-anchor。其余发现仍是 9 条状态行和索引表。这一笔提交上的 `GATE_BASE=origin/main corepack pnpm run check` 退出码补在下一节。
