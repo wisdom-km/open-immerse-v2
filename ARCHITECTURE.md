@@ -374,6 +374,8 @@ packages/features/<name>/
 | `ui-kit/src/markdown/math.tsx` | `MathInline` / `MathBlock`：用 `contracts` 的 `KATEX_SAFE_OPTIONS` 调 KaTeX；抛错时显示原始 LaTeX + 错误标记；只挂载 KaTeX 生成的 DOM |
 | `ui-kit/src/markdown/code-block.tsx`、`md-image.tsx`、`md-link.tsx`、`blocked-html.tsx`、`md-table.tsx` | 各渲染一种节点；`md-link` 只把 `ResolvedLink` 回调给宿主，不自己导航 |
 
+`packages/contracts/src/worker/` 的 `readHealthResponse`、`readProtocolHeader`、`readUnsupportedProtocol` 是 oi-parse/1 报文的运行时校验，与 schema 放在一起，属于接受的例外（Wisdom 2026-11-04 05:26 批准 #61 第 4 条方案 A）。
+
 `kernel` 有文件白名单，含 `packages/kernel/src/index.ts`；新增文件需要 ADR。`packages/contracts` 可以依赖 `kernel`，且只允许 type-only import（G5，Wisdom 2026-11-02 17:58）。**不存在** `utils`、`helpers`、`common`、`shared/state` 这类目录。
 
 ### 4.2 功能切片
@@ -457,7 +459,7 @@ flowchart TD
 - `reader` 只有 ui 与纯 domain，不出现在图中：它通过 `window.oi` 调用其他切片的 IPC 命令，不 import 其他切片。译文块的 `MdDocument` 由 `translation.getBlocks` 返回，reader 不 import `markdown`。
 - **借用多模态翻译（Q11）是装配期复用，不是依赖边**（架构评审 P1-6）：`translation` 只依赖自己的 `TranslationProvider` 端口。开关打开时，装配根把补救所用的同一个服务商绑定（`@oi/providers` 的 `ChatTransport` 与模型）也交给 `translation` 的 `llm-translation-provider`，预留记在多模态科目（§7.8，PRD AC-29）。图上没有、也不得加 `translation → repair` 的边；`translation` 不 import `repair` 的任何东西（PRD AC-78）。
 - **UI 事件不是依赖边，但同样登记**（架构评审 P2-2）：切片间的 UI 事件（§5.3）在 `contracts/src/ui-events.ts` 写明每个事件的发布方与订阅方；它们不进 dependency-cruiser 矩阵，由 G5 的事件检查核对（PRD AC-82）。
-- 新增一条边需要 ADR，并在同一个 PR 里更新本图与 dependency-cruiser 配置。新增 UI 事件，或给事件新增发布方、订阅方，同样需要 ADR。`ingest` 的九条边与删除 `repair → quality` 在 M1 建立 `docs/adr/` 时登记（§16）。
+- 新增一条边需要 ADR，并在同一个 PR 里更新本图与 dependency-cruiser 配置。新增 UI 事件，或给事件新增发布方、订阅方，同样需要 ADR。`ingest` 的九条边与删除 `repair → quality` 已登记为 [ADR 0002](./docs/adr/0002-ingest-edges.md) 与 [ADR 0003](./docs/adr/0003-repair-quality-removed.md)（§16）。
 
 ### 4.4 预留切片 `writing`（Q5）
 
@@ -2222,6 +2224,6 @@ Q1–Q12 已全部由 Wisdom 于 2026-10-30 决定，完整记录在 [docs/v2-ga
 | platform-node 值导入 contracts（Wisdom 2026-11-03 10:40） | 批准 `platform-node` → `contracts` 的值导入，供诊断日志落盘读取 `readDiagEvent`。§5.1 增加 `PN --> C`。`contracts` 仍是叶子（`contracts-is-leaf` 不变）。`contracts` → `kernel` 仍只允许 type-only import。这次批准代替该边的 ADR，不另建 `docs/adr/` 页。dependency-cruiser 与其余门禁不在本 PR 改，规则落地属 PR #77 | §5.1、§13 G5 |
 
 - 上游 SDK 与权重近期才发布（MiniCPM-OCR 仓库 2026-10-27 公开），M3、M6a、M6b 开工前各复核一次：锁定的提交、字段与部署方式是否仍然成立；不成立时先更新差异清单，再改本文。
-- 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、架构评审新增的 `ingest` 切片及其九条出边、`budget` 切片与删除的 `repair → quality`，以及修复 B 新增的 `packages/providers` 包与 `providers-boundary` 规则、`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），以及 PR C 新增的 G18、`ui-events-declared`、`supervisor-state` 与解析规则集 `oi-rules/1`，在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。2026-11-03 10:40 批准的 `platform-node` → `contracts` 值导入同样等到那时登记；门禁配置不在批准它的文档 PR 里改。
+- 本文的任何结构性修改（新增切片、新增依赖边、调整上限）都需要 ADR（`docs/adr/`），并在同一个 PR 更新本文与对应 CI 配置。Q4 新增的 `formula-source` 切片、Markdown 阅读方案新增的 `markdown` 切片及其五条依赖边（`translation`、`notes`、`qa` → `markdown`；`markdown` → `library`、`jobs`）、`budget` 切片，以及修复 B 新增的 `packages/providers` 包与 `providers-boundary` 规则、`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），以及 PR C 新增的 G18、`ui-events-declared`、`supervisor-state` 与解析规则集 `oi-rules/1`，在 M1 建立 `docs/adr/` 时作为第一批 ADR 登记。架构评审新增的 `ingest` 切片及其九条出边，以及删除的 `repair → quality`，已登记为 ADR 0002、0003（2026-11-04，PR #122）。2026-11-03 10:40 批准的 `platform-node` → `contracts` 值导入同样等到那时登记；门禁配置不在批准它的文档 PR 里改。
 
 **v2 桌面端 UI 引起的架构变更（Wisdom 2026-11-04 采纳；[ADR 0001](./docs/adr/0001-m4-desktop-ui.md)）**：§7.11 术语抽取改为需要外发同意和预算的模型能力，放在 M4，抽取前的同意也算该服务商的外发同意；术语库按领域自动分组，用户可以改，`domain` 带来源 `llm` | `user`；§8.2 数据目录可迁移，目标盘空余至少为数据大小的 1.2 倍，迁移完询问是否删除旧文件；§9 绝对路径规则保持不变，UI 只显示名称，用 `shell.revealItem` 在资源管理器 / 访达中显示。§9.1 已采纳；接口签名各自实现时走接口 PR。依据：Wisdom 2026-11-04 02:27、03:02、03:08、03:14、03:18、03:21、03:28 的批准（DESIGN v0.3 §6.1）。决定人与日期见 ADR 0001。

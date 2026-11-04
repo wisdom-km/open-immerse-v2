@@ -2,4 +2,5 @@ packages:
   - packages/contracts
   - packages/kernel
   - packages/platform-node
+  - packages/providers
   - apps/desktop

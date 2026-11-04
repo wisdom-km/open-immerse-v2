@@ -66,6 +66,18 @@ importers:
         specifier: workspace:*
         version: link:../kernel
 
+  packages/providers:
+    dependencies:
+      '@oi/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@oi/kernel':
+        specifier: workspace:*
+        version: link:../kernel
+      '@oi/platform-node':
+        specifier: workspace:*
+        version: link:../platform-node
+
 packages:
 
   '@cacheable/memory@2.2.0':
