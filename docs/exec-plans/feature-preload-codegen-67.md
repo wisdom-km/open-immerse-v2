@@ -16,7 +16,7 @@
 | --- | --- | --- | --- |
 | 1 | 骨架。第一笔只有本文件 | `52a53ef` | 本文件 |
 | 2 | 写满 §3.1–§3.6 与来源核对 | 本提交 | 本文件 |
-| 3 | `node tools/check-docs/check.mjs` 与 `node tools/compare-spec-bytes/compare.mjs` | 见证据目录 | 证据目录 |
+| 3 | `node tools/check-docs/check.mjs` 与 `node tools/compare-spec-bytes/compare.mjs` | 两条退出码都是 0。check-docs `findings: 0` | [docs/evidence/148/commands.md](../evidence/148/commands.md) |
 | 4 | 不写实现。Loom 审、Wisdom 批之后才开契约 PR | 未写实现 | — |
 
 ## 决策记录（Decision Log）
@@ -237,7 +237,7 @@ Q6. 传输失败要不要进每条命令的错误联合？
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：PR 开出后把 `<PR号>` 写成实际编号，并记下定向检查的退出码。
+- [docs/evidence/148/commands.md](../evidence/148/commands.md)：定向检查的命令与退出码。PR #148。
 
 ## 自检
 
