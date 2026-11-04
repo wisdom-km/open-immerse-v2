@@ -115,4 +115,4 @@ corepack pnpm test
 GATE_BASE=origin/main corepack pnpm run check
 ```
 
-这一笔提交上的退出码写在下一节。
+在 `b10c47f` 上退出码 0。`check-pr-size: 7592 non-generated lines`。日志在 `/opt/cursor/artifacts/pnpm-check-125-forge.log`。
