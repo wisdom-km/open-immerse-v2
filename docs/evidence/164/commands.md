@@ -60,4 +60,8 @@ node tools/check-commits/check.mjs --base origin/main
 node tools/check-pr-size/check.mjs --base origin/main
 ```
 
-退出码都是 0。`check-commits: subjects match Conventional Commits`。`1a02eff` 上 `check-pr-size: 88 non-generated lines`。`f339563` 上是 `check-pr-size: 151 non-generated lines`。不需要 `G12:`。
+退出码都是 0。`check-commits: subjects match Conventional Commits`。`1a02eff` 上 `check-pr-size: 88 non-generated lines`。`f339563` 与校正提交 `4e0947a` 上都是 `check-pr-size: 151 non-generated lines`。不需要 `G12:`。
+
+## pnpm check
+
+`4e0947a` 上 `GATE_BASE=origin/main corepack pnpm run check`，退出码 1。停在 G2 ESLint，31 条 `@typescript-eslint/no-unsafe-*`，文件都在 `packages/features/markdown/`（`absorb-list-math.ts`、`extensions.ts`、`read-tree.ts`、`test/core/roundtrip.test.ts`）。这些文件不在本 PR 的 diff 里，是 `origin/main@523c18d` 已有的。本 PR 不改它们。格式检查（G1）在这之前已通过。日志：`/opt/cursor/artifacts/pr164-gates.log`。
