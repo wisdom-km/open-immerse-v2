@@ -14,44 +14,43 @@ import {
   storageFailure,
   type StorageFailure,
 } from "./errors.js";
-import { createHandle, readCurrentSchema, type AppStorage } from "./handle.js";
+import { createHandle, type AppStorage } from "./handle.js";
 import {
-  applyMigrations,
   migrationKey,
   sortMigrations,
   type MigrationSource,
 } from "./migrations.js";
-import { probeDatabase, type DatabaseProbe } from "./probe.js";
 import {
-  readDatabaseSnapshot,
-  removeDatabaseFiles,
-  restoreDatabaseSnapshot,
-  writeSingleBackup,
-  type FileSnapshot,
-} from "./snapshot.js";
-
-type RestoreSnapshot = (databaseFile: string, snapshot: FileSnapshot) => void;
+  createDatabase,
+  migrateDatabase,
+  openWriter,
+} from "./migrate-database.js";
+import { probeDatabase, type DatabaseProbe } from "./probe.js";
+import type { FileSnapshot } from "./snapshot.js";
+import {
+  defaultStorageIo,
+  type PreparedOpen,
+  type StorageIo,
+} from "./storage-io.js";
 
 export type OpenStorageOptions = {
   readonly dataRoot: string;
   readonly clock: Clock;
   readonly supportedAppSchema?: number;
   readonly migrations?: readonly MigrationSource[];
-  readonly restoreSnapshot?: RestoreSnapshot;
-};
-
-type PreparedOpen = {
-  readonly layout: DataRootLayout;
-  readonly supportedAppSchema: number;
-  readonly migrations: readonly MigrationSource[];
-  readonly clock: Clock;
-  readonly restoreSnapshot: RestoreSnapshot;
 };
 
 export function openAppStorage(
   options: OpenStorageOptions,
 ): Result<AppStorage, StorageFailure> {
-  const prepared = prepareOpen(options);
+  return openAppStorageUsing(options, defaultStorageIo());
+}
+
+export function openAppStorageUsing(
+  options: OpenStorageOptions,
+  io: StorageIo,
+): Result<AppStorage, StorageFailure> {
+  const prepared = prepareOpen(options, io);
   if (!prepared.ok) {
     return prepared;
   }
@@ -60,6 +59,7 @@ export function openAppStorage(
 
 function prepareOpen(
   options: OpenStorageOptions,
+  io: StorageIo,
 ): Result<PreparedOpen, StorageFailure> {
   const supported = resolveSupported(options.supportedAppSchema);
   const sorted = sortMigrations(options.migrations ?? []);
@@ -79,7 +79,7 @@ function prepareOpen(
       supportedAppSchema: supported,
       migrations: sorted.value,
       clock: options.clock,
-      restoreSnapshot: options.restoreSnapshot ?? restoreDatabaseSnapshot,
+      io,
     },
   };
 }
@@ -88,9 +88,10 @@ function openPrepared(
   prepared: PreparedOpen,
 ): Result<AppStorage, StorageFailure> {
   const databaseFile = prepared.layout.databaseFile;
-  const prior = existsSync(databaseFile)
-    ? readDatabaseSnapshot(databaseFile)
-    : undefined;
+  const prior = readPrior(databaseFile, prepared.io.readSnapshot);
+  if (!prior.ok) {
+    return prior;
+  }
   const probe = probeDatabase(databaseFile);
   if (probe.kind === "failed") {
     return {
@@ -110,10 +111,42 @@ function openPrepared(
   if (!needsMigration(probe, pending, prepared.supportedAppSchema)) {
     return openReadWrite(prepared.layout, probe);
   }
-  if (probe.kind === "absent" || prior === undefined) {
+  if (probe.kind === "absent" || prior.value === undefined) {
     return createDatabase(prepared, pending);
   }
-  return migrateDatabase(prepared, pending, prior);
+  return migrateDatabase(prepared, pending, prior.value);
+}
+
+function readPrior(
+  databaseFile: string,
+  readSnapshot: StorageIo["readSnapshot"],
+): Result<FileSnapshot | undefined, StorageFailure> {
+  if (!existsSync(databaseFile)) {
+    return { ok: true, value: undefined };
+  }
+  try {
+    return { ok: true, value: readSnapshot(databaseFile) };
+  } catch (error) {
+    return { ok: false, error: snapshotReadFailure(error) };
+  }
+}
+
+function snapshotReadFailure(error: unknown): StorageFailure {
+  if (isFileLock(error)) {
+    return storageFailure("storage.locked", "database file is locked", error);
+  }
+  return storageFailure(
+    "storage.open_failed",
+    "database could not be opened",
+    error,
+  );
+}
+
+function isFileLock(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("code" in error)) {
+    return false;
+  }
+  return error.code === "EBUSY" || error.code === "EPERM";
 }
 
 function pendingMigrations(
@@ -189,132 +222,6 @@ function openReadWrite(
         "database could not be opened",
       ),
     };
-  }
-}
-
-function createDatabase(
-  prepared: PreparedOpen,
-  pending: readonly MigrationSource[],
-): Result<AppStorage, StorageFailure> {
-  let database: DatabaseSync | undefined;
-  try {
-    database = openWriter(prepared.layout.databaseFile);
-    runMigration(database, pending, prepared);
-    return {
-      ok: true,
-      value: createHandle(
-        database,
-        prepared.layout,
-        "read-write",
-        readCurrentSchema(database),
-      ),
-    };
-  } catch {
-    database?.close();
-    removeDatabaseFiles(prepared.layout.databaseFile);
-    return migrationFailed();
-  }
-}
-
-function migrateDatabase(
-  prepared: PreparedOpen,
-  pending: readonly MigrationSource[],
-  snapshot: FileSnapshot,
-): Result<AppStorage, StorageFailure> {
-  try {
-    writeSingleBackup(prepared.layout.stagingDirectory, snapshot);
-  } catch {
-    return failedRestore(prepared, snapshot) ?? backupFailed();
-  }
-  let database: DatabaseSync | undefined;
-  try {
-    database = openWriter(prepared.layout.databaseFile);
-    runMigration(database, pending, prepared);
-    return {
-      ok: true,
-      value: createHandle(
-        database,
-        prepared.layout,
-        "read-write",
-        readCurrentSchema(database),
-      ),
-    };
-  } catch {
-    database?.close();
-    return failedRestore(prepared, snapshot) ?? migrationFailed();
-  }
-}
-
-function failedRestore(
-  prepared: PreparedOpen,
-  snapshot: FileSnapshot,
-): Result<AppStorage, StorageFailure> | undefined {
-  try {
-    prepared.restoreSnapshot(prepared.layout.databaseFile, snapshot);
-    return undefined;
-  } catch (error) {
-    return {
-      ok: false,
-      error: storageFailure(
-        "storage.restore_failed",
-        "database snapshot could not be restored",
-        error,
-      ),
-    };
-  }
-}
-
-function backupFailed(): Result<AppStorage, StorageFailure> {
-  return {
-    ok: false,
-    error: storageFailure(
-      "storage.backup_failed",
-      "database backup could not be written",
-    ),
-  };
-}
-
-function migrationFailed(): Result<AppStorage, StorageFailure> {
-  return {
-    ok: false,
-    error: storageFailure("storage.migration_failed", "migration rolled back"),
-  };
-}
-
-function runMigration(
-  database: DatabaseSync,
-  pending: readonly MigrationSource[],
-  prepared: PreparedOpen,
-): void {
-  database.exec("PRAGMA journal_mode = WAL");
-  database.exec("BEGIN IMMEDIATE");
-  try {
-    applyMigrations(
-      database,
-      pending,
-      prepared.supportedAppSchema,
-      new Date(prepared.clock.nowMs()).toISOString(),
-    );
-    database.exec("COMMIT");
-  } catch (error) {
-    rollbackQuietly(database);
-    throw error;
-  }
-}
-
-function openWriter(databaseFile: string): DatabaseSync {
-  return new DatabaseSync(databaseFile, {
-    readOnly: false,
-    timeout: 0,
-    enableForeignKeyConstraints: true,
-  });
-}
-
-function rollbackQuietly(database: DatabaseSync): void {
-  try {
-    database.exec("ROLLBACK");
-  } catch {
-    return;
   }
 }
 

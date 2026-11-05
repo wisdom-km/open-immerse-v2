@@ -17,9 +17,17 @@ import {
   openAppStorage,
   readSliceMigrations,
   type AppStorage,
+  type OpenStorageOptions,
 } from "@oi/platform-node";
 
 import { dataRootLayout } from "../src/storage/data-root.js";
+import { openAppStorageForTests } from "../src/storage/testing.js";
+
+type PublicHook = Extract<
+  keyof OpenStorageOptions,
+  "restoreSnapshot" | "readSnapshot"
+>;
+const publicHookAbsent: [PublicHook] extends [never] ? true : never = true;
 
 const BUSINESS_PREFIXES = [
   "lib_",
@@ -190,6 +198,36 @@ it("returns backup_failed when the backup file cannot be written", () => {
   });
 });
 
+it("returns locked when the database file is locked before open", () => {
+  expect(publicHookAbsent).toBe(true);
+  for (const code of ["EBUSY", "EPERM"]) {
+    withRoot((root) => {
+      const opened = mustOpen(
+        openAppStorage({ dataRoot: root, clock: clock(0) }),
+      );
+      opened.close();
+      const cause = Object.assign(new Error("resource busy or locked"), {
+        code,
+      });
+      const failed = openAppStorageForTests(
+        { dataRoot: root, clock: clock(1) },
+        {
+          readSnapshot: () => {
+            throw cause;
+          },
+        },
+      );
+      expect(failed.ok).toBe(false);
+      if (!failed.ok) {
+        expect(failed.error.code).toBe("storage.locked");
+        expect(failed.error.message).toBe("database file is locked");
+        expect(failed.error.message.includes(root)).toBe(false);
+        expect(failed.error.cause).toBe(cause);
+      }
+    });
+  }
+});
+
 it("returns restore_failed when writing the snapshot back fails", () => {
   withRoot((root) => {
     const opened = mustOpen(
@@ -201,21 +239,25 @@ it("returns restore_failed when writing the snapshot back fails", () => {
     const cause = Object.assign(new Error("resource busy or locked"), {
       code: "EBUSY",
     });
-    const failed = openAppStorage({
-      dataRoot: root,
-      clock: clock(1),
-      migrations: [
-        {
-          slice: "probe",
-          version: 1,
-          id: "0001_bad.sql",
-          sql: "SELECT missing_column FROM kept",
-        },
-      ],
-      restoreSnapshot: () => {
-        throw cause;
+    const failed = openAppStorageForTests(
+      {
+        dataRoot: root,
+        clock: clock(1),
+        migrations: [
+          {
+            slice: "probe",
+            version: 1,
+            id: "0001_bad.sql",
+            sql: "SELECT missing_column FROM kept",
+          },
+        ],
       },
-    });
+      {
+        restoreSnapshot: () => {
+          throw cause;
+        },
+      },
+    );
     expect(failed.ok).toBe(false);
     if (!failed.ok) {
       expect(failed.error.code).toBe("storage.restore_failed");

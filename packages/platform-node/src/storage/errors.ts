@@ -2,6 +2,7 @@ export const STORAGE_APP_SCHEMA = 1;
 
 export type StorageCode =
   | "storage.open_failed"
+  | "storage.locked"
   | "storage.backup_failed"
   | "storage.migration_failed"
   | "storage.restore_failed"

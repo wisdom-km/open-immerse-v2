@@ -100,6 +100,7 @@
 | 失败后用迁移前快照覆盖原文件 | 同一天实测：`ROLLBACK` 之后主文件字节已变。事务回滚仍然做。字节保证靠快照写回 | 2026-11-05 | 本计划 |
 | 备份前在副本上 `wal_checkpoint(TRUNCATE)`；写失败码是 `storage.backup_failed` | Forge 复查 #165：只复制主文件会丢掉未检查点的 WAL。检查点做在副本上，原库三个文件仍按打开前的快照写回 | 2026-11-05 | Forge 复查 #165 |
 | 快照写回失败返回 `storage.restore_failed` 并带上原来的 `cause`；迁移失败测试断言 `storage.migration_failed`；补 needsBootstrap 测试 | 本任务写明 Owner 2026-11-05 10:19 批准，先修这三项再合入。没有另引一句原文 | 2026-11-05 10:19 | 本任务 |
+| 打开前独占锁返回 `storage.locked`；测试注入不进公开 `OpenStorageOptions`；写回失败后主文件字节可以已变、行不丢 | 本任务写明 Owner 2026-11-05 10:35 批准。`EBUSY` / `EPERM` 与「打不开」分开，调用方能区分文件被占。注入只在 `src/storage/testing.ts`，包入口不导出 | 2026-11-05 10:35 | 本任务 |
 | 资产分桶用摘要前 2 位 | §8.2 只写 `<sha256-prefix>`，没有长度。2 位十六进制是 256 个目录 | 2026-11-05 | 本计划 |
 | 不选定数据根指针文件名 | ADR 0001 与 §8.2 写明由 Forge 定，且尚未核实 | 2026-11-05 | 本计划 |
 | JSON 往返放在 platform-node，不改 contracts | RULES §2：契约单独成 PR。AC-66 ① 允许放在 platform-node | 2026-11-05 | 本计划 |
