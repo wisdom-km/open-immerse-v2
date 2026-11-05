@@ -73,13 +73,13 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它 |  |  |
-| 2 | `@oi/feature-reader` 骨架：`package.json`、`README.md`、`src/index.ts`、`src/pure.ts`。依赖 `@oi/contracts`、`@oi/kernel`、`pdfjs-dist@6.5.438` |  |  |
-| 3 | domain + `pure.ts`：页码夹取、缩放 25–400、fit 视口、会话构造、位置历史 50。core 测试只 import `index.ts` / `pure.ts` / `src/testing` |  |  |
-| 4 | `PdfDocuments` 端口与 `adapters/pdfjs-document.ts`。最小 PDF 得到 `pageCount >= 1`，页几何宽度高度为正。`isEvalSupported: false` 由初始化参数函数钉死并被 open 使用 |  |  |
-| 5 | `ReaderState` + `setZoom` 用例 + `adapters/ipc-handlers.ts`。合法 level 成功；24 / 401 为 `invalid_payload`；未打开的 id 为 `not_found`。同一 id+level 再写一次结果不变。`expose` 仍为 false |  |  |
-| 6 | `openReaderSession`：字节进、`ReaderSession` 出。默认 `viewMode: original`、`zoomPercent: 100`、`currentPage: 1`。不调用 library / ingest。不把绝对路径放进会话 |  |  |
-| 7 | `docs/evidence/<PR号>/commands.md`。`GATE_BASE=origin/main corepack pnpm run check` 与 `corepack pnpm test` |  |  |
+| 1 | 本文件。第一笔只有它 | `f6dbc4c` 只有本文件 | 本文件 |
+| 2 | `@oi/feature-reader` 骨架：`package.json`、`README.md`、`src/index.ts`、`src/pure.ts`。依赖 `@oi/contracts`、`@oi/kernel`、`pdfjs-dist@6.5.438` | `523ceea` 加上上述文件。lockfile 钉 `pdfjs-dist@6.5.438`，optional `@napi-rs/canvas@1.1.0` 被锁进 lockfile，源码不 import | `packages/features/reader/package.json` |
+| 3 | domain + `pure.ts`：页码夹取、缩放 25–400、fit 视口、会话构造、位置历史 50。core 测试只 import `index.ts` / `pure.ts` / `src/testing` | `523ceea`。core 测试只走这三处 | `test/core/` |
+| 4 | `PdfDocuments` 端口与 `adapters/pdfjs-document.ts`。最小 PDF 得到 `pageCount >= 1`，页几何宽度高度为正。`isEvalSupported: false` 由初始化参数函数钉死并被 open 使用 | `523ceea` 与本提交。端口的取消令牌是 `ReaderCancel`（`{ aborted: boolean }`），不写 `AbortSignal` 这个名字，因为 G14 的 lib 只有 ES2023。适配器不 import `@oi/contracts`：§5.1 没有 ADP→C。Node 的 legacy 构建把 worker 关掉（`PDFWorker.#isWorkerDisabled = true`），走 fake worker，不创建 `blob:` Worker。`6.5.438` 的 legacy 构建里没有 `isEvalSupported` 字段，也没有 `eval(` / `new Function(`。初始化参数仍带 `isEvalSupported: false`，库会忽略未知字段。最小 PDF 在 Node 里打开成功，没有为 wasm 改参数，也没有改 CSP | `test/adapters/pdfjs-document.test.ts` |
+| 5 | `ReaderState` + `setZoom` 用例 + `adapters/ipc-handlers.ts`。合法 level 成功；24 / 401 为 `invalid_payload`；未打开的 id 为 `not_found`。同一 id+level 再写一次结果不变。`expose` 仍为 false | `523ceea`。`createMemoryReaderState` 在本提交去掉对 `@oi/contracts` 的 import，id 类型取自 `OpenReader["id"]` | `test/core/open-session.test.ts`、`test/adapters/ipc-handlers.test.ts` |
+| 6 | `openReaderSession`：字节进、`ReaderSession` 出。默认 `viewMode: original`、`zoomPercent: 100`、`currentPage: 1`。不调用 library / ingest。不把绝对路径放进会话 | `523ceea`。不依赖 `@oi/feature-library`，不调用 `updateProgress` | `test/core/open-session.test.ts` |
+| 7 | `docs/evidence/<PR号>/commands.md`。`GATE_BASE=origin/main corepack pnpm run check` 与 `corepack pnpm test` | PR 号出来后写入 |  |
 
 ## 行为
 
@@ -106,7 +106,7 @@
 
 ### 打开与 PDF.js
 
-端口接受字节和 `AbortSignal`，不接受路径，也不返回路径。`AbortSignal` 不出现在 `index.ts` 的用例入参上；用例内部传一个未取消的 signal。字节不是 `%PDF-` 开头则 `not_pdf`，不把解析库的异常文本传出。成功给出 `pageCount` 与首页宽高。`readPage` 按页返回几何（宽高），不返回画布。画布挂载属 PR-C。
+端口接受字节和 `ReaderCancel`（`{ aborted: boolean }`），不接受路径，也不返回路径。不写 `AbortSignal` 这个名字：G14 的 lib 只有 ES2023，这个名字会让 `typecheck:core` 失败。真实的 `AbortSignal` 结构上满足该类型。它不出现在 `index.ts` 的用例入参上；用例内部传一个未取消的令牌。字节不是 `%PDF-` 开头则 `not_pdf`，不把解析库的异常文本传出。成功给出 `pageCount` 与首页宽高。`readPage` 按页返回几何（宽高），不返回画布。画布挂载属 PR-C。
 
 初始化参数由 `pdfjsInitParameters` 集中构造，`isEvalSupported` 恒为 `false`。Node 侧加载，不改 `apps/desktop` 的 CSP。
 
@@ -152,4 +152,4 @@
 
 ## 自检
 
-- [ ] 影响 arch / prd 吗？不改 arch / prd / DESIGN / approvals。规格变更记录不适用。
+- [x] 影响 arch / prd 吗？不改 arch / prd / DESIGN / approvals。规格变更记录不适用。适配器曾直接 import `@oi/contracts`，§5.1 没有 ADP→C，已改成只依赖 application 端口。

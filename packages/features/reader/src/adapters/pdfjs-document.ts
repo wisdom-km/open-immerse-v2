@@ -1,5 +1,3 @@
-import type { LibraryEntryId } from "@oi/contracts";
-
 import type {
   PdfDocuments,
   PdfOpenFacts,
@@ -8,6 +6,8 @@ import type {
 } from "../application/ports/pdf-documents.js";
 import { looksLikePdf } from "../domain/pdf-bytes.js";
 import { readerFailure, type ReaderFailure } from "../domain/reader-failure.js";
+
+type DocumentId = Parameters<PdfDocuments["open"]>[0];
 
 type Result<T, E> =
   | { readonly ok: true; readonly value: T }
@@ -43,7 +43,7 @@ export function pdfjsInitParameters(data: Uint8Array): PdfjsInit {
 }
 
 export function createPdfjsDocuments(): PdfDocuments {
-  const openDocs = new Map<LibraryEntryId, PdfjsDocument>();
+  const openDocs = new Map<DocumentId, PdfjsDocument>();
   return {
     open(id, bytes, signal) {
       return openDocument(openDocs, id, bytes, signal);
@@ -55,8 +55,8 @@ export function createPdfjsDocuments(): PdfDocuments {
 }
 
 async function openDocument(
-  openDocs: Map<LibraryEntryId, PdfjsDocument>,
-  id: LibraryEntryId,
+  openDocs: Map<DocumentId, PdfjsDocument>,
+  id: DocumentId,
   bytes: Uint8Array,
   signal: ReaderCancel,
 ): Promise<Result<PdfOpenFacts, ReaderFailure>> {
@@ -79,8 +79,8 @@ async function openDocument(
 }
 
 async function readDocumentPage(
-  openDocs: Map<LibraryEntryId, PdfjsDocument>,
-  id: LibraryEntryId,
+  openDocs: Map<DocumentId, PdfjsDocument>,
+  id: DocumentId,
   pageNumber: number,
   signal: ReaderCancel,
 ): Promise<Result<PdfPageGeometry, ReaderFailure>> {
@@ -148,8 +148,8 @@ async function pageGeometry(
 }
 
 async function replaceDocument(
-  openDocs: Map<LibraryEntryId, PdfjsDocument>,
-  id: LibraryEntryId,
+  openDocs: Map<DocumentId, PdfjsDocument>,
+  id: DocumentId,
   doc: PdfjsDocument,
 ): Promise<void> {
   const previous = openDocs.get(id);
