@@ -103,5 +103,7 @@
 | 2026-11-05 11:31 | 「OK，那就按照你的建议去推进吧，163，然后和导入和文献库。」 | 推进 #163 遗留项，并开始 M2 第②步导入与文献库。规格批准前不开实现分支；本行之后 #166 已定稿 | Issue #163 | https://github.com/wisdom-km/open-immerse-v2/issues/163#issuecomment-6648926549 |
 | 2026-11-05 11:38 | 「这些都按照推荐吧，当然那个推荐也需要你跟Loom一起去讨论一下子，综合一下你俩共同的建议。」 | #166 定稿决定 1–10 与 A/B/C 拆分。本契约 PR 只做 A | Issue #166 | https://github.com/wisdom-km/open-immerse-v2/issues/166 |
 | 2026-11-05 11:41 | 「帮推荐，然后等他，等你修完的这个吧？等云端修完的这个风险之后降到低的时候，我再把它的评论」随后「ok」 | 一个小修：补 `storage.open_failed` 单测；Windows `EPERM` 与 POSIX `EACCES` 都归 `storage.locked`，文案「被锁定或没有权限」；`cause` 里的绝对路径不进日志、不进 UI。不新增错误码。Anvil 结论评论等风险降到低且 Wisdom 确认后再发 | Issue #163 | https://github.com/wisdom-km/open-immerse-v2/issues/163#issuecomment-6649059743 |
+| 2026-11-05 12:30 | （Forge 合入同步，非 Wisdom 新原话） | 【合入同步，不计入批准】PR #168（拆分 A 契约）已 squash 合入 main@a9b44e4。下一步是拆分 B | Issue #166、PR #168 | https://github.com/wisdom-km/open-immerse-v2/issues/166#issuecomment-6649725202 |
+| 2026-11-05 12:33 | 「按照计划继续推进」 | 按 #166 已定稿的拆分 B 开工：features/library core + 存储。不含 UI、装配、B16、reveal、删除、多选、ingest | Issue #166 | https://github.com/wisdom-km/open-immerse-v2/issues/166#issuecomment-6649758865 |
 
-共 93 条批准 + 1 条反馈记录 + 3 条决定
+共 94 条批准 + 1 条反馈记录 + 3 条决定 + 1 条合入同步
