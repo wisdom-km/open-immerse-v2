@@ -66,7 +66,7 @@
 - 基础设施表由运行器在事务里创建，不放进任何功能切片的 `migrations/`：`app_meta(id=1, app_schema)` 与 `schema_migrations(slice, version, migration_id, applied_at)`。`app_schema` 降低时由触发器拒绝。本常量 `STORAGE_APP_SCHEMA` 是 `1`。
 - 各切片迁移由调用方传入，或用 `readSliceMigrations(slice, directory)` 读取 `NNNN_name.sql`。排序键是（切片名，版本号）。已记录的（切片，版本）跳过。两个切片各读各的目录，运行器不写这些文件。
 - 已有库：先以只读打开，读 `app_schema`。高于 `supportedAppSchema` 时保持只读并返回，写入 API 在送到驱动之前拒绝，`writes` 保持 0，不备份、不迁移。
-- 需要迁移时：先把主文件以及已有的 `-wal`、`-shm` 读进内存；把迁移前的主文件写成 `staging/oi.sqlite.bak`（临时文件再改名，只留这一份）；再打开读写连接，在事务外设置 WAL，在 `BEGIN IMMEDIATE` 里建基础设施表、执行未跑的迁移、把 `app_schema` 升到支持版本（只升不降）、提交。失败时 `ROLLBACK`、关闭连接，再把内存快照写回，并删掉快照里本来没有的 `-wal` / `-shm`。这一步是为了补上实测里回滚不保字节的缺口。成功后连接保持打开，备份留在 `staging/oi.sqlite.bak`。
+- 需要迁移时：先把主文件以及已有的 `-wal`、`-shm` 读进内存（在只读探测之前，探测可能改 `-shm`）。备份写到 `staging/oi.sqlite.bak`（临时文件再改名，只留这一份）之前，把这三份复制到 `staging/oi.sqlite.ckpt`，在副本上执行 `wal_checkpoint(TRUNCATE)`，再只把合并后的主文件写成 bak，然后删掉副本。检查点不改原库。副本检查点没完成或 bak 写失败时返回 `storage.backup_failed`，并按内存快照写回原库三个文件。再打开读写连接，在事务外设置 WAL，在 `BEGIN IMMEDIATE` 里建基础设施表、执行未跑的迁移、把 `app_schema` 升到支持版本（只升不降）、提交。失败时 `ROLLBACK`、关闭连接，再把内存快照写回，并删掉快照里本来没有的 `-wal` / `-shm`。这一步是为了补上实测里回滚不保字节的缺口。成功后连接保持打开，备份留在 `staging/oi.sqlite.bak`。
 - 新建库没有旧文件可备份。失败则删除刚创建的文件与 `-wal` / `-shm`。成功不写 bak。
 - 不需要迁移的已有库：读写打开并设置 WAL。这一步允许改变文件头。AC-66 不要求这种打开保持字节不变。
 - JSON：`readJsonDocument` / `writeJsonDocument` 放在 platform-node，不改 `packages/contracts`（契约改动要单独成 PR）。对象带整数 `schemaVersion`。写回时把已读到的字段与本次更新合并，调用方没提到的字段仍在。`schemaVersion` 高于调用方给出的主版本时，写回返回原来的文本，`writes` 为 0。
@@ -77,7 +77,8 @@
 
 | 验收 | 观察 |
 | --- | --- |
-| AC-66 ① 迁移失败 | 注入一条非法 SQL。失败返回后，`oi.sqlite` 字节与调用前相同。错误信息里不出现临时目录 |
+| AC-66 ① 迁移失败 | 注入一条非法 SQL。失败返回后，`oi.sqlite` 字节与调用前相同。错误信息里不出现临时目录。另有一条：调用前存在 `-wal` 与 `-shm`，失败后三个文件都与调用前逐字节相同；备份库单独能读出只写在 WAL 里的行 |
+| 备份写失败 | `staging/oi.sqlite.bak.tmp` 被占成目录。返回 `storage.backup_failed`，原主文件字节不变，不留下 `oi.sqlite.ckpt` |
 | AC-66 ① 更高 `app_schema` | 样例库的 `app_schema` 高于支持版本。打开为只读。调用写入 API 后 `writes` 为 0，样例行还在，文件字节不变 |
 | AC-66 ① JSON | `schemaVersion` 在支持范围内时，更新已知字段后未知字段仍在。主版本更高时 `writes` 为 0，文本与读入的相同 |
 | §8.2 排序与文件 | 两个临时目录里的迁移按（切片，版本）记录。两个 SQL 文件的字节不变 |
@@ -94,6 +95,7 @@
 | 开工 #163 | 原文：「继续」。实现提交写入 approvals.md。来源：https://github.com/wisdom-km/open-immerse-v2/issues/163#issuecomment-6646970218 | 2026-11-05 09:20 | Wisdom |
 | 驱动用 `node:sqlite` 的 `DatabaseSync`，不加原生扩展 | 见上面「驱动」。Node 22.23.4 已能导入。Electron 45.2.1 绑定 Node 24.22.1，且 36.7.3 起修复了内置 SQLite | 2026-11-05 | 本计划 |
 | 失败后用迁移前快照覆盖原文件 | 同一天实测：`ROLLBACK` 之后主文件字节已变。事务回滚仍然做。字节保证靠快照写回 | 2026-11-05 | 本计划 |
+| 备份前在副本上 `wal_checkpoint(TRUNCATE)`；写失败码是 `storage.backup_failed` | Forge 复查 #165：只复制主文件会丢掉未检查点的 WAL。检查点做在副本上，原库三个文件仍按打开前的快照写回 | 2026-11-05 | Forge 复查 #165 |
 | 资产分桶用摘要前 2 位 | §8.2 只写 `<sha256-prefix>`，没有长度。2 位十六进制是 256 个目录 | 2026-11-05 | 本计划 |
 | 不选定数据根指针文件名 | ADR 0001 与 §8.2 写明由 Forge 定，且尚未核实 | 2026-11-05 | 本计划 |
 | JSON 往返放在 platform-node，不改 contracts | RULES §2：契约单独成 PR。AC-66 ① 允许放在 platform-node | 2026-11-05 | 本计划 |
@@ -113,7 +115,7 @@
 
 ## 证据链接
 
-- `docs/evidence/165/commands.md`：实现 tip `caa5a5e` 上的命令与退出码。
+- `docs/evidence/165/commands.md`：实现 tip `caa5a5e`，以及 Forge 复查后的定向测试与 `pnpm run check`。
 
 ## 自检
 

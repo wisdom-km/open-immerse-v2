@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+
 import { DatabaseSync } from "node:sqlite";
 
 import type { Clock, Result } from "@oi/kernel";
@@ -25,6 +27,7 @@ import {
   removeDatabaseFiles,
   restoreDatabaseSnapshot,
   writeSingleBackup,
+  type FileSnapshot,
 } from "./snapshot.js";
 
 export type OpenStorageOptions = {
@@ -79,7 +82,11 @@ function prepareOpen(
 function openPrepared(
   prepared: PreparedOpen,
 ): Result<AppStorage, StorageFailure> {
-  const probe = probeDatabase(prepared.layout.databaseFile);
+  const databaseFile = prepared.layout.databaseFile;
+  const prior = existsSync(databaseFile)
+    ? readDatabaseSnapshot(databaseFile)
+    : undefined;
+  const probe = probeDatabase(databaseFile);
   if (probe.kind === "failed") {
     return {
       ok: false,
@@ -98,10 +105,10 @@ function openPrepared(
   if (!needsMigration(probe, pending, prepared.supportedAppSchema)) {
     return openReadWrite(prepared.layout, probe);
   }
-  if (probe.kind === "absent") {
+  if (probe.kind === "absent" || prior === undefined) {
     return createDatabase(prepared, pending);
   }
-  return migrateDatabase(prepared, pending);
+  return migrateDatabase(prepared, pending, prior);
 }
 
 function pendingMigrations(
@@ -213,16 +220,17 @@ function createDatabase(
 function migrateDatabase(
   prepared: PreparedOpen,
   pending: readonly MigrationSource[],
+  snapshot: FileSnapshot,
 ): Result<AppStorage, StorageFailure> {
-  const snapshot = readDatabaseSnapshot(prepared.layout.databaseFile);
   try {
-    writeSingleBackup(prepared.layout.stagingDirectory, snapshot.main);
+    writeSingleBackup(prepared.layout.stagingDirectory, snapshot);
   } catch {
+    restoreDatabaseSnapshot(prepared.layout.databaseFile, snapshot);
     return {
       ok: false,
       error: storageFailure(
-        "storage.open_failed",
-        "database could not be opened",
+        "storage.backup_failed",
+        "database backup could not be written",
       ),
     };
   }

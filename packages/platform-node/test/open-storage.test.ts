@@ -51,6 +51,25 @@ function withRoot(run: (root: string) => void): void {
   }
 }
 
+function leaveUncheckpointedWal(databaseFile: string): {
+  readonly main: Buffer;
+  readonly wal: Buffer;
+  readonly shm: Buffer;
+} {
+  const database = new DatabaseSync(databaseFile);
+  database.exec("PRAGMA journal_mode = WAL");
+  database.exec("CREATE TABLE kept (note TEXT)");
+  database.exec("INSERT INTO kept (note) VALUES ('sentinel')");
+  const main = readFileSync(databaseFile);
+  const wal = readFileSync(`${databaseFile}-wal`);
+  const shm = readFileSync(`${databaseFile}-shm`);
+  database.close();
+  writeFileSync(databaseFile, main);
+  writeFileSync(`${databaseFile}-wal`, wal);
+  writeFileSync(`${databaseFile}-shm`, shm);
+  return { main, wal, shm };
+}
+
 function mustOpen(
   storage: { ok: true; value: AppStorage } | { ok: false },
 ): AppStorage {
@@ -91,6 +110,79 @@ it("AC-66 keeps the original database bytes when a migration fails", () => {
     const again = mustOpen(openAppStorage({ dataRoot: root, clock: clock(2) }));
     expect(again.query("SELECT note FROM kept")?.note).toBe("sentinel");
     again.close();
+  });
+});
+
+it("restores wal and shm bytes when a migration fails", () => {
+  withRoot((root) => {
+    const opened = mustOpen(
+      openAppStorage({ dataRoot: root, clock: clock(0) }),
+    );
+    opened.close();
+    const databaseFile = dataRootLayout(root).databaseFile;
+    const unclean = leaveUncheckpointedWal(databaseFile);
+    const failed = openAppStorage({
+      dataRoot: root,
+      clock: clock(1),
+      migrations: [
+        {
+          slice: "probe",
+          version: 1,
+          id: "0001_bad.sql",
+          sql: "SELECT missing_column FROM kept",
+        },
+      ],
+    });
+    expect(failed.ok).toBe(false);
+    expect(readFileSync(databaseFile).equals(unclean.main)).toBe(true);
+    expect(readFileSync(`${databaseFile}-wal`).equals(unclean.wal)).toBe(true);
+    expect(readFileSync(`${databaseFile}-shm`).equals(unclean.shm)).toBe(true);
+    const backup = path.join(
+      dataRootLayout(root).stagingDirectory,
+      "oi.sqlite.bak",
+    );
+    const saved = new DatabaseSync(backup, { readOnly: true, timeout: 0 });
+    expect(saved.prepare("SELECT note FROM kept").get()).toMatchObject({
+      note: "sentinel",
+    });
+    saved.close();
+  });
+});
+
+it("returns backup_failed when the backup file cannot be written", () => {
+  withRoot((root) => {
+    const opened = mustOpen(
+      openAppStorage({ dataRoot: root, clock: clock(0) }),
+    );
+    opened.close();
+    const databaseFile = dataRootLayout(root).databaseFile;
+    const before = readFileSync(databaseFile);
+    mkdirSync(
+      path.join(dataRootLayout(root).stagingDirectory, "oi.sqlite.bak.tmp"),
+    );
+    const failed = openAppStorage({
+      dataRoot: root,
+      clock: clock(1),
+      migrations: [
+        {
+          slice: "probe",
+          version: 1,
+          id: "0001_mark.sql",
+          sql: "CREATE TABLE mark_one (id INTEGER);",
+        },
+      ],
+    });
+    expect(failed.ok).toBe(false);
+    if (!failed.ok) {
+      expect(failed.error.code).toBe("storage.backup_failed");
+      expect(failed.error.message.includes(root)).toBe(false);
+    }
+    expect(readFileSync(databaseFile).equals(before)).toBe(true);
+    expect(
+      existsSync(
+        path.join(dataRootLayout(root).stagingDirectory, "oi.sqlite.ckpt"),
+      ),
+    ).toBe(false);
   });
 });
 

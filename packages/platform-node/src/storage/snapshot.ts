@@ -7,6 +7,8 @@ import {
 } from "node:fs";
 import path from "node:path";
 
+import { DatabaseSync } from "node:sqlite";
+
 export type FileSnapshot = {
   readonly main: Buffer;
   readonly wal: Buffer | undefined;
@@ -32,12 +34,17 @@ export function restoreDatabaseSnapshot(
 
 export function writeSingleBackup(
   stagingDirectory: string,
-  main: Buffer,
+  snapshot: FileSnapshot,
 ): void {
-  const finalName = path.join(stagingDirectory, "oi.sqlite.bak");
-  const temporary = path.join(stagingDirectory, "oi.sqlite.bak.tmp");
-  writeFileSync(temporary, main);
-  renameSync(temporary, finalName);
+  const copy = path.join(stagingDirectory, "oi.sqlite.ckpt");
+  removeDatabaseFiles(copy);
+  try {
+    materialize(copy, snapshot);
+    checkpointTruncate(copy);
+    writeBackupFile(stagingDirectory, readFileSync(copy));
+  } finally {
+    removeDatabaseFiles(copy);
+  }
 }
 
 export function removeDatabaseFiles(databaseFile: string): void {
@@ -64,4 +71,46 @@ function restoreSide(file: string, bytes: Buffer | undefined): void {
     return;
   }
   writeFileSync(file, bytes);
+}
+
+function materialize(databaseFile: string, snapshot: FileSnapshot): void {
+  writeFileSync(databaseFile, snapshot.main);
+  writeSide(`${databaseFile}-wal`, snapshot.wal);
+  writeSide(`${databaseFile}-shm`, snapshot.shm);
+}
+
+function writeSide(file: string, bytes: Buffer | undefined): void {
+  if (bytes !== undefined) {
+    writeFileSync(file, bytes);
+  }
+}
+
+function checkpointTruncate(databaseFile: string): void {
+  const database = new DatabaseSync(databaseFile, {
+    readOnly: false,
+    timeout: 0,
+    enableForeignKeyConstraints: true,
+  });
+  try {
+    const row = database.prepare("PRAGMA wal_checkpoint(TRUNCATE)").get();
+    if (!checkpointFinished(row)) {
+      throw new Error("wal checkpoint did not finish");
+    }
+  } finally {
+    database.close();
+  }
+}
+
+function checkpointFinished(row: unknown): boolean {
+  if (typeof row !== "object" || row === null || !("busy" in row)) {
+    return false;
+  }
+  return row.busy === 0;
+}
+
+function writeBackupFile(stagingDirectory: string, main: Buffer): void {
+  const finalName = path.join(stagingDirectory, "oi.sqlite.bak");
+  const temporary = path.join(stagingDirectory, "oi.sqlite.bak.tmp");
+  writeFileSync(temporary, main);
+  renameSync(temporary, finalName);
 }

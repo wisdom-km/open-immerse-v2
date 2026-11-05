@@ -34,3 +34,25 @@ node tools/check-docs/check.mjs
 ```
 
 两条退出码都是 0。compare-spec-bytes：ARCHITECTURE.md 66 个部分与基线 `f8d5d01` 在两条 amendment 之后一致。check-docs findings 0。
+
+## Forge 复查后的定向测试
+
+日期仍是 2026-11-05。覆盖 WAL 检查点备份、`-wal`/`-shm` 失败写回、`storage.backup_failed`。`json-document.ts` 没改。
+
+```
+corepack pnpm exec vitest run packages/platform-node/test/data-root.test.ts packages/platform-node/test/json-document.test.ts packages/platform-node/test/open-storage.test.ts
+```
+
+退出码 0。3 个文件，14 通过。新增两条：`restores wal and shm bytes when a migration fails`；`returns backup_failed when the backup file cannot be written`。
+
+```
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+提交前工作区还有这次改动时，退出码 1。G7 的 `git diff --exit-code` 看到的是未提交的源文件，不是 codegen 改写了已提交文件。提交后在干净工作区重跑，退出码见下面这一节。
+
+```
+node tools/check-docs/check.mjs
+```
+
+退出码 0。findings 0。
