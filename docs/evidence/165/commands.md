@@ -49,7 +49,7 @@ corepack pnpm exec vitest run packages/platform-node/test/data-root.test.ts pack
 GATE_BASE=origin/main corepack pnpm run check
 ```
 
-提交前工作区还有这次改动时，退出码 1。G7 的 `git diff --exit-code` 看到的是未提交的源文件，不是 codegen 改写了已提交文件。提交后在干净工作区重跑，退出码见下面这一节。
+提交前工作区还有这次改动时，退出码 1。G7 的 `git diff --exit-code` 看到的是未提交的源文件，不是 codegen 改写了已提交文件。在 `69aa241c3edf329d63a50dfb85e86bc482004cd4` 的干净工作区重跑，退出码 0。`check-pr-size: 1816 non-generated lines`。提交说明里已有的 `G12:` 仍在。
 
 ```
 node tools/check-docs/check.mjs
