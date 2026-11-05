@@ -72,3 +72,19 @@ GATE_BASE=origin/main corepack pnpm run check
 ```
 
 在 `bcc9bc442103dfb27322e74bd2ff75e9c88cb0a3` 的干净工作区重跑，退出码 0。`check-pr-size: 1916 non-generated lines`。提交说明里已有的 `G12:` 仍在。
+
+## Owner 10:35 批准的三项
+
+日期仍是 2026-11-05。打开前 `EBUSY` / `EPERM` 返回 `storage.locked`，文案不含路径。测试注入改到 `src/storage/testing.ts`，公开 `OpenStorageOptions` 不再带钩子。ADR 0004 写明：迁移失败后若写回仍被锁，主文件字节可能已变，已提交的行不丢，返回 `storage.restore_failed`。
+
+```
+corepack pnpm exec vitest run packages/platform-node/test
+```
+
+退出码 0。9 个文件，74 通过。新增 `returns locked when the database file is locked before open`。
+
+```
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+在 `5c8e2bb1b4a42162710faf34e52c0d2dc865885f` 的干净工作区重跑，退出码 0。`check-pr-size: 2075 non-generated lines`。提交说明里已有的 `G12:` 仍在。
