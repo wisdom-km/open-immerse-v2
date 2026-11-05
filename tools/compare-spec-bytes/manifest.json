@@ -184,6 +184,51 @@
       "source": "ARCHITECTURE.md",
       "old": "- **Python worker**：结构化 JSON 写 stderr，supervisor 收集并加上 `source: worker`。字段服从上面的白名单和禁止项。",
       "new": "- **Python worker**：结构化 JSON 写 stderr，supervisor 收集并加上 `source: worker`。字段服从上面的白名单和禁止项。行格式（Wisdom 2026-11-04 16:46、16:50）：\n  - 一行一个 JSON 对象，UTF-8，以 `\\n` 结尾。写 stderr，不写 stdout。stdout 只留 `{\"port\": <整数>}` 与 `{\"event\":\"exited\"}`（§10.1）。\n  - 单行上限 8192 字节，按去掉行尾一个 `\\n` 或 `\\r\\n` 之后的 UTF-8 字节计。超过上限整行丢弃，不截断后解析。恰好 8192 字节仍解析。\n  - 非 JSON、不是对象、缺信封字段，或 `event` 不在上面的白名单：整行丢弃，不落盘原文。丢弃行数的计数留给 supervisor，收集纯函数不记数。\n  - 信封字段是 `ts`（必填、非空）、`level`、`feature`、`event`。worker 不得自己写 `source`。收集端在读入成功且结果没有 `source` 时补上 `source: \"worker\"`。已是 `\"worker\"` 则保留。其他值整行丢弃，不改写成 `\"worker\"`，也不只删掉该字段。\n  - `pipeline.run`：`run_id`、`route`、`step`、`status`、`error_class`（string）、`duration_ms`（number），可选 `requestId`。\n  - `upstream.server_error`：`requestId`（必填）。\n  - `ipc.oversize`：`channel`、`bytes`（number），可选 `requestId`。\n  - `egress.ask`、`budget.refused`、`scoring.unavailable`：可选 `requestId`。\n  - 其余键丢弃。字段值的长度和形式沿用 `guardDiagRecord`：不合形式或超长换成 `[redacted]`。\n  - Python 发送端只发这 6 个事件和上面的字段。未知事件或未知字段在发送端丢掉，不抛异常，不挡住请求。发送端不写 `source`。发出前若 JSON 对象的 UTF-8 字节数超过 8192，整行不写。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│  ├─ design/                         # Loom 的功能级设计文档（md-reader.md、wireframe-vault.svg）\n│  ├─ v1-review.md  v2-gap-and-changes.md\n│  ├─ adr/                            # 架构决策记录：NNNN-标题.md\n│  ├─ acceptance/                     # AC / QM 到测试用例的映射\n│  └─ architecture/                   # 早期草案（历史输入，非权威）\n",
+      "new": "│  ├─ design/                         # Loom 的功能级设计文档（md-reader.md、wireframe-vault.svg）\n│  ├─ arch/                           # 拆分后的 ARCHITECTURE 正文；根目录 ARCHITECTURE.md 是索引\n│  ├─ prd/                            # 拆分后的 PRD 正文；根目录 PRD.md 是索引\n│  ├─ v1-review.md  v2-gap-and-changes.md\n│  ├─ adr/                            # 架构决策记录：NNNN-标题.md\n│  ├─ acceptance/                     # AC / QM 到测试用例的映射\n│  ├─ approvals.md                    # 批准记录\n│  ├─ backlog.md\n│  ├─ exec-plans/                     # 执行计划\n│  ├─ evidence/                       # 各 PR 的测试日志\n│  ├─ reviews/\n│  ├─ incidents/                      # 事故复盘\n│  ├─ architecture/                   # 早期草案（历史输入，非权威）\n│  ├─ architecture-redesign.md\n│  ├─ ci-and-environment.md\n│  ├─ gate-remediation.md\n│  ├─ spec-changelog.md               # 规格变更记录\n│  ├─ README.md\n│  └─ WORKFLOW.md\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│     ├─ src/renderer/                # 当前只有 index.html；路由、布局插槽、全局 Provider 为计划中\n",
+      "new": "│     ├─ src/renderer/                # 当前有 index.html 与 oi-api.d.ts；路由、布局插槽、全局 Provider 为计划中\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│  ├─ kernel/                         # 最小运行时无关原语：Result、AppError、Logger 接口、Clock、Id\n",
+      "new": "│  ├─ kernel/                         # 最小运行时无关原语：Result、AppError、Logger 接口、Clock、Id。AppError、Id 计划中（2026-11-05 核对 origin/main：src/ 只有 clock.ts、logger.ts、result.ts、index.ts）\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│  ├─ platform-node/                  # Node 侧基础设施：SQLite、文件资产、safeStorage、HTTP 客户端、日志落盘\n",
+      "new": "│  ├─ platform-node/                  # Node 侧基础设施：SQLite、文件资产、safeStorage、HTTP 客户端、日志落盘。SQLite、文件资产、safeStorage、HTTP 客户端计划中（#163 做 SQLite 与文件存储）；日志落盘已在 logging/\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│  ├─ providers/                      # 服务商适配层：注册表、按 API 格式的适配器、鉴权方式、契约测试套件（§7.9）\n",
+      "new": "│  ├─ providers/                      # 服务商适配层：注册表、按 API 格式的适配器、鉴权方式、契约测试套件（§7.9）。注册表、适配器、鉴权方式、契约测试套件计划中\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "└─ tools/\n   ├─ check-commits/\n",
+      "new": "└─ tools/\n   ├─ check-arch-graph/               # import 图对照 §5.1\n   ├─ check-commits/\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "本机与远程使用**同一套 HTTP + SSE 协议**，桌面端只有一个客户端实现（`packages/worker-client`）。\n",
+      "new": "本机与远程使用**同一套 HTTP + SSE 协议**，桌面端只计划一个客户端，放在 `packages/worker-client`（计划中）。2026-11-05 核对 `origin/main`：`packages/worker-client/` 还不存在，与 §3 目录树、§4.1 一致。\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "- `packages/providers/src/testing/` 按能力提供共享套件：`chat`、`vision`、`streaming`、`ocr`、`errors`、`auth`、`budget-egress`。每个格式适配器跑它支持的能力对应的套件；每条注册表记录至少跑 `auth` 与 `errors`。\n",
+      "new": "- `packages/providers/src/testing/`（计划中）按能力提供共享套件：`chat`、`vision`、`streaming`、`ocr`、`errors`、`auth`、`budget-egress`。每个格式适配器跑它支持的能力对应的套件；每条注册表记录至少跑 `auth` 与 `errors`。2026-11-05 核对 `origin/main`：`packages/providers/src/` 只有 `index.ts`，内容是 `export {}`。\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "| 服务商适配层 | `packages/providers/src/testing/` 的共享套件 | 每个格式适配器跑它支持的能力对应的套件（chat、vision、streaming、ocr、errors、auth、budget-egress）；每条注册表记录至少跑 auth 与 errors；样例在 `fixtures/providers/<vendor>/`，全部是合成数据（§7.9.7） |\n",
+      "new": "| 服务商适配层 | `packages/providers/src/testing/`（计划中）的共享套件 | 每个格式适配器跑它支持的能力对应的套件（chat、vision、streaming、ocr、errors、auth、budget-egress）；每条注册表记录至少跑 auth 与 errors；样例在 `fixtures/providers/<vendor>/`，全部是合成数据（§7.9.7） |\n"
     }
   ]
 }
