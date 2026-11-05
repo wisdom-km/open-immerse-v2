@@ -37,9 +37,7 @@ declare global {
     readonly oi: {
       readonly library: {
         /** idempotent: false */
-        import(
-          input: Readonly<{}>,
-        ): Promise<
+        import(input: Readonly<{}>): Promise<
           Result<
             Readonly<{
               duplicate: boolean;
@@ -60,9 +58,7 @@ declare global {
           >
         >;
         /** idempotent: false */
-        importDropped(
-          file: File,
-        ): Promise<
+        importDropped(file: File): Promise<
           Result<
             Readonly<{
               duplicate: boolean;
@@ -107,9 +103,7 @@ declare global {
           >
         >;
         /** idempotent: false */
-        relocate(
-          input: Readonly<{ id: string }>,
-        ): Promise<
+        relocate(input: Readonly<{ id: string }>): Promise<
           Result<
             Readonly<{
               entry: Readonly<{

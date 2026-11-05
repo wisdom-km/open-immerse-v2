@@ -35,9 +35,7 @@ export function createOi(bridge: IpcBridge) {
   return {
     library: {
       /** idempotent: false */
-      import(
-        input: Readonly<{}>,
-      ): Promise<
+      import(input: Readonly<{}>): Promise<
         Result<
           Readonly<{
             duplicate: boolean;
@@ -60,9 +58,7 @@ export function createOi(bridge: IpcBridge) {
         return call(bridge, "library.import", input);
       },
       /** idempotent: false */
-      importDropped(
-        file: File,
-      ): Promise<
+      importDropped(file: File): Promise<
         Result<
           Readonly<{
             duplicate: boolean;
@@ -111,9 +107,7 @@ export function createOi(bridge: IpcBridge) {
         return call(bridge, "library.list", input);
       },
       /** idempotent: false */
-      relocate(
-        input: Readonly<{ id: string }>,
-      ): Promise<
+      relocate(input: Readonly<{ id: string }>): Promise<
         Result<
           Readonly<{
             entry: Readonly<{

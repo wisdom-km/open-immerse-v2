@@ -304,9 +304,7 @@ function callProgress(oi: Record<string, unknown>): () => void {
   return asVoid(asProgress(dataDir.onRelocateProgress)(() => undefined));
 }
 
-function asDropped(
-  value: unknown,
-): (file: object) => Promise<unknown> {
+function asDropped(value: unknown): (file: object) => Promise<unknown> {
   if (typeof value !== "function") {
     throw new Error("importFile");
   }
