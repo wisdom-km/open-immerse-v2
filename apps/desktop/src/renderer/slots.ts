@@ -1,3 +1,3 @@
-import { libraryContribution } from "../../../../packages/features/library/src/ui/index.js";
+import { libraryContribution } from "@oi/feature-library/ui";
 
 export const slots = [libraryContribution];

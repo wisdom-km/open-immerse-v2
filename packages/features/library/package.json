@@ -11,6 +11,10 @@
     "./main": {
       "types": "./src/adapters/library-main.js",
       "default": "./dist/adapters/library-main.js"
+    },
+    "./ui": {
+      "types": "./src/ui/index.js",
+      "default": "./src/ui/index.ts"
     }
   },
   "dependencies": {

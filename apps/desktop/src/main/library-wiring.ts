@@ -1,9 +1,20 @@
-import { app, BrowserWindow, dialog, Menu } from "electron";
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  Menu,
+  type MenuItemConstructorOptions,
+} from "electron";
+import { platform } from "node:process";
 
 import { createLibraryMain, type LibraryMain } from "@oi/feature-library/main";
 
 import type { IpcCommandHandler } from "./ipc/ipc-router.js";
-import { fileMenu, openFileScript } from "./library-menu.js";
+import {
+  applicationMenuTemplate,
+  openFileScript,
+  type ShellMenuEntry,
+} from "./library-menu.js";
 
 export function startLibrary(
   dataRoot: string,
@@ -40,23 +51,28 @@ function pickPdf():
 }
 
 function installFileMenu(): void {
-  const item = fileMenu.items[0];
   Menu.setApplicationMenu(
-    Menu.buildFromTemplate([
-      {
-        label: fileMenu.label,
-        submenu: [
-          {
-            label: item.label,
-            accelerator: item.accelerator,
-            click() {
-              void dispatchOpenFile();
-            },
-          },
-        ],
-      },
-    ]),
+    Menu.buildFromTemplate(applicationMenuTemplate(platform).map(toMenuItem)),
   );
+}
+
+function toMenuItem(entry: ShellMenuEntry): MenuItemConstructorOptions {
+  if ("role" in entry) {
+    return { role: entry.role };
+  }
+  const item = entry.items[0];
+  return {
+    label: entry.label,
+    submenu: [
+      {
+        label: item.label,
+        accelerator: item.accelerator,
+        click() {
+          void dispatchOpenFile();
+        },
+      },
+    ],
+  };
 }
 
 function dispatchOpenFile(): Promise<void> {
