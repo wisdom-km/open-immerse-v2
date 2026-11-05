@@ -2,8 +2,17 @@ import { type ElectronApplication } from "@playwright/test";
 
 import { expect, test } from "./fixtures/electron-app.js";
 
-test("exposes an empty object when window.oi is read", async ({ desktop }) => {
-  expect(await evaluate(desktop.page, "JSON.stringify(window.oi)")).toBe("{}");
+test("exposes the library seam when window.oi is read", async ({ desktop }) => {
+  const raw = await evaluate(
+    desktop.page,
+    `JSON.stringify({
+      keys: Object.keys(window.oi),
+      library:
+        window.oi.library !== null && typeof window.oi.library === "object",
+      import: typeof window.oi.library.import
+    })`,
+  );
+  expect(raw).toBe('{"keys":["library"],"library":true,"import":"function"}');
 });
 
 test("enables context isolation when web preferences are read", async ({
