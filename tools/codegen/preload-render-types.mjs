@@ -66,9 +66,11 @@ function renderMember(node, key, depth) {
 function renderCommand(descriptor, pad) {
   const name = descriptor.channel.split(".").at(-1);
   const input =
-    descriptor.request === null
-      ? ""
-      : `input: ${renderResponse(descriptor.request)}`;
+    descriptor.transport === "dropped-file"
+      ? "file: File"
+      : descriptor.request === null
+        ? ""
+        : `input: ${renderResponse(descriptor.request)}`;
   const result = `Promise<Result<${renderResponse(descriptor.response)}, ${renderErrorUnion(descriptor.errors)}>>`;
   return [
     `${pad}/** idempotent: ${String(descriptor.idempotent)} */`,

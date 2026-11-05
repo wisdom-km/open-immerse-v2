@@ -141,7 +141,7 @@ function outcomeSchemas(
   return [descriptor.response, ...details];
 }
 
-it("exports four unexposed library commands with unique channels", () => {
+it("exports four exposed library commands with unique channels", () => {
   expect(libraryIpc.map((descriptor) => descriptor.channel)).toEqual([
     "library.import",
     "library.importDropped",
@@ -156,7 +156,7 @@ it("exports four unexposed library commands with unique channels", () => {
   );
   for (const descriptor of libraryIpc) {
     expect(descriptor.kind).toBe("command");
-    expect(descriptor.expose).toBe(false);
+    expect(descriptor.expose).toBe(true);
     expect(settingsChannels.has(descriptor.channel)).toBe(false);
     expectTypeOf(descriptor).toExtend<IpcCommandDescriptor>();
   }

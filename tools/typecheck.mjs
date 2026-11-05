@@ -46,3 +46,21 @@ if ((result.status ?? 1) !== 0) {
   writeRemediation(["G3"]);
   process.exit(result.status === null ? 1 : result.status);
 }
+
+for (const project of [
+  "tsconfig.ui.json",
+  "apps/desktop/tsconfig.preload.json",
+]) {
+  const extra = spawnCommand({
+    command: "tsc",
+    args: ["--noEmit", "--pretty", "false", "--project", project],
+    options: { stdio: "inherit" },
+  });
+  if ((extra.status ?? 1) !== 0) {
+    if (extra.error) {
+      console.error(extra.error.message);
+    }
+    writeRemediation(["G3"]);
+    process.exit(extra.status === null ? 1 : extra.status);
+  }
+}

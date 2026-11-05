@@ -2,14 +2,20 @@ import { expect, it } from "vitest";
 
 import { createOi } from "../src/preload/oi.generated.js";
 
-it("lists no oi keys when no channel is exposed", () => {
+it("lists the exposed library commands", () => {
   const oi = createOi({
     invoke: () => Promise.resolve(undefined),
+    invokeDropped: () => Promise.resolve(undefined),
     subscribe: () => () => undefined,
   });
-  expect(keyPaths(oi)).toEqual([]);
+  expect(keyPaths(oi)).toEqual([
+    "library.import",
+    "library.importDropped",
+    "library.list",
+    "library.relocate",
+  ]);
   expect("invoke" in oi).toBe(false);
-  expect("subscribe" in oi).toBe(false);
+  expect("invokeDropped" in oi).toBe(false);
 });
 
 function keyPaths(value: unknown, prefix = ""): readonly string[] {

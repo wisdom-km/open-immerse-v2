@@ -17,11 +17,40 @@ import type { IpcInvokeEvent } from "../src/main/ipc/sender-frame.js";
 const frame = { url: "oi-app://app/index.html" };
 const invokeEvent: IpcInvokeEvent = { senderFrame: frame, sender: { id: 1 } };
 
-it("registers no handles when the generated registry is empty", () => {
-  expect(ipcRegistry).toEqual([]);
-  const harness = bind(ipcRegistry, new Map());
-  expect(harness.count).toBe(0);
-  expect([...harness.listeners.keys()]).toEqual([]);
+it("registers one handle for each exposed library command", () => {
+  const channels = ipcRegistry.map((entry) => entry.channel);
+  expect(channels).toEqual([
+    "library.import",
+    "library.importDropped",
+    "library.list",
+    "library.relocate",
+  ]);
+  const handlers = new Map<string, IpcCommandHandler>(
+    channels.map((channel) => [
+      channel,
+      () => Promise.resolve({ ok: true, value: {} }),
+    ]),
+  );
+  const harness = bind(ipcRegistry, handlers);
+  expect(harness.count).toBe(channels.length);
+  expect([...harness.listeners.keys()]).toEqual(channels);
+});
+
+it("returns invalid_payload when a relocate id fails the pattern", async () => {
+  const handlers = new Map<string, IpcCommandHandler>(
+    ipcRegistry.map((entry) => [
+      entry.channel,
+      () => Promise.resolve({ ok: true, value: {} }),
+    ]),
+  );
+  const harness = bind(ipcRegistry, handlers);
+  const result = await invokeChannel(harness.listeners, "library.relocate", {
+    id: "not-a-hash",
+  });
+  expect(result).toEqual({
+    ok: false,
+    error: { code: "invalid_payload", retryable: false },
+  });
 });
 
 it("requires a handler when an exposed command is registered", () => {
@@ -157,10 +186,103 @@ it("logs ipc.oversize without changing the result when the response is large", a
   expect(JSON.stringify(logged).includes(value.name)).toBe(false);
 });
 
+it("passes a dropped file path to the handler and leaves it out of the result", async () => {
+  const seen: string[] = [];
+  const harness = bind(
+    [droppedCommand],
+    new Map<string, IpcCommandHandler>([
+      [
+        "library.importDropped",
+        (_payload, context) => {
+          seen.push(context.droppedFilePath ?? "");
+          return Promise.resolve({ ok: true, value: { name: "paper.pdf" } });
+        },
+      ],
+    ]),
+  );
+  const result = await invokeChannel(
+    harness.listeners,
+    "library.importDropped",
+    {},
+    "/tmp/papers/a.pdf",
+  );
+  expect(seen).toEqual(["/tmp/papers/a.pdf"]);
+  expect(JSON.stringify(result).includes("/tmp/papers/a.pdf")).toBe(false);
+});
+
+it("rejects a path field inside a dropped-file payload", async () => {
+  let calls = 0;
+  const harness = bind(
+    [droppedCommand],
+    new Map<string, IpcCommandHandler>([
+      [
+        "library.importDropped",
+        () => {
+          calls += 1;
+          return Promise.resolve({ ok: true, value: {} });
+        },
+      ],
+    ]),
+  );
+  const result = await invokeChannel(
+    harness.listeners,
+    "library.importDropped",
+    { absolutePath: "/tmp/papers/a.pdf" },
+    "/tmp/papers/a.pdf",
+  );
+  expect(calls).toBe(0);
+  expect(result).toEqual({
+    ok: false,
+    error: { code: "invalid_payload", retryable: false },
+  });
+});
+
+it("returns invalid_payload when a dropped-file command has no path", async () => {
+  const harness = bind(
+    [droppedCommand],
+    new Map<string, IpcCommandHandler>([
+      ["library.importDropped", () => Promise.resolve({ ok: true, value: {} })],
+    ]),
+  );
+  const result = await invokeChannel(
+    harness.listeners,
+    "library.importDropped",
+    {},
+  );
+  expect(result).toEqual({
+    ok: false,
+    error: { code: "invalid_payload", retryable: false },
+  });
+});
+
+it("ignores a second argument on an invoke command", async () => {
+  let dropped = "unset";
+  const harness = bind(
+    [command],
+    new Map<string, IpcCommandHandler>([
+      [
+        "library.open",
+        (_payload, context) => {
+          dropped = context.droppedFilePath ?? "absent";
+          return Promise.resolve({ ok: true, value: { name: "a" } });
+        },
+      ],
+    ]),
+  );
+  await invokeChannel(
+    harness.listeners,
+    "library.open",
+    { id: "doc-1" },
+    "/tmp/papers/a.pdf",
+  );
+  expect(dropped).toBe("absent");
+});
+
 const command = {
   kind: "command" as const,
   channel: "library.open",
   idempotent: true,
+  transport: "invoke" as const,
   request: {
     type: "object",
     additionalProperties: false,
@@ -173,6 +295,15 @@ const command = {
     required: ["name"],
     properties: { name: { type: "string" } },
   },
+} satisfies IpcRegistryEntry;
+
+const droppedCommand = {
+  kind: "command" as const,
+  channel: "library.importDropped",
+  idempotent: false,
+  transport: "dropped-file" as const,
+  request: { type: "object", additionalProperties: false },
+  response: { type: "object", additionalProperties: false },
 } satisfies IpcRegistryEntry;
 
 const eventEntry = {
@@ -215,9 +346,18 @@ async function invoke(
   listeners: ReadonlyMap<string, IpcListener>,
   payload: unknown = { id: "doc-1" },
 ) {
-  const listener = listeners.get("library.open");
+  return invokeChannel(listeners, "library.open", payload);
+}
+
+async function invokeChannel(
+  listeners: ReadonlyMap<string, IpcListener>,
+  channel: string,
+  payload: unknown,
+  droppedFilePath?: unknown,
+) {
+  const listener = listeners.get(channel);
   if (listener === undefined) {
     throw new Error("listener");
   }
-  return listener(invokeEvent, payload);
+  return listener(invokeEvent, payload, droppedFilePath);
 }

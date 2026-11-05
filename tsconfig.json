@@ -17,5 +17,15 @@
     "isolatedModules": true
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "dist", "coverage", "tools/gate-fixtures"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "tools/gate-fixtures",
+    "packages/features/**/src/ui/**",
+    "packages/features/**/test/ui/**",
+    "apps/desktop/src/renderer/**",
+    "apps/desktop/src/preload/**",
+    "apps/desktop/test/oi-keys.test.ts"
+  ]
 }

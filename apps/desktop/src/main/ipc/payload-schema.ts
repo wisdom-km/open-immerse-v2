@@ -37,7 +37,7 @@ function typeMatches(schema: IpcJsonSchema, payload: unknown): boolean {
     case "array":
       return arrayMatches(schema, payload);
     case "string":
-      return typeof payload === "string";
+      return stringMatches(schema, payload);
     case "boolean":
       return typeof payload === "boolean";
     case "number":
@@ -101,6 +101,22 @@ function extrasAllowed(
   }
   const known = new Set(Object.keys(schema.properties ?? {}));
   return Object.keys(payload).every((key) => known.has(key));
+}
+
+function stringMatches(schema: IpcJsonSchema, payload: unknown): boolean {
+  if (typeof payload !== "string") {
+    return false;
+  }
+  if (schema.minLength !== undefined && payload.length < schema.minLength) {
+    return false;
+  }
+  if (
+    schema.pattern !== undefined &&
+    !new RegExp(schema.pattern).test(payload)
+  ) {
+    return false;
+  }
+  return true;
 }
 
 function arrayMatches(schema: IpcJsonSchema, payload: unknown): boolean {

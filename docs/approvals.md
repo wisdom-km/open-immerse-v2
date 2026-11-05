@@ -105,5 +105,7 @@
 | 2026-11-05 11:41 | 「帮推荐，然后等他，等你修完的这个吧？等云端修完的这个风险之后降到低的时候，我再把它的评论」随后「ok」 | 一个小修：补 `storage.open_failed` 单测；Windows `EPERM` 与 POSIX `EACCES` 都归 `storage.locked`，文案「被锁定或没有权限」；`cause` 里的绝对路径不进日志、不进 UI。不新增错误码。Anvil 结论评论等风险降到低且 Wisdom 确认后再发 | Issue #163 | https://github.com/wisdom-km/open-immerse-v2/issues/163#issuecomment-6649059743 |
 | 2026-11-05 12:30 | （Forge 合入同步，非 Wisdom 新原话） | 【合入同步，不计入批准】PR #168（拆分 A 契约）已 squash 合入 main@a9b44e4。下一步是拆分 B | Issue #166、PR #168 | https://github.com/wisdom-km/open-immerse-v2/issues/166#issuecomment-6649725202 |
 | 2026-11-05 12:33 | 「按照计划继续推进」 | 按 #166 已定稿的拆分 B 开工：features/library core + 存储。不含 UI、装配、B16、reveal、删除、多选、ingest | Issue #166 | https://github.com/wisdom-km/open-immerse-v2/issues/166#issuecomment-6649758865 |
+| 2026-11-05 13:55 | （Forge 合入同步，非 Wisdom 新原话） | 【合入同步，不计入批准】PR #169（拆分 B 文献库 core）已 squash 合入 main@77371a7。下一步是拆分 C | Issue #166、PR #169 | https://github.com/wisdom-km/open-immerse-v2/issues/166#issuecomment-6650918054 |
+| 2026-11-05 13:58 | 「按推荐开工 PR-C：行点击仅选中；按 Loom 放置建议」 | 行点击只选中。按 Loom 放置。双击和 Enter 无动作。不接 ingest。UI 不调用 relocate | Issue #166 | https://github.com/wisdom-km/open-immerse-v2/issues/166#issuecomment-6650951584 |
 
-共 94 条批准 + 1 条反馈记录 + 3 条决定 + 1 条合入同步
+共 95 条批准 + 1 条反馈记录 + 3 条决定 + 2 条合入同步

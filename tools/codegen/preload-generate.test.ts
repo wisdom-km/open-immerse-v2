@@ -102,13 +102,43 @@ it("rejects an exposed event when transport is dropped-file", async () => {
   }
 });
 
-it("rejects an exposed command when transport is dropped-file", async () => {
+it("generates a File parameter when an exposed command transport is dropped-file", async () => {
   const root = mkdtempSync(path.join(tmpdir(), "oi-preload-"));
   try {
     await writeIpc(root, droppedCommand);
-    await expect(generatePreloadSet(root, generator)).rejects.toThrow(
-      "dropped-file is not generated",
-    );
+    await generatePreloadSet(root, generator);
+    const text = readOutputs(root);
+    expect(text.includes("importFile(")).toBe(true);
+    expect(text.includes("file: File")).toBe(true);
+    expect(text.includes("invokeDropped")).toBe(true);
+    expect(text.includes("getPathForFile")).toBe(false);
+    expect(text.includes("absolutePath")).toBe(false);
+    const createOi = await loadCreateOi(path.join(root, outputs[0]));
+    const file = { name: "paper.pdf", type: "application/pdf", size: 3 };
+    const seen: { channel: string; file: object; payload: unknown }[] = [];
+    const oi = createOi({
+      invoke() {
+        throw new Error("invoke");
+      },
+      invokeDropped(channel, dropped, payload) {
+        seen.push({ channel, file: dropped, payload });
+        return Promise.resolve({ ok: true, value: { name: "paper.pdf" } });
+      },
+      subscribe() {
+        return () => undefined;
+      },
+    });
+    const library = record(objectChild(oi, "library"));
+    const imported = await asDropped(library.importFile)(file);
+    expect(imported).toEqual({ ok: true, value: { name: "paper.pdf" } });
+    expect(JSON.stringify(imported).includes("/tmp")).toBe(false);
+    expect(seen).toEqual([
+      {
+        channel: "library.importFile",
+        file,
+        payload: undefined,
+      },
+    ]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -212,6 +242,11 @@ function readOutputs(root: string): string {
 
 type Bridge = {
   invoke: (channel: string, payload: unknown) => Promise<unknown>;
+  invokeDropped?: (
+    channel: string,
+    file: object,
+    payload: unknown,
+  ) => Promise<unknown>;
   subscribe: (
     channel: string,
     listener: (payload: unknown) => void,
@@ -267,6 +302,15 @@ function callProgress(oi: Record<string, unknown>): () => void {
   const settings = record(objectChild(oi, "settings"));
   const dataDir = record(objectChild(settings, "dataDir"));
   return asVoid(asProgress(dataDir.onRelocateProgress)(() => undefined));
+}
+
+function asDropped(
+  value: unknown,
+): (file: object) => Promise<unknown> {
+  if (typeof value !== "function") {
+    throw new Error("importFile");
+  }
+  return value as (file: object) => Promise<unknown>;
 }
 
 function asOpen(

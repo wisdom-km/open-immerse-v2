@@ -7,7 +7,7 @@ export function assertExposedTransport(descriptor) {
     throw new Error("event transport only allows invoke");
   }
   if (transport === "dropped-file") {
-    throw new Error("dropped-file is not generated");
+    return;
   }
   throw new Error("unsupported ipc transport");
 }

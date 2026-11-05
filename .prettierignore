@@ -6,3 +6,4 @@
 **/*.yml
 **/*.yaml
 tools/gate-fixtures
+apps/desktop/src/renderer/main.js

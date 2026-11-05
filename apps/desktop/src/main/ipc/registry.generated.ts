@@ -5,6 +5,8 @@ export type IpcJsonSchema = {
   readonly anyOf?: readonly IpcJsonSchema[];
   readonly const?: string | number | boolean | null;
   readonly items?: IpcJsonSchema;
+  readonly minLength?: number;
+  readonly pattern?: string;
   readonly properties?: Readonly<Record<string, IpcJsonSchema>>;
   readonly required?: readonly string[];
   readonly type?: string;
@@ -14,6 +16,7 @@ export type IpcRegistryCommand = {
   readonly kind: "command";
   readonly channel: string;
   readonly idempotent: boolean;
+  readonly transport: "invoke" | "dropped-file";
   readonly request: IpcJsonSchema | null;
   readonly response: IpcJsonSchema;
 };
@@ -26,4 +29,286 @@ export type IpcRegistryEvent = {
 
 export type IpcRegistryEntry = IpcRegistryCommand | IpcRegistryEvent;
 
-export const ipcRegistry: readonly IpcRegistryEntry[] = [];
+export const ipcRegistry: readonly IpcRegistryEntry[] = [
+  {
+    kind: "command",
+    channel: "library.import",
+    idempotent: false,
+    transport: "invoke",
+    request: {
+      additionalProperties: false,
+      properties: {},
+      type: "object",
+    },
+    response: {
+      additionalProperties: false,
+      properties: {
+        duplicate: {
+          type: "boolean",
+        },
+        entry: {
+          additionalProperties: false,
+          properties: {
+            addedAt: {
+              pattern:
+                "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$",
+              type: "string",
+            },
+            fileName: {
+              minLength: 1,
+              pattern: "^[^/\\\\]+$",
+              type: "string",
+            },
+            id: {
+              pattern: "^[0-9a-f]{64}$",
+              type: "string",
+            },
+            openedAt: {
+              anyOf: [
+                {
+                  pattern:
+                    "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$",
+                  type: "string",
+                },
+                {
+                  type: "null",
+                },
+              ],
+            },
+            title: {
+              pattern: "^(?!/)(?!\\\\)(?![A-Za-z]:[\\\\/]).*$",
+              type: "string",
+            },
+          },
+          required: ["id", "fileName", "title", "addedAt", "openedAt"],
+          type: "object",
+        },
+      },
+      required: ["entry", "duplicate"],
+      type: "object",
+    },
+  },
+  {
+    kind: "command",
+    channel: "library.importDropped",
+    idempotent: false,
+    transport: "dropped-file",
+    request: {
+      additionalProperties: false,
+      properties: {},
+      type: "object",
+    },
+    response: {
+      additionalProperties: false,
+      properties: {
+        duplicate: {
+          type: "boolean",
+        },
+        entry: {
+          additionalProperties: false,
+          properties: {
+            addedAt: {
+              pattern:
+                "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$",
+              type: "string",
+            },
+            fileName: {
+              minLength: 1,
+              pattern: "^[^/\\\\]+$",
+              type: "string",
+            },
+            id: {
+              pattern: "^[0-9a-f]{64}$",
+              type: "string",
+            },
+            openedAt: {
+              anyOf: [
+                {
+                  pattern:
+                    "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$",
+                  type: "string",
+                },
+                {
+                  type: "null",
+                },
+              ],
+            },
+            title: {
+              pattern: "^(?!/)(?!\\\\)(?![A-Za-z]:[\\\\/]).*$",
+              type: "string",
+            },
+          },
+          required: ["id", "fileName", "title", "addedAt", "openedAt"],
+          type: "object",
+        },
+      },
+      required: ["entry", "duplicate"],
+      type: "object",
+    },
+  },
+  {
+    kind: "command",
+    channel: "library.list",
+    idempotent: true,
+    transport: "invoke",
+    request: {
+      additionalProperties: false,
+      properties: {
+        sort: {
+          additionalProperties: false,
+          properties: {
+            dir: {
+              anyOf: [
+                {
+                  const: "asc",
+                  type: "string",
+                },
+                {
+                  const: "desc",
+                  type: "string",
+                },
+              ],
+            },
+            field: {
+              anyOf: [
+                {
+                  const: "title",
+                  type: "string",
+                },
+                {
+                  const: "status",
+                  type: "string",
+                },
+                {
+                  const: "openedAt",
+                  type: "string",
+                },
+                {
+                  const: "addedAt",
+                  type: "string",
+                },
+              ],
+            },
+          },
+          required: ["field", "dir"],
+          type: "object",
+        },
+        view: {
+          anyOf: [
+            {
+              const: "recent",
+              type: "string",
+            },
+            {
+              const: "all",
+              type: "string",
+            },
+          ],
+        },
+      },
+      required: ["view"],
+      type: "object",
+    },
+    response: {
+      items: {
+        additionalProperties: false,
+        properties: {
+          addedAt: {
+            pattern:
+              "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$",
+            type: "string",
+          },
+          fileName: {
+            minLength: 1,
+            pattern: "^[^/\\\\]+$",
+            type: "string",
+          },
+          id: {
+            pattern: "^[0-9a-f]{64}$",
+            type: "string",
+          },
+          openedAt: {
+            anyOf: [
+              {
+                pattern:
+                  "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$",
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          title: {
+            pattern: "^(?!/)(?!\\\\)(?![A-Za-z]:[\\\\/]).*$",
+            type: "string",
+          },
+        },
+        required: ["id", "fileName", "title", "addedAt", "openedAt"],
+        type: "object",
+      },
+      type: "array",
+    },
+  },
+  {
+    kind: "command",
+    channel: "library.relocate",
+    idempotent: false,
+    transport: "invoke",
+    request: {
+      additionalProperties: false,
+      properties: {
+        id: {
+          pattern: "^[0-9a-f]{64}$",
+          type: "string",
+        },
+      },
+      required: ["id"],
+      type: "object",
+    },
+    response: {
+      additionalProperties: false,
+      properties: {
+        entry: {
+          additionalProperties: false,
+          properties: {
+            addedAt: {
+              pattern:
+                "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$",
+              type: "string",
+            },
+            fileName: {
+              minLength: 1,
+              pattern: "^[^/\\\\]+$",
+              type: "string",
+            },
+            id: {
+              pattern: "^[0-9a-f]{64}$",
+              type: "string",
+            },
+            openedAt: {
+              anyOf: [
+                {
+                  pattern:
+                    "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$",
+                  type: "string",
+                },
+                {
+                  type: "null",
+                },
+              ],
+            },
+            title: {
+              pattern: "^(?!/)(?!\\\\)(?![A-Za-z]:[\\\\/]).*$",
+              type: "string",
+            },
+          },
+          required: ["id", "fileName", "title", "addedAt", "openedAt"],
+          type: "object",
+        },
+      },
+      required: ["entry"],
+      type: "object",
+    },
+  },
+];
