@@ -177,7 +177,7 @@ P0 已按 Wisdom 2026-10-30 23:55、23:56 写入规格（差异清单 §6.11）�
 | --- | --- | --- |
 | E-P0-1 | README 对齐 v2，AGENTS.md | 已处理。与 23:55 的入口是同一份，不另写第二份规格 |
 | E-P0-2 | 写明当前 CI 是空跑 | 已处理。README 与 docs/ci-and-environment.md「当前是空跑」 |
-| E-P1-1 | ADR 索引 | 已处理：`docs/adr/README.md` 指向 Q1–Q12，并指向 2026-11-04 的 `docs/adr/0001-m4-desktop-ui.md`。ingest 九条边与删除 `repair → quality` 已是 ADR 0002、0003（PR #122）。第一批其余项仍未建页：`formula-source`、Markdown 的依赖边、`budget`、`packages/providers` 与外发检查、存储升级规则、G18、`ui-events-declared`、`supervisor-state`、解析规则集 `oi-rules/1` |
+| E-P1-1 | ADR 索引 | 已处理：`docs/adr/README.md` 指向 Q1–Q12，并指向 2026-11-04 的 `docs/adr/0001-m4-desktop-ui.md`。ingest 九条边与删除 `repair → quality` 已是 ADR 0002、0003（PR #122）。存储与协议的升级规则已是 [ADR 0004](adr/0004-storage-and-protocol-versions.md)。第一批其余项仍未建页：`formula-source`、Markdown 的依赖边、`budget`、`packages/providers` 与外发检查、G18、`ui-events-declared`、`supervisor-state`、解析规则集 `oi-rules/1` |
 | E-P1-2 | Issue 与 PR 模板 | 已处理。字段来自 RULES §2 与 §8.4，PR 模板含所在提交 SHA |
 | E-P1-11 | 事故复盘模板 | 已处理：`docs/incidents/TEMPLATE.md` |
 | E-P1-12 | 三种版本号 | 已处理。README「三种版本号」 |

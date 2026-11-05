@@ -94,5 +94,11 @@
 | 2026-11-04 23:40 | 「那就按照你的这个建议吧，先做SQL Lite的加文件存储，再做导入和文献库，最后做PDF.js阅读」 | Markdown 解析核心这组（#154）合完以后，M2 按 ① SQLite + 文件存储（含版本与迁移备份，ARCHITECTURE §8.4）→ ② 导入与文献库 → ③ PDF.js 阅读。M2 其余交付项的顺序还没定 | Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6634955416 |
 | 2026-11-05 09:20 | 「继续」 | Markdown 组已合完后继续 M2：开工 #163（SQLite + 文件存储）。文档日检 7 条另见同日 09:21 | Issue #163 | https://github.com/wisdom-km/open-immerse-v2/issues/163#issuecomment-6646970218 |
 | 2026-11-05 09:21 | 「按推荐」 | #28 日检 7 条：1、2、6、7 按代码现状改文档；3、4、5 原文旁标「计划中」，不删承诺内容。7 条放进本 PR | Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6646969613 |
+| 2026-11-04 23:40 | 「那就按照你的这个建议吧，先做SQL Lite的加文件存储，再做导入和文献库，最后做PDF.js阅读」 | M2 顺序：① SQLite + 文件存储 → ② 导入与文献库 → ③ PDF.js。Markdown 组合完以后开工 | Issue #163、Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6634955416 |
+| 2026-11-05 09:20 | 「继续」 | Markdown 组已合完后开工 #163（SQLite + 文件存储）。文档日检不在这次实现里 | Issue #163 | https://github.com/wisdom-km/open-immerse-v2/issues/163#issuecomment-6646970218 |
+| 2026-11-05 09:56 | 「按推荐吧」 | 1A：`json-document.ts` 的未知字段往返算 #163 / AC-66 ①，留在本 PR。2A：本 PR 凭 `G12:` 超过 600 行，不拆。不含合入批准 | PR #165 | https://github.com/wisdom-km/open-immerse-v2/pull/165#issuecomment-6647497730 |
+| 2026-11-05 10:19 | 「按推荐吧我的Windows电脑一直在线。」 | 合入前在同一分支补 Anvil 三处低风险：迁移失败断言 `storage.migration_failed`；还原失败包成存储错误；`needsBootstrap` 路径测试。不含合入批准 | PR #165 | https://github.com/wisdom-km/open-immerse-v2/pull/165#issuecomment-6647879943 |
+| 2026-11-05 10:35 | 「都推荐」 | 1A：打开前 `oi.sqlite` / `-wal` 被独占时返回存储错误码并补测试；测试注入从公开 `OpenStorageOptions` 挪到内部。2A：迁移失败后还原时文件被占，主库字节可以已变（WAL 已合并、行不丢、返回 `storage.restore_failed`），写入 ADR 0004。不含合入批准 | PR #165 | https://github.com/wisdom-km/open-immerse-v2/pull/165#issuecomment-6648132102 |
+| 2026-11-05 10:53 | 「1」 | 批准合入 #165（squash，tip 1d361c5）。两个低风险点记进 #163 后补 | PR #165 | https://github.com/wisdom-km/open-immerse-v2/pull/165#issuecomment-6648395137 |
 
-共 84 条批准 + 1 条反馈记录 + 3 条决定
+共 90 条批准 + 1 条反馈记录 + 3 条决定

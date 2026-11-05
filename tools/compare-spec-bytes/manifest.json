@@ -229,6 +229,16 @@
       "source": "ARCHITECTURE.md",
       "old": "| 服务商适配层 | `packages/providers/src/testing/` 的共享套件 | 每个格式适配器跑它支持的能力对应的套件（chat、vision、streaming、ocr、errors、auth、budget-egress）；每条注册表记录至少跑 auth 与 errors；样例在 `fixtures/providers/<vendor>/`，全部是合成数据（§7.9.7） |\n",
       "new": "| 服务商适配层 | `packages/providers/src/testing/`（计划中）的共享套件 | 每个格式适配器跑它支持的能力对应的套件（chat、vision、streaming、ocr、errors、auth、budget-egress）；每条注册表记录至少跑 auth 与 errors；样例在 `fixtures/providers/<vendor>/`，全部是合成数据（§7.9.7） |\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "`EgressCheck` 端口、存储与协议的升级规则（§8.4、§10.4，须在 M2 建第一张业务表之前合入），以及 PR C",
+      "new": "`EgressCheck` 端口，以及 PR C"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "已登记为 ADR 0002、0003（2026-11-04，PR #122）。",
+      "new": "已登记为 ADR 0002、0003（2026-11-04，PR #122）。存储与协议的升级规则（§8.4、§10.4）已登记为 [ADR 0004](../../docs/adr/0004-storage-and-protocol-versions.md)。第一张业务表仍未建。"
     }
   ]
 }
