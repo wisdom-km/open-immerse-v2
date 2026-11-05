@@ -1,6 +1,6 @@
 # 批准记录
 
-状态：现行。日期：2026-11-04（Asia/Shanghai）。
+状态：现行。日期：2026-11-05（Asia/Shanghai）。
 
 本文是项目的批准记录。Wisdom 给出的每一次批准（点选或原话）由收到它的 bot 记在这里。每行写时间（Asia/Shanghai）、Wisdom 的原话、批了什么、落在哪里（PR、issue 或文档节）、来源聊天。记下来的批准是终局。没有记在这里的，不算已批准。
 
@@ -87,5 +87,7 @@
 | 2026-11-04 19:07 | 「合入，那148也合入。」 | 合入 #148 @1f2e718，排在 #149 之后；tip 变了须重批（已被 19:18 取代） | PR #148 | https://github.com/wisdom-km/open-immerse-v2/pull/148#issuecomment-6629086133 |
 | 2026-11-04 19:18 | 「批准」 | 合入 #148 新 tip e6631f5（取代 19:07） | PR #148 | https://github.com/wisdom-km/open-immerse-v2/pull/148#issuecomment-6629248653 |
 | 2026-11-04 19:24 | 「第一个就按照你的建议，然后第二个不用收缩范围。」 | 【决定，不计入批准】1) 以后 PR 统一 squash 合入（#149 普通 merge 是例外，不回滚）；2) 不做 MVP 收缩，按 M2–M8 推进到第一个安装包 | 流程、Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6629345577 |
+| 2026-11-04 23:40 | 「那就按照你的这个建议吧，先做SQL Lite的加文件存储，再做导入和文献库，最后做PDF.js阅读」 | M2 顺序：① SQLite + 文件存储 → ② 导入与文献库 → ③ PDF.js。Markdown 组合完以后开工 | Issue #163、Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6634955416 |
+| 2026-11-05 09:20 | 「继续」 | Markdown 组已合完后开工 #163（SQLite + 文件存储）。文档日检不在这次实现里 | Issue #163 | https://github.com/wisdom-km/open-immerse-v2/issues/163#issuecomment-6646970218 |
 
-共 77 条批准 + 1 条反馈记录 + 3 条决定
+共 79 条批准 + 1 条反馈记录 + 3 条决定
