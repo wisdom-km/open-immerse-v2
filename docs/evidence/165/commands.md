@@ -56,3 +56,19 @@ node tools/check-docs/check.mjs
 ```
 
 退出码 0。findings 0。
+
+## Owner 10:19 批准的三项
+
+日期仍是 2026-11-05。迁移失败断言 `storage.migration_failed`；快照写回失败返回 `storage.restore_failed` 并带上原来的 `cause`；已有库缺基础设施表时走 needsBootstrap。`json-document.ts` 没改。
+
+```
+corepack pnpm exec vitest run packages/platform-node/test
+```
+
+退出码 0。9 个文件，73 通过。新增 `returns restore_failed when writing the snapshot back fails` 与 `bootstraps infrastructure tables when an existing database has none`。AC-66 迁移失败那条现在检查错误码。
+
+```
+GATE_BASE=origin/main corepack pnpm run check
+```
+
+在 `bcc9bc442103dfb27322e74bd2ff75e9c88cb0a3` 的干净工作区重跑，退出码 0。`check-pr-size: 1916 non-generated lines`。提交说明里已有的 `G12:` 仍在。
