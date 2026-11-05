@@ -22,6 +22,7 @@ export default defineConfig({
     include: [
       "tools/**/*.test.ts",
       "packages/features/*/test/core/**/*.ts",
+      "packages/features/*/test/adapters/**/*.ts",
       "packages/contracts/**/*.test.ts",
       "packages/kernel/**/*.test.ts",
       "packages/platform-node/test/**/*.test.ts",

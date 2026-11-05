@@ -70,6 +70,18 @@ importers:
         specifier: workspace:*
         version: link:../../contracts
 
+  packages/features/library:
+    dependencies:
+      '@oi/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@oi/kernel':
+        specifier: workspace:*
+        version: link:../../kernel
+      '@oi/platform-node':
+        specifier: workspace:*
+        version: link:../../platform-node
+
   packages/features/markdown:
     dependencies:
       '@oi/contracts':

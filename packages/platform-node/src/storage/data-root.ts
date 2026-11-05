@@ -12,6 +12,7 @@ export type DataRootLayout = {
   readonly assetsDirectory: string;
   readonly stagingDirectory: string;
   readonly logsDirectory: string;
+  readonly libraryDirectory: string;
   readonly secretsFile: string;
 };
 
@@ -26,6 +27,7 @@ export function dataRootLayout(dataRoot: string): DataRootLayout {
     assetsDirectory: path.join(dataRoot, "assets"),
     stagingDirectory: path.join(dataRoot, "staging"),
     logsDirectory: path.join(dataRoot, "logs"),
+    libraryDirectory: path.join(dataRoot, "library"),
     secretsFile: path.join(dataRoot, "secrets.bin"),
   };
 }
@@ -35,6 +37,7 @@ export function ensureDataRootDirectories(layout: DataRootLayout): void {
   mkdirSync(layout.assetsDirectory, { recursive: true });
   mkdirSync(layout.stagingDirectory, { recursive: true });
   mkdirSync(layout.logsDirectory, { recursive: true });
+  mkdirSync(layout.libraryDirectory, { recursive: true });
 }
 
 export function assetFilePath(
@@ -49,6 +52,30 @@ export function assetFilePath(
     ok: true,
     value: path.join(layout.assetsDirectory, sha256.slice(0, 2), assetId),
   };
+}
+
+export function libraryEntryDirectory(
+  layout: DataRootLayout,
+  sha256: string,
+): Result<string, StorageFailure> {
+  if (!SHA256_HEX.test(sha256)) {
+    return rejectedPath();
+  }
+  return {
+    ok: true,
+    value: path.join(layout.libraryDirectory, sha256),
+  };
+}
+
+export function librarySourcePath(
+  layout: DataRootLayout,
+  sha256: string,
+): Result<string, StorageFailure> {
+  const directory = libraryEntryDirectory(layout, sha256);
+  if (!directory.ok) {
+    return directory;
+  }
+  return { ok: true, value: path.join(directory.value, "source.pdf") };
 }
 
 export function stagingFilePath(

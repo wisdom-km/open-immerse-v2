@@ -10,6 +10,8 @@ export {
   dataRootLayout,
   dataRootPointerPath,
   ensureDataRootDirectories,
+  libraryEntryDirectory,
+  librarySourcePath,
   stagingFilePath,
 } from "./storage/data-root.js";
 export type { DataRootLayout } from "./storage/data-root.js";
