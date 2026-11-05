@@ -120,6 +120,19 @@ export default tseslint.config(
               message:
                 "G2: katex only in ui-kit math and formula katex-renderer",
             },
+            {
+              group: [
+                "markdown-it",
+                "markdown-it-*",
+                "micromark",
+                "micromark-*",
+                "mdast",
+                "mdast-*",
+                "@types/mdast",
+              ],
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
+            },
           ],
         },
       ],
@@ -147,6 +160,21 @@ export default tseslint.config(
             },
             {
               name: "mdast",
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
+            },
+          ],
+          patterns: [
+            {
+              group: [
+                "markdown-it",
+                "markdown-it-*",
+                "micromark",
+                "micromark-*",
+                "mdast",
+                "mdast-*",
+                "@types/mdast",
+              ],
               message:
                 "G2: markdown parser only in features/markdown/src/domain/parse",
             },
@@ -241,6 +269,19 @@ export default tseslint.config(
               group: ["katex/*"],
               message:
                 "G2: katex only in ui-kit math and formula katex-renderer",
+            },
+            {
+              group: [
+                "markdown-it",
+                "markdown-it-*",
+                "micromark",
+                "micromark-*",
+                "mdast",
+                "mdast-*",
+                "@types/mdast",
+              ],
+              message:
+                "G2: markdown parser only in features/markdown/src/domain/parse",
             },
           ],
         },
