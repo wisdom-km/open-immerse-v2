@@ -34,7 +34,7 @@
 | [docs/arch/06.md](../arch/06.md) | 行数表 | 对得上。处理：源文件不超过 600，测试不超过 800，函数不超过 80。超过 600 行的 PR 在提交说明和 PR 正文写 `G12:`，不改上限（N-08）。 |
 | [docs/arch/08-02.md](../arch/08-02.md) | §8.2 | 对得上。处理：写入顺序是暂存 → 校验摘要 → 移到 `library/<sha256>/source.pdf` → 事务内写 `lib_` 引用。失败删掉本次的 `library/<sha>/`（空目录也删）。暂存文件由本切片在失败路径删掉；既有清理约定仍然适用。迁移文件只在本切片，表前缀只 `lib_`。不改其他切片的迁移。 |
 | [docs/arch/09.md](../arch/09.md) | §9 路径规则 | 对得上。处理：handler 与用例返回的 `LibraryEntry` 和列表只有 `id`、`fileName`、`title`、`addedAt`、`openedAt`。错误 `message` 用固定短句，不拼接异常文本，因此不含绝对路径。 |
-| [docs/arch/09.md](../arch/09.md) | 第 11 行 ingest 唯一入口 | 对不上已合入的 #168。该行写「打开 PDF 只有 `ingest.openDocument`；`library.importPdf` 不是 IPC」。#168 已把 `library.import` / `library.importDropped` 定为 IPC，且 `expose` 仍为 false。处理：本 PR 以 #166 / #168 为准，文献库导入不经 ingest。不改 §9 正文，留给下一份文档 PR。 |
+| [docs/arch/09.md](../arch/09.md) | 第 11 行当时写打开 PDF 只有 `ingest.openDocument`，文献库导入不注册为 IPC | 对不上已合入的 #168。#168 已把 `library.import` / `library.importDropped` 定为 IPC，且当时 `expose` 仍为 false。处理：本 PR 以 #166 / #168 为准，文献库导入不经 ingest。不改 §9 正文，留给下一份文档 PR。 |
 | [docs/arch/09-01.md](../arch/09-01.md) | `list` / `relocate(id)` | 对得上字段，all 的默认序以决定 10 为准。处理：显式 `sort.field` 为 `title`、`status`、`openedAt`、`addedAt`，`dir` 为 `asc` 或 `desc`。`relocate` 由注入的选文件端口打开选择器，renderer 不传路径。`checkSource` 与批量删除不做。与副本的关系仍按该节「还没核实」：本 PR 不发明「重写副本」的语义。 |
 | [docs/prd/03-01.md](../prd/03-01.md) | S6 | 对得上。处理：身份是原 PDF 的 SHA-256。重复导入不建新文献、不调用解析端口。阅读进度走 `update-progress`，不另开 IPC。 |
 | [docs/prd/06-01.md](../prd/06-01.md) | AC-01 | 对得上。处理：同一 SHA-256 第二次导入返回 `duplicate: true`，`lib_` 行数与 `library/` 下目录数与第一次成功后相同。 |

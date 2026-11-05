@@ -54,7 +54,7 @@
 
 - ARCHITECTURE §7.1 要求一条固定流水线：预处理，引擎 A / B、云 OCR、文字层、arXiv 源码，规范化，Jev，再按优先级链采用或补救，然后翻译。
 - §4.3 的合法依赖里，没有任何切片同时看得到 `parsing`、`quality`、`formula`、`repair`、`translation`。
-- `repair` 是唯一可以 import `quality` 的切片，而没有任何切片可以 import `repair`。`parsing` 没有入边。`library` 只依赖 `document`，`importPdf` 到不了 `submitParse`。
+- `repair` 是唯一可以 import `quality` 的切片，而没有任何切片可以 import `repair`。`parsing` 没有入边。`library` 只依赖 `document`，文献库导入到不了 `submitParse`。
 - 装配根可以看见全部 application（§5.1），但 F-02 禁止入口写业务分支，入口硬上限 150 行（§6）。
 - §2.1 禁止把状态转移写进 UI。若 renderer 依次调用 `parsing`、`quality`、`document`、`translation`，流水线状态机就回到了 UI。
 

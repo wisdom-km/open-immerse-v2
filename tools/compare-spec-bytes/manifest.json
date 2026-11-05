@@ -239,6 +239,26 @@
       "source": "ARCHITECTURE.md",
       "old": "已登记为 ADR 0002、0003（2026-11-04，PR #122）。",
       "new": "已登记为 ADR 0002、0003（2026-11-04，PR #122）。存储与协议的升级规则（§8.4、§10.4）已登记为 [ADR 0004](../../docs/adr/0004-storage-and-protocol-versions.md)。第一张业务表仍未建。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "- 打开 PDF 只有一条用户入口 `ingest.openDocument`（返回 `jobId`）；`library.importPdf`、`parsing.submitParse`、`quality.evaluateRegions` 等是 `ingest` 调用的 seam，不注册为 IPC 命令。",
+      "new": "- 文献库导入走 `library.import`（invoke）与 `library.importDropped`（dropped-file）（#166 决定，#168 契约 `packages/contracts/src/ipc/library.ts`）：只入库，不解析。`library.list`、`library.relocate` 同文件。各命令是否 `expose` 以该文件与 `packages/contracts/test/ipc-library.test.ts` 为准，不在这里写死。\n- 解析与打开阅读仍走 `ingest.openDocument`（返回 `jobId`）。M2 ② 不接 ingest（#166 推后项）。\n- `parsing.submitParse`、`quality.evaluateRegions` 仍是 `ingest` 调用的内部 seam，不注册为 IPC 命令。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "| `library.list({sort: {field: 'title'\\|'status'\\|'openedAt'\\|'addedAt', dir}})` | library | 列排序（默认 `openedAt desc`）；多选批量删除 / 导出笔记接受 id 数组 |",
+      "new": "| `library.list({view: 'recent'\\|'all', sort?: {field: 'title'\\|'status'\\|'openedAt'\\|'addedAt', dir}})` | library | 列排序在 core（#166 决定 10；#169 `packages/features/library/src/domain/library-order.ts`）。「最近」先去掉 `openedAt` 为空的条目，未传 sort 时按 `openedAt desc`。「全部论文」未传 sort 时，有 `openedAt` 的在前、空的在后，组内按 `addedAt desc`，同刻按 `id` 升序。显式 `status` 的次序等于 `addedAt` 再加 `id`。多选批量删除 / 导出笔记接受 id 数组：② 不做，计划中（#166 决定 4） |"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "| `session.save(state)` / `session.restore()` | main | 窗口几何、最大化 / 全屏、场景、文档与阅读位置、视图、PDF 缩放、侧栏、列表排序；存 `<dataRoot>`；位置后退 / 前进历史**不**持久化 |",
+      "new": "| `session.save(state)` / `session.restore()` | main | 窗口几何、最大化 / 全屏、场景、文档与阅读位置、视图、PDF 缩放、侧栏、列表排序；存 `<dataRoot>`；位置后退 / 前进历史**不**持久化。记住列表排序：② 不做，计划中（#166） |"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "`importPdf`（由 `ingest` 调用，不是 IPC 命令）、`listLibrary`、`updateProgress`、`getBibliographicRecords`（§4.4 预留）",
+      "new": "`library.import` / `library.importDropped`（IPC，只入库、不解析；`expose` 以 `packages/contracts/src/ipc/library.ts` 为准）、`library.list`、`updateProgress`（无 IPC）、`library.relocate`、`getBibliographicRecords`（§4.4 预留）"
     }
   ]
 }
