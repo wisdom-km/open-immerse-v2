@@ -4,6 +4,7 @@ export type StorageCode =
   | "storage.open_failed"
   | "storage.backup_failed"
   | "storage.migration_failed"
+  | "storage.restore_failed"
   | "storage.readonly"
   | "storage.invalid_path"
   | "storage.json_rejected"
@@ -12,13 +13,18 @@ export type StorageCode =
 export type StorageFailure = {
   readonly code: StorageCode;
   readonly message: string;
+  readonly cause?: unknown;
 };
 
 export function storageFailure(
   code: StorageCode,
   message: string,
+  cause?: unknown,
 ): StorageFailure {
-  return { code, message };
+  if (cause === undefined) {
+    return { code, message };
+  }
+  return { code, message, cause };
 }
 
 export class StorageError extends Error {

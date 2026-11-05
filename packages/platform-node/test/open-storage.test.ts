@@ -104,6 +104,7 @@ it("AC-66 keeps the original database bytes when a migration fails", () => {
     });
     expect(failed.ok).toBe(false);
     if (!failed.ok) {
+      expect(failed.error.code).toBe("storage.migration_failed");
       expect(failed.error.message.includes(root)).toBe(false);
     }
     expect(readFileSync(databaseFile).equals(before)).toBe(true);
@@ -134,6 +135,9 @@ it("restores wal and shm bytes when a migration fails", () => {
       ],
     });
     expect(failed.ok).toBe(false);
+    if (!failed.ok) {
+      expect(failed.error.code).toBe("storage.migration_failed");
+    }
     expect(readFileSync(databaseFile).equals(unclean.main)).toBe(true);
     expect(readFileSync(`${databaseFile}-wal`).equals(unclean.wal)).toBe(true);
     expect(readFileSync(`${databaseFile}-shm`).equals(unclean.shm)).toBe(true);
@@ -183,6 +187,68 @@ it("returns backup_failed when the backup file cannot be written", () => {
         path.join(dataRootLayout(root).stagingDirectory, "oi.sqlite.ckpt"),
       ),
     ).toBe(false);
+  });
+});
+
+it("returns restore_failed when writing the snapshot back fails", () => {
+  withRoot((root) => {
+    const opened = mustOpen(
+      openAppStorage({ dataRoot: root, clock: clock(0) }),
+    );
+    opened.execute("CREATE TABLE kept (note TEXT)");
+    opened.execute("INSERT INTO kept (note) VALUES (?)", ["sentinel"]);
+    opened.close();
+    const cause = Object.assign(new Error("resource busy or locked"), {
+      code: "EBUSY",
+    });
+    const failed = openAppStorage({
+      dataRoot: root,
+      clock: clock(1),
+      migrations: [
+        {
+          slice: "probe",
+          version: 1,
+          id: "0001_bad.sql",
+          sql: "SELECT missing_column FROM kept",
+        },
+      ],
+      restoreSnapshot: () => {
+        throw cause;
+      },
+    });
+    expect(failed.ok).toBe(false);
+    if (!failed.ok) {
+      expect(failed.error.code).toBe("storage.restore_failed");
+      expect(failed.error.message).toBe(
+        "database snapshot could not be restored",
+      );
+      expect(failed.error.message.includes(root)).toBe(false);
+      expect(failed.error.cause).toBe(cause);
+    }
+  });
+});
+
+it("bootstraps infrastructure tables when an existing database has none", () => {
+  withRoot((root) => {
+    const databaseFile = dataRootLayout(root).databaseFile;
+    mkdirSync(path.dirname(databaseFile), { recursive: true });
+    const seeded = new DatabaseSync(databaseFile);
+    seeded.exec("CREATE TABLE kept (note TEXT)");
+    seeded.exec("INSERT INTO kept (note) VALUES ('sentinel')");
+    seeded.close();
+    const opened = mustOpen(
+      openAppStorage({ dataRoot: root, clock: clock(0) }),
+    );
+    expect(opened.mode).toBe("read-write");
+    expect(opened.appSchema).toBe(1);
+    expect(opened.query("SELECT note FROM kept")?.note).toBe("sentinel");
+    expect(
+      opened.query("SELECT app_schema FROM app_meta WHERE id = 1")?.app_schema,
+    ).toBe(1);
+    expect(opened.query("SELECT COUNT(*) AS n FROM schema_migrations")?.n).toBe(
+      0,
+    );
+    opened.close();
   });
 });
 
@@ -367,6 +433,9 @@ it("deletes a new database when the first migration fails", () => {
       ],
     });
     expect(failed.ok).toBe(false);
+    if (!failed.ok) {
+      expect(failed.error.code).toBe("storage.migration_failed");
+    }
     expect(existsSync(dataRootLayout(root).databaseFile)).toBe(false);
   });
 });

@@ -30,11 +30,14 @@ import {
   type FileSnapshot,
 } from "./snapshot.js";
 
+type RestoreSnapshot = (databaseFile: string, snapshot: FileSnapshot) => void;
+
 export type OpenStorageOptions = {
   readonly dataRoot: string;
   readonly clock: Clock;
   readonly supportedAppSchema?: number;
   readonly migrations?: readonly MigrationSource[];
+  readonly restoreSnapshot?: RestoreSnapshot;
 };
 
 type PreparedOpen = {
@@ -42,6 +45,7 @@ type PreparedOpen = {
   readonly supportedAppSchema: number;
   readonly migrations: readonly MigrationSource[];
   readonly clock: Clock;
+  readonly restoreSnapshot: RestoreSnapshot;
 };
 
 export function openAppStorage(
@@ -75,6 +79,7 @@ function prepareOpen(
       supportedAppSchema: supported,
       migrations: sorted.value,
       clock: options.clock,
+      restoreSnapshot: options.restoreSnapshot ?? restoreDatabaseSnapshot,
     },
   };
 }
@@ -207,13 +212,7 @@ function createDatabase(
   } catch {
     database?.close();
     removeDatabaseFiles(prepared.layout.databaseFile);
-    return {
-      ok: false,
-      error: storageFailure(
-        "storage.migration_failed",
-        "migration rolled back",
-      ),
-    };
+    return migrationFailed();
   }
 }
 
@@ -225,14 +224,7 @@ function migrateDatabase(
   try {
     writeSingleBackup(prepared.layout.stagingDirectory, snapshot);
   } catch {
-    restoreDatabaseSnapshot(prepared.layout.databaseFile, snapshot);
-    return {
-      ok: false,
-      error: storageFailure(
-        "storage.backup_failed",
-        "database backup could not be written",
-      ),
-    };
+    return failedRestore(prepared, snapshot) ?? backupFailed();
   }
   let database: DatabaseSync | undefined;
   try {
@@ -249,15 +241,44 @@ function migrateDatabase(
     };
   } catch {
     database?.close();
-    restoreDatabaseSnapshot(prepared.layout.databaseFile, snapshot);
+    return failedRestore(prepared, snapshot) ?? migrationFailed();
+  }
+}
+
+function failedRestore(
+  prepared: PreparedOpen,
+  snapshot: FileSnapshot,
+): Result<AppStorage, StorageFailure> | undefined {
+  try {
+    prepared.restoreSnapshot(prepared.layout.databaseFile, snapshot);
+    return undefined;
+  } catch (error) {
     return {
       ok: false,
       error: storageFailure(
-        "storage.migration_failed",
-        "migration rolled back",
+        "storage.restore_failed",
+        "database snapshot could not be restored",
+        error,
       ),
     };
   }
+}
+
+function backupFailed(): Result<AppStorage, StorageFailure> {
+  return {
+    ok: false,
+    error: storageFailure(
+      "storage.backup_failed",
+      "database backup could not be written",
+    ),
+  };
+}
+
+function migrationFailed(): Result<AppStorage, StorageFailure> {
+  return {
+    ok: false,
+    error: storageFailure("storage.migration_failed", "migration rolled back"),
+  };
 }
 
 function runMigration(

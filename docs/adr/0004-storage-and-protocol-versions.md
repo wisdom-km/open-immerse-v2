@@ -20,7 +20,7 @@
 1. **数据库。** `app_meta.app_schema` 是整个应用的数据版本，整数，只增不减。各切片迁移记在 `schema_migrations`。迁移前把数据库文件复制到 `staging/`，迁移在一个事务里执行。失败则回滚，原文件保持迁移前的字节。成功只留最近一份备份。打开时若 `app_schema` 高于本应用支持的版本，以只读方式打开，写入次数为 0。
 2. **JSON 与协议。** 持久化 JSON 带主版本 `schemaVersion`。不认识的字段读入再写出仍在。主版本高于本应用支持的版本时，该文档只读。协议用请求头 `OI-Protocol: <主版本>.<次版本>`，第一版是 `1.0`。次版本只新增可选字段与新端点。删除字段、改含义、把可选改为必填，升主版本。主版本不在桌面支持范围内时不提交作业。worker 不支持请求的主版本时返回 `426`。缺头或坏头返回 `400`，响应体 `{"code":"protocol.version"}`。`secrets.bin` 的格式变化另立 ADR。协议实现不在本页，落在以后的 `packages/worker-client`。
 3. **驱动。** 用 Node 自带的 `node:sqlite`（`DatabaseSync`）。2026-11-05 在 Node v22.23.4 上导入成功，不需要额外的命令行开关。Electron 45.2.1 绑定 Node.js 24.22.1，且 Electron 自 36.7.3 起修复了内置 SQLite。不加 `better-sqlite3` 或 `sqlite3`：那是原生扩展，要按 Electron 的 ABI 另编一份。读写连接打开后设置 WAL。一个 `openAppStorage` 只持有一条连接。
-4. **字节。** 2026-11-05 实测：事务 `ROLLBACK` 之后主文件字节已经变。失败时仍先回滚并关闭连接，再把迁移前读入内存的主文件、`-wal`、`-shm` 写回去。成功后的那一份备份在 `staging/oi.sqlite.bak`。写入前把这三个文件复制到临时库，执行 `wal_checkpoint(TRUNCATE)`，再只保留合并后的主文件，避免上次未正常退出留下的 WAL 从备份里丢掉。检查点做在副本上，不改原库。备份写失败返回 `storage.backup_failed`，并按内存快照把原库三个文件写回。
+4. **字节。** 2026-11-05 实测：事务 `ROLLBACK` 之后主文件字节已经变。失败时仍先回滚并关闭连接，再把迁移前读入内存的主文件、`-wal`、`-shm` 写回去。成功后的那一份备份在 `staging/oi.sqlite.bak`。写入前把这三个文件复制到临时库，执行 `wal_checkpoint(TRUNCATE)`，再只保留合并后的主文件，避免上次未正常退出留下的 WAL 从备份里丢掉。检查点做在副本上，不改原库。备份写失败返回 `storage.backup_failed`，并按内存快照把原库三个文件写回。快照写回本身失败（例如文件锁 `EBUSY` / `EPERM`）时不抛出原始异常，返回 `storage.restore_failed`，`cause` 保留原来的错误，对外文案不含路径。
 
 本页不选定数据根指针的文件名。那一项仍按 [0001](0001-m4-desktop-ui.md)：文件名与位置还没定，迁移流程另做。
 
