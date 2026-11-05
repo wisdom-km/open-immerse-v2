@@ -58,13 +58,13 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它 |  |  |
-| 2 | platform-node：`libraryDirectory`、`ensureDataRootDirectories` 创建 `library/`、`libraryEntryDirectory`、`librarySourcePath`，导出，并改 data-root 测试 |  |  |
-| 3 | `@oi/feature-library` 骨架、`0001_lib_entries.sql`、repository 与 fs store |  |  |
-| 4 | `import-pdf`、`list-library`、`relocate-source`、`update-progress`，以及 core / adapter 测试 |  |  |
-| 5 | `ipc-handlers.ts`（注入选文件端口）与错误码测试。`expose` 仍为 false |  |  |
-| 6 | approvals 补 12:30 / 12:33。`vitest.config.ts` 的 include 加上 `packages/features/*/test/adapters/**/*.ts`，否则 `pnpm test` 收集不到适配器测试。不改 workflow。证据在 PR 号出来后写入 `docs/evidence/<PR号>/commands.md` |  |  |
-| 7 | `GATE_BASE=origin/main corepack pnpm run check` 与 `corepack pnpm test`。失败则只修这次引入的失败 |  |  |
+| 1 | 本文件。第一笔只有它 | `a74d97e` 只有本文件 | 本表 |
+| 2 | platform-node：`libraryDirectory`、`ensureDataRootDirectories` 创建 `library/`、`libraryEntryDirectory`、`librarySourcePath`，导出，并改 data-root 测试 | `e2da38c`。`secrets.bin` 仍不创建。非法摘要返回 `storage.invalid_path` | `docs/evidence/<PR号>/commands.md` |
+| 3 | `@oi/feature-library` 骨架、`0001_lib_entries.sql`、repository 与 fs store | `c1c7b2d`。插入在一个事务里。暂存失败、摘要不符、插入失败都不留 `library/<sha>/` | 同上 |
+| 4 | `import-pdf`、`list-library`、`relocate-source`、`update-progress`，以及 core / adapter 测试 | 同一次提交。重复导入不写文件、不调用 ingest。`status` 按 `addedAt` 再 `id`。标题去掉末尾 `.pdf` | 同上 |
+| 5 | `ipc-handlers.ts`（注入选文件端口）与错误码测试。`expose` 仍为 false | handlers 在 `c1c7b2d`。`f7c781c` 去掉适配器对 `@oi/kernel` 的 import。契约 `expose` 未改 | 同上 |
+| 6 | approvals 补 12:30 / 12:33。`vitest.config.ts` 的 include 加上 `packages/features/*/test/adapters/**/*.ts`，否则 `pnpm test` 收集不到适配器测试。不改 workflow。证据在 PR 号出来后写入 `docs/evidence/<PR号>/commands.md` | `f739ab1` 补了这两行。include 在 `c1c7b2d`。未改 `.github/` | 同上 |
+| 7 | `GATE_BASE=origin/main corepack pnpm run check` 与 `corepack pnpm test`。失败则只修这次引入的失败 | 在 `f7c781c` 上两条都是退出码 0。`pnpm test`：511 passed、3 skipped。`check-docs` findings 0。依赖图 planned 从 22 变为 16 | 同上 |
 
 ## 行为
 
@@ -145,6 +145,7 @@ handler 先问选文件端口。取消 → `cancelled`，不读库。无此 id �
 | §9 第 11 行暂不改 | 与 #168 冲突。#166 把文献库导入定为 IPC。改 ARCH 正文是下一份文档 PR | 2026-11-05 | 交接，本计划采纳 |
 | 落盘端口名 `pdf-file-store` | SPEC 用过这个名字。§4.2 没列。文件是 `application/ports/pdf-file-store.ts` 与 `adapters/fs-pdf-file-store.ts` | 2026-11-05 | 本计划 |
 | 超过 600 行不拆 B | 导入、去重、排序、迁移、路径辅助与失败清理要一起证明。不改 G12 上限 | 2026-11-05 | 交接，本计划采纳 |
+| 适配器不 import kernel | §5.1 没有画出 ADP → K。适配器用本地结果形状。`src/testing` 由 `layer-of` 排除，假实现留在模板要求的目录。已画出的 APP→DOM、APP→C、APP→K、ADP→APP、ADP→DOM、ADP→PN 因此落地，planned 快照 22→16 | 2026-11-05 | 实现时 |
 
 ## 证据链接
 
