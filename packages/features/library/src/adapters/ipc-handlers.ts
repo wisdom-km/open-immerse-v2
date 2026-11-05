@@ -1,12 +1,9 @@
-import type { Result } from "@oi/kernel";
-
 import type {
   LibraryIpcDeps,
   LibraryIpcHandlers,
 } from "../application/library-ipc.js";
-import type { LibraryFailure } from "../domain/library-failure.js";
-import type { ImportPdfResult } from "../application/use-cases/import-pdf.js";
-import type { RelocateSourceResult } from "../application/use-cases/relocate-source.js";
+import type { ImportPdf } from "../application/use-cases/import-pdf.js";
+import type { RelocateSource } from "../application/use-cases/relocate-source.js";
 
 type HandlerResult<Name extends keyof LibraryIpcHandlers> = Awaited<
   ReturnType<LibraryIpcHandlers[Name]>
@@ -76,9 +73,7 @@ function runRelocate(
   );
 }
 
-function mapImport(
-  imported: Result<ImportPdfResult, LibraryFailure>,
-): HandlerResult<"import"> {
+function mapImport(imported: ReturnType<ImportPdf>): HandlerResult<"import"> {
   if (imported.ok) {
     return { ok: true, value: imported.value };
   }
@@ -96,7 +91,7 @@ function mapImport(
 }
 
 function mapDropped(
-  imported: Result<ImportPdfResult, LibraryFailure>,
+  imported: ReturnType<ImportPdf>,
 ): HandlerResult<"importDropped"> {
   if (imported.ok) {
     return { ok: true, value: imported.value };
@@ -115,7 +110,7 @@ function mapDropped(
 }
 
 function mapRelocate(
-  relocated: Result<RelocateSourceResult, LibraryFailure>,
+  relocated: ReturnType<RelocateSource>,
 ): HandlerResult<"relocate"> {
   if (relocated.ok) {
     return { ok: true, value: relocated.value };

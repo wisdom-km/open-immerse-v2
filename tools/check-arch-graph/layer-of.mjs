@@ -18,7 +18,8 @@ function isExcluded(name) {
   if (
     name.includes("/test/") ||
     name.includes("/tests/") ||
-    name.includes("/__tests__/")
+    name.includes("/__tests__/") ||
+    name.includes("/src/testing/")
   ) {
     return true;
   }

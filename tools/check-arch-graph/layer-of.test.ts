@@ -33,6 +33,10 @@ const cases: ReadonlyArray<readonly [string, LayerHit]> = [
   ["@oi/kernel", { kind: "layer", id: "K" }],
   ["workers/parser/oi_worker/api/app.py", { kind: "layer", id: "PY" }],
   ["packages/features/jobs/test/core/job-id.test.ts", { kind: "excluded" }],
+  [
+    "packages/features/library/src/testing/fake-library-repository.ts",
+    { kind: "excluded" },
+  ],
   ["apps/desktop/e2e/csp.spec.ts", { kind: "excluded" }],
   ["apps/desktop/playwright.config.ts", { kind: "excluded" }],
   ["node:fs", { kind: "external" }],

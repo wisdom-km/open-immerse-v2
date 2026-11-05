@@ -1,4 +1,3 @@
-import type { Result } from "@oi/kernel";
 import type { AppStorage, SqlValue } from "@oi/platform-node";
 
 import {
@@ -21,6 +20,10 @@ import type {
   LibraryRepository,
   LibrarySourceUpdate,
 } from "../application/ports/library-repository.js";
+
+type Outcome<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly error: LibraryFailure };
 
 const COLUMNS =
   "id, file_name, title, original_path, added_at, opened_at, progress_page";
@@ -50,7 +53,7 @@ export function createSqliteLibraryRepository(
 function findById(
   storage: AppStorage,
   id: LibraryEntryId,
-): Result<LibraryRecord | null, LibraryFailure> {
+): Outcome<LibraryRecord | null> {
   try {
     const row = storage.query(
       `SELECT ${COLUMNS} FROM lib_entries WHERE id = ?`,
@@ -72,7 +75,7 @@ function findById(
 function insertRecord(
   storage: AppStorage,
   record: LibraryRecord,
-): Result<void, LibraryFailure> {
+): Outcome<void> {
   try {
     storage.transaction(() => {
       storage.execute(
@@ -86,9 +89,7 @@ function insertRecord(
   }
 }
 
-function listRecords(
-  storage: AppStorage,
-): Result<readonly LibraryRecord[], LibraryFailure> {
+function listRecords(storage: AppStorage): Outcome<readonly LibraryRecord[]> {
   try {
     const rows = storage.queryAll(`SELECT ${COLUMNS} FROM lib_entries`);
     const records: LibraryRecord[] = [];
@@ -109,7 +110,7 @@ function updateSource(
   storage: AppStorage,
   id: LibraryEntryId,
   source: LibrarySourceUpdate,
-): Result<LibraryRecord, LibraryFailure> {
+): Outcome<LibraryRecord> {
   const fileName = parseFileName(source.fileName);
   if (fileName === undefined || source.originalPath.length === 0) {
     return { ok: false, error: libraryFailure("rejected") };
@@ -126,7 +127,7 @@ function updateProgress(
   storage: AppStorage,
   id: LibraryEntryId,
   progress: LibraryProgressUpdate,
-): Result<LibraryRecord, LibraryFailure> {
+): Outcome<LibraryRecord> {
   return writeThenRead(storage, id, () => {
     storage.execute(
       "UPDATE lib_entries SET opened_at = ?, progress_page = ? WHERE id = ?",
@@ -139,7 +140,7 @@ function writeThenRead(
   storage: AppStorage,
   id: LibraryEntryId,
   write: () => void,
-): Result<LibraryRecord, LibraryFailure> {
+): Outcome<LibraryRecord> {
   try {
     storage.transaction(write);
   } catch {

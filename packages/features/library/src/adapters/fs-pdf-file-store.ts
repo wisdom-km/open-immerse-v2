@@ -9,7 +9,6 @@ import {
 } from "node:fs";
 import path from "node:path";
 
-import type { Result } from "@oi/kernel";
 import {
   libraryEntryDirectory,
   librarySourcePath,
@@ -30,6 +29,10 @@ import type {
   InspectedPdf,
   PdfFileStore,
 } from "../application/ports/pdf-file-store.js";
+
+type Outcome<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly error: LibraryFailure };
 
 export type PdfBytesIo = {
   readonly readFile: (filePath: string) => Uint8Array;
@@ -77,7 +80,7 @@ function inspectFile(
   io: PdfBytesIo,
   hashBytes: (bytes: Uint8Array) => string,
   sourcePath: string,
-): Result<InspectedPdf, LibraryFailure> {
+): Outcome<InspectedPdf> {
   const bytes = readBytes(io, sourcePath);
   if (!bytes.ok) {
     return bytes;
@@ -103,7 +106,7 @@ function placeCopy(
   context: ByteContext,
   sourcePath: string,
   id: LibraryEntryId,
-): Result<void, LibraryFailure> {
+): Outcome<void> {
   const read = readBytes(context.io, sourcePath);
   if (!read.ok) {
     return read;
@@ -127,7 +130,7 @@ function commitStaged(
   id: LibraryEntryId,
   stagedPath: string,
   sourceHash: string,
-): Result<void, LibraryFailure> {
+): Outcome<void> {
   const stagedRead = readBytes(context.io, stagedPath);
   if (!stagedRead.ok) {
     deleteFile(stagedPath);
@@ -144,7 +147,7 @@ function stageBytes(
   context: ByteContext,
   id: LibraryEntryId,
   bytes: Uint8Array,
-): Result<string, LibraryFailure> {
+): Outcome<string> {
   const staged = stagingFilePath(context.layout, id);
   if (!staged.ok) {
     return { ok: false, error: libraryFailure("rejected") };
@@ -162,7 +165,7 @@ function moveToLibrary(
   layout: DataRootLayout,
   id: LibraryEntryId,
   stagedPath: string,
-): Result<void, LibraryFailure> {
+): Outcome<void> {
   const directory = libraryEntryDirectory(layout, id);
   const destination = librarySourcePath(layout, id);
   if (!directory.ok || !destination.ok) {
@@ -182,10 +185,7 @@ function moveToLibrary(
   }
 }
 
-function removeCopy(
-  layout: DataRootLayout,
-  id: LibraryEntryId,
-): Result<void, LibraryFailure> {
+function removeCopy(layout: DataRootLayout, id: LibraryEntryId): Outcome<void> {
   const directory = libraryEntryDirectory(layout, id);
   if (!directory.ok) {
     return { ok: false, error: libraryFailure("rejected") };
@@ -194,10 +194,7 @@ function removeCopy(
   return { ok: true, value: undefined };
 }
 
-function readBytes(
-  io: PdfBytesIo,
-  filePath: string,
-): Result<Uint8Array, LibraryFailure> {
+function readBytes(io: PdfBytesIo, filePath: string): Outcome<Uint8Array> {
   try {
     return { ok: true, value: io.readFile(filePath) };
   } catch {
