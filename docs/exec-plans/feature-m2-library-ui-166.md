@@ -191,9 +191,33 @@ desktop 不从 `@oi/feature-library` 桶导入。那个桶转出 domain，而 [d
 - #169 打磨池
 - 改 CI 上限、`.github/`、`.cursor/`
 
+## 2026-11-05 oi-app 放行 js/css
+
+真机 tip `6f2b7ee` 的窗口停在 `oi-app://app/index.html`，`#root` 为空。根因在 `static-file.ts`：`relativePath` 只放行 `*.html`，`.js` / `.css` 在 `contentTypeFor` 之前就返回 null，协议回 404，类型是 `text/plain`。`mime-types.ts` 里 `.js` 已是 `text/javascript; charset=utf-8`，`.css` 已是 `text/css; charset=utf-8`。控制台里样式被拒，是 404 的 `text/plain` 碰上 `nosniff`，不是 MIME 表写错。renderer 挂载只引用 `./main.js` 与 `./library.css`，没有 svg、png、mjs。
+
+`.html` 仍按后缀判断，所以 `.xhtml` 与批准前一样。`.js` / `.css` 用 `path.extname`，`.mjs` 不会被当成 `.js`。不打开 `supportFetchAPI`。路径穿越、符号链接出根、非 GET/HEAD、根外文件仍拒绝。`window.oi` 不改。
+
+S1–S5 都是这次挂载失败。S6 报告写「还没核实」，不是另一处已证实的缺陷。S7、S8 已 PASS。仓库里更早的 Windows 真机 e2e（PR #90，24/24）不是本 tip 的失败。这次只修这一处。
+
+### 来源核对
+
+| # | 来源 | 回应 |
+| --- | --- | --- |
+| 1 | REAL.md，DESKTOP-0GI64S8，2026-11-05 约 17:04–17:13 | 对得上。S1–S5 FAIL 的共同原因是脚本和样式没加载。S6 还没核实，本轮不改拖入。S7 `window.oi` 只有 `library`、无路径泄露，PASS，本轮不改 preload。S8 菜单 PASS，本轮不改菜单。`duplicate:true` 的 API 旁证不代替 UI。 |
+| 2 | `real-device-console.log` | 对得上。`main.js` 404；`library.css` 的类型是 `text/plain` 被拒。处理：根内 `.js` / `.css` 回 200 和表里的类型。 |
+| 3 | 截图 S1 | 对得上。空白窗口，`#root` 空。处理：脚本能执行后，空库显示「把论文 PDF 拖到这里」和「打开文件…」。 |
+| 4 | `apps/desktop/src/renderer/index.html` @ `6f2b7ee` | 对得上。引用 `./library.css` 与 `./main.js`，根节点是 `#root`。不改这份 HTML。 |
+| 5 | `static-file.ts` @ `6f2b7ee` | 假设成立。`isHtmlDocument` 只认 `.html`，非 html 返回 null，然后 missing。MIME 由 `contentTypeFor` 决定，但这两类文件到不了那里。处理：放行 `.js` / `.css`，类型仍走现有表。 |
+| 6 | `static-file.test.ts` @ `6f2b7ee` | 对得上。原断言把 `app.js` / `app.css` 与 `app.mjs` / `icon.svg` / `icon.png` 一起写成 missing。处理：js/css 改为 200 和正确 MIME；mjs/svg/png 仍是 missing。 |
+| 7 | Issue #69，PR #141，2026-11-04 15:21 | 对得上。当时只放行 `.html`，并写明以后放行 js/css 需另批。本次 17:43 就是那次另批。nosniff 与按扩展名的类型表保留。打包后的 Content-Type 由协议测试锁住；Windows 真机复测留给 Anvil。 |
+| 8 | Box 与 CI e2e 没覆盖 | 对得上。补 `static-file` 与 `protocol-response`：根内 js/css 为 file、正确 MIME、nosniff；穿越、符号链接、POST、未批准类型仍拒绝；html 的 200 不变。e2e 不走 `fetch`（没有 `supportFetchAPI`），改为等文献库挂上，并读到 `library.css` 的 `cssRules`。 |
+| 9 | ARCH §9 | 对得上。本轮不改 IPC，不把绝对路径交给 UI，不扩大 `window.oi`。 |
+| 10 | 本 PR 仍是 #166 拆分 C | 对得上。不改导入业务、菜单、#161。 |
+
 ## 证据链接
 
 - `docs/evidence/171/commands.md`
+- `docs/evidence/172/commands.md`
 
 ## 自检
 

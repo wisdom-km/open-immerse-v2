@@ -114,5 +114,7 @@
 | 2026-11-05 13:56 | （Forge 合入同步，非 Wisdom 新原话） | 【合入同步，不计入批准】#169 → main@77371a7；parent a9b44e4；tree 536c631 = tip tree | PR #169、Issue #166 | https://github.com/wisdom-km/open-immerse-v2/issues/166#issuecomment-6650918054 ；https://github.com/wisdom-km/open-immerse-v2/pull/169#issuecomment-6650918287 |
 | 2026-11-05 13:58 | 「按推荐开工 PR-C：行点击仅选中；按 Loom 放置建议」 | 开工拆分 C（文献库 UI + expose + 装配）。行点击仅选中不打开。放置按 Loom `LOOM-PR-C-PLACEMENT.md` | Issue #166 | https://github.com/wisdom-km/open-immerse-v2/issues/166#issuecomment-6650951584 |
 | 2026-11-05 14:10 | 「并行开文档 PR（approvals + DESIGN/ARCH + Loom 补丁）」 | 本 PR。approvals、DESIGN、ARCH 与 Loom 补丁。不含 #161，不碰 library 实现 | Issue #166 | https://github.com/wisdom-km/open-immerse-v2/issues/166#issuecomment-6651125733 |
+| 2026-11-05 17:43 | 「按推荐：批准 Anvil 在 #172/#166 发更正（PASS→真机 FAIL）；Cloud 修 oi-app 放行 js/css（及正确 MIME），修完再测 tip」 | #69 的另批：oi-app 放行 `.js` 与 `.css` 并给出正确 MIME。不扩大到 svg/png/mjs。不合入 #172 | PR #172、Issue #69、Issue #166 | 本轮 Cloud 交接 |
+| 2026-11-05 17:44 | 「这个先修复吧，然后看看之前有没有真机测试没过的，咱一起修了。就是在之后如果说需要真机测试，咱都要实际跑一遍，不能说Box跑一遍过了之后的。」 | 先修这次真机 FAIL。本 tip 的真机失败只有这一处根因。以后需要真机测试时要实际跑，Box 通过不能代替 | PR #172 | 本轮 Cloud 交接 |
 
-共 101 条批准 + 1 条反馈记录 + 3 条决定 + 3 条合入同步
+共 103 条批准 + 1 条反馈记录 + 3 条决定 + 3 条合入同步
