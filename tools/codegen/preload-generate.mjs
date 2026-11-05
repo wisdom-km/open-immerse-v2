@@ -43,9 +43,9 @@ function outputPaths(root, generator) {
 async function writeFormatted(file, text) {
   await mkdir(path.dirname(file), { recursive: true });
   const config = await prettier.resolveConfig(path.join(here, "run.mjs"));
-  const formatted = await prettier.format(text, {
-    ...config,
-    filepath: file,
-  });
+  const options = { ...config, filepath: file };
+  // Prettier 3 对 `Readonly<{}>` 的函数签名第一遍和 check 不一致，第二遍才稳定。
+  const once = await prettier.format(text, options);
+  const formatted = await prettier.format(once, options);
   await writeFile(file, toLf(formatted));
 }

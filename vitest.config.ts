@@ -23,6 +23,8 @@ export default defineConfig({
       "tools/**/*.test.ts",
       "packages/features/*/test/core/**/*.ts",
       "packages/features/*/test/adapters/**/*.ts",
+      "packages/features/*/test/ui/**/*.ts",
+      "packages/features/*/test/ui/**/*.tsx",
       "packages/contracts/**/*.test.ts",
       "packages/kernel/**/*.test.ts",
       "packages/platform-node/test/**/*.test.ts",

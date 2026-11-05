@@ -5,15 +5,19 @@
   "type": "module",
   "main": "dist/main/index.js",
   "scripts": {
-    "build": "tsc -p ../../packages/kernel/tsconfig.build.json && tsc -p ../../packages/contracts/tsconfig.build.json && tsc -p ../../packages/platform-node/tsconfig.build.json && tsc -p tsconfig.main.json && tsc -p tsconfig.preload.json && node scripts/use-cjs-preload.mjs",
+    "build": "tsc -p ../../packages/kernel/tsconfig.build.json && tsc -p ../../packages/contracts/tsconfig.build.json && tsc -p ../../packages/platform-node/tsconfig.build.json && tsc -p ../../packages/features/library/tsconfig.build.json && tsc -p tsconfig.main.json && tsc -p tsconfig.preload.json && node scripts/use-cjs-preload.mjs && node scripts/bundle-renderer.mjs",
     "start": "pnpm run build && electron dist/main/index.js",
     "e2e": "pnpm run build && playwright test"
   },
   "dependencies": {
+    "@oi/feature-library": "workspace:*",
     "@oi/platform-node": "workspace:*",
-    "electron": "45.2.1"
+    "electron": "45.2.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.1"
+    "@playwright/test": "1.64.1",
+    "esbuild": "0.28.2"
   }
 }

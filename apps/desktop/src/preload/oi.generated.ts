@@ -2,15 +2,133 @@
 
 export type IpcBridge = {
   invoke(channel: string, payload: unknown): Promise<unknown>;
+  invokeDropped(
+    channel: string,
+    file: File,
+    payload: unknown,
+  ): Promise<unknown>;
   subscribe(channel: string, listener: (payload: unknown) => void): () => void;
 };
 
-export function createOi(bridge: IpcBridge): Record<string, never> {
-  // No descriptor is exposed, so oi has no keys.
-  for (const key of Object.keys(bridge)) {
-    if (key === "") {
-      return {};
-    }
-  }
-  return {};
+type Result<T, E> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly error: E };
+
+function call<T>(
+  bridge: IpcBridge,
+  channel: string,
+  payload: unknown,
+): Promise<T> {
+  return bridge.invoke(channel, payload) as Promise<T>;
+}
+
+function callDropped<T>(
+  bridge: IpcBridge,
+  channel: string,
+  file: File,
+  payload: unknown,
+): Promise<T> {
+  return bridge.invokeDropped(channel, file, payload) as Promise<T>;
+}
+
+export function createOi(bridge: IpcBridge) {
+  return {
+    library: {
+      /** idempotent: false */
+      import(input: Readonly<{}>): Promise<
+        Result<
+          Readonly<{
+            duplicate: boolean;
+            entry: Readonly<{
+              addedAt: string;
+              fileName: string;
+              id: string;
+              openedAt: string | null;
+              title: string;
+            }>;
+          }>,
+          | { readonly code: "cancelled"; readonly retryable: false }
+          | { readonly code: "not_pdf"; readonly retryable: false }
+          | { readonly code: "hash_mismatch"; readonly retryable: false }
+          | { readonly code: "sender_rejected"; readonly retryable: false }
+          | { readonly code: "invalid_payload"; readonly retryable: false }
+          | { readonly code: "handler_threw"; readonly retryable: true }
+        >
+      > {
+        return call(bridge, "library.import", input);
+      },
+      /** idempotent: false */
+      importDropped(file: File): Promise<
+        Result<
+          Readonly<{
+            duplicate: boolean;
+            entry: Readonly<{
+              addedAt: string;
+              fileName: string;
+              id: string;
+              openedAt: string | null;
+              title: string;
+            }>;
+          }>,
+          | { readonly code: "not_pdf"; readonly retryable: false }
+          | { readonly code: "hash_mismatch"; readonly retryable: false }
+          | { readonly code: "sender_rejected"; readonly retryable: false }
+          | { readonly code: "invalid_payload"; readonly retryable: false }
+          | { readonly code: "handler_threw"; readonly retryable: true }
+        >
+      > {
+        return callDropped(bridge, "library.importDropped", file, {});
+      },
+      /** idempotent: true */
+      list(
+        input: Readonly<{
+          sort?: Readonly<{
+            dir: "asc" | "desc";
+            field: "title" | "status" | "openedAt" | "addedAt";
+          }>;
+          view: "recent" | "all";
+        }>,
+      ): Promise<
+        Result<
+          Readonly<
+            readonly Readonly<{
+              addedAt: string;
+              fileName: string;
+              id: string;
+              openedAt: string | null;
+              title: string;
+            }>[]
+          >,
+          | { readonly code: "sender_rejected"; readonly retryable: false }
+          | { readonly code: "invalid_payload"; readonly retryable: false }
+          | { readonly code: "handler_threw"; readonly retryable: true }
+        >
+      > {
+        return call(bridge, "library.list", input);
+      },
+      /** idempotent: false */
+      relocate(input: Readonly<{ id: string }>): Promise<
+        Result<
+          Readonly<{
+            entry: Readonly<{
+              addedAt: string;
+              fileName: string;
+              id: string;
+              openedAt: string | null;
+              title: string;
+            }>;
+          }>,
+          | { readonly code: "not_found"; readonly retryable: false }
+          | { readonly code: "cancelled"; readonly retryable: false }
+          | { readonly code: "not_pdf"; readonly retryable: false }
+          | { readonly code: "hash_mismatch"; readonly retryable: false }
+          | { readonly code: "sender_rejected"; readonly retryable: false }
+          | { readonly code: "invalid_payload"; readonly retryable: false }
+          | { readonly code: "handler_threw"; readonly retryable: true }
+        >
+      > {
+        return call(bridge, "library.relocate", input);
+      },
+    },
+  };
 }

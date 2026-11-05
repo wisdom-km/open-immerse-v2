@@ -3,6 +3,7 @@ import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron";
 import {
   registerIpcRouter,
   type HandlerThrewLog,
+  type IpcCommandHandler,
   type IpcOversizeLog,
 } from "./ipc-router.js";
 import { ipcRegistry } from "./registry.generated.js";
@@ -17,20 +18,26 @@ export type IpcLogSink = {
   readonly logHandlerThrew: (record: HandlerThrewLog) => void;
 };
 
-export function wireIpc(sink: IpcLogSink): void {
+export type IpcWireOptions = IpcLogSink & {
+  readonly handlers: ReadonlyMap<string, IpcCommandHandler>;
+};
+
+export function wireIpc(options: IpcWireOptions): void {
   registerIpcRouter({
     registry: ipcRegistry,
-    handlers: new Map(),
+    handlers: options.handlers,
     bind(channel, listener) {
-      ipcMain.handle(channel, (event, payload: unknown) =>
-        listener(asInvokeEvent(event), payload),
+      ipcMain.handle(
+        channel,
+        (event, payload: unknown, droppedFilePath?: unknown) =>
+          listener(asInvokeEvent(event), payload, droppedFilePath),
       );
     },
     acceptsSender(event) {
       return isAppSender(event, appFrames());
     },
-    logOversize: sink.logOversize,
-    logHandlerThrew: sink.logHandlerThrew,
+    logOversize: options.logOversize,
+    logHandlerThrew: options.logHandlerThrew,
     nowIso() {
       return new Date().toISOString();
     },

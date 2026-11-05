@@ -62,13 +62,13 @@ export const importLibrary = {
   response: importResponse,
   errors: [cancelled, notPdf, hashMismatch, ...ipcTransportErrors] as const,
   idempotent: false as const,
-  expose: false as const,
+  expose: true as const,
   transport: "invoke" as const,
 };
 
 /**
  * 拖入。transport 为 dropped-file：路径只在 preload 里取，不进 request / response。
- * 请求体为空，避免 schema 出现路径字段。expose 保持 false，到 PR-C 再打开。
+ * 请求体为空，避免 schema 出现路径字段。
  */
 export const importDroppedLibrary = {
   channel: "library.importDropped" as const,
@@ -77,7 +77,7 @@ export const importDroppedLibrary = {
   response: importResponse,
   errors: [notPdf, hashMismatch, ...ipcTransportErrors] as const,
   idempotent: false as const,
-  expose: false as const,
+  expose: true as const,
   transport: "dropped-file" as const,
 };
 
@@ -89,13 +89,13 @@ export const listLibrary = {
   response: Type.Array(libraryEntrySchema),
   errors: ipcTransportErrors,
   idempotent: true as const,
-  expose: false as const,
+  expose: true as const,
   transport: "invoke" as const,
 };
 
 /**
- * B16 用，②不接。
- * main 打开文件选择器。请求只有 id，不带 path。expose 保持 false。
+ * B16 用。main 打开文件选择器。请求只有 id，不带 path。
+ * 本步只装配。界面不调用。
  */
 export const relocateLibrary = {
   channel: "library.relocate" as const,
@@ -110,7 +110,7 @@ export const relocateLibrary = {
     ...ipcTransportErrors,
   ] as const,
   idempotent: false as const,
-  expose: false as const,
+  expose: true as const,
   transport: "invoke" as const,
 };
 

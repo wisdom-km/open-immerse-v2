@@ -19,6 +19,10 @@ export default tseslint.config(
       "**/dist/**",
       "coverage/**",
       "tools/gate-fixtures/**",
+      "apps/desktop/src/renderer/main.js",
+      "apps/desktop/src/preload/oi.generated.ts",
+      "apps/desktop/src/renderer/oi-api.d.ts",
+      "apps/desktop/src/main/ipc/registry.generated.ts",
       "workers/parser/.venv/**",
     ],
   },
@@ -31,7 +35,19 @@ export default tseslint.config(
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        projectService: {
+          defaultProject: "tsconfig.ui.json",
+          allowDefaultProject: [
+            "packages/features/library/src/ui/*.ts",
+            "packages/features/library/src/ui/*.tsx",
+            "packages/features/library/test/ui/*.tsx",
+            "apps/desktop/src/renderer/*.ts",
+            "apps/desktop/src/renderer/*.tsx",
+            "apps/desktop/src/preload/*.ts",
+            "apps/desktop/test/oi-keys.test.ts",
+          ],
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 64,
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },

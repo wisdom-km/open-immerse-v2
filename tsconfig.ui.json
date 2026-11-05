@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "useUnknownInCatchVariables": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM"],
+    "types": [],
+    "jsx": "react-jsx",
+    "skipLibCheck": true,
+    "isolatedModules": true
+  },
+  "include": [
+    "packages/features/**/src/ui/**/*.ts",
+    "packages/features/**/src/ui/**/*.tsx",
+    "packages/features/**/test/ui/**/*.ts",
+    "packages/features/**/test/ui/**/*.tsx",
+    "apps/desktop/src/renderer/**/*.ts",
+    "apps/desktop/src/renderer/**/*.tsx",
+    "apps/desktop/src/preload/**/*.ts",
+    "apps/desktop/test/oi-keys.test.ts"
+  ]
+}

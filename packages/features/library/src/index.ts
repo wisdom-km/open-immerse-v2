@@ -51,3 +51,4 @@ export type {
   UpdateProgress,
   UpdateProgressInput,
 } from "./application/use-cases/update-progress.js";
+export { createLibraryIpcHandlers } from "./adapters/ipc-handlers.js";

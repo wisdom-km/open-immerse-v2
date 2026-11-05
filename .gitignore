@@ -6,6 +6,7 @@ coverage/
 .env.*
 !.env.example
 dist/
+apps/desktop/src/renderer/main.js
 test-results/
 playwright-report/
 blob-report/

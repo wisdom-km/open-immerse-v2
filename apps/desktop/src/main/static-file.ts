@@ -80,7 +80,7 @@ function relativePath(pathname: string): string | null {
     return null;
   }
   const stripped = decoded.replace(/^[/\\]+/, "");
-  if (stripped.length === 0 || !isHtmlDocument(stripped)) {
+  if (stripped.length === 0 || !isServedDocument(stripped)) {
     return null;
   }
   const segments = stripped.split(/[/\\]/);
@@ -94,8 +94,12 @@ function relativePath(pathname: string): string | null {
   return segments.join(path.sep);
 }
 
-function isHtmlDocument(relative: string): boolean {
-  return relative.toLowerCase().endsWith(".html");
+function isServedDocument(relative: string): boolean {
+  const lower = relative.toLowerCase();
+  const extension = path.extname(lower);
+  // `.html` 仍按后缀判断，`.xhtml` 与这次批准前一样可以进来。
+  // `.js` / `.css` 用扩展名，避免 `.mjs` 被当成 `.js`。
+  return lower.endsWith(".html") || extension === ".js" || extension === ".css";
 }
 
 function decodePath(pathname: string): string | null {
