@@ -37,8 +37,8 @@
 | 2 | ADR `docs/adr/0004-storage-and-protocol-versions.md`。五节：背景、选项、决定、后果、状态。状态为采纳。登记 [docs/adr/README.md](../adr/README.md)、[docs/arch/16.md](../arch/16.md)、[docs/backlog.md](../backlog.md) E-P1-1。§16 的改动配 compare-spec-bytes amendment。不改 §8.4、§10.4 正文 | 已写入。compare-spec-bytes 退出码 0。两条 amendment 各替换一次 | 实现提交 |
 | 3 | `packages/platform-node` 数据根、打开、迁移、备份恢复、JSON 文档。从 `src/index.ts` 导出，供 main 以后注入。不改 `composition-root.ts` | 已写入 `src/storage/`。装配根未改 | 实现提交 |
 | 4 | AC-66 ① 三条测试，外加迁移排序与「两个切片不改同一文件」 | 定向 vitest 12 通过 | 实现提交后写入 `docs/evidence/<PR号>/commands.md` |
-| 5 | `docs/approvals.md` 补两行。`docs/spec-changelog.md` 加一行。证据在 PR 号出来后写入 `docs/evidence/<PR号>/commands.md` | approvals 已补 23:40 与 09:20，总数 79。changelog 与证据等 PR 号 | 下一步 |
-| 6 | `GATE_BASE=origin/main corepack pnpm run check`，以及定向 vitest。失败则只修这次引入的失败 | 定向测试已过。全量 check 在实现提交之后跑 | `docs/evidence/<PR号>/commands.md` |
+| 5 | `docs/approvals.md` 补两行。`docs/spec-changelog.md` 加一行。证据在 PR 号出来后写入 `docs/evidence/<PR号>/commands.md` | approvals 已补 23:40 与 09:20，总数 79。changelog 与证据在 PR #165 | [commands.md](../evidence/165/commands.md) |
+| 6 | `GATE_BASE=origin/main corepack pnpm run check`，以及定向 vitest。失败则只修这次引入的失败 | `caa5a5e`：定向 vitest 12 通过；`pnpm test` 456 通过、3 跳过；`pnpm run check` 退出码 0 | [commands.md](../evidence/165/commands.md) |
 
 预计行数（开工前，含空行）：实现与测试约 900–1400，加上 ADR 与登记。超过 G12 的 600 行。实现提交说明和 PR 描述都写一行 `G12:`：打开、迁移、失败时原文件字节不变、更高版本只读、JSON 往返是同一次 AC-66 ①，拆开不能一起证明这三条。不调上限（N-08）。
 
@@ -113,7 +113,7 @@
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：实现 tip 上的命令与退出码。PR 号确定后写入。
+- `docs/evidence/165/commands.md`：实现 tip `caa5a5e` 上的命令与退出码。
 
 ## 自检
 
