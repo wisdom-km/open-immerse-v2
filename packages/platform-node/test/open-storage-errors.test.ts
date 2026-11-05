@@ -98,7 +98,7 @@ function logLocked(failure: StorageFailure, causeMessage: string): string {
     const withCause = {
       ...pipeline(failure.code),
       cause: failure.cause,
-    } as DiagEvent;
+    } as unknown as DiagEvent;
     logger.log(withCause);
     const day = "2026-11-05.jsonl";
     const product = readFileSync(path.join(root, "diagnostics", day), "utf8");
