@@ -6,7 +6,7 @@ Node 放在 PATH 前面的是 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin`。`
 
 `test:core`：不适用（`package.json` 没有这个脚本）。没有执行。pytest、e2e、全量 `pnpm test` 没有执行。未改日志。没有改 `.github/workflows/**`、`apps/`、`packages/`、`workers/`、`DESIGN.md`、`docs/design-principles.md`、`docs/design/**`、`.cursor/environment.json`、`.cursor/install.sh`。
 
-下面四条先跑在 `1a02eff59242c4662d5d5810722e15d98ccb497c`（还没有本文件，changelog 里 PR 列还是「本 PR」）。本文件和 changelog 的 #164 链接写上之后再跑一次 compare-spec-bytes、check-docs、check-commits、check-pr-size，输出相同。
+下面四条先跑在 `1a02eff59242c4662d5d5810722e15d98ccb497c`（还没有本文件，changelog 里 PR 列还是「本 PR」）。`f339563` 加上本文件和 changelog 的 #164 链接之后，compare-spec-bytes、check-docs、check-commits 的输出与下面相同。check-pr-size 从 88 行变成 151 行，仍低于 600。
 
 ## compare-spec-bytes
 
@@ -60,4 +60,4 @@ node tools/check-commits/check.mjs --base origin/main
 node tools/check-pr-size/check.mjs --base origin/main
 ```
 
-退出码都是 0。`check-commits: subjects match Conventional Commits`。`1a02eff` 上 `check-pr-size: 88 non-generated lines`。加上本文件和 changelog 的一行替换之后，行数会略增，仍低于 600，不需要 `G12:`。
+退出码都是 0。`check-commits: subjects match Conventional Commits`。`1a02eff` 上 `check-pr-size: 88 non-generated lines`。`f339563` 上是 `check-pr-size: 151 non-generated lines`。不需要 `G12:`。
