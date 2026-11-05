@@ -1,0 +1,11 @@
+{
+  "name": "@oi/feature-library",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "dependencies": {
+    "@oi/contracts": "workspace:*",
+    "@oi/kernel": "workspace:*",
+    "@oi/platform-node": "workspace:*"
+  }
+}
