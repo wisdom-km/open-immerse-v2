@@ -130,6 +130,138 @@ it("returns invalid_payload when the schema rejects the body", async () => {
   });
 });
 
+it("returns invalid_payload when the response value is missing a field", async () => {
+  let calls = 0;
+  const harness = bind(
+    [command],
+    handler(() => {
+      calls += 1;
+      return Promise.resolve({
+        ok: true,
+        value: { title: "secret-title" },
+        message: "secret-message",
+      });
+    }),
+  );
+  const result = await invoke(harness.listeners, { id: "doc-1" });
+  expect(calls).toBe(1);
+  expect(result).toEqual({
+    ok: false,
+    error: { code: "invalid_payload", retryable: false },
+  });
+  const encoded = JSON.stringify(result);
+  expect(encoded.includes("secret-title")).toBe(false);
+  expect(encoded.includes("secret-message")).toBe(false);
+  expect(encoded.includes("detail")).toBe(false);
+  expect("message" in result).toBe(false);
+});
+
+it("returns invalid_payload when the response value has an extra field", async () => {
+  const harness = bind(
+    [command],
+    handler(() =>
+      Promise.resolve({
+        ok: true,
+        value: { name: "paper", note: "secret-note" },
+      }),
+    ),
+  );
+  const result = await invoke(harness.listeners, { id: "doc-1" });
+  expect(result).toEqual({
+    ok: false,
+    error: { code: "invalid_payload", retryable: false },
+  });
+  expect(JSON.stringify(result).includes("secret-note")).toBe(false);
+});
+
+it("returns invalid_payload when the response value has the wrong type", async () => {
+  const harness = bind(
+    [command],
+    handler(() => Promise.resolve({ ok: true, value: { name: 1 } })),
+  );
+  expect(await invoke(harness.listeners, { id: "doc-1" })).toEqual({
+    ok: false,
+    error: { code: "invalid_payload", retryable: false },
+  });
+});
+
+it("drops extra result fields when the response value matches", async () => {
+  const harness = bind(
+    [command],
+    handler(() =>
+      Promise.resolve({
+        ok: true,
+        value: { name: "paper" },
+        message: "secret-message",
+      }),
+    ),
+  );
+  const result = await invoke(harness.listeners, { id: "doc-1" });
+  expect(result).toEqual({ ok: true, value: { name: "paper" } });
+  expect(JSON.stringify(result).includes("secret-message")).toBe(false);
+});
+
+it("strips transport errors to code and retryable when the handler adds fields", async () => {
+  const cases = [
+    { code: "sender_rejected", retryable: false },
+    { code: "invalid_payload", retryable: false },
+    { code: "handler_threw", retryable: true },
+  ] as const;
+  for (const expected of cases) {
+    const harness = bind(
+      [command],
+      handler(() =>
+        Promise.resolve({
+          ok: false,
+          error: {
+            code: expected.code,
+            retryable: !expected.retryable,
+            detail: { leak: "secret-detail" },
+            message: "secret-message",
+          },
+        }),
+      ),
+    );
+    const result = await invoke(harness.listeners, { id: "doc-1" });
+    expect(result).toEqual({ ok: false, error: { ...expected } });
+    const encoded = JSON.stringify(result);
+    expect(encoded.includes("secret-detail")).toBe(false);
+    expect(encoded.includes("secret-message")).toBe(false);
+    expect(encoded.includes("detail")).toBe(false);
+    expect(encoded.includes("message")).toBe(false);
+  }
+});
+
+it("drops a message when a business error keeps its detail", async () => {
+  const harness = bind(
+    [command],
+    handler(() =>
+      Promise.resolve({
+        ok: false,
+        message: "secret-message",
+        error: {
+          code: "not_found",
+          retryable: false,
+          detail: { id: "doc-1" },
+          message: "secret-error",
+        },
+      }),
+    ),
+  );
+  const result = await invoke(harness.listeners, { id: "doc-1" });
+  expect(result).toEqual({
+    ok: false,
+    error: {
+      code: "not_found",
+      retryable: false,
+      detail: { id: "doc-1" },
+    },
+  });
+  const encoded = JSON.stringify(result);
+  expect(encoded.includes("secret-message")).toBe(false);
+  expect(encoded.includes("secret-error")).toBe(false);
+});
+
 it("returns the handler result when the payload is valid", async () => {
   const success = { ok: true as const, value: { name: "paper" } };
   const harness = bind(

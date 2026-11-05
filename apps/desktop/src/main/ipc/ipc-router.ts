@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { acceptHandlerResult } from "./accept-result.js";
 import { exceedsIpcBudget, utf8Bytes } from "./oversize.js";
 import { isPassThrough, type IpcPassThrough } from "./pass-through.js";
 import { payloadMatches } from "./payload-schema.js";
@@ -174,7 +175,7 @@ async function callHandler(
       attempt.options,
     );
   }
-  return produced;
+  return acceptHandlerResult(attempt.entry.response, produced);
 }
 
 function commandContext(
