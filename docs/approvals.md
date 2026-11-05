@@ -1,6 +1,6 @@
 # 批准记录
 
-状态：现行。日期：2026-11-04（Asia/Shanghai）。
+状态：现行。日期：2026-11-05（Asia/Shanghai）。
 
 本文是项目的批准记录。Wisdom 给出的每一次批准（点选或原话）由收到它的 bot 记在这里。每行写时间（Asia/Shanghai）、Wisdom 的原话、批了什么、落在哪里（PR、issue 或文档节）、来源聊天。记下来的批准是终局。没有记在这里的，不算已批准。
 
@@ -87,5 +87,12 @@
 | 2026-11-04 19:07 | 「合入，那148也合入。」 | 合入 #148 @1f2e718，排在 #149 之后；tip 变了须重批（已被 19:18 取代） | PR #148 | https://github.com/wisdom-km/open-immerse-v2/pull/148#issuecomment-6629086133 |
 | 2026-11-04 19:18 | 「批准」 | 合入 #148 新 tip e6631f5（取代 19:07） | PR #148 | https://github.com/wisdom-km/open-immerse-v2/pull/148#issuecomment-6629248653 |
 | 2026-11-04 19:24 | 「第一个就按照你的建议，然后第二个不用收缩范围。」 | 【决定，不计入批准】1) 以后 PR 统一 squash 合入（#149 普通 merge 是例外，不回滚）；2) 不做 MVP 收缩，按 M2–M8 推进到第一个安装包 | 流程、Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6629345577 |
+| 2026-11-04 21:55 | 「一和二都按照你的推荐去做。」 | #159 合入前先给 skip-ranges.ts 补分支用例，并把会让断言悄悄跳过的两处 `if (!x) return;` 改成明确断言；补完重新审查、重新测试后再合入。Anvil 在 #157（b3d3d4b）和 #159（6c2579a）上发验收评论 | PR #157、#159 | https://github.com/wisdom-km/open-immerse-v2/pull/159#issuecomment-6632477307 ；https://github.com/wisdom-km/open-immerse-v2/pull/157#issuecomment-6632478203 |
+| 2026-11-04 22:36 | 「这3个都按推荐。然后该建issue的建issue。」 | 按 #157(b3d3d4b)→#159(702bd2c)→#160(9b43ed6)→#162(3f58a01) 的顺序 squash 合入；每合完一个，先把下一个 merge-update 到 main 再合，不 rebase、不 force push。Anvil 验收评论不阻塞。三处遗留放进 #153，不阻塞合入。tip 列表被同日 23:14 取代 | PR #157、#159、#160、#162 | https://github.com/wisdom-km/open-immerse-v2/pull/157#issuecomment-6633416169 ；https://github.com/wisdom-km/open-immerse-v2/pull/159#issuecomment-6633417178 ；https://github.com/wisdom-km/open-immerse-v2/pull/160#issuecomment-6633418207 ；https://github.com/wisdom-km/open-immerse-v2/pull/162#issuecomment-6633419200 |
+| 2026-11-04 23:14 | 「对，按照推荐」 | 按 #159(67dce53)→#160(53d7a88)→#162(a3cfb11) 的顺序 squash 合入；每合完一个，把下一个 merge-update 到 main 再合，不 rebase、不 force push。由 Anvil 发这三个 PR 的验收评论。取代 22:36 的 tip 列表（#157 已合入） | PR #159、#160、#162 | https://github.com/wisdom-km/open-immerse-v2/pull/159#issuecomment-6634313027 ；https://github.com/wisdom-km/open-immerse-v2/pull/160#issuecomment-6634314382 ；https://github.com/wisdom-km/open-immerse-v2/pull/162#issuecomment-6634315739 |
+| 2026-11-04 23:35 | 「那如果说第三次没合入进去的话，那就等明天的上午10点再合入吧。如果说第三次合入进去了，咱们就继续排队就好了。」 | worker-health-macos 第三次重跑（run 41851433139）如果通过，就继续按 #159→#160→#162 合入；如果没通过，推迟到 2026-11-05 10:00（UTC+8）再重跑、合入。23:14 的合入批准仍然有效 | PR #159 | https://github.com/wisdom-km/open-immerse-v2/pull/159#issuecomment-6634837647 |
+| 2026-11-04 23:40 | 「那就按照你的这个建议吧，先做SQL Lite的加文件存储，再做导入和文献库，最后做PDF.js阅读」 | Markdown 解析核心这组（#154）合完以后，M2 按 ① SQLite + 文件存储（含版本与迁移备份，ARCHITECTURE §8.4）→ ② 导入与文献库 → ③ PDF.js 阅读。M2 其余交付项的顺序还没定 | Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6634955416 |
+| 2026-11-05 09:20 | 「继续」 | Markdown 组已合完后继续 M2：开工 #163（SQLite + 文件存储）。文档日检 7 条另见同日 09:21 | Issue #163 | https://github.com/wisdom-km/open-immerse-v2/issues/163#issuecomment-6646970218 |
+| 2026-11-05 09:21 | 「按推荐」 | #28 日检 7 条：1、2、6、7 按代码现状改文档；3、4、5 原文旁标「计划中」，不删承诺内容。7 条放进本 PR | Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6646969613 |
 
-共 77 条批准 + 1 条反馈记录 + 3 条决定
+共 84 条批准 + 1 条反馈记录 + 3 条决定
