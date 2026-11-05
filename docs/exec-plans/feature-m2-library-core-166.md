@@ -59,7 +59,7 @@
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
 | 1 | 本文件。第一笔只有它 | `a74d97e` 只有本文件 | 本表 |
-| 2 | platform-node：`libraryDirectory`、`ensureDataRootDirectories` 创建 `library/`、`libraryEntryDirectory`、`librarySourcePath`，导出，并改 data-root 测试 | `e2da38c`。`secrets.bin` 仍不创建。非法摘要返回 `storage.invalid_path` | `docs/evidence/<PR号>/commands.md` |
+| 2 | platform-node：`libraryDirectory`、`ensureDataRootDirectories` 创建 `library/`、`libraryEntryDirectory`、`librarySourcePath`，导出，并改 data-root 测试 | `e2da38c`。`secrets.bin` 仍不创建。非法摘要返回 `storage.invalid_path` | [commands.md](../evidence/169/commands.md) |
 | 3 | `@oi/feature-library` 骨架、`0001_lib_entries.sql`、repository 与 fs store | `c1c7b2d`。插入在一个事务里。暂存失败、摘要不符、插入失败都不留 `library/<sha>/` | 同上 |
 | 4 | `import-pdf`、`list-library`、`relocate-source`、`update-progress`，以及 core / adapter 测试 | 同一次提交。重复导入不写文件、不调用 ingest。`status` 按 `addedAt` 再 `id`。标题去掉末尾 `.pdf` | 同上 |
 | 5 | `ipc-handlers.ts`（注入选文件端口）与错误码测试。`expose` 仍为 false | handlers 在 `c1c7b2d`。`f7c781c` 去掉适配器对 `@oi/kernel` 的 import。契约 `expose` 未改 | 同上 |
@@ -149,7 +149,7 @@ handler 先问选文件端口。取消 → `cancelled`，不读库。无此 id �
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：PR 打开之后补。
+- [commands.md](../evidence/169/commands.md)
 
 ## 自检
 
