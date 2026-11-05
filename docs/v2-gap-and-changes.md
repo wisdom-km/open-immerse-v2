@@ -453,7 +453,7 @@ Wisdom 批准按[架构评审](./reviews/2026-10-30-architecture-review.md)修�
 
 | 项 | 决定 | 落点 |
 | --- | --- | --- |
-| P0-1 流水线没有归属 | 新增无 UI 的 `ingest` 切片，独占「解析 → Jev 评分 → 采用 → 翻译」与补救后重评的跨切片编排；不建表，下一步由已落库的事实重新推出，进度经 `jobs` 的 `ingest` 任务上报；PDF 打开只有 `ingest.openDocument` 一个 IPC 入口，`library.importPdf` 不再暴露给 IPC；任何切片不 import `ingest` | ARCH §2.5、§3、§4.2、§4.3、§5.2 F-17、§5.3、§7.1、§9、§13 G5；PRD §4 原则 3、M1、M3；RULES §5 第 16 条 |
+| P0-1 流水线没有归属 | 新增无 UI 的 `ingest` 切片，独占「解析 → Jev 评分 → 采用 → 翻译」与补救后重评的跨切片编排；不建表，下一步由已落库的事实重新推出，进度经 `jobs` 的 `ingest` 任务上报；PDF 打开只有 `ingest.openDocument` 一个 IPC 入口，文献库导入当时不暴露给 IPC；任何切片不 import `ingest` | ARCH §2.5、§3、§4.2、§4.3、§5.2 F-17、§5.3、§7.1、§9、§13 G5；PRD §4 原则 3、M1、M3；RULES §5 第 16 条 |
 | 删除 `repair → quality` | 补救后的重评由 `ingest` 调用 `quality`，`repair` 不再依赖 `quality` | ARCH §4.3 |
 | P0-2 utilityProcess 的说法 | `safeStorage`、对话框、`shell`、`oi-asset://` 协议处理、窗口、preload、IPC 校验、`worker-supervisor` 固定在 main；用例、SQLite、HTTP 适配器、`worker-client`、文件资产、md 读取 / 扫描 / 监视可在 M3 按实测迁到 utility；密钥明文只在 main，按次授权并核对该服务商登记的主机；启用 utility 后 assetId → 路径经 MessagePort 查询 | ARCH §1、§9 |
 | P0-3 预算只管补救 | 新增 `budget` 切片（账本从 `repair` 移出，上限从 `settings` 移出），经 `contracts/src/budget.ts` 的 `BudgetGate` 端口由装配根注入；每次外发付费调用先 `reserve`，被拒就不发请求；账户按「服务商 + 能力」，有金额上限与请求数 / 页数 / token 上限；受限预算下单价未知且没设上限时拒绝（`budget_cap_unset`）；worker 作业带额度信封；Jev 被拒记为 `unavailable/budget`；本机回环服务与 arXiv 下载不计 | ARCH §2.5、§4.1、§4.2、§7.3、§7.8、§10.2；PRD §3.3、AC-06、AC-59 ③、AC-63；RULES §5 第 15 条 |
