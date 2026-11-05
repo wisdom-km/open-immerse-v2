@@ -62,6 +62,7 @@
 | 5 | `ui/**`、renderer 壳、`slots.ts` 一行；假 `window.oi` 的组件测试 | `08d1697`。单击只选中。双击和 Enter 不增加调用。UI 不调用 `relocate` | `packages/features/library/test/ui/library-screen.test.tsx` |
 | 6 | approvals 两行。证据在 PR 号出来后写入 `docs/evidence/<PR号>/commands.md` | `08d1697` 追加 13:55 合入同步与 13:58 开工 C。证据在 #171 | `docs/approvals.md`、`docs/evidence/171/commands.md` |
 | 7 | `GATE_BASE=origin/main corepack pnpm run check` 与 `corepack pnpm test`。失败则只修这次引入的失败 | `547db98`。check 退出码 0（`check-pr-size: 2767`）。test 退出码 0（135 文件，529 passed、3 skipped）。`node tools/check-docs/check.mjs` 退出码 0 | `docs/evidence/171/commands.md` |
+| 8 | desktop 构建不再编 UI。菜单保留系统 role | `0f29561`。`tsconfig.build.json` 排除 `src/ui/**`。`slots.ts` 改从 `@oi/feature-library/ui` 导入。darwin 菜单是 appMenu、文件、editMenu、windowMenu；其他平台没有 appMenu | `docs/evidence/171/commands.md` |
 
 ## 行为
 
@@ -75,7 +76,7 @@
 | UI 栈 | `react` 与 `react-dom`（MIT）。组件在 `packages/features/library/src/ui/**`。不建 `packages/ui-kit`。不加 `react-router`。 |
 | 打包 | 只对 renderer 用 `esbuild`（MIT）打出一个脚本。main 与 preload 仍用现有 `tsc`。 |
 | dataRoot | `app.getPath("userData")`。不做数据目录指针迁移。 |
-| 菜单 | 要做。应用菜单只有「文件 › 打开…」，快捷键 `CmdOrCtrl+O`。没有「打开文件夹…」「删除」「在访达中显示」「在资源管理器中显示」。 |
+| 菜单 | 要做。darwin 保留 `appMenu`，各平台保留 `editMenu` 与 `windowMenu`，再加上「文件 › 打开…」，快捷键 `CmdOrCtrl+O`。没有「打开文件夹…」「删除」「在访达中显示」「在资源管理器中显示」。 |
 | 样式 | 独立 CSS 文件，由 `index.html` 链接。组件不用 `style` 属性，避免违反 `style-src 'self'`。TypeScript 不 import 这个 CSS，避免依赖图出现无法归层的边。 |
 | 导入后的视图 | 成功或重复之后再 `list` 当前视图。返回的数组里没有这条 id 时（新导入的 `openedAt` 为 null，不在「最近」），改为 `list({ view: "all", sort })` 并选中它。这是为了让选中行看得见，不是 UI 自己排序。 |
 
@@ -95,7 +96,7 @@
 
 desktop 不从 `@oi/feature-library` 桶导入。那个桶转出 domain，而 [docs/arch/05-01.md](../arch/05-01.md) 没有 MAIN → DOM。`no-cross-feature-internals` 只约束切片之间。desktop 改从公开子路径 `@oi/feature-library/main` 导入，包导出指向 `src/adapters/library-main.ts`。dependency-cruiser 因此记成 MAIN → ADP，这是图上已有的边。`index.ts` 仍然转出工厂，给测试和以后的装配用。`tools/check-deps/tsconfig.paths.json` 加上这条子路径，避免它被收成无法归层的 seam。
 
-`apps/desktop/src/main/library-wiring.ts`（非热点）做三件事：用 `dialog.showOpenDialogSync` 实现 `PdfPicker`（只此文件出现 Electron 对话框；features 不 `import "electron"`）；调用 `createLibraryMain`；把四条 handler 放进 `Map<string, IpcCommandHandler>`。`library.import` 与 `library.relocate` 走各自的已有函数。`library.importDropped` 读上下文里的路径。同一文件注册菜单。菜单项的 click 在页面里派发 `oi-open-file`。快捷键只放在菜单加速键上，页面不再监听一份 Mod+O，避免对话框开两次。
+`apps/desktop/src/main/library-wiring.ts`（非热点）做三件事：用 `dialog.showOpenDialogSync` 实现 `PdfPicker`（只此文件出现 Electron 对话框；features 不 `import "electron"`）；调用 `createLibraryMain`；把四条 handler 放进 `Map<string, IpcCommandHandler>`。`library.import` 与 `library.relocate` 走各自的已有函数。`library.importDropped` 读上下文里的路径。同一文件注册菜单。模板在 darwin 上含 `appMenu`，并含 `editMenu`、`windowMenu` 和「文件 › 打开…」。菜单项的 click 在页面里派发 `oi-open-file`。快捷键只放在菜单加速键上，页面不再监听一份 Mod+O，避免对话框开两次。
 
 `composition-root.ts` 只把 `startLibrary(app.getPath("userData"))` 的 Map 传进 `wireIpc`。`wireIpc` 增加 `handlers` 参数，并多传一个 IPC 参数。storage 在退出前 `close`。
 
@@ -172,7 +173,9 @@ desktop 不从 `@oi/feature-library` 桶导入。那个桶转出 domain，而 [d
 | 路径走 IPC 第二参数 | 交接要求在计划里写死。schema 保持空对象 | 2026-11-05 | 本计划 |
 | React + esbuild，不建 ui-kit | 交接 §1.5。CSP 不允许内联脚本，静态 HTML 挂不上 JSX | 2026-11-05 | 交接建议，本计划采纳 |
 | dataRoot 用 userData | 交接 §7.5。指针迁移另议 | 2026-11-05 | 交接建议，本计划采纳 |
-| 菜单只留「打开…」 | 用户要求文件菜单；DP:54 不放还不能用的项 | 2026-11-05 | 交接与 Loom，本计划采纳 |
+| 菜单只留「打开…」 | 用户要求文件菜单；DP:54 不放还不能用的项。文件子菜单仍只有这一项 | 2026-11-05 | 交接与 Loom，本计划采纳 |
+| 应用菜单保留系统 role | 不要用「文件」盖掉整份 Application Menu。darwin 保留 `appMenu`，各平台保留 `editMenu` 与 `windowMenu` | 2026-11-05 | Wisdom |
+| UI 不进 library 的 Node emit | `tsconfig.build.json` 没有 jsx 和 DOM。`slots` 走 `@oi/feature-library/ui`，renderer 由 esbuild 打包 | 2026-11-05 | Wisdom |
 | 不改 DESIGN / ARCH 正文 | N-10。14:10 原话把这些冲突放进并行文档 PR。来源：https://github.com/wisdom-km/open-immerse-v2/issues/166#issuecomment-6651125733 | 2026-11-05 14:10 | Wisdom |
 | desktop 走 `@oi/feature-library/main` | 桶会带上 domain，MAIN → DOM 不在 §5.1。子路径落在 adapters，是已画出的 MAIN → ADP | 2026-11-05 | 本计划 |
 | 超过 600 行不拆 C | expose、生成器、装配和 UI 要一起证明窗口能导入。不改 G12 上限 | 2026-11-05 | 交接，本计划采纳 |

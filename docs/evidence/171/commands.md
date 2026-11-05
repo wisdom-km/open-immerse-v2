@@ -16,3 +16,17 @@ esbuild 第一次解析不到 `react-dom/client`。pnpm 不提升 `@oi/feature-l
 `test:core` 不适用（`package.json` 没有这个脚本）。未跑 worker 的 ruff / pyright / pytest（本 PR 不改 `workers/parser`）。没有在 Electron 窗口里点过。除上面那次格式与计划边失败并重跑外，没有跳过。
 
 `G12:` 写在 `08d1697` 的说明里。本文件是随后的提交，不改变那一行。
+
+## 2026-11-05 修正 desktop 构建与菜单
+
+代码 `0f29561c300bff3e1ccc64bffc01e7f035d3c9b6`。`corepack pnpm --filter desktop build` 与 `corepack pnpm test` 跑在提交前的同一棵源码树上，提交没有再改这些文件。`GATE_BASE=origin/main corepack pnpm run check` 跑在该提交上，工作树干净。
+
+CI `desktop-e2e-windows`（run `41983502119`，tip `e2cbbbb`）红在 `tsc -p packages/features/library/tsconfig.build.json`，不是 `tsconfig.main.json`。`include` 为 `src/**/*.ts`，把 `src/ui/*.ts` 编进没有 `jsx`、`lib` 只有 ES2023 的构建。报错是 `src/ui/index.ts` TS6142，以及 `window` / `DragEvent.dataTransfer` 缺失。`slots.ts` 不在 main 的 include（`src/main/**/*.ts`）里。修正仍按要求把 slots 改到公开子路径 `@oi/feature-library/ui`，并把 `src/ui/**` 排除出这次 emit。UI 继续由 `tsconfig.ui.json` 做类型检查，由 esbuild 打包。`packages/features/library/dist/ui` 不存在。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `corepack pnpm --filter desktop build` | 0 | 含 library、main、preload 的 tsc，以及 `bundle-renderer.mjs`。产物 `apps/desktop/src/renderer/main.js` 含 `library-app.tsx`，已 gitignore |
+| `corepack pnpm test` | 0 | 135 个文件，530 passed、3 skipped。Type Errors 无。新增菜单 role 一条 |
+| `GATE_BASE=origin/main corepack pnpm run check` | 0 | `check-pr-size: 2850 non-generated lines`。`check-deps` 245 modules、605 dependencies。codegen 后 `git diff --exit-code` 通过 |
+
+菜单模板：darwin 为 `appMenu`、「文件 › 打开…」、`editMenu`、`windowMenu`。win32 与 linux 没有 `appMenu`。没有打开文件夹、删除、访达或资源管理器。
