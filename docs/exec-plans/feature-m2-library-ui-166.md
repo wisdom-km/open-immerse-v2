@@ -55,13 +55,13 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它 |  |  |
-| 2 | codegen：`dropped-file` 生成 `File` 形参与 `invokeDropped`；事件仍失败；测试翻新 |  |  |
-| 3 | 四条 `expose: true`，然后 `pnpm run codegen`，生成物入版 |  |  |
-| 4 | router 接受仅 preload 传来的路径第二参数；desktop 非热点接线；热点文件少改 |  |  |
-| 5 | `ui/**`、renderer 壳、`slots.ts` 一行；假 `window.oi` 的组件测试 |  |  |
-| 6 | approvals 两行。证据在 PR 号出来后写入 `docs/evidence/<PR号>/commands.md` |  |  |
-| 7 | `GATE_BASE=origin/main corepack pnpm run check` 与 `corepack pnpm test`。失败则只修这次引入的失败 |  |  |
+| 1 | 本文件。第一笔只有它 | `c24623e`，只有本文件 | `git show --stat c24623e` |
+| 2 | codegen：`dropped-file` 生成 `File` 形参与 `invokeDropped`；事件仍失败；测试翻新 | `08d1697`。命令生成 `file: File`。事件仍抛 `event transport only allows invoke` | `tools/codegen/preload-generate.test.ts` |
+| 3 | 四条 `expose: true`，然后 `pnpm run codegen`，生成物入版 | `08d1697`。settings 仍是 `expose: false` | `packages/contracts/test/ipc-library.test.ts` |
+| 4 | router 接受仅 preload 传来的路径第二参数；desktop 非热点接线；热点文件少改 | `08d1697`。`composition-root.ts` +2 行。`slots.ts` 2 行。`createLibraryMain` 不从 `index.ts` 转出：G14 的 `types: []` 不能跟着 Node 模块进 core | `apps/desktop/test/ipc-router.test.ts`、`library-main.test.ts` |
+| 5 | `ui/**`、renderer 壳、`slots.ts` 一行；假 `window.oi` 的组件测试 | `08d1697`。单击只选中。双击和 Enter 不增加调用。UI 不调用 `relocate` | `packages/features/library/test/ui/library-screen.test.tsx` |
+| 6 | approvals 两行。证据在 PR 号出来后写入 `docs/evidence/<PR号>/commands.md` | `08d1697` 追加 13:55 合入同步与 13:58 开工 C。证据等 PR 号 | `docs/approvals.md` |
+| 7 | `GATE_BASE=origin/main corepack pnpm run check` 与 `corepack pnpm test`。失败则只修这次引入的失败 | 实现后跑。结果写入证据 | `docs/evidence/<PR号>/commands.md` |
 
 ## 行为
 
@@ -194,4 +194,4 @@ desktop 不从 `@oi/feature-library` 桶导入。那个桶转出 domain，而 [d
 
 ## 自检
 
-- [ ] 影响 arch / prd 吗？§9 第 11 行、§5.3 的 ingest 分流、DESIGN §4.5.3 与 #166 对不上。本 PR 不改这些正文。approvals 补两行。规格变更记录不适用。
+- [x] 影响 arch / prd 吗？§9 第 11 行、§5.3 的 ingest 分流、DESIGN §4.5.3 与 #166 对不上。本 PR 不改这些正文。approvals 补两行。规格变更记录不适用。
