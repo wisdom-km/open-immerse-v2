@@ -132,8 +132,8 @@ function readPrior(
 }
 
 function snapshotReadFailure(error: unknown): StorageFailure {
-  if (isFileLock(error)) {
-    return storageFailure("storage.locked", "database file is locked", error);
+  if (isLockOrDenied(error)) {
+    return storageFailure("storage.locked", "被锁定或没有权限", error);
   }
   return storageFailure(
     "storage.open_failed",
@@ -142,11 +142,13 @@ function snapshotReadFailure(error: unknown): StorageFailure {
   );
 }
 
-function isFileLock(error: unknown): boolean {
+function isLockOrDenied(error: unknown): boolean {
   if (typeof error !== "object" || error === null || !("code" in error)) {
     return false;
   }
-  return error.code === "EBUSY" || error.code === "EPERM";
+  return (
+    error.code === "EBUSY" || error.code === "EPERM" || error.code === "EACCES"
+  );
 }
 
 function pendingMigrations(

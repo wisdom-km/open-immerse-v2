@@ -125,3 +125,7 @@
 ## 自检
 
 - [x] 影响 arch / prd 吗？影响 §16 的登记句，同一个 PR 里更新，并加 compare-spec-bytes amendment。不改 PRD 正文。
+
+## 后续备注（feature/m2-storage-perm-163）
+
+2026-11-05 11:41 的小修不改上面的计划正文。`EACCES` 与 `EBUSY` / `EPERM` 一样，在读 `oi.sqlite`、`-wal` 或 `-shm` 失败时返回 `storage.locked`。固定文案改为「被锁定或没有权限」。非锁、非权限的读失败仍是 `storage.open_failed`，并补了单测。绝对路径仍只留在 `cause`，不进 `message`，也不进诊断日志。批准行在 [docs/approvals.md](../approvals.md) 的 11:41。

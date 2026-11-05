@@ -220,7 +220,7 @@ it("returns locked when the database file is locked before open", () => {
       expect(failed.ok).toBe(false);
       if (!failed.ok) {
         expect(failed.error.code).toBe("storage.locked");
-        expect(failed.error.message).toBe("database file is locked");
+        expect(failed.error.message).toBe("被锁定或没有权限");
         expect(failed.error.message.includes(root)).toBe(false);
         expect(failed.error.cause).toBe(cause);
       }
