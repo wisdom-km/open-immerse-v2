@@ -100,6 +100,28 @@ export type {
   SettingsEgressCommands,
   SettingsEgressEventPayload,
 } from "./ipc/settings.js";
+export type {
+  LibraryChannel,
+  LibraryCommands,
+  LibraryImportResult,
+  LibraryRelocateRequest,
+} from "./ipc/library.js";
+export {
+  importDroppedLibrary,
+  importLibrary,
+  libraryIpc,
+  listLibrary,
+  relocateLibrary,
+} from "./ipc/library.js";
+export type {
+  LibraryEntry,
+  LibraryEntryId,
+  LibrarySort,
+  LibrarySortDir,
+  LibrarySortField,
+  LibrarySourceRecord,
+  LibraryView,
+} from "./library.js";
 export { healthResponseSchema, readHealthResponse } from "./worker/health.js";
 export {
   matchesWorkerVersion,
