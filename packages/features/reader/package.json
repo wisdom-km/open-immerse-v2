@@ -1,0 +1,11 @@
+{
+  "name": "@oi/feature-reader",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "dependencies": {
+    "@oi/contracts": "workspace:*",
+    "@oi/kernel": "workspace:*",
+    "pdfjs-dist": "6.5.438"
+  }
+}
