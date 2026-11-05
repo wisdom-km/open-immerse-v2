@@ -114,6 +114,17 @@ export {
   relocateLibrary,
 } from "./ipc/library.js";
 export type {
+  IngestChannel,
+  IngestCommands,
+  IngestOpenDocumentRequest,
+  IngestOpenDocumentResponse,
+} from "./ipc/ingest.js";
+export { ingestIpc, openDocument } from "./ipc/ingest.js";
+export type { ReaderChannel, ReaderCommands } from "./ipc/reader.js";
+export { readerIpc, setZoom } from "./ipc/reader.js";
+export type { ReaderSession, ReaderViewMode } from "./reader.js";
+export { readerSessionSchema } from "./reader.js";
+export type {
   LibraryEntry,
   LibraryEntryId,
   LibrarySort,
