@@ -259,6 +259,26 @@
       "source": "ARCHITECTURE.md",
       "old": "`importPdf`（由 `ingest` 调用，不是 IPC 命令）、`listLibrary`、`updateProgress`、`getBibliographicRecords`（§4.4 预留）",
       "new": "`library.import` / `library.importDropped`（IPC，只入库、不解析；`expose` 以 `packages/contracts/src/ipc/library.ts` 为准）、`library.list`、`updateProgress`（无 IPC）、`library.relocate`、`getBibliographicRecords`（§4.4 预留）"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│     ├─ src/renderer/                # 当前有 index.html 与 oi-api.d.ts；路由、布局插槽、全局 Provider 为计划中\n",
+      "new": "│     ├─ src/renderer/                # 当前有 index.html、oi-api.d.ts、main.tsx、slots.ts、library.css；路由、全局 Provider 为计划中。slots.ts 现为文献库贡献数组（非正式布局系统）\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│  ├─ platform-node/                  # Node 侧基础设施：SQLite、文件资产、safeStorage、HTTP 客户端、日志落盘。SQLite、文件资产、safeStorage、HTTP 客户端计划中（#163 做 SQLite 与文件存储）；日志落盘已在 logging/\n",
+      "new": "│  ├─ platform-node/                  # Node 侧基础设施：SQLite、文件资产、safeStorage、HTTP 客户端、日志落盘。SQLite 与文件存储路径已在 storage/（open-storage.ts、data-root.ts 等）；safeStorage、HTTP 客户端计划中；日志落盘已在 logging/\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│     ├─ budget/  formula-source/  ingest/  jobs/  markdown/  # 已建\n│     ├─ library/  document/  parsing/  formula/  translation/  # 计划中\n│     ├─ quality/  repair/            # 计划中。ADR 0003 删的是 repair → quality，不是这两个切片（§4.2）\n│     ├─ reader/  notes/  qa/  voice/ # 计划中\n│     └─ settings/  diagnostics/      # 计划中。writing/ 为预留位，v2 不建目录（§4.4）\n",
+      "new": "│     ├─ budget/  formula-source/  ingest/  jobs/  markdown/  library/  # 已建\n│     ├─ document/  parsing/  formula/  translation/  # 计划中\n│     ├─ quality/  repair/            # 计划中。ADR 0003 删的是 repair → quality，不是这两个切片（§4.2）\n│     ├─ reader/                      # 已建。核心与 PDF.js 适配；没有阅读界面\n│     ├─ notes/  qa/  voice/          # 计划中\n│     └─ settings/  diagnostics/      # 计划中。writing/ 为预留位，v2 不建目录（§4.4）\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "样例放 `fixtures/eval/`，用合成数据。",
+      "new": "样例放 `fixtures/eval/`（计划中），用合成数据。"
     }
   ]
 }

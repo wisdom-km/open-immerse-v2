@@ -1,6 +1,6 @@
 # 批准记录
 
-状态：现行。日期：2026-11-05（Asia/Shanghai）。
+状态：现行。日期：2026-11-06（Asia/Shanghai）。
 
 本文是项目的批准记录。Wisdom 给出的每一次批准（点选或原话）由收到它的 bot 记在这里。每行写时间（Asia/Shanghai）、Wisdom 的原话、批了什么、落在哪里（PR、issue 或文档节）、来源聊天。记下来的批准是终局。没有记在这里的，不算已批准。
 
@@ -116,5 +116,9 @@
 | 2026-11-05 14:10 | 「并行开文档 PR（approvals + DESIGN/ARCH + Loom 补丁）」 | 本 PR。approvals、DESIGN、ARCH 与 Loom 补丁。不含 #161，不碰 library 实现 | Issue #166 | https://github.com/wisdom-km/open-immerse-v2/issues/166#issuecomment-6651125733 |
 | 2026-11-05 17:43 | 「按推荐：批准 Anvil 在 #172/#166 发更正（PASS→真机 FAIL）；Cloud 修 oi-app 放行 js/css（及正确 MIME），修完再测 tip」 | #69 的另批：oi-app 放行 `.js` 与 `.css` 并给出正确 MIME。不扩大到 svg/png/mjs。不合入 #172 | PR #172、Issue #69、Issue #166 | 本轮 Cloud 交接 |
 | 2026-11-05 17:44 | 「这个先修复吧，然后看看之前有没有真机测试没过的，咱一起修了。就是在之后如果说需要真机测试，咱都要实际跑一遍，不能说Box跑一遍过了之后的。」 | 先修这次真机 FAIL。本 tip 的真机失败只有这一处根因。以后需要真机测试时要实际跑，Box 通过不能代替 | PR #172 | 本轮 Cloud 交接 |
+| 2026-11-06 13:22 | 「全部纳入，纳入前你让 Loom 核实一下。」 | #28 今日日检 5 条全部纳入下一份文档 PR。只校正文档与已实现现状，不扩实现。前置是 Loom 逐条核实 | Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6677657688 |
+| 2026-11-06 13:55 | 「批准可以开 pr 修改仓库」 | 按核实记录改这 5 条文档并开 Draft PR。只做目录与实现状态校正，不扩代码。不含合入授权 | Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6678088734 |
+| 2026-11-06 17:59 | 「OK，那就按照你的建议去做吧。」 | #177 两项补改：补仓库内 `eb917736` 之后 check-docs 与 diff --check 的记录，并记下已发生的流程偏差及 Forge 责任。不写成事前已审。不扩 5 条正文。不含合入 | PR #177、Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6682213550 |
+| 2026-11-06 18:30 | 「那就按照你说的推进吧。」 | 实施已审的三文件补改：证据、执行计划、本文件。登记 17:59 与本行。不动五条正文。不含合入或发版 | PR #177、Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6682755276 |
 
-共 103 条批准 + 1 条反馈记录 + 3 条决定 + 3 条合入同步
+共 107 条批准 + 1 条反馈记录 + 3 条决定 + 3 条合入同步
