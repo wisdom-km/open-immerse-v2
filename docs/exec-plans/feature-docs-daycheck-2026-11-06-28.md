@@ -20,9 +20,9 @@
 | 2 | 改 [docs/arch/03.md](../arch/03.md) 第 37、42、47–51 行。`library/` 与 `reader/` 标已建。`document/` 等与 `notes/` 等仍计划中。`reader/` 单独一行，写明核心与 PDF.js 适配、没有阅读界面。platform-node 写明 SQLite 与文件存储路径已在 `storage/`；safeStorage、HTTP 客户端仍计划中。renderer 补上三个现有文件；路由与全局 Provider 仍计划中 | 已按「要写入的文本」写入。`quality/` 与 `settings/` 两行未改 | 同文件 |
 | 3 | [docs/arch/12-01.md](../arch/12-01.md) 第 6 行给 `fixtures/eval/` 加「计划中」。不改路径，不新建目录。不在 §3 目录树加 `eval/` 行 | 已写入。未新建 `fixtures/eval/`，§3 未加 `eval/` | 同文件 |
 | 4 | [docs/approvals.md](../approvals.md) 只加 13:22 与 13:55 两行。计入批准。总数 103 改为 105。不补这两次之间的历史积压 | 已写入。文首日期改为 2026-11-06 | 同文件 |
-| 5 | [docs/spec-changelog.md](../spec-changelog.md) 表首加一行。版本历史标记之内不改。规格版本仍是 v0.6。PR 号等 Draft PR 开出后填 | 表首一行已加，PR 列暂写「本 PR」 | 同文件 |
+| 5 | [docs/spec-changelog.md](../spec-changelog.md) 表首加一行。版本历史标记之内不改。规格版本仍是 v0.6。PR 号等 Draft PR 开出后填 | 表首一行。PR 列是 [#177](https://github.com/wisdom-km/open-immerse-v2/pull/177) | 同文件 |
 | 6 | `tools/compare-spec-bytes/manifest.json` 在 `amendments` 末尾为上述正文各加一条唯一替换。`old` 是当前拼接正文里只出现一次的句子，`new` 是改后的句子。不改基线，不改 `compare.mjs` | 追加四条。拼接模拟与工作区正文一致 | 同文件 |
-| 7 | 跑文档门禁：`node tools/check-docs/check.mjs`、`node tools/compare-spec-bytes/compare.mjs`、`git diff --check`，以及 `corepack pnpm exec vitest run tools/compare-spec-bytes/compare.test.ts`。不跑全量产品测试。失败只修失败项再测。日志写入 `docs/evidence/<PR号>/commands.md`。Draft PR，正文用 `Refs #28`，不用 `Fixes` | 四条命令退出码都是 0。check-docs findings 0。compare 对准 `f8d5d01`，ARCHITECTURE 365716 字节。vitest 14 passed。证据文件等 PR 号 | `docs/evidence/<PR号>/commands.md` |
+| 7 | 跑文档门禁：`node tools/check-docs/check.mjs`、`node tools/compare-spec-bytes/compare.mjs`、`git diff --check`，以及 `corepack pnpm exec vitest run tools/compare-spec-bytes/compare.test.ts`。不跑全量产品测试。失败只修失败项再测。日志写入 `docs/evidence/<PR号>/commands.md`。Draft PR，正文用 `Refs #28`，不用 `Fixes` | 四条命令与 `check-commits` 退出码都是 0。check-docs findings 0。compare 对准 `f8d5d01`，ARCHITECTURE 365716 字节。vitest 14 passed。Draft PR #177，正文 `Refs #28` | [commands.md](../evidence/177/commands.md) |
 
 ## 决策记录（Decision Log）
 
@@ -120,7 +120,7 @@ M0 的路线对比与以后的回归只用这一份记录形状，不在这里�
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：检查命令、退出码与输出摘要。Draft PR 开出后把 `<PR号>` 换成实际编号。
+- [docs/evidence/177/commands.md](../evidence/177/commands.md)：检查命令、退出码与输出摘要。Draft PR 是 #177。
 
 ## 自检
 
