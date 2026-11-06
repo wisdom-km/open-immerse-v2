@@ -73,6 +73,39 @@ check-commits: subjects match Conventional Commits
 
 `56542b8691de68a33dd24ee8cc71b30b9f831a2f` 加上本文件，并把 changelog 的 PR 列改成 #177 之后，又跑了 `node tools/check-docs/check.mjs`、`node tools/compare-spec-bytes/compare.mjs`、`git diff --check origin/main...HEAD`、`node tools/check-commits/check.mjs --base origin/main`。退出码都是 0。check-docs 仍是 findings 0。compare 的三行字节数与上面相同。vitest 没有再跑：`tools/compare-spec-bytes/` 的测试与 `manifest.json` 在 `57776dc` 之后没有改。
 
+## eb917736 之后的复查
+
+提交 `eb917736cc60064c8d76c2f9d4553c23d118cfda` 在推送前的同一条 shell 里接着跑了下面两条。本段只记这一笔已经固定的 SHA。后来的提交不写在这里。
+
+来源粒度：
+
+- 当时的 shell 输出有完整 check-docs 计数，以及 `git diff --check origin/main...HEAD` 的退出码 0。这段输出当时没有写入仓库。
+- 本地交付日志 `/opt/cursor/artifacts/docs-daycheck-gates.log` 第 44–46 行只有摘要：`check-docs exit 0 findings 0`，`git diff --check origin/main...HEAD exit 0`。没有六行计数。
+
+```bash
+node tools/check-docs/check.mjs
+```
+
+退出码 0。shell 输出：
+
+```text
+check-docs: strict
+links: 0
+anchors: 0
+status: 0
+verbatim: 0
+tree: 0
+findings: 0
+```
+
+```bash
+git diff --check origin/main...HEAD
+```
+
+退出码 0。
+
+`node tools/compare-spec-bytes/compare.mjs`、`corepack pnpm exec vitest run tools/compare-spec-bytes/compare.test.ts`、`node tools/check-commits/check.mjs` 在 `eb917736` 上没有再跑。这里不写它们的结果。
+
 ## 没有重跑的项
 
-全量 `pnpm test`、`pnpm check`、worker 的 ruff / pyright / pytest、桌面 e2e、真机。本次只改文档与 manifest 数据。
+全量 `pnpm test`、`pnpm check`、worker 的 ruff / pyright / pytest、桌面 e2e、真机。本次只改文档与 manifest 数据。`eb917736` 上没有跑 compare-spec-bytes、vitest、check-commits。
