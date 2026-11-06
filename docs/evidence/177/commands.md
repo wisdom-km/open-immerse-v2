@@ -71,6 +71,8 @@ node tools/check-commits/check.mjs --base origin/main
 check-commits: subjects match Conventional Commits
 ```
 
+`56542b8691de68a33dd24ee8cc71b30b9f831a2f` 加上本文件，并把 changelog 的 PR 列改成 #177 之后，又跑了 `node tools/check-docs/check.mjs`、`node tools/compare-spec-bytes/compare.mjs`、`git diff --check origin/main...HEAD`、`node tools/check-commits/check.mjs --base origin/main`。退出码都是 0。check-docs 仍是 findings 0。compare 的三行字节数与上面相同。vitest 没有再跑：`tools/compare-spec-bytes/` 的测试与 `manifest.json` 在 `57776dc` 之后没有改。
+
 ## 没有重跑的项
 
 全量 `pnpm test`、`pnpm check`、worker 的 ruff / pyright / pytest、桌面 e2e、真机。本次只改文档与 manifest 数据。
