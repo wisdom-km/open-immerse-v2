@@ -2,7 +2,7 @@
 
 分支 `feature/m2-ingest-open-document-174`。基线 `origin/main` `208056585d0891ad7ab2c1309527074b34a1c0a1`（#177 文档 squash；parent `d8113a1e98c41aaf37258c7f3cf00bd6c64d5a59` = #176）。开工前 `git fetch origin main`，SHA 未动。`d8113a1...2080565` 只改 7 个文档 / manifest 文件，没有改 `packages/`、`apps/`、`tools/check-*`。第一笔提交只有本文件。预计实现超过 300 行的阅读成本，按 [RULES.md](../../RULES.md) §2 先交计划。
 
-首笔 `028ee5ad6cbec94aa4c24f1cc699c859d785749e` 只有本文件。Forge 已读过该笔，结论是有条件通过，尚未放行实施（[#174 评论 6719728190](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6719728190)）。本修订仍只改本文件。步骤 2–6 等 Forge 复核本修订并另行指示之后才做。不写实现，不改 `packages/**`，不开 Ready，不合入，不在 issue 上评论。仍只推分支，不开 PR。以后开 PR 也只开 Draft，正文写 `Refs #174`，不写 Closes / Fixes。#174 保持 OPEN。不 force push，不 amend 已推送提交，不同步时用 merge，不用 rebase（N-01、N-03）。
+首笔 `028ee5ad6cbec94aa4c24f1cc699c859d785749e` 只有本文件。修订 `adf0cbc882dd226824b456586214f6c6946966a7` 仍只改本文件。Forge 最终计划审查 PASS（[#174 评论 6719786094](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6719786094)，2026-11-08 17:24）。据 Wisdom 17:17 的既定实现与测试授权（[#174 评论 6719728190](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6719728190)），本分支接着做步骤 2–6。不开 Ready，不合入，不在 issue 上评论。PR 只开 Draft，正文写 `Refs #174`，不写 Closes / Fixes。#174 保持 OPEN。不 force push，不 amend 已推送提交，不同步时用 merge，不用 rebase（N-01、N-03）。
 
 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
 
@@ -123,16 +123,16 @@ AC-11 的「浏览原文」和 DESIGN 的「进入阅读场景」由 PR-C 用已
 
 ## 计划 / 实际
 
-计划列在开工前填。实际列在 Forge 审过并另行指示、实现完成后再填。本提交不回写 SHA。
+计划列在开工前填。实际列在 Forge 最终审查 PASS 之后填写。
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它。推送后暂停 | 未填。回复里给 SHA | 本文件 |
-| 2 | 更新 `packages/features/ingest/package.json`：加上 `@oi/contracts`、`@oi/kernel`、`@oi/feature-library`，都是 `workspace:*`。不加 `pdfjs-dist`、`@oi/feature-reader`、`@oi/feature-jobs`。用包管理器生成 lockfile，不手改 | 未做 |  |
-| 3 | 端口、`open-document` 用例、`src/testing` 假件、`test/core`。覆盖 openedAt、幂等、写前 not_found、写回 `progressPage` 为 null 与非空、进度写返回 not_found / rejected 时复用已分配 `jobId` | 未做 |  |
-| 4 | `adapters/ipc-handlers.ts`、进程内记忆适配器、adapter 测试。`expose` 仍为 false。进度 `not_found` 与 `rejected` 的映射按上文。返回值与错误无绝对路径、无 `message` | 未做 |  |
-| 5 | 更新 README：同实例幂等，重启或新建实例不保证同一个 `jobId`，没有持久化 jobs。跑下面「测试分工」里的针对性命令。写 `docs/evidence/<PR号>/commands.md`。全量留给 Anvil | 未做 |  |
-| 6 | Draft PR：`Refs #174`。来源核对、第 7 节选择、真机与截图属 PR-C。不评论 issue，不标 Ready，不合入 | 未做 |  |
+| 1 | 本文件。第一笔只有它。推送后暂停 | `028ee5a` 计划，`adf0cbc` 修订。Forge 最终审查 PASS：[6719786094](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6719786094)（2026-11-08 17:24） | 本文件 |
+| 2 | 更新 `packages/features/ingest/package.json`：加上 `@oi/contracts`、`@oi/kernel`、`@oi/feature-library`，都是 `workspace:*`。不加 `pdfjs-dist`、`@oi/feature-reader`、`@oi/feature-jobs`。用包管理器生成 lockfile，不手改 | 三个 workspace 依赖已加。lockfile 由 pnpm 生成。Vitest 与 `tools/check-deps/tsconfig.paths.json` 把 `@oi/feature-library` 指到 `src/index.ts`，与 kernel、contracts 的源码别名相同。没有改依赖矩阵，也没有改门禁阈值 | `packages/features/ingest/package.json`、`pnpm-lock.yaml` |
+| 3 | 端口、`open-document` 用例、`src/testing` 假件、`test/core`。覆盖 openedAt、幂等、写前 not_found、写回 `progressPage` 为 null 与非空、进度写返回 not_found / rejected 时复用已分配 `jobId` | 已做。另覆盖 `formatUtc(9e15)` 的 RangeError：用例 `rejected`，不写进度，不泄漏路径。没有改 library | `packages/features/ingest/test/core/open-document.test.ts` |
+| 4 | `adapters/ipc-handlers.ts`、进程内记忆适配器、adapter 测试。`expose` 仍为 false。进度 `not_found` 与 `rejected` 的映射按上文。返回值与错误无绝对路径、无 `message` | 已做。写时 `not_found` 后重试仍用第一次的 `jobId` | `packages/features/ingest/test/adapters/` |
+| 5 | 更新 README：同实例幂等，重启或新建实例不保证同一个 `jobId`，没有持久化 jobs。跑下面「测试分工」里的针对性命令。写 `docs/evidence/<PR号>/commands.md`。全量留给 Anvil | README 已写。针对性命令的退出码写入证据。全量 `pnpm test` / `pnpm run check` / pytest / e2e 未跑 | `docs/evidence/<PR号>/commands.md` |
+| 6 | Draft PR：`Refs #174`。来源核对、第 7 节选择、真机与截图属 PR-C。不评论 issue，不标 Ready，不合入 | Draft PR 随这次实现打开。URL 写在证据里。不评论 issue，不标 Ready，不合入 | 证据 |
 
 ## 行为
 
@@ -232,10 +232,11 @@ AC-11 的「浏览原文」和 DESIGN 的「进入阅读场景」由 PR-C 用已
 | 进度 `not_found` 保持 `not_found`；其余失败走 `handler_threw` | 写之前查到记录，不保证写的时候还在。来源同上评论 | 2026-11-08 17:18 | Forge 排序，非业主决定 |
 | 打开成功 = 查库命中且进度写成功；不建 reader 会话 | 契约响应只有 `jobId`。没有 `ingest → reader` 边，也没有按 id 读字节的端口。AC-11 的浏览原文留给 PR-C | 2026-11-08 | 本计划，按交接默认 (i) |
 | 幂等取「最近一次」；进度写失败不换新 jobId；只在同实例内 | jobs 状态机未就绪。契约要求不另开第二个解析作业。用例保持同步。README 写明重启不保证同一个 `jobId`。来源含 6719728190 | 2026-11-08 | 本计划；Forge 接受首次写失败仍复用 |
+| 放行步骤 2–6，不是合入或发版 | Forge 已亲读 `adf0cbc` 全文并逐项复核前次四项，最终计划审查 PASS。来源：https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6719786094 。实施时另覆盖 `formatUtc` 的 RangeError、结果不带 `originalPath`、写时 `not_found` 后重试复用 `jobId`。approvals 没有 17:24 这一行。本计划不补 | 2026-11-08 17:24 | Forge 排序，非业主决定 |
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：实现阶段再写。本提交没有测试日志。
+- `docs/evidence/<PR号>/commands.md`：只记录实际跑过的针对性命令和退出码。没跑的不写成通过。全量留给 Anvil。
 
 ## 自检
 

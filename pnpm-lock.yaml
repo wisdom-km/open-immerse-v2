@@ -89,7 +89,17 @@ importers:
 
   packages/features/formula-source: {}
 
-  packages/features/ingest: {}
+  packages/features/ingest:
+    dependencies:
+      '@oi/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@oi/feature-library':
+        specifier: workspace:*
+        version: link:../library
+      '@oi/kernel':
+        specifier: workspace:*
+        version: link:../../kernel
 
   packages/features/jobs:
     dependencies:

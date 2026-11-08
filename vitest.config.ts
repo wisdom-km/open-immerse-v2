@@ -15,6 +15,10 @@ export default defineConfig({
         root,
         "packages/platform-node/src/index.ts",
       ),
+      "@oi/feature-library": path.join(
+        root,
+        "packages/features/library/src/index.ts",
+      ),
     },
   },
   test: {

@@ -2,5 +2,10 @@
   "name": "@oi/feature-ingest",
   "private": true,
   "license": "Apache-2.0",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@oi/contracts": "workspace:*",
+    "@oi/feature-library": "workspace:*",
+    "@oi/kernel": "workspace:*"
+  }
 }
