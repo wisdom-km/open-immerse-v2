@@ -309,6 +309,26 @@
       "source": "PRD.md",
       "old": "| M8 打包准备 | Windows / macOS 安装包构建流水线 | 构建产物可安装；AC-67 ③（fuses）通过；签名、公证、发版由人执行 |\n\n### 8.1 Markdown 阅读的里程碑校正",
       "new": "| M8 打包准备 | Windows / macOS 安装包构建流水线 | 构建产物可安装；AC-67 ③（fuses）通过；签名、公证、发版由人执行 |\n\n### M2 ③ 本批归属\n\n2026-11-08 23:45：PR-C 这一组纳入页级浏览保存和重开恢复，用文献库已有页码。不含「页 + 块」，不含整窗恢复。US-08 的译文与笔记仍在，不因本批标成通过。本批的 Windows PDF「打开 / 滚动 / 重开」要在 8 GB 机器上录屏，并附对应截图。这台机器尚未核实。没有这台机器就标「未验证」，不用更高内存的机器代替。上表 M2 格里的 M1 录屏和 `.md` 录屏仍是退出条件。AC-11 整句仍是 M2 标准。本批覆盖其中「打开 PDF、浏览原文」和由此而来的明确降级状态。真实数据源与查询语义要由契约收口。未收口、未实现之前，不得把该状态标成验收通过。\n\n### 8.1 Markdown 阅读的里程碑校正"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "`listProviderPresets`、事件 `onEgressConsentRequired`；`EgressCheck` 端口的实现（装配根注入，不是 IPC 命令）",
+      "new": "`listProviderPresets`、事件 `onEgressConsentRequired`；内部契约 `saveParseService` 与 `getParseServiceStatus`（`expose` 为 false，存储尚未实现）；`EgressCheck` 端口的实现（装配根注入，不是 IPC 命令）"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "`submitParse`、`getParseCapabilities`",
+      "new": "`submitParse`、`getParseCapabilities`（`parsing.getParseCapabilities` 对 renderer 暴露；运行时尚未接通，也不表示本构建已有解析）"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "`getParseCapabilities` 仍是上表里的名字。真实数据源和成功语义由契约收口。契约未收口或查询未接上之前，不得把 AC-11 或这条降级状态标成验收通过。",
+      "new": "`parsing.getParseCapabilities` 是本批对 renderer 暴露的查询（Wisdom 2026-11-09 00:52）。`settings.saveParseService` 与 `settings.getParseServiceStatus` 是内部契约，`expose` 为 false，不给 renderer 生成调用。没有配置元数据记录就是 `unconfigured`；没有记录指向的孤儿密文不参与判断。只有元数据有效且所引用密钥可用，才可能是 `configured`。有记录但密钥缺失、解密失败或数据损坏，是明确错误，不是 `unconfigured`。构建是否提供解析、本篇是否已有译文，都不是这条查询的结果。存储、密钥读写、handler 与 core 都还没有实现。codegen 会把这条暴露命令写入 registry。现有 router 要求每条 registry 命令都有 handler，本批不注册 handler。因此在 handler 另批之前，启动 desktop main 会因缺少 handler 失败；这不表示查询已接通，也不能把 AC-11 或这条降级状态标成验收通过。"
+    },
+    {
+      "source": "PRD.md",
+      "old": "真实数据源与查询语义要由契约收口。未收口、未实现之前，不得把该状态标成验收通过。",
+      "new": "能力查询的契约形状已由 2026-11-09 00:52 收口：对 renderer 只暴露 `parsing.getParseCapabilities`；没有配置记录是 `unconfigured`；孤儿密文不参与判断；密钥缺失、解密失败或损坏是明确错误。存储和 handler 尚未实现。未实现之前，不得把该状态标成验收通过。"
     }
   ]
 }
