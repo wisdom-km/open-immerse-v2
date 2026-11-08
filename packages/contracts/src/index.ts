@@ -114,6 +114,24 @@ export {
   relocateLibrary,
 } from "./ipc/library.js";
 export type {
+  ReadingAssetChannel,
+  ReadingAssetCommands,
+} from "./ipc/reading-asset.js";
+export {
+  bindReadingAsset,
+  readingAssetIpc,
+  revokeReadingAsset,
+} from "./ipc/reading-asset.js";
+export type {
+  LibraryProgressChannel,
+  LibraryProgressCommands,
+} from "./ipc/library-progress.js";
+export {
+  getProgressPage,
+  libraryProgressIpc,
+  setProgressPage,
+} from "./ipc/library-progress.js";
+export type {
   IngestChannel,
   IngestCommands,
   IngestOpenDocumentRequest,

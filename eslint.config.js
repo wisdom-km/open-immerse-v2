@@ -45,6 +45,7 @@ export default tseslint.config(
             "apps/desktop/src/renderer/*.tsx",
             "apps/desktop/src/preload/*.ts",
             "apps/desktop/test/oi-keys.test.ts",
+            "apps/desktop/test/reading-command-surface.test.ts",
           ],
           maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 64,
         },

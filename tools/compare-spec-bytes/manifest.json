@@ -344,6 +344,31 @@
       "source": "PRD.md",
       "old": "能力查询的契约形状已由 2026-11-09 00:52 收口：对 renderer 只暴露 `parsing.getParseCapabilities`；没有配置记录是 `unconfigured`；孤儿密文不参与判断；密钥缺失、解密失败或损坏是明确错误。存储和 handler 尚未实现。未实现之前，不得把该状态标成验收通过。",
       "new": "能力查询的契约形状已由 2026-11-09 00:52 收口，开放时机由 2026-11-09 01:56 改：本批 `parsing.getParseCapabilities` 的 `expose` 为 false，codegen 不写入调用面或 registry；`expose` 为 true 只在真实配置来源与 handler 同一次合入时打开。没有配置记录是 `unconfigured`；孤儿密文不参与判断；密钥缺失、解密失败或损坏是明确错误。存储和 handler 尚未实现。未实现之前，不得把该状态标成验收通过。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "`updateProgress`（无 IPC）",
+      "new": "`updateProgress`（无 IPC。页码命令在 `ipc/library-progress.ts`，本批 `expose` 为 false）"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "请求字段，以及恢复、保存和 `openDocument` 写回的先后，由契约收口。本节不发明 `reader.setPage`。",
+      "new": "2026-11-09 02:37 收口四条内部契约：`library.bindReadingAsset`、`library.revokeReadingAsset`、`library.getProgressPage`、`library.setProgressPage`，`expose` 都是 false。正式 codegen 不写入 preload、公开声明或 registry。generation 与非空页码是 1 到 `Number.MAX_SAFE_INTEGER` 的整数。这不是篇内页数，也不改 `progress_page` 的 CHECK。写页不接受 `null`，读页成功可以是 `null`。`bindReadingAsset` 被拒绝时只回显请求里的 `id`。其余三条被拒绝时回显请求里的 `id` 与 `generation`。代际不入库。先核代际还是先查库、到上界不回绕、重载后清表，都是以后的 runtime，本节不写成已经实现。`openDocument` 与 `setZoom` 不改。本节不发明 `reader.setPage`，也不加 `getZoom`。这四条不表示页码已经能保存或恢复。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "生命周期只定方向：这个 `assetId` 绑定一次受控阅读，不是永久链接。何时撤销、同一次阅读里重复登记是否返回同一个 id、再次进入是否更换 id，由契约审定，不在本节写成签名。",
+      "new": "生命周期只定方向：`library.bindReadingAsset` 成功时给出 `assetId` 和 generation；`library.revokeReadingAsset` 按请求中的 `id` 与 generation 指向这一对。本批这两条以及两条页码命令的 `expose` 为 false。重复登记是否沿用同一个 `assetId`、重载或崩溃后是否清表、以及先核代际还是先查库，仍不在本节写成签名。不写 Range。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "本批的页码只走文献库 `progressPage`。",
+      "new": "本批的页码只走文献库 `progressPage`。页码 IPC 是 `library.getProgressPage` 与 `library.setProgressPage`，不是 `reader.setPage`。本批 `expose` 为 false，不表示保存或恢复已经实现。"
+    },
+    {
+      "source": "PRD.md",
+      "old": "2026-11-08 23:45：PR-C 这一组纳入页级浏览保存和重开恢复，用文献库已有页码。",
+      "new": "2026-11-08 23:45：PR-C 这一组纳入页级浏览保存和重开恢复，用文献库已有页码。2026-11-09 02:37 只定义四条登记与页码契约，`expose` 为 false。定义契约不等于保存或恢复已经实现。"
     }
   ]
 }
