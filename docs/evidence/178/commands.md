@@ -67,3 +67,17 @@ Anvil 在 `af48113a5925c79288163f0995f4868343940482` 上的唯一全量 `corepac
 同一工作区里，从 `apps/desktop` 用 Node 默认条件 `import.meta.resolve`：`@oi/feature-library` 与 `@oi/feature-library/main` 仍是 `dist` 下的 js；`@oi/feature-library/ui` 仍是 `src/ui/index.ts`。加上 `--conditions=development` 后，前两个改到上面的源码路径。Electron 的默认条件不选 `development`。
 
 上表跑在进入提交之前的同一份源码。提交 `84ef0daf548b3d05c74bd9bd0ec24aa60f841d95` 之后再跑：ingest 的 core 与 adapters vitest 退出码 0（4 个文件，23 通过）；arch-graph 两条用例退出码 0；`node tools/check-arch-graph/check.mjs --strict` 退出码 0（undocumented 0，planned 15，unmapped 0，index 0）；Vite resolve 退出码 0，上表四个路径的 `exists` 仍为 true；`GATE_BASE=origin/main corepack pnpm run check:one-slice` 退出码 0（1 feature slice）；`node tools/check-docs/check.mjs` 退出码 0。`typecheck`、`typecheck:core`、`check:deps`、`check:size`、eslint 没有在这个提交上重跑，它们跑在进入该提交的同一份源码上，退出码都是 0。
+
+## G9 分步计时
+
+`d6e711d` 的唯一全量保持 632 通过 / 1 失败 / 0 跳过、退出码 1。这次只给三条 detect 夹具加单调分步计时，不重跑该全量，也不重跑已经通过的单项。
+
+日期 2026-11-08。工作目录是仓库根。Node v22.23.4。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `corepack pnpm exec prettier --write tools/check-secrets/leak.test.ts` | 0 | unchanged |
+| `corepack pnpm exec eslint tools/check-secrets/leak.test.ts --max-warnings 0` | 0 | 含 `max-lines-per-function` 80。文件 341 行 |
+| `node tools/check-docs/check.mjs` | 0 | findings 0。计划与本证据的链接 |
+
+没有跑 `corepack pnpm test`、`corepack pnpm run check`、这条文件的 Vitest、pytest、e2e，也没有下载 Electron。推送前 `gh run list` 上该分支最近三次 CI 都已结束，没有进行中的运行。推送会启动新的 `pull_request` CI，其中 `Unit tests` 的 `pnpm test` 是这个新 tip 的唯一全量。

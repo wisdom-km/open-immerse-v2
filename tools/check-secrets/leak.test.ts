@@ -73,6 +73,60 @@ function detect(bin: string, root: string) {
   );
 }
 
+type DetectCase = "reject-access-key" | "allow-oitest" | "reject-nottest";
+
+type PhaseName =
+  | "binary"
+  | "fixture-dir"
+  | "git-init"
+  | "git-config-email"
+  | "git-config-name"
+  | "fixture-write"
+  | "git-add"
+  | "git-commit"
+  | "detect"
+  | "cleanup";
+
+type PhaseLog = {
+  measure<T>(phase: PhaseName, run: () => T): T;
+  flush(): void;
+};
+
+/** 单调计时。步骤抛出的异常原样继续抛。全部完成后一次写出。 */
+function createPhaseLog(caseId: DetectCase): PhaseLog {
+  const rows: { phase: PhaseName; ms: number }[] = [];
+  return {
+    measure(phase, run) {
+      const start = process.hrtime.bigint();
+      try {
+        return run();
+      } finally {
+        const elapsed = process.hrtime.bigint() - start;
+        rows.push({ phase, ms: Number(elapsed) / 1_000_000 });
+      }
+    },
+    flush() {
+      if (rows.length === 0) {
+        return;
+      }
+      const lines = rows.map(
+        (row) =>
+          `g9-phase case=${caseId} phase=${row.phase} ms=${row.ms.toFixed(3)}`,
+      );
+      process.stderr.write(`${lines.join("\n")}\n`);
+      rows.length = 0;
+    },
+  };
+}
+
+function closeDetect(log: PhaseLog, cleanup: () => void): void {
+  try {
+    log.measure("cleanup", cleanup);
+  } finally {
+    log.flush();
+  }
+}
+
 it("fails when CI is true and GITLEAKS_BIN is missing (G9)", () => {
   const env = { CI: "true", GITLEAKS_BIN: undefined };
   expect(() => binary({ skip: () => undefined }, env)).toThrow(
@@ -146,79 +200,142 @@ it("skips when CI is false and GITLEAKS_BIN is missing (G9)", () => {
 });
 
 it("rejects a committed access key that lacks the oitest_ prefix (G9)", (context) => {
-  const bin = binary(context);
-  const root = mkdtempSync(path.join(tmpdir(), "oi-leak-"));
+  const log = createPhaseLog("reject-access-key");
   try {
-    git(root, ["init"]);
-    git(root, ["config", "user.email", "gate@example.com"]);
-    git(root, ["config", "user.name", "gate"]);
-    const suffix = [
-      "1WqE2rT3",
-      "yU4iO5pA",
-      "6sD7fG8h",
-      "J9kL0zXc",
-      "VbNm",
-    ].join("");
-    const key = ["ghp_", suffix].join("");
-    writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
-    git(root, ["add", "secret.txt"]);
-    git(root, ["commit", "-m", "chore: leak fixture"]);
-    const leaked = detect(bin, root);
-    expect(leaked.status).not.toBe(0);
-    expect(commandOutput(leaked)).toContain(remediationBlock("G9"));
+    const bin = log.measure("binary", () => binary(context));
+    const root = log.measure("fixture-dir", () =>
+      mkdtempSync(path.join(tmpdir(), "oi-leak-")),
+    );
+    try {
+      log.measure("git-init", () => {
+        git(root, ["init"]);
+      });
+      log.measure("git-config-email", () => {
+        git(root, ["config", "user.email", "gate@example.com"]);
+      });
+      log.measure("git-config-name", () => {
+        git(root, ["config", "user.name", "gate"]);
+      });
+      const suffix = [
+        "1WqE2rT3",
+        "yU4iO5pA",
+        "6sD7fG8h",
+        "J9kL0zXc",
+        "VbNm",
+      ].join("");
+      const key = ["ghp_", suffix].join("");
+      log.measure("fixture-write", () => {
+        writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
+      });
+      log.measure("git-add", () => {
+        git(root, ["add", "secret.txt"]);
+      });
+      log.measure("git-commit", () => {
+        git(root, ["commit", "-m", "chore: leak fixture"]);
+      });
+      const leaked = log.measure("detect", () => detect(bin, root));
+      expect(leaked.status).not.toBe(0);
+      expect(commandOutput(leaked)).toContain(remediationBlock("G9"));
+    } finally {
+      closeDetect(log, () => {
+        rmSync(root, { recursive: true, force: true });
+      });
+    }
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    log.flush();
   }
 });
 
 it("allows a synthetic key that uses the oitest_ prefix (G9)", (context) => {
-  const bin = binary(context);
-  const root = mkdtempSync(path.join(tmpdir(), "oi-leak-ok-"));
+  const log = createPhaseLog("allow-oitest");
   try {
-    git(root, ["init"]);
-    git(root, ["config", "user.email", "gate@example.com"]);
-    git(root, ["config", "user.name", "gate"]);
-    const suffix = [
-      "1WqE2rT3",
-      "yU4iO5pA",
-      "6sD7fG8h",
-      "J9kL0zXc",
-      "VbNm",
-    ].join("");
-    const key = ["oitest_", suffix].join("");
-    writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
-    git(root, ["add", "secret.txt"]);
-    git(root, ["commit", "-m", "chore: synthetic key"]);
-    const allowed = detect(bin, root);
-    expect(allowed.status).toBe(0);
-    expect(commandOutput(allowed)).not.toContain("gate-remediation:");
+    const bin = log.measure("binary", () => binary(context));
+    const root = log.measure("fixture-dir", () =>
+      mkdtempSync(path.join(tmpdir(), "oi-leak-ok-")),
+    );
+    try {
+      log.measure("git-init", () => {
+        git(root, ["init"]);
+      });
+      log.measure("git-config-email", () => {
+        git(root, ["config", "user.email", "gate@example.com"]);
+      });
+      log.measure("git-config-name", () => {
+        git(root, ["config", "user.name", "gate"]);
+      });
+      const suffix = [
+        "1WqE2rT3",
+        "yU4iO5pA",
+        "6sD7fG8h",
+        "J9kL0zXc",
+        "VbNm",
+      ].join("");
+      const key = ["oitest_", suffix].join("");
+      log.measure("fixture-write", () => {
+        writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
+      });
+      log.measure("git-add", () => {
+        git(root, ["add", "secret.txt"]);
+      });
+      log.measure("git-commit", () => {
+        git(root, ["commit", "-m", "chore: synthetic key"]);
+      });
+      const allowed = log.measure("detect", () => detect(bin, root));
+      expect(allowed.status).toBe(0);
+      expect(commandOutput(allowed)).not.toContain("gate-remediation:");
+    } finally {
+      closeDetect(log, () => {
+        rmSync(root, { recursive: true, force: true });
+      });
+    }
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    log.flush();
   }
 });
 
 it("rejects the same suffix when the prefix is nottest_ (G9)", (context) => {
-  const bin = binary(context);
-  const root = mkdtempSync(path.join(tmpdir(), "oi-leak-prefix-"));
+  const log = createPhaseLog("reject-nottest");
   try {
-    git(root, ["init"]);
-    git(root, ["config", "user.email", "gate@example.com"]);
-    git(root, ["config", "user.name", "gate"]);
-    const suffix = [
-      "1WqE2rT3",
-      "yU4iO5pA",
-      "6sD7fG8h",
-      "J9kL0zXc",
-      "VbNm",
-    ].join("");
-    const key = ["nottest_", suffix].join("");
-    writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
-    git(root, ["add", "secret.txt"]);
-    git(root, ["commit", "-m", "chore: leak fixture"]);
-    const leaked = detect(bin, root);
-    expect(leaked.status).not.toBe(0);
-    expect(commandOutput(leaked)).toContain(remediationBlock("G9"));
+    const bin = log.measure("binary", () => binary(context));
+    const root = log.measure("fixture-dir", () =>
+      mkdtempSync(path.join(tmpdir(), "oi-leak-prefix-")),
+    );
+    try {
+      log.measure("git-init", () => {
+        git(root, ["init"]);
+      });
+      log.measure("git-config-email", () => {
+        git(root, ["config", "user.email", "gate@example.com"]);
+      });
+      log.measure("git-config-name", () => {
+        git(root, ["config", "user.name", "gate"]);
+      });
+      const suffix = [
+        "1WqE2rT3",
+        "yU4iO5pA",
+        "6sD7fG8h",
+        "J9kL0zXc",
+        "VbNm",
+      ].join("");
+      const key = ["nottest_", suffix].join("");
+      log.measure("fixture-write", () => {
+        writeFileSync(path.join(root, "secret.txt"), `token=${key}\n`);
+      });
+      log.measure("git-add", () => {
+        git(root, ["add", "secret.txt"]);
+      });
+      log.measure("git-commit", () => {
+        git(root, ["commit", "-m", "chore: leak fixture"]);
+      });
+      const leaked = log.measure("detect", () => detect(bin, root));
+      expect(leaked.status).not.toBe(0);
+      expect(commandOutput(leaked)).toContain(remediationBlock("G9"));
+    } finally {
+      closeDetect(log, () => {
+        rmSync(root, { recursive: true, force: true });
+      });
+    }
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    log.flush();
   }
 });

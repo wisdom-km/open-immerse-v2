@@ -133,6 +133,25 @@ AC-11 的「浏览原文」和 DESIGN 的「进入阅读场景」由 PR-C 用已
 | 4 | `adapters/ipc-handlers.ts`、进程内记忆适配器、adapter 测试。`expose` 仍为 false。进度 `not_found` 与 `rejected` 的映射按上文。返回值与错误无绝对路径、无 `message` | 已做。写时 `not_found` 后重试仍用第一次的 `jobId`。记忆适配器不 import `@oi/contracts`，标识类型来自应用端口。Anvil 在 `af48113` 的全量把 `memory-openings.ts` 第 1 行记成未入图的 ADP → C | `packages/features/ingest/test/adapters/` |
 | 5 | 更新 README：同实例幂等，重启或新建实例不保证同一个 `jobId`，没有持久化 jobs。跑下面「测试分工」里的针对性命令。写 `docs/evidence/<PR号>/commands.md`。全量留给 Anvil | README 已写。针对性命令的退出码在证据里。全量 `pnpm test` / `pnpm run check` / pytest / e2e 未跑 | [docs/evidence/178/commands.md](../evidence/178/commands.md) |
 | 6 | Draft PR：`Refs #174`。来源核对、第 7 节选择、真机与截图属 PR-C。不评论 issue，不标 Ready，不合入 | Draft PR：https://github.com/wisdom-km/open-immerse-v2/pull/178 。正文 `Refs #174`。不评论 issue，不标 Ready，不合入 | [docs/evidence/178/commands.md](../evidence/178/commands.md) |
+| 7 | G9 残留只加诊断计时。Wisdom 18:38「继续推进，该修就修」（[#174 评论 6720452013](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6720452013)）。不认定 `d6e711d` 全量里 `oitest_` 夹具 5000ms 超时的原因 | 见下方「G9 分步计时」 | [docs/evidence/178/commands.md](../evidence/178/commands.md) |
+
+## G9 分步计时
+
+`d6e711d` 的唯一全量是 632 通过 / 1 失败 / 0 跳过，退出码 1。失败是 `allows a synthetic key that uses the oitest_ prefix (G9)` 的 Vitest `Test timed out in 5000ms`，用例行 14085ms，没有断言差值。同文件其余 8 条合计 875ms。该项单独重跑和 main/tip 各一次对照都通过，不能证明稳定或因果。`leak.test.ts` 相对 main 的 blob 相同。本步不改写那次 632/1/0。
+
+### 目标
+
+下次在真实全量并发里这条若再超时，原始日志能分开：夹具准备、每一次 git、`detect` 的同步调用、cleanup。三条真实 detect 夹具用同一组分步标签。
+
+### 验收
+
+三条扫描仍各执行一次。退出码断言和 remediation 断言保持原样。Vitest 默认 5000ms 不改。计时不吞掉步骤抛出的异常，cleanup 仍在 `finally`。函数与文件行数仍在现有硬上限内。日志只有固定的 case、phase 和单调耗时。
+
+### 边界
+
+只改 `tools/check-secrets/leak.test.ts`、本计划和 `docs/evidence/178/commands.md`。不改 vitest 配置、并发、allowlist、runner、CI、gitleaks、ingest 与 library 产品文件。不设新的 timeout，不加让测试 skip 的条件。不跑全量 `pnpm test` / `pnpm run check`，不重跑 `d6e711d` 上已通过的单项，不下载 Electron。推送前这条分支的 CI 没有在跑。推送后 `pull_request` 的 `Unit tests` 会执行 `pnpm test`，那是新 tip 的唯一全量，Anvil 不再另开一轮。计时不是零开销：每个 phase 两次 `process.hrtime.bigint()`，cleanup 之后一次 `stderr` 写出已完成的行。写出成功后清空缓冲，外层 `finally` 再调用 `flush` 时不再写第二遍。
+
+静态门禁跑在写入本段之前的同一份 `leak.test.ts` 上：`eslint tools/check-secrets/leak.test.ts --max-warnings 0` 退出码 0；`prettier --write` 该文件退出码 0，输出 unchanged。文件 341 行，测试文件硬上限 800。`node tools/check-docs/check.mjs` 退出码 0。没有跑 Vitest。
 
 ## 行为
 
