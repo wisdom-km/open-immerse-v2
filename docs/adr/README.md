@@ -1,6 +1,6 @@
 # 架构决定索引
 
-状态：索引。日期：2026-11-05（Asia/Shanghai）。
+状态：索引。日期：2026-11-08（Asia/Shanghai）。
 
 这里只指向已经写在规格里的决定，不重写决定，也不另写一份规格。Q1–Q12 的问题、取舍和结论在 [差异清单](../v2-gap-and-changes.md) §6，落点在 [ARCHITECTURE.md](../../ARCHITECTURE.md) §16。
 
@@ -41,5 +41,6 @@ M1 要登记的第一批独立 ADR 仍未建页：`formula-source`、Markdown �
 | 0002 | `ingest` 的九条出边。任何切片都不依赖 `ingest` | [0002-ingest-edges.md](0002-ingest-edges.md) |
 | 0003 | 删除 `repair → quality`。补救只产出候选，重新评分由 `ingest` 调 `quality` | [0003-repair-quality-removed.md](0003-repair-quality-removed.md) |
 | 0004 | 存储版本与协议版本合为一页。`app_schema`、迁移备份、更高版本只读、JSON `schemaVersion`，以及 `OI-Protocol` 的兼容规则。驱动用 `node:sqlite` | [0004-storage-and-protocol-versions.md](0004-storage-and-protocol-versions.md) |
+| 0005 | 只暂缓 `allows a synthetic key that uses the oitest_ prefix (G9)` 的隔离，到 PR-C 合入前。不改 §4 的通用规则 | [0005-g9-oitest-quarantine-exception.md](0005-g9-oitest-quarantine-exception.md) |
 
-Q1–Q12 之后的其余决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，2026-10-31 的 D-D、D-E、W-4，以及 2026-11-02 的面壁 API 主路线、同日 Jev 契约与 Jev API 客户端里程碑）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.15。本索引不抄那些段落。0001、0002、0003、0004 的正文在各自的页上，这里不重抄。
+Q1–Q12 之后的其余决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，2026-10-31 的 D-D、D-E、W-4，以及 2026-11-02 的面壁 API 主路线、同日 Jev 契约与 Jev API 客户端里程碑）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.15。本索引不抄那些段落。0001、0002、0003、0004、0005 的正文在各自的页上，这里不重抄。

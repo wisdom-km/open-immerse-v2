@@ -134,6 +134,7 @@ AC-11 的「浏览原文」和 DESIGN 的「进入阅读场景」由 PR-C 用已
 | 5 | 更新 README：同实例幂等，重启或新建实例不保证同一个 `jobId`，没有持久化 jobs。跑下面「测试分工」里的针对性命令。写 `docs/evidence/<PR号>/commands.md`。全量留给 Anvil | README 已写。针对性命令的退出码在证据里。全量 `pnpm test` / `pnpm run check` / pytest / e2e 未跑 | [docs/evidence/178/commands.md](../evidence/178/commands.md) |
 | 6 | Draft PR：`Refs #174`。来源核对、第 7 节选择、真机与截图属 PR-C。不评论 issue，不标 Ready，不合入 | Draft PR：https://github.com/wisdom-km/open-immerse-v2/pull/178 。正文 `Refs #174`。不评论 issue，不标 Ready，不合入 | [docs/evidence/178/commands.md](../evidence/178/commands.md) |
 | 7 | G9 残留只加诊断计时。Wisdom 18:38「继续推进，该修就修」（[#174 评论 6720452013](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6720452013)）。不认定 `d6e711d` 全量里 `oitest_` 夹具 5000ms 超时的原因 | 见下方「G9 分步计时」 | [docs/evidence/178/commands.md](../evidence/178/commands.md) |
+| 8 | 只写 ADR 0005 和批准记录。Wisdom 19:09 批准这一条暂不隔离。不改测试、CI、产品文件，也不改 RULES / PRD / ARCHITECTURE / DESIGN 正文 | 见下方「G9 有界例外」。测试证据仍停在 `ef5d14b`。本步的提交没有新的全量 | [docs/adr/0005-g9-oitest-quarantine-exception.md](../adr/0005-g9-oitest-quarantine-exception.md)、[docs/approvals.md](../approvals.md) |
 
 ## G9 分步计时
 
@@ -152,6 +153,20 @@ AC-11 的「浏览原文」和 DESIGN 的「进入阅读场景」由 PR-C 用已
 只改 `tools/check-secrets/leak.test.ts`、本计划和 `docs/evidence/178/commands.md`。不改 vitest 配置、并发、allowlist、runner、CI、gitleaks、ingest 与 library 产品文件。不设新的 timeout，不加让测试 skip 的条件。不跑全量 `pnpm test` / `pnpm run check`，不重跑 `d6e711d` 上已通过的单项，不下载 Electron。推送前这条分支的 CI 没有在跑。推送后 `pull_request` 的 `Unit tests` 会执行 `pnpm test`，那是新 tip 的唯一全量，Anvil 不再另开一轮。计时不是零开销：每个 phase 两次 `process.hrtime.bigint()`，cleanup 之后一次 `stderr` 写出已完成的行。写出成功后清空缓冲，外层 `finally` 再调用 `flush` 时不再写第二遍。
 
 静态门禁跑在写入本段之前的同一份 `leak.test.ts` 上：`eslint tools/check-secrets/leak.test.ts --max-warnings 0` 退出码 0；`prettier --write` 该文件退出码 0，输出 unchanged。文件 341 行，测试文件硬上限 800。`node tools/check-docs/check.mjs` 退出码 0。没有跑 Vitest。
+
+## G9 有界例外
+
+Wisdom 2026-11-08 19:09（Asia/Shanghai）批准，原文在 [approvals.md](../approvals.md) 该行。来源：[Issue #174 评论 6720737180](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6720737180)。正文是 [ADR 0005](../adr/0005-g9-oitest-quarantine-exception.md)。
+
+只覆盖 `allows a synthetic key that uses the oitest_ prefix (G9)`。保留全部测试和门禁。这一条暂不隔离，到 PR-C 合入前。届时复核修复、已批准的等价隔离，或重新批准，不自动续期。再次失败暂停放行。Forge 跟进，Anvil 验证。不新开 issue。不含 Ready、合入或发版。
+
+`d6e711d5de31426880f1f94ee747552ad1be4ac6` 的 632/1/0 与其后的单项通过都保留，根因未知。`ef5d14b6aacafb9414a75aa9878b790adf73f690` 的 CI [run 42473475343](https://github.com/wisdom-km/open-immerse-v2/actions/runs/42473475343) attempt 1 六个 job 成功：node 150 个文件，633/0/0；Windows 64 个单测与 27 个 Electron 通过。那是计时加入后的一次正常路径，不是新的全量，也不代替 PR-C 真机。本步提交在该 SHA 之后，只改文档，不把 633/0/0 记到新 tip 上。
+
+`flush` 写失败会盖住原异常，`rmSync` 抛错也会盖住断言错误。这两处是已定、不改的低风险点，不是超时根因。
+
+第 7 节第 6 条仍锁着接线阶段不改 approvals。19:09 的原话要求先写 ADR 和批准记录，所以本步才改 `docs/approvals.md`。RULES §4 的通用条文不改。
+
+本步只跑 `node tools/check-docs/check.mjs`。不跑 Vitest、`pnpm run check`、pytest、e2e，不重跑旧 tip。
 
 ## 行为
 
@@ -252,6 +267,7 @@ AC-11 的「浏览原文」和 DESIGN 的「进入阅读场景」由 PR-C 用已
 | 打开成功 = 查库命中且进度写成功；不建 reader 会话 | 契约响应只有 `jobId`。没有 `ingest → reader` 边，也没有按 id 读字节的端口。AC-11 的浏览原文留给 PR-C | 2026-11-08 | 本计划，按交接默认 (i) |
 | 幂等取「最近一次」；进度写失败不换新 jobId；只在同实例内 | jobs 状态机未就绪。契约要求不另开第二个解析作业。用例保持同步。README 写明重启不保证同一个 `jobId`。来源含 6719728190 | 2026-11-08 | 本计划；Forge 接受首次写失败仍复用 |
 | 放行步骤 2–6，不是合入或发版 | Forge 已亲读 `adf0cbc` 全文并逐项复核前次四项，最终计划审查 PASS。来源：https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6719786094 。实施时另覆盖 `formatUtc` 的 RangeError、结果不带 `originalPath`、写时 `not_found` 后重试复用 `jobId`。approvals 没有 17:24 这一行。本计划不补 | 2026-11-08 17:24 | Forge 排序，非业主决定 |
+| 只暂缓这一条 G9 夹具的隔离 | 原文：「批准你和Loom建议的有界例外：保留全部测试和门禁，这一条暂不隔离至PR-C合入前；再次失败暂停放行，由Forge跟进、Anvil验证。先写ADR和批准记录，不包含Ready或合入。」approvals 2026-11-08 19:09。来源：https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6720737180 | 2026-11-08 19:09 | Wisdom |
 
 ## 证据链接
 

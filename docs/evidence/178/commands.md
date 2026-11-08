@@ -81,3 +81,15 @@ Anvil 在 `af48113a5925c79288163f0995f4868343940482` 上的唯一全量 `corepac
 | `node tools/check-docs/check.mjs` | 0 | findings 0。计划与本证据的链接 |
 
 没有跑 `corepack pnpm test`、`corepack pnpm run check`、这条文件的 Vitest、pytest、e2e，也没有下载 Electron。推送前 `gh run list` 上该分支最近三次 CI 都已结束，没有进行中的运行。推送会启动新的 `pull_request` CI，其中 `Unit tests` 的 `pnpm test` 是这个新 tip 的唯一全量。
+
+## ADR 0005
+
+`ef5d14b6aacafb9414a75aa9878b790adf73f690` 的全量是 CI [run 42473475343](https://github.com/wisdom-km/open-immerse-v2/actions/runs/42473475343) attempt 1，六个 job 成功。node：150 个文件，633 通过 / 0 失败 / 0 跳过。Windows：64 个单测、27 个 Electron。那次结果不记到本段的文档提交上。`d6e711d` 的 632/1/0 仍保留。
+
+本段只改文档。工作目录是仓库根。Node v22.23.4。
+
+| 命令 | 退出码 | 备注 |
+| --- | --- | --- |
+| `node tools/check-docs/check.mjs` | 0 | findings 0。ADR 0005、索引、approvals、变更记录、本计划和本证据 |
+
+没有跑 `corepack pnpm test`、`corepack pnpm run check`、Vitest、pytest、e2e，也没有重跑 `d6e711d` 或 `ef5d14b`。提交前 `gh run list --branch feature/m2-ingest-open-document-174 --limit 5` 上没有进行中的运行。推送后的 CI 交给 Anvil 去重，本记录不再查询。
