@@ -13,6 +13,7 @@ import {
   type LibraryRecord,
 } from "../domain/library-record.js";
 import type {
+  LibraryProgressPageUpdate,
   LibraryProgressUpdate,
   LibraryRepository,
   LibrarySourceUpdate,
@@ -28,9 +29,10 @@ export type FakeLibrarySeed = {
   readonly progressPage: number | null;
 };
 
-export type FakeLibraryRepository = LibraryRepository & {
-  readonly records: () => readonly LibraryRecord[];
-};
+export type FakeLibraryRepository = LibraryRepository &
+  LibraryProgressPageUpdate & {
+    readonly records: () => readonly LibraryRecord[];
+  };
 
 export function createFakeLibraryRepository(options?: {
   readonly failInsert?: boolean;
@@ -55,6 +57,9 @@ export function createFakeLibraryRepository(options?: {
     },
     updateProgress(id, progress) {
       return updateProgress(rows, id, progress);
+    },
+    updateProgressPage(id, page) {
+      return updateProgressPage(rows, id, page);
     },
   };
 }
@@ -154,6 +159,24 @@ function updateProgress(
     ...current,
     openedAt: progress.openedAt,
     progressPage: progress.progressPage,
+  };
+  rows[index] = next;
+  return { ok: true, value: next };
+}
+
+function updateProgressPage(
+  rows: LibraryRecord[],
+  id: LibraryRecord["id"],
+  page: number,
+): Result<LibraryRecord, LibraryFailure> {
+  const index = rows.findIndex((row) => row.id === id);
+  const current = rows[index];
+  if (current === undefined) {
+    return { ok: false, error: libraryFailure("not_found") };
+  }
+  const next = {
+    ...current,
+    progressPage: page,
   };
   rows[index] = next;
   return { ok: true, value: next };

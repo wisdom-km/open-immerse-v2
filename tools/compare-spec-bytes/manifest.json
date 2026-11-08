@@ -369,6 +369,26 @@
       "source": "PRD.md",
       "old": "2026-11-08 23:45：PR-C 这一组纳入页级浏览保存和重开恢复，用文献库已有页码。",
       "new": "2026-11-08 23:45：PR-C 这一组纳入页级浏览保存和重开恢复，用文献库已有页码。2026-11-09 02:37 只定义四条登记与页码契约，`expose` 为 false。定义契约不等于保存或恢复已经实现。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "`application/use-cases/update-progress.ts` · `application/use-cases/get-bibliographic-records.ts`",
+      "new": "`application/use-cases/update-progress.ts` · `application/use-cases/get-progress-page.ts`（只按 id 读页）· `application/use-cases/set-progress-page.ts`（只写安全正整数页，不改打开时间）· `application/use-cases/get-bibliographic-records.ts`"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "这四条不表示页码已经能保存或恢复。",
+      "new": "这四条命令仍不表示重开恢复或 handler 已经实现。2026-11-09 03:39 起，library core 能按文献 id 读 `progressPage`，并只写 `progress_page`：写页不接受 `null`、不改 `openedAt`、不调用 `updateProgress`；读成功可以是 `null` 或现有读路径给出的整数，不声明安全整数。`expose` 仍是 false。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "本批 `expose` 为 false，不表示保存或恢复已经实现。",
+      "new": "本批 `expose` 为 false。library core 已能按 id 读写 `progressPage`，这不等于命令已经挂上 handler，也不表示保存或恢复已经实现。"
+    },
+    {
+      "source": "PRD.md",
+      "old": "定义契约不等于保存或恢复已经实现。",
+      "new": "定义契约不等于保存或恢复已经实现。2026-11-09 03:39 的 library core 已能按 id 读写已有页码；重开的用户路径、handler 与 `expose` 为 true 仍未验收。"
     }
   ]
 }
