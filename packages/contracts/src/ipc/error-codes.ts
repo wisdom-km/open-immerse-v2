@@ -21,6 +21,11 @@ export const STORAGE_CORRUPT = "storage_corrupt" as const;
 export const SECRET_UNAVAILABLE = "secret_unavailable" as const;
 /** 写入没有提交。成功体不会因此变成 configured。 */
 export const SAVE_FAILED = "save_failed" as const;
+/**
+ * 运行时拒绝。不是 invalid_payload，也不是 not_found。
+ * 本常量不查代际，不写库。
+ */
+export const REJECTED = "rejected" as const;
 
 /** Transport failures. No `detail`, no `message`. */
 export const ipcTransportErrors = [
