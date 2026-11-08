@@ -1,6 +1,6 @@
 # 批准记录
 
-状态：现行。日期：2026-11-06（Asia/Shanghai）。
+状态：现行。日期：2026-11-08（Asia/Shanghai）。
 
 本文是项目的批准记录。Wisdom 给出的每一次批准（点选或原话）由收到它的 bot 记在这里。每行写时间（Asia/Shanghai）、Wisdom 的原话、批了什么、落在哪里（PR、issue 或文档节）、来源聊天。记下来的批准是终局。没有记在这里的，不算已批准。
 
@@ -120,5 +120,6 @@
 | 2026-11-06 13:55 | 「批准可以开 pr 修改仓库」 | 按核实记录改这 5 条文档并开 Draft PR。只做目录与实现状态校正，不扩代码。不含合入授权 | Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6678088734 |
 | 2026-11-06 17:59 | 「OK，那就按照你的建议去做吧。」 | #177 两项补改：补仓库内 `eb917736` 之后 check-docs 与 diff --check 的记录，并记下已发生的流程偏差及 Forge 责任。不写成事前已审。不扩 5 条正文。不含合入 | PR #177、Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6682213550 |
 | 2026-11-06 18:30 | 「那就按照你说的推进吧。」 | 实施已审的三文件补改：证据、执行计划、本文件。登记 17:59 与本行。不动五条正文。不含合入或发版 | PR #177、Issue #28 | https://github.com/wisdom-km/open-immerse-v2/issues/28#issuecomment-6682755276 |
+| 2026-11-08 19:09 | 「批准你和Loom建议的有界例外：保留全部测试和门禁，这一条暂不隔离至PR-C合入前；再次失败暂停放行，由Forge跟进、Anvil验证。先写ADR和批准记录，不包含Ready或合入。」 | 只暂缓 `allows a synthetic key that uses the oitest_ prefix (G9)` 的隔离，到 PR-C 合入前。保留全部测试与门禁。再次失败暂停放行。Forge 跟进，Anvil 验证。先写 ADR 0005 与本行。不含 Ready、合入或发版 | ADR 0005、PR #178、Issue #174 | https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6720737180 |
 
-共 107 条批准 + 1 条反馈记录 + 3 条决定 + 3 条合入同步
+共 108 条批准 + 1 条反馈记录 + 3 条决定 + 3 条合入同步

@@ -9,7 +9,8 @@
       "@oi/feature-library/main": [
         "packages/features/library/src/adapters/library-main.ts"
       ],
-      "@oi/feature-library/ui": ["packages/features/library/src/ui/index.ts"]
+      "@oi/feature-library/ui": ["packages/features/library/src/ui/index.ts"],
+      "@oi/feature-library": ["packages/features/library/src/index.ts"]
     }
   },
   "files": [
@@ -18,6 +19,7 @@
     "../../packages/platform-node/src/index.ts",
     "../../packages/providers/src/index.ts",
     "../../packages/features/library/src/adapters/library-main.ts",
-    "../../packages/features/library/src/ui/index.ts"
+    "../../packages/features/library/src/ui/index.ts",
+    "../../packages/features/library/src/index.ts"
   ]
 }
