@@ -22,7 +22,10 @@ export type {
   LibraryIpcDeps,
   LibraryIpcHandlers,
 } from "./application/library-ipc.js";
-export type { LibraryRepository } from "./application/ports/library-repository.js";
+export type {
+  LibraryProgressPageUpdate,
+  LibraryRepository,
+} from "./application/ports/library-repository.js";
 export type {
   InspectedPdf,
   PdfFileStore,
@@ -51,4 +54,16 @@ export type {
   UpdateProgress,
   UpdateProgressInput,
 } from "./application/use-cases/update-progress.js";
+export { createGetProgressPage } from "./application/use-cases/get-progress-page.js";
+export type {
+  GetProgressPage,
+  GetProgressPageInput,
+  GetProgressPageValue,
+} from "./application/use-cases/get-progress-page.js";
+export { createSetProgressPage } from "./application/use-cases/set-progress-page.js";
+export type {
+  SetProgressPage,
+  SetProgressPageInput,
+  SetProgressPageValue,
+} from "./application/use-cases/set-progress-page.js";
 export { createLibraryIpcHandlers } from "./adapters/ipc-handlers.js";

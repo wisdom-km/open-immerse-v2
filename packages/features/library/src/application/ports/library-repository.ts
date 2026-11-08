@@ -28,3 +28,14 @@ export type LibraryRepository = {
     progress: LibraryProgressUpdate,
   ): Result<LibraryRecord, LibraryFailure>;
 };
+
+/**
+ * 只写页码。不并进 LibraryRepository：ingest 的测试双已经实现后者，
+ * 加必选方法会让本 PR 改到第二个切片。
+ */
+export type LibraryProgressPageUpdate = {
+  updateProgressPage(
+    id: LibraryEntryId,
+    page: number,
+  ): Result<LibraryRecord, LibraryFailure>;
+};

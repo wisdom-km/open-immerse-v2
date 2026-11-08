@@ -16,6 +16,7 @@ import {
   type LibraryRecord,
 } from "../domain/library-record.js";
 import type {
+  LibraryProgressPageUpdate,
   LibraryProgressUpdate,
   LibraryRepository,
   LibrarySourceUpdate,
@@ -30,7 +31,7 @@ const COLUMNS =
 
 export function createSqliteLibraryRepository(
   storage: AppStorage,
-): LibraryRepository {
+): LibraryRepository & LibraryProgressPageUpdate {
   return {
     findById(id) {
       return findById(storage, id);
@@ -46,6 +47,9 @@ export function createSqliteLibraryRepository(
     },
     updateProgress(id, progress) {
       return updateProgress(storage, id, progress);
+    },
+    updateProgressPage(id, page) {
+      return updateProgressPage(storage, id, page);
     },
   };
 }
@@ -133,6 +137,19 @@ function updateProgress(
       "UPDATE lib_entries SET opened_at = ?, progress_page = ? WHERE id = ?",
       [progress.openedAt, progress.progressPage, id],
     );
+  });
+}
+
+function updateProgressPage(
+  storage: AppStorage,
+  id: LibraryEntryId,
+  page: number,
+): Outcome<LibraryRecord> {
+  return writeThenRead(storage, id, () => {
+    storage.execute("UPDATE lib_entries SET progress_page = ? WHERE id = ?", [
+      page,
+      id,
+    ]);
   });
 }
 
