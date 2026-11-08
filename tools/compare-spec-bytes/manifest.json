@@ -279,6 +279,36 @@
       "source": "ARCHITECTURE.md",
       "old": "样例放 `fixtures/eval/`，用合成数据。",
       "new": "样例放 `fixtures/eval/`（计划中），用合成数据。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "- `oi-asset://` 只服务两类资产：",
+      "new": "- `oi-asset://` 服务下列资产："
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "  - 测试：符号链接越界、未登记的 `assetId`、`../` 与 `%2e%2e` 编码穿越，都返回 404。\n- 外部链接：",
+      "new": "  - 测试：符号链接越界、未登记的 `assetId`、`../` 与 `%2e%2e` 编码穿越，都返回 404。\n- 文献库 PDF 副本是第三类。它不并入 `<userData>/assets/`，也不并入笔记库图片。安全根是该条目的 `<dataRoot>/library/<libraryEntryId>/`。可读文件只有其中的 `source.pdf`，与 §8.2 的 `library/<sha256>/source.pdf` 是同一份副本。条目 id 就是该 SHA-256。本批发放、撤销与授权入口在 main。上面 utility 启用后资产登记表随 SQLite 迁移的通则不改，本句不另定进程或签名。renderer 只接收 `assetId`，不接收绝对路径，不接收整份 PDF 字节。\n- 这一类只放行 `application/pdf`。内容须符合 PDF 头，并与文件名 `source.pdf` 一致。不符合、未登记、已撤销、副本不可读、符号链接出该条目目录、`../` 与 `%2e%2e`，都在协议层返回 HTTP 404。响应体为空，不含绝对路径，不含 IPC 错误码。响应带 `X-Content-Type-Options: nosniff`。不放行 SVG。上面的 PNG、JPEG、GIF、WebP 不扩大到 PDF。\n- 向 renderer 发出 `assetId` 的 invoke 沿用本节已有的发送方规则，只接受本应用窗口里来源为 `oi-app:` 的主 frame。协议处理器不接受 renderer 提交的路径或字节。处理仍只接受 GET 与 HEAD。URL 仍是 `oi-asset://<assetId>`。不重定向，不列目录。每次读取对文件和该条目目录做 `realpath`，文件必须仍在该条目目录内。\n- 生命周期只定方向：这个 `assetId` 绑定一次受控阅读，不是永久链接。何时撤销、同一次阅读里重复登记是否返回同一个 id、再次进入是否更换 id，由契约审定，不在本节写成签名。\n- `oi-asset://` 的响应只用 HTTP 状态。invoke 的结果才使用 `not_found`、`sender_rejected`，以及契约审定后的业务码。协议状态行不写这些码。\n- 上面几条不放宽 CSP 草案，也不授予 `bypassCSP`、`supportFetchAPI`、`connect-src oi-asset:`、`wasm-unsafe-eval` 或 `blob:`。PDF.js 仍以 `isEvalSupported: false` 运行。若 M2 实测证明现行 CSP 不能让 renderer 经 `oi-asset://` 读取这份 PDF，先单独写 ADR 并获批，再改草案与 `csp.ts`。在那之前两处都不改。\n- 外部链接："
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "└─ secrets.bin                  # safeStorage 密文；不入 SQLite、不随导出\n```\n\n- 表按切片加前缀",
+      "new": "└─ secrets.bin                  # safeStorage 密文；不入 SQLite、不随导出\n```\n\n阅读其中的 `library/<sha256>/source.pdf` 时走 §9 的第三类 `assetId`。路径留在 main。\n\n- 表按切片加前缀"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "| `writing`（预留，v2 不建） | 引用必须解析到锚点（复用 `qa/citation` 规则） | §4.4 草案 | — | — |\n\n### 2.6 示例 seam",
+      "new": "| `writing`（预留，v2 不建） | 引用必须解析到锚点（复用 `qa/citation` 规则） | §4.4 草案 | — | — |\n\n本批页级进度（Wisdom 2026-11-08 23:45，Issue #174）：浏览保存和重开恢复用 library 已有的 `progressPage`。这不是 `session.save` / `session.restore` 的「页 + 块」，也不是整窗恢复。`updateProgress` 没有「用 null 表示跳过」：`null` 是已存储的空页码，写回去会清空 `progress_page`。请求字段，以及恢复、保存和 `openDocument` 写回的先后，由契约收口。本节不发明 `reader.setPage`。\n\nAC-11 仍要求未配置解析服务时可以打开 PDF 并浏览原文，界面给出明确的降级状态。本批这条状态来自真实的最小能力查询，不来自 `ingest.openDocument` 返回的 `jobId`，不来自诊断事件，也不由界面写死。`getParseCapabilities` 仍是上表里的名字。真实数据源和成功语义由契约收口。契约未收口或查询未接上之前，不得把 AC-11 或这条降级状态标成验收通过。本节不把「还没有配置来源」写成可以不做查询、或可以不显示降级状态的豁免。完整 jobs 状态机不在本批。\n\n### 2.6 示例 seam"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "**与 §9 绝对路径规则的关系（已批 Wisdom 2026-11-04 03:28）**：",
+      "new": "本批不实现 `session.save` / `session.restore`。阅读位置的「页 + 块」、窗口几何和侧栏都不在本批恢复。本批的页码只走文献库 `progressPage`。\n\n**与 §9 绝对路径规则的关系（已批 Wisdom 2026-11-04 03:28）**："
+    },
+    {
+      "source": "PRD.md",
+      "old": "| M8 打包准备 | Windows / macOS 安装包构建流水线 | 构建产物可安装；AC-67 ③（fuses）通过；签名、公证、发版由人执行 |\n\n### 8.1 Markdown 阅读的里程碑校正",
+      "new": "| M8 打包准备 | Windows / macOS 安装包构建流水线 | 构建产物可安装；AC-67 ③（fuses）通过；签名、公证、发版由人执行 |\n\n### M2 ③ 本批归属\n\n2026-11-08 23:45：PR-C 这一组纳入页级浏览保存和重开恢复，用文献库已有页码。不含「页 + 块」，不含整窗恢复。US-08 的译文与笔记仍在，不因本批标成通过。本批的 Windows PDF「打开 / 滚动 / 重开」要在 8 GB 机器上录屏，并附对应截图。这台机器尚未核实。没有这台机器就标「未验证」，不用更高内存的机器代替。上表 M2 格里的 M1 录屏和 `.md` 录屏仍是退出条件。AC-11 整句仍是 M2 标准。本批覆盖其中「打开 PDF、浏览原文」和由此而来的明确降级状态。真实数据源与查询语义要由契约收口。未收口、未实现之前，不得把该状态标成验收通过。\n\n### 8.1 Markdown 阅读的里程碑校正"
     }
   ]
 }
