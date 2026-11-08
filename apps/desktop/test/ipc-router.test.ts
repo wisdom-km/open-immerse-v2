@@ -17,7 +17,7 @@ import type { IpcInvokeEvent } from "../src/main/ipc/sender-frame.js";
 const frame = { url: "oi-app://app/index.html" };
 const invokeEvent: IpcInvokeEvent = { senderFrame: frame, sender: { id: 1 } };
 
-it("registers one handle for each exposed command", () => {
+it("registers one handle for each exposed library command", () => {
   const channels = ipcRegistry.map((entry) => entry.channel);
   expect(channels).toEqual([
     "library.import",
