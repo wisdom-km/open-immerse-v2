@@ -131,8 +131,8 @@ AC-11 的「浏览原文」和 DESIGN 的「进入阅读场景」由 PR-C 用已
 | 2 | 更新 `packages/features/ingest/package.json`：加上 `@oi/contracts`、`@oi/kernel`、`@oi/feature-library`，都是 `workspace:*`。不加 `pdfjs-dist`、`@oi/feature-reader`、`@oi/feature-jobs`。用包管理器生成 lockfile，不手改 | 三个 workspace 依赖已加。lockfile 由 pnpm 生成。Vitest 与 `tools/check-deps/tsconfig.paths.json` 把 `@oi/feature-library` 指到 `src/index.ts`，与 kernel、contracts 的源码别名相同。没有改依赖矩阵，也没有改门禁阈值 | `packages/features/ingest/package.json`、`pnpm-lock.yaml` |
 | 3 | 端口、`open-document` 用例、`src/testing` 假件、`test/core`。覆盖 openedAt、幂等、写前 not_found、写回 `progressPage` 为 null 与非空、进度写返回 not_found / rejected 时复用已分配 `jobId` | 已做。另覆盖 `formatUtc(9e15)` 的 RangeError：用例 `rejected`，不写进度，不泄漏路径。没有改 library | `packages/features/ingest/test/core/open-document.test.ts` |
 | 4 | `adapters/ipc-handlers.ts`、进程内记忆适配器、adapter 测试。`expose` 仍为 false。进度 `not_found` 与 `rejected` 的映射按上文。返回值与错误无绝对路径、无 `message` | 已做。写时 `not_found` 后重试仍用第一次的 `jobId` | `packages/features/ingest/test/adapters/` |
-| 5 | 更新 README：同实例幂等，重启或新建实例不保证同一个 `jobId`，没有持久化 jobs。跑下面「测试分工」里的针对性命令。写 `docs/evidence/<PR号>/commands.md`。全量留给 Anvil | README 已写。针对性命令的退出码写入证据。全量 `pnpm test` / `pnpm run check` / pytest / e2e 未跑 | `docs/evidence/<PR号>/commands.md` |
-| 6 | Draft PR：`Refs #174`。来源核对、第 7 节选择、真机与截图属 PR-C。不评论 issue，不标 Ready，不合入 | Draft PR 随这次实现打开。URL 写在证据里。不评论 issue，不标 Ready，不合入 | 证据 |
+| 5 | 更新 README：同实例幂等，重启或新建实例不保证同一个 `jobId`，没有持久化 jobs。跑下面「测试分工」里的针对性命令。写 `docs/evidence/<PR号>/commands.md`。全量留给 Anvil | README 已写。针对性命令的退出码在证据里。全量 `pnpm test` / `pnpm run check` / pytest / e2e 未跑 | [docs/evidence/178/commands.md](../evidence/178/commands.md) |
+| 6 | Draft PR：`Refs #174`。来源核对、第 7 节选择、真机与截图属 PR-C。不评论 issue，不标 Ready，不合入 | Draft PR：https://github.com/wisdom-km/open-immerse-v2/pull/178 。正文 `Refs #174`。不评论 issue，不标 Ready，不合入 | [docs/evidence/178/commands.md](../evidence/178/commands.md) |
 
 ## 行为
 
@@ -214,7 +214,7 @@ AC-11 的「浏览原文」和 DESIGN 的「进入阅读场景」由 PR-C 用已
 | `corepack pnpm run typecheck` | `node tools/typecheck.mjs` | `tsc -p tsconfig.json`（`**/*.ts`，排除 ui、renderer、preload 等），再加 `tsconfig.ui.json` 与 `apps/desktop/tsconfig.preload.json`。adapters 在这里 | 跑 |
 | `node tools/check-docs/check.mjs` | 无 npm script | 文档链接、状态行、verbatim、`docs/arch/03.md` 树 | 跑 |
 
-不跑 `corepack pnpm test`（全量 Vitest）、`corepack pnpm run check`（format、lint、两套 typecheck、size、deps、core-tests、三套 license、one-slice、commits、hotspots、pr-size、codegen、`git diff --exit-code`）、pytest、e2e。全量只由 Anvil 在与证据相同的 tip 上跑一次。命令、退出码与留给 Anvil 的项写入 `docs/evidence/<PR号>/commands.md`。没跑的命令不写成通过。
+不跑 `corepack pnpm test`（全量 Vitest）、`corepack pnpm run check`（format、lint、两套 typecheck、size、deps、core-tests、三套 license、one-slice、commits、hotspots、pr-size、codegen、`git diff --exit-code`）、pytest、e2e。全量只由 Anvil 在与证据相同的 tip 上跑一次。命令、退出码与留给 Anvil 的项写入 [docs/evidence/178/commands.md](../evidence/178/commands.md)。没跑的命令不写成通过。
 
 本计划修订只跑 `node tools/check-docs/check.mjs`。不跑上表里的产品命令，也不跑 `pnpm test` / `pnpm run check`。
 
@@ -236,7 +236,7 @@ AC-11 的「浏览原文」和 DESIGN 的「进入阅读场景」由 PR-C 用已
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/commands.md`：只记录实际跑过的针对性命令和退出码。没跑的不写成通过。全量留给 Anvil。
+- [docs/evidence/178/commands.md](../evidence/178/commands.md)：只记录实际跑过的针对性命令和退出码。没跑的不写成通过。全量留给 Anvil。Draft PR：https://github.com/wisdom-km/open-immerse-v2/pull/178
 
 ## 自检
 
