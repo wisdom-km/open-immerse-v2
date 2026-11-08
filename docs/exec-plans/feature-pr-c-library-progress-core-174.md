@@ -46,7 +46,7 @@
 | 1 | 本文件。第一笔只有它 | `42c8571b22330573ccb8dd99b2160b2838c93b5c` 只有本文件 | 该提交 |
 | 2 | 只在 `docs/approvals.md` 追加 03:39 原话、时间、范围、来源，并改文末计数。然后停 | `8054c7f93e0ba0bca6e708dd1e4d8a38a51549b5` 只有台账行 | 该提交 |
 | 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 | 2026-11-09 03:47 Asia/Shanghai，Forge 对这两笔事前执行计划审查 PASS。登记 [issue #174 评论 6726246791](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6726246791)。此 PASS 先于实现，不是方案 PASS，也不是 Ready 或合入许可。本行写入时还没有实现提交 | 该评论 |
-| 4 | 两个用例、端口、SQLite、fake、`index.ts` 出口、core 测试与 SQLite 测试。规格清单在同一次实现里更新，不在步骤 1、2 |  |  |
+| 4 | 两个用例、端口、SQLite、fake、`index.ts` 出口、core 测试与 SQLite 测试。规格清单在同一次实现里更新，不在步骤 1、2 | `87d2324f521e575397862d1c895efe98ba6d09a8`。写页条件是 `Number.isSafeInteger(page) && page >= 1`。fake 与 SQLite 都断言 `openedAt` 不变。四份规格、changelog 和 manifest 唯一替换在同一提交 | [commands.md](../evidence/182/commands.md) |
 
 ## 行为
 
@@ -154,9 +154,9 @@ G12：本批不改 contracts，契约 PR 的 200 行理由不适用。这不豁�
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：计划阶段无。实现阶段再写命令与退出码。本计划阶段不跑测试，不跑 CI。
+- `docs/evidence/182/commands.md`：全量记录在 `87d2324f521e575397862d1c895efe98ba6d09a8`。其后只追加本表与该证据，没有重跑 `pnpm test` 或 `pnpm run check`。
 
 ## 自检
 
-- [ ] 影响 arch / prd 吗？实现阶段影响。清单在「规格后续更新」。本两笔不改正文。
+- [x] 影响 arch / prd 吗？影响。四份正文、changelog 和 manifest 唯一替换在 `87d2324`。不改基线，不改 `compare.mjs`。
 - [x] Forge 已亲读 `42c8571` 与 `8054c7f` 并 PASS（2026-11-09 03:47，[6726246791](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6726246791)）。此勾选先于实现提交。
