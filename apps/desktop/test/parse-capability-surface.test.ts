@@ -8,11 +8,11 @@ const generated = [
   "apps/desktop/src/main/ipc/registry.generated.ts",
 ];
 
-it("does not generate a renderer call for settings parse commands", () => {
+it("does not generate a renderer call for the parse commands", () => {
   const text = generated
     .map((rel) => readFileSync(path.resolve(rel), "utf8"))
     .join("\n");
-  expect(text).toContain("parsing.getParseCapabilities");
+  expect(text).not.toContain("parsing.getParseCapabilities");
   expect(text).not.toContain("settings.saveParseService");
   expect(text).not.toContain("settings.getParseServiceStatus");
   expect(text).not.toContain("saveParseService");

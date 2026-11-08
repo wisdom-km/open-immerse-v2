@@ -11,6 +11,10 @@ import { createLibraryMain, type LibraryMain } from "@oi/feature-library/main";
 
 import type { IpcCommandHandler } from "./ipc/ipc-router.js";
 import {
+  libraryCommandChannels,
+  type LibraryCommandChannel,
+} from "./ipc/library-command-channels.js";
+import {
   applicationMenuTemplate,
   openFileScript,
   type ShellMenuEntry,
@@ -85,17 +89,20 @@ function dispatchOpenFile(): Promise<void> {
   });
 }
 
-function commandMap(main: LibraryMain): ReadonlyMap<string, IpcCommandHandler> {
+function commandMap(
+  main: LibraryMain,
+): ReadonlyMap<LibraryCommandChannel, IpcCommandHandler> {
   const handlers = main.handlers;
-  return new Map<string, IpcCommandHandler>([
-    ["library.import", (payload) => handlers.import(asImport(payload))],
-    [
-      "library.importDropped",
-      (_payload, context) => importDropped(handlers, context.droppedFilePath),
-    ],
-    ["library.list", (payload) => handlers.list(asList(payload))],
-    ["library.relocate", (payload) => handlers.relocate(asRelocate(payload))],
-  ]);
+  const bound: Record<LibraryCommandChannel, IpcCommandHandler> = {
+    "library.import": (payload) => handlers.import(asImport(payload)),
+    "library.importDropped": (_payload, context) =>
+      importDropped(handlers, context.droppedFilePath),
+    "library.list": (payload) => handlers.list(asList(payload)),
+    "library.relocate": (payload) => handlers.relocate(asRelocate(payload)),
+  };
+  return new Map(
+    libraryCommandChannels.map((channel) => [channel, bound[channel]]),
+  );
 }
 
 function asImport(

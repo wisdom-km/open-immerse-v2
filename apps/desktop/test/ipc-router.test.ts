@@ -24,7 +24,6 @@ it("registers one handle for each exposed command", () => {
     "library.importDropped",
     "library.list",
     "library.relocate",
-    "parsing.getParseCapabilities",
   ]);
   const handlers = new Map<string, IpcCommandHandler>(
     channels.map((channel) => [
