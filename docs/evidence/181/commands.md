@@ -44,3 +44,14 @@ Electron e2e 与 Windows 真机未在本机跑。具名 G9 的 detect 留待本 
 ## 补上 #181 链接之后
 
 `docs/spec-changelog.md` 把「本 PR」改成 #181，并记下本文件。规格句子没有再改。compare、check-docs、`git diff --check` 再跑一次，退出码都是 0。没有重跑 `pnpm test` 或 `pnpm run check`。上面的 638 行是契约提交上的计数，不含本文件。
+
+## F-08 修正
+
+公开面回归改为断言 `ipcRegistry` 的通道值、`createOi` 返回对象的键，以及 `Window["oi"]` 与 `createOi` 返回类型的键。不读取 `src/` 文本。四条阅读命令和三条解析契约都不在这些公开面上。`ipc-production-assembly.test.ts` 没有改。`parse-capability-surface.test.ts` 没有改，它仍是 #180 留下的读文本测试。
+
+本段没有重跑 `pnpm test` 或 `pnpm run check`。上面的 667 通过和 3 个 detect 跳过仍是 `a557384` 的记录，这 3 个跳过仍不是具名 G9 通过。
+
+- `eslint` `apps/desktop/test/reading-command-surface.test.ts`：退出码 0。
+- `vitest run` 该文件、`oi-keys.test.ts`、`ipc-production-assembly.test.ts`：3 个文件，4 通过，退出码 0。这不是全量。
+- `corepack pnpm run typecheck`：退出码 0。`tsconfig.ui.json` 包含该测试，所以 `Window["oi"]` 与 preload 返回类型的断言进入编译。
+- `corepack pnpm run codegen` 之后，三份生成文件 `git diff --exit-code`：退出码 0。

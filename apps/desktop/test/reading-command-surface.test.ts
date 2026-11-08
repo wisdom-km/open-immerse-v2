@@ -1,26 +1,68 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { expect, it } from "vitest";
+import { expect, expectTypeOf, it } from "vitest";
 
-const generated = [
-  "apps/desktop/src/preload/oi.generated.ts",
-  "apps/desktop/src/renderer/oi-api.d.ts",
-  "apps/desktop/src/main/ipc/registry.generated.ts",
-];
+import { ipcRegistry } from "../src/main/ipc/registry.generated.js";
+import { createOi } from "../src/preload/oi.generated.js";
 
-it("does not generate a renderer call for the reading commands", () => {
-  const text = generated
-    .map((rel) => readFileSync(path.resolve(rel), "utf8"))
-    .join("\n");
-  for (const channel of [
-    "library.bindReadingAsset",
-    "library.revokeReadingAsset",
-    "library.getProgressPage",
-    "library.setProgressPage",
-    "parsing.getParseCapabilities",
-    "settings.saveParseService",
-    "settings.getParseServiceStatus",
-  ]) {
-    expect(text).not.toContain(channel);
+const hidden = [
+  "library.bindReadingAsset",
+  "library.revokeReadingAsset",
+  "library.getProgressPage",
+  "library.setProgressPage",
+  "parsing.getParseCapabilities",
+  "settings.saveParseService",
+  "settings.getParseServiceStatus",
+] as const;
+
+const exposed = [
+  "library.import",
+  "library.importDropped",
+  "library.list",
+  "library.relocate",
+] as const;
+
+it("keeps internal commands off the registry and the preload object", () => {
+  const channels = ipcRegistry.map((entry) => entry.channel);
+  const keys = keyPaths(preload());
+  expect(keys).toEqual([...exposed]);
+  for (const channel of hidden) {
+    expect(channels).not.toContain(channel);
+    expect(keys).not.toContain(channel);
   }
 });
+
+it("types the window and the preload return as the same exposed commands", () => {
+  expectTypeOf<keyof Window["oi"]>().toEqualTypeOf<"library">();
+  expectTypeOf<keyof Window["oi"]["library"]>().toEqualTypeOf<ExposedName>();
+  expectTypeOf<PreloadName>().toEqualTypeOf<ExposedName>();
+});
+
+type ExposedName = "import" | "importDropped" | "list" | "relocate";
+
+type PreloadName = keyof ReturnType<typeof createOi>["library"];
+
+function preload(): unknown {
+  return createOi({
+    invoke: () => Promise.resolve(undefined),
+    invokeDropped: () => Promise.resolve(undefined),
+    subscribe: () => () => undefined,
+  });
+}
+
+function keyPaths(value: unknown, prefix = ""): readonly string[] {
+  if (typeof value === "function") {
+    return prefix === "" ? [] : [prefix];
+  }
+  if (typeof value !== "object" || value === null) {
+    return [];
+  }
+  const paths: string[] = [];
+  for (const key of Object.keys(value).sort()) {
+    const next = prefix === "" ? key : `${prefix}.${key}`;
+    paths.push(...keyPaths(record(value)[key], next));
+  }
+  return paths;
+}
+
+function record(value: object): Record<string, unknown> {
+  return value as Record<string, unknown>;
+}
