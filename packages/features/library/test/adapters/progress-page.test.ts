@@ -69,3 +69,30 @@ it("returns not_found from sqlite when the row is absent", () => {
     expect(found.ok && found.value?.progressPage).toBe(2);
   });
 });
+
+it("returns rejected from sqlite when progress_page 0 violates the check", () => {
+  withLibrary((fixture) => {
+    const repository = createSqliteLibraryRepository(fixture.storage);
+    const id = parseLibraryEntryId(ID_A);
+    if (id === undefined) {
+      throw new Error("id");
+    }
+    const inserted = repository.insert({
+      id,
+      fileName: "paper.pdf",
+      title: "paper",
+      originalPath: "/library-source/paper.pdf",
+      addedAt: "2026-01-01T00:00:00.000Z",
+      openedAt: OPENED,
+      progressPage: 2,
+    });
+    expect(inserted.ok).toBe(true);
+    const written = repository.updateProgressPage(id, 0);
+    expect(written).toEqual({ ok: false, error: libraryFailure("rejected") });
+    const row = fixture.storage.query(
+      "SELECT opened_at, progress_page FROM lib_entries WHERE id = ?",
+      [id],
+    );
+    expect(row).toEqual({ opened_at: OPENED, progress_page: 2 });
+  });
+});
