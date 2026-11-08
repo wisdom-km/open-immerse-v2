@@ -23,7 +23,7 @@
 
 ## 证据链接
 
-- `docs/evidence/181/`：命令记录。PR 号若不是 181，以实际 PR 为准并改正本行。
+- `docs/evidence/181/`：命令记录。Draft PR #181。
 
 ## 自检
 
