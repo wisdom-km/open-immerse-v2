@@ -44,3 +44,15 @@ Electron e2e、Box 和 Windows 真机未在本机跑。没有新增 Box 检出�
 ## 补上证据链接之后
 
 本文件和执行计划的实际列在 `87d2324` 之后补上。规格句子没有再改。`check-docs`、`compare-spec-bytes` 和 `git diff --check` 再跑一次，退出码都是 0。没有重跑 `pnpm test` 或 `pnpm run check`。上面的 631 行和 683 通过是 `87d2324` 的记录，不含本文件。
+
+## SQLite rejected
+
+对象是 `f27efc2bed671f7ff713234546bcc6afb70a791c`。只改 `packages/features/library/test/adapters/progress-page.test.ts`。生产代码没有改。fake 与 core 的原断言没有删。没有重跑 `pnpm test` 或 `pnpm run check`。上面的 683 通过和 3 跳过不是这个提交的结果，也不是其后 tip 的全量通过。
+
+命令在该提交的文件内容上跑，当时 HEAD 还是 `4333579c199a9dedafe84a99fd3f261d0d700ec2`。提交后没有再跑。
+
+- `corepack pnpm exec eslint --max-warnings 0 packages/features/library/test/adapters/progress-page.test.ts`：退出码 0。
+- `corepack pnpm exec prettier --check packages/features/library/test/adapters/progress-page.test.ts`：退出码 0。
+- `corepack pnpm exec vitest run packages/features/library/test/adapters/progress-page.test.ts`：退出码 0。1 个文件，3 通过，类型错误 0。
+
+这 3 条是该文件里的成功、`not_found` 和 CHECK 失败。CHECK 失败走真实 `updateProgressPage(id, 0)`，返回 `rejected`，`opened_at` 与 `progress_page` 仍是写入前的值。

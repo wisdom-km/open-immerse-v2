@@ -46,7 +46,7 @@
 | 1 | 本文件。第一笔只有它 | `42c8571b22330573ccb8dd99b2160b2838c93b5c` 只有本文件 | 该提交 |
 | 2 | 只在 `docs/approvals.md` 追加 03:39 原话、时间、范围、来源，并改文末计数。然后停 | `8054c7f93e0ba0bca6e708dd1e4d8a38a51549b5` 只有台账行 | 该提交 |
 | 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 | 2026-11-09 03:47 Asia/Shanghai，Forge 对这两笔事前执行计划审查 PASS。登记 [issue #174 评论 6726246791](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6726246791)。此 PASS 先于实现，不是方案 PASS，也不是 Ready 或合入许可。本行写入时还没有实现提交 | 该评论 |
-| 4 | 两个用例、端口、SQLite、fake、`index.ts` 出口、core 测试与 SQLite 测试。规格清单在同一次实现里更新，不在步骤 1、2 | `87d2324f521e575397862d1c895efe98ba6d09a8`。写页条件是 `Number.isSafeInteger(page) && page >= 1`。fake 与 SQLite 都断言 `openedAt` 不变。四份规格、changelog 和 manifest 唯一替换在同一提交 | [commands.md](../evidence/182/commands.md) |
+| 4 | 两个用例、端口、SQLite、fake、`index.ts` 出口、core 测试与 SQLite 测试。规格清单在同一次实现里更新，不在步骤 1、2 | `87d2324f521e575397862d1c895efe98ba6d09a8` 是实现。写页条件是 `Number.isSafeInteger(page) && page >= 1`。fake 与 SQLite 都断言 `openedAt` 不变。四份规格、changelog 和 manifest 唯一替换在同一提交。`LibraryProgressPageUpdate` 是必选能力窄端口：方法没有问号，SQLite 与 fake 用交叉类型实现。原 `LibraryRepository` 与 ingest mock 仍只实现原来的端口，保持兼容。这不是可选 method，也不是写失败后的 fallback。`f27efc2bed671f7ff713234546bcc6afb70a791c` 补上第 116 行的 SQLite `rejected`：真实 `updateProgressPage` 写入 `0`，已有 CHECK 让事务失败，结果是 `rejected`，`opened_at` 与 `progress_page` 仍是写入前的值。没有改生产代码 | [commands.md](../evidence/182/commands.md) |
 
 ## 行为
 
@@ -154,7 +154,7 @@ G12：本批不改 contracts，契约 PR 的 200 行理由不适用。这不豁�
 
 ## 证据链接
 
-- `docs/evidence/182/commands.md`：全量记录在 `87d2324f521e575397862d1c895efe98ba6d09a8`。其后只追加本表与该证据，没有重跑 `pnpm test` 或 `pnpm run check`。
+- `docs/evidence/182/commands.md`：全量记录在 `87d2324f521e575397862d1c895efe98ba6d09a8`。SQLite `rejected` 的定向记录在 `f27efc2bed671f7ff713234546bcc6afb70a791c`。两段都不把对方写成自己的通过数。
 
 ## 自检
 
