@@ -122,6 +122,24 @@ export type {
 export { ingestIpc, openDocument } from "./ipc/ingest.js";
 export type { ReaderChannel, ReaderCommands } from "./ipc/reader.js";
 export { readerIpc, setZoom } from "./ipc/reader.js";
+export type {
+  SettingsParseChannel,
+  SettingsParseCommands,
+} from "./ipc/settings-parse.js";
+export {
+  getParseServiceStatus,
+  saveParseService,
+  settingsParseIpc,
+} from "./ipc/settings-parse.js";
+export type {
+  ParsingCapabilityChannel,
+  ParsingCapabilityCommands,
+} from "./ipc/parsing.js";
+export { getParseCapabilities, parsingIpc } from "./ipc/parsing.js";
+export type {
+  ParseServiceConfigured,
+  ParseServiceStatus,
+} from "./parse-service-status.js";
 export type { ReaderSession, ReaderViewMode } from "./reader.js";
 export { readerSessionSchema } from "./reader.js";
 export type {
