@@ -30,7 +30,14 @@ export type OiError<Channel extends string> = Channel extends "library.import"
             | "sender_rejected"
             | "invalid_payload"
             | "handler_threw"
-        : never;
+        : Channel extends "parsing.getParseCapabilities"
+          ?
+              | "storage_corrupt"
+              | "secret_unavailable"
+              | "sender_rejected"
+              | "invalid_payload"
+              | "handler_threw"
+          : never;
 
 declare global {
   interface Window {
@@ -118,6 +125,21 @@ declare global {
             | { readonly code: "cancelled"; readonly retryable: false }
             | { readonly code: "not_pdf"; readonly retryable: false }
             | { readonly code: "hash_mismatch"; readonly retryable: false }
+            | { readonly code: "sender_rejected"; readonly retryable: false }
+            | { readonly code: "invalid_payload"; readonly retryable: false }
+            | { readonly code: "handler_threw"; readonly retryable: true }
+          >
+        >;
+      };
+      readonly parsing: {
+        /** idempotent: true */
+        getParseCapabilities(
+          input: Readonly<{}>,
+        ): Promise<
+          Result<
+            Readonly<{ state: "configured" | "unconfigured" }>,
+            | { readonly code: "storage_corrupt"; readonly retryable: false }
+            | { readonly code: "secret_unavailable"; readonly retryable: false }
             | { readonly code: "sender_rejected"; readonly retryable: false }
             | { readonly code: "invalid_payload"; readonly retryable: false }
             | { readonly code: "handler_threw"; readonly retryable: true }

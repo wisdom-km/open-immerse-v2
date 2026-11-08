@@ -13,6 +13,7 @@ it("lists the exposed library commands", () => {
     "library.importDropped",
     "library.list",
     "library.relocate",
+    "parsing.getParseCapabilities",
   ]);
   expect("invoke" in oi).toBe(false);
   expect("invokeDropped" in oi).toBe(false);

@@ -17,13 +17,14 @@ import type { IpcInvokeEvent } from "../src/main/ipc/sender-frame.js";
 const frame = { url: "oi-app://app/index.html" };
 const invokeEvent: IpcInvokeEvent = { senderFrame: frame, sender: { id: 1 } };
 
-it("registers one handle for each exposed library command", () => {
+it("registers one handle for each exposed command", () => {
   const channels = ipcRegistry.map((entry) => entry.channel);
   expect(channels).toEqual([
     "library.import",
     "library.importDropped",
     "library.list",
     "library.relocate",
+    "parsing.getParseCapabilities",
   ]);
   const handlers = new Map<string, IpcCommandHandler>(
     channels.map((channel) => [

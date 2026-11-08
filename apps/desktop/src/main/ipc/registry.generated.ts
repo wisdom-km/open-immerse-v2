@@ -311,4 +311,34 @@ export const ipcRegistry: readonly IpcRegistryEntry[] = [
       type: "object",
     },
   },
+  {
+    kind: "command",
+    channel: "parsing.getParseCapabilities",
+    idempotent: true,
+    transport: "invoke",
+    request: {
+      additionalProperties: false,
+      properties: {},
+      type: "object",
+    },
+    response: {
+      additionalProperties: false,
+      properties: {
+        state: {
+          anyOf: [
+            {
+              const: "configured",
+              type: "string",
+            },
+            {
+              const: "unconfigured",
+              type: "string",
+            },
+          ],
+        },
+      },
+      required: ["state"],
+      type: "object",
+    },
+  },
 ];
