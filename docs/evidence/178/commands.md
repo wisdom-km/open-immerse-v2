@@ -65,3 +65,5 @@ Anvil 在 `af48113a5925c79288163f0995f4868343940482` 上的唯一全量 `corepac
 | `apps/desktop/src/main/library-wiring.ts` | `@oi/feature-library/main` | `packages/features/library/src/adapters/library-main.ts` |
 
 同一工作区里，从 `apps/desktop` 用 Node 默认条件 `import.meta.resolve`：`@oi/feature-library` 与 `@oi/feature-library/main` 仍是 `dist` 下的 js；`@oi/feature-library/ui` 仍是 `src/ui/index.ts`。加上 `--conditions=development` 后，前两个改到上面的源码路径。Electron 的默认条件不选 `development`。
+
+上表跑在进入提交之前的同一份源码。提交 `84ef0daf548b3d05c74bd9bd0ec24aa60f841d95` 之后再跑：ingest 的 core 与 adapters vitest 退出码 0（4 个文件，23 通过）；arch-graph 两条用例退出码 0；`node tools/check-arch-graph/check.mjs --strict` 退出码 0（undocumented 0，planned 15，unmapped 0，index 0）；Vite resolve 退出码 0，上表四个路径的 `exists` 仍为 true；`GATE_BASE=origin/main corepack pnpm run check:one-slice` 退出码 0（1 feature slice）；`node tools/check-docs/check.mjs` 退出码 0。`typecheck`、`typecheck:core`、`check:deps`、`check:size`、eslint 没有在这个提交上重跑，它们跑在进入该提交的同一份源码上，退出码都是 0。
