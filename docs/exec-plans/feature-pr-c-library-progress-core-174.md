@@ -43,9 +43,9 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它 |  |  |
-| 2 | 只在 `docs/approvals.md` 追加 03:39 原话、时间、范围、来源，并改文末计数。然后停 |  |  |
-| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 |  |  |
+| 1 | 本文件。第一笔只有它 | `42c8571b22330573ccb8dd99b2160b2838c93b5c` 只有本文件 | 该提交 |
+| 2 | 只在 `docs/approvals.md` 追加 03:39 原话、时间、范围、来源，并改文末计数。然后停 | `8054c7f93e0ba0bca6e708dd1e4d8a38a51549b5` 只有台账行 | 该提交 |
+| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 | 2026-11-09 03:47 Asia/Shanghai，Forge 对这两笔事前执行计划审查 PASS。登记 [issue #174 评论 6726246791](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6726246791)。此 PASS 先于实现，不是方案 PASS，也不是 Ready 或合入许可。本行写入时还没有实现提交 | 该评论 |
 | 4 | 两个用例、端口、SQLite、fake、`index.ts` 出口、core 测试与 SQLite 测试。规格清单在同一次实现里更新，不在步骤 1、2 |  |  |
 
 ## 行为
@@ -91,7 +91,7 @@
 | 条件 | 结果 |
 | --- | --- |
 | id 不能解析 | `not_found`。不写库 |
-| 值是 `null`、`0`、小数、非整数，或不是 `Number.isSafeInteger` 且 ≥ 1 | `rejected`。不调用端口 |
+| 不满足 `Number.isSafeInteger(page) && page >= 1`。含 `null`、`0`、负数、小数、`NaN`、`Infinity`、`-Infinity`、`Number.MAX_SAFE_INTEGER + 2` | `rejected`。不调用端口 |
 | 端口报告没有这篇 | `not_found` |
 | 端口报告行损坏或存储抛错 | `rejected` |
 | 端口成功 | 成功体带回写入的页 |
@@ -106,18 +106,18 @@ core 测试放在 `packages/features/library/test/core/`。不启动 Electron，
 - 读到 `1` 和 `Number.MAX_SAFE_INTEGER` 成功。
 - 没有这篇时，读和写都是 `not_found`。
 - id 不合法时，读和写都是 `not_found`。
-- 写 `null`、`0`、非整数、`Number.MAX_SAFE_INTEGER + 2` 都是 `rejected`，fake 里的页和 `openedAt` 都不变。
+- 写 `null`、`0`、`-1`、小数、`NaN`、`Infinity`、`-Infinity`、`Number.MAX_SAFE_INTEGER + 2` 都是 `rejected`，不调用端口，fake 里的页和 `openedAt` 都不变。
 - 写 `1` 和 `Number.MAX_SAFE_INTEGER` 成功，`openedAt` 与写入前相同。
 - 端口返回 `rejected` 时，读和写都转发 `rejected`。
 - 超界透传必须测：`seedLibrary` 种入 `progressPage: Number.MAX_SAFE_INTEGER + 2`，读页成功，并且原样返回同一个 number。这锁住「读用例不另加过滤」，不依赖 SQLite 驱动。
 
 SQLite 测试放在 `test/adapters/`，走真实 `createSqliteLibraryRepository` 和现有 `withLibrary`。不用 fake 代替 SQL。至少：写入一个安全整数页之后，`opened_at` 与写入前相同，`progress_page` 变为该页；没有这篇时得到 `not_found`。不把驱动对大整数的返回类型写成已测。
 
-[docs/arch/12.md](../arch/12.md) 要求端口的内存实现和 SQLite 实现跑契约测试。本批按批准清单落实：重叠的读写、`not_found` 与 `rejected` 两边都有；超界透传只在 fake；`opened_at` 不变只在真实 SQLite。不把 SQLite 测试放进 `test/core/`。不新增 npm script。Vitest 现有 include 已覆盖 `packages/features/*/test/core/**` 与 `test/adapters/**`。
+[docs/arch/12.md](../arch/12.md) 要求端口的内存实现和 SQLite 实现跑契约测试。本批按批准清单落实：重叠的读写、`not_found` 与 `rejected` 两边都有；超界透传只在 fake。`openedAt` 不变在 fake 和真实 SQLite 两端都测，fake 的断言不删。不把 SQLite 测试放进 `test/core/`。不新增 npm script。Vitest 现有 include 已覆盖 `packages/features/*/test/core/**` 与 `test/adapters/**`。
 
 ## 规格后续更新
 
-本两笔不改 PRD、ARCHITECTURE 正文，不改 `tools/compare-spec-bytes/manifest.json`，不改基线 `f8d5d01`，不改 `compare.mjs`。Forge PASS 之后，实现提交在同一次 Draft 里补下面这些，并在 [docs/spec-changelog.md](../spec-changelog.md) 加一行。这些文件都在字节对照清单里，改动需要唯一替换，不改基线。
+步骤 1 和步骤 2 不改 PRD、ARCHITECTURE 正文，也不改 `tools/compare-spec-bytes/manifest.json`。这只说明那两笔。Forge PASS 之后的实现提交要补下面四份正文，在 [docs/spec-changelog.md](../spec-changelog.md) 加一行，并只追加 manifest 的唯一替换。不改基线 `f8d5d01`，不改 `compare.mjs`。
 
 | 文件 | 实现阶段要补的一句 | 不写成 |
 | --- | --- | --- |
@@ -150,6 +150,7 @@ G12：本批不改 contracts，契约 PR 的 200 行理由不适用。这不豁�
 | 「批准按FINAL-CORE-PLAN.md第12节页码core范围实施，含用例、端口、SQLite、fake及测试；先提交计划和批准台账，经Forge审查后编码，只开Draft，不Ready、不合入、不发版，不含F-08另批整改。」 | 页码 core 的实施范围。台账行在第二笔。链接：[6726168870](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6726168870)，以及第二笔写入的 [docs/approvals.md](../approvals.md) 03:39 行 | 2026-11-09 03:39 | Wisdom |
 | 读页超界沿现有读路径透传，fake 必须断言；写页由新用例拒绝非安全正整数 | 这是 §12 里已经选中的技术范围，随 03:39 一起批准。不改 `findById` / `list` | 2026-11-09 03:39 | Wisdom，经 FINAL-CORE-PLAN.md §12 |
 | 第一笔只有计划，第二笔只有台账，然后停 | 03:39 原话要求先提交计划和批准台账，经 Forge 审查后才编码。方案审查不代替 | 2026-11-09 03:39 | Wisdom |
+| 对 `42c8571` 与 `8054c7f` 的事前执行计划审查 PASS | 发生在实现之前。不是方案 PASS，不是新的范围批准，不是 Ready 或合入许可。03:39 批准与 03:42 继续推进仍然有效。实现时落实三项：写页条件是 `Number.isSafeInteger(page) && page >= 1`；fake 与 SQLite 都断言 `openedAt` 不变；四份规格、changelog 与 manifest 唯一替换随实现提交。链接：[6726246791](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6726246791) | 2026-11-09 03:47 | Forge 排序，非业主决定 |
 
 ## 证据链接
 
@@ -158,4 +159,4 @@ G12：本批不改 contracts，契约 PR 的 200 行理由不适用。这不豁�
 ## 自检
 
 - [ ] 影响 arch / prd 吗？实现阶段影响。清单在「规格后续更新」。本两笔不改正文。
-- [ ] Forge 已亲读本文件提交与台账提交并 PASS。未勾选之前不写实现。
+- [x] Forge 已亲读 `42c8571` 与 `8054c7f` 并 PASS（2026-11-09 03:47，[6726246791](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6726246791)）。此勾选先于实现提交。
