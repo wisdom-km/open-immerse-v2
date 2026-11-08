@@ -1,5 +1,9 @@
 import { openDocument, type IngestOpenDocumentRequest } from "@oi/contracts";
-import { createUpdateProgress } from "@oi/feature-library";
+import {
+  createUpdateProgress,
+  formatUtc,
+  parseLibraryEntryId,
+} from "@oi/feature-library";
 import { expect, it } from "vitest";
 
 import { createIngestIpcHandlers } from "../../src/adapters/ipc-handlers.js";
@@ -34,6 +38,8 @@ function harness(page: number | null = null) {
   const open = createOpenDocument({
     lookup: library.lookup,
     updateProgress: createUpdateProgress(library.repository),
+    parseEntryId: parseLibraryEntryId,
+    formatOpenedAt: formatUtc,
     clock: createFixedClock([OPENED_MS, LATER_MS]),
     jobIds,
     openings: createFakeOpenings(),

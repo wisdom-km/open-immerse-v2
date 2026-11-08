@@ -128,9 +128,9 @@ AC-11 的「浏览原文」和 DESIGN 的「进入阅读场景」由 PR-C 用已
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
 | 1 | 本文件。第一笔只有它。推送后暂停 | `028ee5a` 计划，`adf0cbc` 修订。Forge 最终审查 PASS：[6719786094](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6719786094)（2026-11-08 17:24） | 本文件 |
-| 2 | 更新 `packages/features/ingest/package.json`：加上 `@oi/contracts`、`@oi/kernel`、`@oi/feature-library`，都是 `workspace:*`。不加 `pdfjs-dist`、`@oi/feature-reader`、`@oi/feature-jobs`。用包管理器生成 lockfile，不手改 | 三个 workspace 依赖已加。lockfile 由 pnpm 生成。Vitest 与 `tools/check-deps/tsconfig.paths.json` 把 `@oi/feature-library` 指到 `src/index.ts`，与 kernel、contracts 的源码别名相同。没有改依赖矩阵，也没有改门禁阈值 | `packages/features/ingest/package.json`、`pnpm-lock.yaml` |
-| 3 | 端口、`open-document` 用例、`src/testing` 假件、`test/core`。覆盖 openedAt、幂等、写前 not_found、写回 `progressPage` 为 null 与非空、进度写返回 not_found / rejected 时复用已分配 `jobId` | 已做。另覆盖 `formatUtc(9e15)` 的 RangeError：用例 `rejected`，不写进度，不泄漏路径。没有改 library | `packages/features/ingest/test/core/open-document.test.ts` |
-| 4 | `adapters/ipc-handlers.ts`、进程内记忆适配器、adapter 测试。`expose` 仍为 false。进度 `not_found` 与 `rejected` 的映射按上文。返回值与错误无绝对路径、无 `message` | 已做。写时 `not_found` 后重试仍用第一次的 `jobId` | `packages/features/ingest/test/adapters/` |
+| 2 | 更新 `packages/features/ingest/package.json`：加上 `@oi/contracts`、`@oi/kernel`、`@oi/feature-library`，都是 `workspace:*`。不加 `pdfjs-dist`、`@oi/feature-reader`、`@oi/feature-jobs`。用包管理器生成 lockfile，不手改 | 三个 workspace 依赖已加。lockfile 由 pnpm 生成。`tools/check-deps/tsconfig.paths.json` 用精确键 `@oi/feature-library` → `src/index.ts`。Vitest 不再给这个包加别名：前缀别名会把 `/ui` 和 `/main` 接到 `index.ts` 后面。`@oi/feature-library` 的 `exports` 增加 `development` 条件，指向已有源码；`default` 仍是 `dist`。没有改依赖矩阵，也没有改门禁阈值 | `packages/features/ingest/package.json`、`packages/features/library/package.json`、`vitest.config.ts` |
+| 3 | 端口、`open-document` 用例、`src/testing` 假件、`test/core`。覆盖 openedAt、幂等、写前 not_found、写回 `progressPage` 为 null 与非空、进度写返回 not_found / rejected 时复用已分配 `jobId` | 已做。另覆盖 `formatUtc(9e15)` 的 RangeError：用例 `rejected`，不写进度，不泄漏路径。用例文件不 import `@oi/feature-library`。`parseEntryId` 与 `formatOpenedAt` 由调用方传入，测试传入真实的 `parseLibraryEntryId` 与 `formatUtc`。Anvil 在 `af48113` 的全量把该文件第 6 行记成未入图的 APP → ADP | `packages/features/ingest/test/core/open-document.test.ts` |
+| 4 | `adapters/ipc-handlers.ts`、进程内记忆适配器、adapter 测试。`expose` 仍为 false。进度 `not_found` 与 `rejected` 的映射按上文。返回值与错误无绝对路径、无 `message` | 已做。写时 `not_found` 后重试仍用第一次的 `jobId`。记忆适配器不 import `@oi/contracts`，标识类型来自应用端口。Anvil 在 `af48113` 的全量把 `memory-openings.ts` 第 1 行记成未入图的 ADP → C | `packages/features/ingest/test/adapters/` |
 | 5 | 更新 README：同实例幂等，重启或新建实例不保证同一个 `jobId`，没有持久化 jobs。跑下面「测试分工」里的针对性命令。写 `docs/evidence/<PR号>/commands.md`。全量留给 Anvil | README 已写。针对性命令的退出码在证据里。全量 `pnpm test` / `pnpm run check` / pytest / e2e 未跑 | [docs/evidence/178/commands.md](../evidence/178/commands.md) |
 | 6 | Draft PR：`Refs #174`。来源核对、第 7 节选择、真机与截图属 PR-C。不评论 issue，不标 Ready，不合入 | Draft PR：https://github.com/wisdom-km/open-immerse-v2/pull/178 。正文 `Refs #174`。不评论 issue，不标 Ready，不合入 | [docs/evidence/178/commands.md](../evidence/178/commands.md) |
 
@@ -140,7 +140,7 @@ AC-11 的「浏览原文」和 DESIGN 的「进入阅读场景」由 PR-C 用已
 
 `@oi/feature-ingest`。`src/index.ts` 转出 `createOpenDocument`、失败类型、端口类型、`createIngestIpcHandlers`。`src/pure.ts` 继续 `export {}`。不导出 React。不建 `src/ui/`、`migrations/`。进程内记忆工厂放在 `adapters/`，不从桶转出，与 reader 不从桶转出 `createMemoryReaderState` 相同。
 
-依赖只有三个 workspace 包。`formatUtc`、`createUpdateProgress`、`createListLibrary`、`LibraryRepository` 的类型从 `@oi/feature-library` 的桶导入。不深导入 `src/testing` 或 adapters。ingest 自己的假仓库放在 `src/testing/`，实现查库端口；core 测试把真实的 `createUpdateProgress` 接上去，再用真实的 `createListLibrary({ view: "recent" })` 看 id。
+依赖只有三个 workspace 包。测试与 `src/testing` 从 `@oi/feature-library` 的桶导入 `formatUtc`、`createUpdateProgress`、`createListLibrary`。不深导入 `src/testing` 或 adapters。用例文件本身不引用这个桶：桶还转出适配器，§5.1 没有 application → adapters。调用方传入 `parseLibraryEntryId` 与 `formatUtc`。ingest 自己的假仓库放在 `src/testing/`，实现查库端口；core 测试把真实的 `createUpdateProgress` 接上去，再用真实的 `createListLibrary({ view: "recent" })` 看 id。记忆适配器只引用应用端口，§5.1 没有 adapters → contracts。
 
 ### 文件
 

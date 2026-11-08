@@ -6,10 +6,12 @@
   "exports": {
     ".": {
       "types": "./src/index.js",
+      "development": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./main": {
       "types": "./src/adapters/library-main.js",
+      "development": "./src/adapters/library-main.ts",
       "default": "./dist/adapters/library-main.js"
     },
     "./ui": {

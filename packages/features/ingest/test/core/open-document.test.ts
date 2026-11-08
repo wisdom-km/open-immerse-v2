@@ -1,4 +1,9 @@
-import { createListLibrary, createUpdateProgress } from "@oi/feature-library";
+import {
+  createListLibrary,
+  createUpdateProgress,
+  formatUtc,
+  parseLibraryEntryId,
+} from "@oi/feature-library";
 import { expect, it } from "vitest";
 
 import {
@@ -51,6 +56,8 @@ function harness(options?: {
   const open = createOpenDocument({
     lookup: library.lookup,
     updateProgress: createUpdateProgress(library.repository),
+    parseEntryId: parseLibraryEntryId,
+    formatOpenedAt: formatUtc,
     clock: createFixedClock(options?.times ?? [OPENED_MS, LATER_MS]),
     jobIds,
     openings,

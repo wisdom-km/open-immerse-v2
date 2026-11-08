@@ -6,4 +6,6 @@
 
 公开 API：`src/index.ts` 转出 `createOpenDocument`、`openFailure`、端口类型和 `createIngestIpcHandlers`。`src/pure.ts` 没有导出。进程内记忆是 `src/adapters/memory-openings.ts` 的 `createMemoryOpenings`，不从桶转出。`openDocument.expose` 仍为 false，不挂 `wire-ipc`。
 
+用例不引用 `@oi/feature-library`。调用方传入 `parseLibraryEntryId` 与 `formatUtc`，进度写入仍走已有的 `createUpdateProgress`。library 的桶还转出适配器，§5.1 没有 application → adapters。记忆适配器只引用应用端口，§5.1 没有 adapters → contracts。
+
 所有者：@wisdom-km。热点文件：无。

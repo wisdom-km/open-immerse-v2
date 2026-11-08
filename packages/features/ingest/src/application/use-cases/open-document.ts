@@ -1,9 +1,4 @@
 import type { JobId, LibraryEntryId } from "@oi/contracts";
-import {
-  formatUtc,
-  parseLibraryEntryId,
-  type UpdateProgress,
-} from "@oi/feature-library";
 import type { Clock, Result } from "@oi/kernel";
 
 import {
@@ -18,9 +13,21 @@ import type {
 } from "../ports/library-lookup.js";
 import type { Openings } from "../ports/openings.js";
 
+export type ParseEntryId = (value: string) => LibraryEntryId | undefined;
+
+export type FormatOpenedAt = (nowMs: number) => string | undefined;
+
+export type WriteProgress = (input: {
+  readonly id: string;
+  readonly openedAt: string;
+  readonly page: number | null;
+}) => Result<unknown, { readonly code: string }>;
+
 export type OpenDocumentDeps = {
   readonly lookup: LibraryLookup;
-  readonly updateProgress: UpdateProgress;
+  readonly updateProgress: WriteProgress;
+  readonly parseEntryId: ParseEntryId;
+  readonly formatOpenedAt: FormatOpenedAt;
   readonly clock: Clock;
   readonly jobIds: JobIdSource;
   readonly openings: Openings;
@@ -46,7 +53,7 @@ function openDocument(
   deps: OpenDocumentDeps,
   input: OpenDocumentInput,
 ): Result<OpenDocumentValue, OpenFailure> {
-  const id = parseLibraryEntryId(input.id);
+  const id = deps.parseEntryId(input.id);
   if (id === undefined) {
     return fail("not_found");
   }
@@ -54,7 +61,7 @@ function openDocument(
   if (!hit.ok) {
     return hit;
   }
-  const openedAt = readOpenedAt(deps.clock);
+  const openedAt = readOpenedAt(deps.formatOpenedAt, deps.clock);
   if (openedAt === undefined) {
     return fail("rejected");
   }
@@ -85,9 +92,12 @@ function readHit(
  * formatUtc 对 NaN / Infinity 返回 undefined。
  * 有限但超出 Date 范围的毫秒（例如 9e15）会抛 RangeError。两种都是 rejected，且不写进度。
  */
-function readOpenedAt(clock: Clock): string | undefined {
+function readOpenedAt(
+  formatOpenedAt: FormatOpenedAt,
+  clock: Clock,
+): string | undefined {
   try {
-    return formatUtc(clock.nowMs());
+    return formatOpenedAt(clock.nowMs());
   } catch (error) {
     if (error instanceof RangeError) {
       return undefined;
@@ -115,7 +125,7 @@ type FinishInput = {
 
 /** page 是本次查到的 progressPage。null 写回 null，不能另传 null 表示跳过。 */
 function finish(
-  updateProgress: UpdateProgress,
+  updateProgress: WriteProgress,
   input: FinishInput,
 ): Result<OpenDocumentValue, OpenFailure> {
   const written = updateProgress({
