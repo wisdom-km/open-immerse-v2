@@ -41,10 +41,10 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它 |  |  |
-| 2 | 只在 `docs/approvals.md` 追加 15:07 原话、所批范围、时间和登记链接，并改文末计数。然后停 |  |  |
-| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 |  |  |
-| 4 | 先做「接线前置」，再做「接线」。不在步骤 1、2 |  |  |
+| 1 | 本文件。第一笔只有它 | 已提交。只有本文件 | `2d12766c025eefbf1b33df64a7762e4433f7974d`，tree `d82da01e81782b7d894e21e68d7a9f2c792a00f5` |
+| 2 | 只在 `docs/approvals.md` 追加 15:07 原话、所批范围、时间和登记链接，并改文末计数。然后停 | 已提交。只有台账，计数当时改为 121。随后停过 | `5a9c40ea11ffdaa4ed9f42cecc921820915515a9`，tree `86a34bd706f0e86a1ee7611321822fb23a606536` |
+| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 | Forge 计划审查 PASS，PR #188 评论 [6734534945](https://github.com/wisdom-km/open-immerse-v2/pull/188#issuecomment-6734534945)。Wisdom 2026-11-09 15:20 批准实施，Issue #174 评论 [6734546327](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6734546327)。台账另有一笔，计数改为 122 | PASS 不代替 15:20。台账提交 `80c7f2b56cfaa41ea71c94315e58df31dbb1ae56`，tree `4de3e3d9bad0ae7da5f9d5d4cca7e350a5cc6124` |
+| 4 | 先做「接线前置」，再做「接线」。不在步骤 1、2 | 前置 `e299993c753f4f28ffde9d7a4e696825812e98ff`（tree `06b8a236b200200441eca464796b996062cff23b`）只改 `accept-result.ts` 与 `accept-result.test.ts`。跳过 `__proto__` 与 `stack`。该文件 5 通过。接线 `3e361b59e5930caadfa33c561776eedf18fc8894`（tree `59cf125536fb840298a72fc9d012cb4c462efc85`）：四条 `expose` 改为 true，正式 codegen，`createLibraryMain` 同一次打开建一张表，失败路径返回 `handler_threw`。规格 `4077a531dac017a25f5b23e4658749bb87372c7f`（tree `079cdcf70bea1e4597aa2e90b156ca7599e81151`）。类型修复 `26424591c15197227aabc7e75e86707e17a570c5`（tree `7ae992934fa2538718871e39c489b41f5f2798f9`）：生成的 `IpcJsonSchema` 补 `minimum` 与 `maximum`，再跑 codegen；`ipc-router.test.ts` 的公开通道名单跟上这四条。`09.md` 第 23 行同时把「先核代际还是先查库」改成「先查表再查库」，重复登记与崩溃后清表不动。非锁文件在该 tip 上是 1077 行，超过 600。没有写 `G12:` | 全量只跑在 `26424591c15197227aabc7e75e86707e17a570c5`。`check` 在 G12 退出码 1，此前各项已走到 `check-pr-size`。`codegen` 与随后的 `git diff --exit-code` 退出码 0。Vitest 171 个文件，723 通过，3 跳过，0 失败。这 3 个跳过是 G9 detect，停在 `phase=binary`，因为 `GITLEAKS_BIN` 未设置，不算具名 G9 通过。`check-docs` 与 `check-arch-graph` 退出码 0。Python：ruff check、ruff format、pyright、lint-imports 退出码 0，pytest 181 通过。回填本表的提交不再跑全量 |
 
 ## 接线前置
 
@@ -170,7 +170,7 @@ desktop UI、`oi-asset://`、CSP、Range、`ingest.openDocument` 与 `setZoom` �
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：本两笔无。实现 tip 的命令记录在步骤 4 之后再写。
+- `docs/evidence/<PR号>/`：本两笔无。实现 tip `26424591c15197227aabc7e75e86707e17a570c5` 的命令计数写在步骤 4 的证据列。回填本表的提交不再跑全量。
 
 ## 自检
 
