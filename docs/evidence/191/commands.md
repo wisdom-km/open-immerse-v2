@@ -39,3 +39,19 @@ Forge 有条件 PASS：[6739982998](https://github.com/wisdom-km/open-immerse-v2
 ## 调用链
 
 `ingest.openDocument` 仍走已有的 `createOpenDocument`。它读 `progressPage`，写 `openedAt` 和刚读到的页，记一份进程内 `jobId`。不提交解析。
+
+## 21:06 放行
+
+Wisdom 原话在 `docs/approvals.md` 2026-11-09 21:06 那一行。来源：[6740803796](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6740803796)。
+
+`85c002964c96ca4c5b4110114bf107a997a7bdf8`（tree `01f14768b3bd28b136051c49fa03c0f3b22d7ea4`）是空提交。说明正文一行：
+
+`G12: 计划与证据文档，加上不在生成物白名单里的 oi-api.d.ts、registry.generated.ts、oi.generated.ts，以及 expose openDocument 的接线与测试。`
+
+该提交上 `node tools/check-pr-size/check.mjs --base 631859c440320328164f6b3ecc0076dd7ca7ea94` 退出码 0：`check-pr-size: 785 non-generated lines`。
+
+`52c51c798d379ea1692e87238a8ba851554923d6`（tree `cd31e275c3d4b42416a1e6a9e3d58cedcf2e4643`）只追加 21:06 原话，计数从 126 改为 127。再量退出码 0：`check-pr-size: 786 non-generated lines`。PR #190 已写成 127。后合入的一方用 merge commit，把计数改为 128。
+
+Windows 修复仍在历史上：`92730a1312ac7e843a3dfd6ffd5a68a4763ee91c`。`apps/desktop/test/open-document-wiring.test.ts` 仍先调用 `will-quit` 再 `rmSync`。本机 Linux 跑 `corepack pnpm exec vitest run apps/desktop/test`：21 个文件，80 通过，0 失败，类型错误 0。没有在 Windows 上复跑。
+
+含本节的 `check-pr-size` 是 802。全量 `corepack pnpm run check` 跑在含本节的那一笔上。那一笔的 SHA 与 tree 写在下一笔，避免写进自己的正文。
