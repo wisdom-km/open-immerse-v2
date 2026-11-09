@@ -86,7 +86,8 @@
 | 新建 `packages/features/library/src/application/library-open-port.ts` | 实现上面的端口。`decimalJobId` 把十进制字符串交给已有的 `parseJobId`，不写 jobs。错误只留 `code`，不留 `message`，不留 `originalPath`。desktop 不值导入 `@oi/contracts`：§5.1 没有 MAIN → C | 无 | +80 以内 |
 | 新建 `apps/desktop/src/main/open-document-wiring.ts` | ingest 侧装配。`Openings` 与 `JobIdSource` 的闭包在这里。`JobIdSource` 只产出十进制字符串并调用端口的 `decimalJobId`。调用已导出的 `createOpenDocument` 与 `createIngestIpcHandlers`。查找只把端口的 `progressPage` 交进去 | 无 | ≤90 |
 | `library-wiring.ts` | `startLibrary` 把上面那个文件返回的一条 `ingest.openDocument` 并入 map。不在这里写 `Openings`、`JobIdSource` 或 `createOpenDocument` | 174 | +15 以内 |
-| `apps/desktop/package.json` | 只加依赖 `@oi/feature-ingest`。不改 `build` 脚本。Electron 的默认条件仍指向 `dist`；本批的 `pnpm check` 不跑这条脚本。若 desktop 的 `tsc` 或依赖检查必须先有 `dist`，才把编译 ingest 加回脚本，并在实际列写明 | 23 | +2 以内 |
+| `apps/desktop/package.json` | 加依赖 `@oi/feature-ingest`。`build` 在 library 的 `tsc` 之后加上 `tsc -p ../../packages/features/ingest/tsconfig.build.json`。20:27「不改 build 脚本」的前提是接线不必先有 `dist`。Forge 在 `ca29bca` 上证明没有这份 `dist` 时，生产入口报 `ERR_MODULE_NOT_FOUND`。该决定作废 | 23 | 依赖 +1，build 脚本加一段 tsc |
+| 新建 `packages/features/ingest/tsconfig.build.json` | 照 library 的 `tsconfig.build.json`。`outDir` 是 `dist`，`rootDir` 是 `src`，`include` 是 `src/**/*.ts`。让编译后的 `library-wiring.js` 解析到 `@oi/feature-ingest/dist/...` | 无 | 与 library 同形 |
 | `packages/features/ingest/package.json` | 包根 exports 指向已有的 `src/index.ts`。另加两条子路径：`./open-document` 指向已有的用例文件，`./ipc` 指向已有的 `ipc-handlers.ts`。desktop 只导入这两条，不导入包根：包根会跟进 domain，§5.1 没有 MAIN → DOM。不新出口 `createMemoryOpenings` | 11 | +24 以内 |
 | `tools/check-deps/tsconfig.paths.json` | 增加包根和上面两条子路径，都指向已有源文件 | 25 | +12 以内 |
 | 新建 `apps/desktop/test/open-document-wiring.test.ts` | 见测试 | 无 | +160 以内 |
@@ -101,7 +102,7 @@ G18 只数 `packages/features/<切片>/src/`（[check.mjs](../../tools/check-one
 
 G12 估计：上表手写增量约 400 行，codegen 约 80 行，本计划文件与台账另计。`check-pr-size` 用 `base...HEAD`，实现提交上去之后会把本文件一并计入。合计可能超过 600。超过就停，报告数字，不预写 `G12:`，不手改生成物，也不把 `expose` 拆到另一次合入。先例是 [docs/approvals.md](../approvals.md) 第 130 行：`expose` 为 true 与 handler 同一次合入。
 
-与 Draft PR #190（`feature/oi-asset-protocol-174`）同改 `library-main.ts`、`library-wiring.ts`，且两边台账计数都写成 126。后合入的一方用 merge commit（不 rebase、不 force-push）解决冲突，并把计数改为 127。这句写进 PR 描述。
+与 PR #190 同改 `library-main.ts`、`library-wiring.ts`。#190 已 squash 合入 main `b58c8f8807322018c1b4adc898ff6b9fd1aa2ad6`，在 125 条上加了 19:45 与 20:48，写成 127。本 PR 加了 20:06 与 21:06，也写成 127。四行都保留，125 + 4 = 129。20:27 写的 127，以及后来推算的 128，都作废。合入用 merge commit，不 rebase，不 force-push。21:06 原话不动；范围栏里的 128 是推算，改为 129。
 
 ## (d) 测试
 
@@ -143,7 +144,8 @@ Box 与真机：
 | 1 | 本文件。第一笔只有它 | `a4c29c3` 只有本文件 | 该提交 |
 | 2 | 只在 `docs/approvals.md` 追加 20:06 原话，并把 125 改为 126。然后停 | `5ffc1f3`。台账 125 改为 126 | `docs/approvals.md` |
 | 3 | Forge 亲读步骤 1 与步骤 2。有条件 PASS 见评论 6739982998。本笔只改本文件，写入三条必改 | `47f416f` 只改本文件。三条必改已写入。build 脚本未改 | 评论 6739982998 |
-| 4 | 按改正后的「改哪些文件」接线。不在步骤 1、2、3 | `058f881` 接线，`724f761` 修载荷类型，`fb075ec` 把三处仍写「未暴露」的测试改成已暴露。`open-document-wiring.ts` 79 行。`library-wiring.ts` +14/−1。全量 check 在 `724f761` 停在 G12：722 行。测试对齐后 `check-pr-size` 是 731。没有写 `G12:`。停点 7 命中，不再往下改行数 | `docs/evidence/191/commands.md` |
+| 4 | 按改正后的「改哪些文件」接线。不在步骤 1、2、3 | `058f881` 接线，`724f761` 修载荷类型，`fb075ec` 把三处仍写「未暴露」的测试改成已暴露。`open-document-wiring.ts` 79 行。`library-wiring.ts` +14/−1。全量 check 在 `724f761` 停在 G12：722 行。测试对齐后 `check-pr-size` 是 731。没有写 `G12:`。停点 7 命中，不再往下改行数。N1：`library-open-port.ts` 87 行，预算 +80。`open-document-wiring.test.ts` 181 行，预算 +160 | `docs/evidence/191/commands.md` |
+| 5 | 按 Forge 评论 6741920775 修 B1：补 ingest 的 `tsconfig.build.json`，desktop `build` 在 library 之后编译 ingest。用 merge commit 合入 main `b58c8f8`。台账四行按时间保留，计数改为 129。新测试里 `startLibrary` 的第二个参数是 `() => undefined`。不改规格，不让 `openDocument` 提交解析 | 本笔只改本文件 | 该提交 |
 
 ## 决策记录（Decision Log）
 
@@ -154,14 +156,17 @@ Box 与真机：
 | 调用顺序按 (b) | 第 1 步写回的是它刚刚读到的页，并且在它的 Promise 落实前写完。第 4 步在这之后 | 2026-11-09 | 本计划，依据 20:06 要求的顺序 |
 | ingest 装配单独放在 `open-document-wiring.ts`；`library-wiring.ts` 只并入一条通道 | 一个文件不混两个切片的装配。文件不超过 90 行，`library-wiring.ts` 不超过 +15 | 2026-11-09 20:27 | Forge 排序，非业主决定。评论 6739982998 |
 | 02-05 第 30 行同时写明路线读取与按路线提交作业仍未实现、本批不触发 | 避免读者以为 04-02 已落地。不改 04-02、07-12、AC-91 的原句 | 2026-11-09 20:27 | Forge 排序，非业主决定。评论 6739982998 |
-| 与 PR #190 冲突时后合者用 merge，计数改为 127 | 两边都改 `library-main.ts`、`library-wiring.ts`，台账都写成 126。不 rebase，不 force-push | 2026-11-09 20:27 | Forge 排序，非业主决定。评论 6739982998 |
-| 不改 `apps/desktop/package.json` 的 build 脚本 | 该改动不是接线所必需。只加 workspace 依赖 | 2026-11-09 20:27 | Forge 排序，非业主决定。评论 6739982998 |
+| 与 PR #190 冲突时后合者用 merge，计数改为 127 | 两边都改 `library-main.ts`、`library-wiring.ts`，台账都写成 126。不 rebase，不 force-push。这一行的 127 已被 129 那一行取代 | 2026-11-09 20:27 | Forge 排序，非业主决定。评论 6739982998 |
+| 不改 `apps/desktop/package.json` 的 build 脚本 | 该改动不是接线所必需。只加 workspace 依赖。这一行已被下一行取代 | 2026-11-09 20:27 | Forge 排序，非业主决定。评论 6739982998 |
+| 编译 ingest，desktop `build` 在 library 之后跑它的 tsc | 20:27 的前提是接线不必先有 `dist`。`ca29bca` 上生产入口找不到 `@oi/feature-ingest/dist/...`。照 library 补 `tsconfig.build.json` | 2026-11-09 22:00 | Forge 精确 tip 审查。评论 6741920775 |
+| 台账合并后是 129，不是 128 | main 加 19:45 与 20:48，本 PR 加 20:06 与 21:06。125 + 4 = 129。21:06 原话不动。范围栏里的 128 是推算 | 2026-11-09 22:00 | Forge 精确 tip 审查。评论 6741920775 |
+| N1 实际行数 | `library-open-port.ts` 87 行，预算 +80。`open-document-wiring.test.ts` 181 行，预算 +160 | 2026-11-09 22:00 | Forge 精确 tip 审查 N1。评论 6741920775 |
 
 批次 D 的界面、配置存储与降级 chip 不在本文件的实施范围内。同一条评论的另外两句也不在本文件。
 
 ## 不改
 
-`open-document.ts`、ingest 的 `index.ts` 与其余 `src/**`、library 的 `index.ts`、jobs 的 `index.ts`、contracts 的 `index.ts`、`import-pdf.ts`、两个页码用例、`reading-generation-table.ts`、`composition-root.ts`、`slots.ts`、`ipc-router.ts`、`pass-through.ts`、`accept-result.ts`、`apps/desktop/package.json` 的 build 脚本、CSP、Range、`oi-asset://`、`setZoom`、`getZoom`、`reader.setPage`、`session.save`、`session.restore`、settings、safeStorage、密钥、RULES、CI、门禁、DESIGN、原则、`docs/arch/04-02.md`、`docs/arch/07-12.md`、`docs/arch/09.md` 第 12 行、`docs/arch/05-01.md`、`parse-capability-surface.test.ts` 的禁止名单。
+`open-document.ts`、ingest 的 `index.ts` 与其余 `src/**`、library 的 `index.ts`、jobs 的 `index.ts`、contracts 的 `index.ts`、`import-pdf.ts`、两个页码用例、`reading-generation-table.ts`、`composition-root.ts`、`slots.ts`、`ipc-router.ts`、`pass-through.ts`、`accept-result.ts`、CSP、Range、`oi-asset://`、`setZoom`、`getZoom`、`reader.setPage`、`session.save`、`session.restore`、settings、safeStorage、密钥、RULES、CI、门禁、DESIGN、原则、`docs/arch/04-02.md`、`docs/arch/07-12.md`、`docs/arch/09.md` 第 12 行、`docs/arch/05-01.md`、`parse-capability-surface.test.ts` 的禁止名单。
 
 ## 还没核实
 
