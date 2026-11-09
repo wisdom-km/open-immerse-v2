@@ -34,10 +34,10 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它 |  |  |
-| 2 | 只在 `docs/approvals.md` 追加 12:04 原话、第 10 节原句全文、时间和登记链接，并改文末计数。然后停 |  |  |
-| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 |  |  |
-| 4 | 按「行为」与「原句对照」实现。规格句子按原句在同一次实现里更新。不在步骤 1、2 |  |  |
+| 1 | 本文件。第一笔只有它 | `13d16eb967d376711effd4f4adaaf98010a9d9d7` 只有本文件，+222 | 该提交 |
+| 2 | 只在 `docs/approvals.md` 追加 12:04 原话、第 10 节原句全文、时间和登记链接，并改文末计数。然后停 | `1defc1a00f400315c5bafdbcfcd355e5850bfaca` 只有 `docs/approvals.md`，+2/-1 | 该提交 |
+| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 | 2026-11-09 12:12 Asia/Shanghai PASS。评论 [6732021577](https://github.com/wisdom-km/open-immerse-v2/pull/184#issuecomment-6732021577) | 该评论 |
+| 4 | 按「行为」与「原句对照」实现。规格句子按原句在同一次实现里更新。不在步骤 1、2 | `9f9eabe2c797ec796f9c5ace546930ecd3017588` 只增加代际表、bind / revoke、页码 command 的查表参数、三处规格句子、changelog 一行和 manifest 的四条唯一替换。四个热点与装配文件 diff 为 0。`atCeiling` 只给上界测试把一条代际放在安全整数上界，生产调用不传 | [commands.md](../evidence/184/commands.md) |
 
 ## 原句对照
 
@@ -215,8 +215,8 @@ F-08 的原句不在本文件的实施范围内。它的登记不能用来改本
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：本两笔无。实现阶段再写。
+- `docs/evidence/184/commands.md`：实现提交 `9f9eabe2c797ec796f9c5ace546930ecd3017588` 的本机全量。回填本表的提交不含这次全量。
 
 ## 自检
 
-- [ ] 影响 arch / prd 吗？影响。步骤 1 和步骤 2 不改。步骤 4 按原句只更新三处句子、changelog 一行和 manifest 的唯一替换。
+- [x] 影响 arch / prd 吗？影响。步骤 4 只更新了 `docs/arch/02-05.md`、`docs/arch/09-01.md`、`docs/prd/08.md`，加了 changelog 一行和 manifest 的唯一替换。compare-spec-bytes 与 check-docs 在 `9f9eabe` 上退出码都是 0。
