@@ -49,10 +49,11 @@
 | 2 | 只在 `docs/approvals.md` 追加 19:45 原话、所批范围、时间和登记链接，并把文末批准数从 125 改为 126。然后停 | `2e70df084793f57e8b3816f9b230b633f072119b`，tree `2dba7d765962fd74c315d3058b4a7f0554a1a826`。只改 `docs/approvals.md`。批准数 126 | 无 |
 | 3 | Forge 亲读步骤 1 与步骤 2。有条件 PASS 要求先把主机名规范化停点和可测性写进本文件。那一笔即视为 PASS，之前没有步骤 4 | 评论 [6739448337](https://github.com/wisdom-km/open-immerse-v2/pull/190#issuecomment-6739448337)。补充 `22012818ce48525d529402623243f9e6d47b326a`，tree `cd97a8a0d1792e5557ec718032ba5493da9be460`。只改本文件。这一笔即 PASS | 无 |
 | 4 | 按「行为」实现。不在步骤 1、2 | 实现 `94e5ac2f54852534d2b7f5557b52f8fd133a6a4d`，tree `fab6c6c43e192139aabfd5ae2781f6def4cb4c51`。类型修正 `1dddc5a058c8823bbedef425083966ad7bfdab32`，tree `1c119730674fe8af9b1e307707341aab16c60912`。全量在这个 tip。`protocol.handle` 注入。`library-wiring.ts` +15。四个热点和 `index.ts` 的 diff 是 0。Electron 45.2.1 的 main 进程 `net.fetch("oi-asset://1")` 时，`protocol.handle` 收到 `oi-asset://0.0.0.1/`，状态 404。没有改解析去兼容 IPv4，也没有改 URL。合法 `assetId` 在这次真实请求里不是 200。停在这里 | [docs/evidence/190/commands.md](../evidence/190/commands.md) |
+| 5 | 按 20:48 把 URL 改成 `oi-asset://asset/<assetId>`。主机名必须是 `asset`，路径恰好一段。其他一律 404 且体为空。只改 [docs/arch/09.md](../arch/09.md) 第 16、22 行的 URL 形式，加 changelog 一行和 manifest 的唯一替换。Electron 里对合法、未登记、已撤销各 fetch 一次。收到的 URL 再被改写，或合法 id 不是 200，就停，不加兼容 |  |  |
 
 ## 目标
 
-用 bind 成功写在当前行上的十进制 `assetId`，读该条目目录里的 `source.pdf`。URL 仍是 `oi-asset://<assetId>`。renderer 不提交路径，也不经本协议提交字节。
+用 bind 成功写在当前行上的十进制 `assetId`，读该条目目录里的 `source.pdf`。步骤 4 的 URL 是 `oi-asset://<assetId>`。2026-11-09 20:48 起，步骤 5 改为 `oi-asset://asset/<assetId>`。renderer 不提交路径，也不经本协议提交字节。
 
 查找只用这一张已有的代际表，不另建资产登记表，不把 `assetId` 当路径，也不把文献 id 放进 URL。当前行没有这个 `assetId` 时，未登记、已撤销、旧代际是同一种结果：HTTP 404。响应不写是哪一种。
 
@@ -64,7 +65,9 @@
 
 ### URL
 
-用 `new URL`。协议必须是 `oi-asset:`。不允许用户名、密码、端口、查询或片段。路径只允许空字符串或 `/`。主机名是 `assetId`。主机名或原始 URL 里出现 `..`，或大小写不限的 `%2e%2e`，直接 404，不调用端口。主机名不是当前行上的那个十进制字符串时也是 404。不把 `01` 收成 `1`。不接受文献 id。
+步骤 4 把主机名当成 `assetId`，路径只允许空字符串或 `/`。Electron 45.2.1 把 `oi-asset://1` 收成 `oi-asset://0.0.0.1/`，状态 404。见下面的实测。步骤 5 不再用那个形式。
+
+步骤 5 用 `new URL`。协议必须是 `oi-asset:`。主机名必须恰好是 `asset`。路径必须恰好一段 `/<assetId>`，`assetId` 是去掉开头斜杠后的那一段，非空，里面没有斜杠。不允许用户名、密码、端口、查询或片段。末尾多一个斜杠、空 id、多一段、别的主机名、纯数字主机名、`oi-asset://0.0.0.1/`，都是 404，体为空。原始 URL 里出现 `..`，或大小写不限的 `%2e%2e`，直接 404，不调用端口。路径段不是当前行上的那个十进制字符串时也是 404。不把 `01` 收成 `1`。不接受文献 id。不把 IPv4 形式改写成 `assetId`。`assetId` 仍是表里那个十进制字符串，格式不改。
 
 ### 端口
 
@@ -101,6 +104,7 @@
 | `%2e%2e` | 原始 URL 含 `%2e%2e` 或 `%2E%2E`。不调用端口 |
 | 符号链接指向目录外 | `source.pdf` 指到条目目录外，或条目目录本身指到外面。沿用 `protocol-response.test.ts` 的 `symlinkSync(..., "junction")` |
 | 非 PDF | 文件名仍是 `source.pdf`，前 5 字节不是 `%PDF-`。含一段 SVG 字节。不把 PNG / JPEG / GIF / WebP 扩成这一类的放行类型 |
+| 旧 URL 与多段路径 | 步骤 5。`oi-asset://1`、`oi-asset://0.0.0.1/`、别的主机名、`oi-asset://asset/`、`oi-asset://asset/1/extra`、查询或片段。都不调用成功路径 |
 
 副本被删掉，同样 404。这是 [docs/arch/09.md](../arch/09.md) 第 21 行已写的「副本不可读」，用删除文件来做，不用 `chmod 000`。
 
@@ -155,9 +159,11 @@
 
 在真实 Electron 的 main 进程里，用 `net.fetch` 或 `session.fetch` 请求一次 `oi-asset://<真实 assetId>`。不开窗口，不涉及 CSP。要核实两件事：`protocol.handle` 实际收到的 URL，以及合法 `assetId` 是否返回 200。
 
-原因：Chromium 对 `standard: true` 的 scheme 可能把纯数字 host 规范化成 IPv4 形式，例如 `oi-asset://1` 变成 `oi-asset://0.0.0.1/`。这一点还没核实。Node 的 `new URL` 对非特殊方案不会这样做，所以上面的纯函数测试发现不了。
+原因：Chromium 对 `standard: true` 的 scheme 可能把纯数字 host 规范化成 IPv4 形式。Node 的 `new URL` 对非特殊方案不会这样做，所以纯函数测试发现不了。
 
-如果确实被规范化：停下来报告。不要在解析里兼容 IPv4 形式，也不要改 URL 形式。改规格必须另外请 Wisdom 批准，[docs/arch/09.md](../arch/09.md) 第 16、22 行都写着 `oi-asset://<assetId>`。
+实测：Electron 45.2.1，`xvfb-run -a`，不开窗口。`registerAppScheme` 之后导入合成 PDF 并 bind，`net.fetch("oi-asset://1")`。`protocol.handle` 的 `request.url` 是 `oi-asset://0.0.0.1/`，状态 404。证据在 [docs/evidence/190/commands.md](../evidence/190/commands.md)。解析没有兼容 IPv4。
+
+20:48 批准改 URL，不批准在解析里认 `0.0.0.1`。步骤 5 再测 `oi-asset://asset/<真实 assetId>`。收到的 URL 若再被改写，或合法 id 不是 200，停，不加兼容。
 
 这一步可以在实施环境、Box 的 Electron 或 CI 的 desktop-e2e 里做。环境起不了真实 Electron 时，证据写「还没核实」，交给 Box，不把未跑的结果写成 200。
 
@@ -175,9 +181,9 @@
 
 ## 不改
 
-`composition-root.ts`、`slots.ts`、`ipc-router.ts`、`pass-through.ts`、`index.ts`、`csp.ts`、contracts、codegen、四个 command 工厂、`reader`、desktop UI、settings、safeStorage、密钥、RULES、CI、门禁、[docs/spec-changelog.md](../spec-changelog.md)、`tools/compare-spec-bytes/manifest.json`。不改 [docs/arch/09.md](../arch/09.md) 第 23 行。重复登记是否沿用同一个 `assetId`、重载或崩溃后是否清表，继续不写成签名。
+`composition-root.ts`、`slots.ts`、`ipc-router.ts`、`pass-through.ts`、`index.ts`、`csp.ts`、contracts、codegen、四个 command 工厂、`reader`、desktop UI、settings、safeStorage、密钥、RULES、CI、门禁。不改 [docs/arch/09.md](../arch/09.md) 第 23 行。重复登记是否沿用同一个 `assetId`、重载或崩溃后是否清表，继续不写成签名。
 
-步骤 1 和步骤 2 也不改这些文件。实现阶段同样不改。规格句子已经描述第三类 PDF。若文档门禁因此失败，停，不自行改规格。
+步骤 5 只改第 16 行和第 22 行里的 URL 形式，从 `oi-asset://<assetId>` 改成 `oi-asset://asset/<assetId>`。同一次加 [docs/spec-changelog.md](../spec-changelog.md) 一行，以及 [tools/compare-spec-bytes/manifest.json](../../tools/compare-spec-bytes/manifest.json) 的唯一替换。不改基线 `f8d5d01`，不改 `compare.mjs`。这两处之外的规格句子不动。
 
 ## G12
 
@@ -186,7 +192,7 @@
 ## 还没核实
 
 - `standard: true` 是否必要。见停点。本批没有跑 Electron 45.2.1 去核对「`registerSchemesAsPrivileged` 只能调用一次」。
-- 纯数字 `assetId` 在 `standard: true` 下会被收成 IPv4。Electron 45.2.1 main 进程里，`net.fetch("oi-asset://1")` 使 `protocol.handle` 收到 `oi-asset://0.0.0.1/`，状态 404。见证据。解析没有兼容这种形式，URL 形式也没改。要改规格必须另外请 Wisdom 批准。
+- 纯数字主机名会被收成 IPv4。见「主机名规范化」的实测。20:48 已批准改成 `oi-asset://asset/<assetId>`。步骤 5 的 Electron 结果在跑完之前不写成 200。
 - 现行 CSP 能否读到这份 PDF。见停点。本批不打开窗口，所以这项保持未核实。
 - PDF.js 6.5.438 不经 `blob:` worker 能否打开 `oi-asset://`。见停点。
 - 第二个 `createLibraryMain` 仍是空表。这不能代替杀掉 OS 进程再拉起。本批不把「没杀进程」写成重启已验证，也不为协议把代际表入库。
@@ -202,6 +208,7 @@
 | 窗口级 CSP、`standard` 与 PDF.js 不纳入本批测试 | 19:45 不做 UI，也不改 CSP。这三项要开窗口。不够用是停点，不是本批的放宽 | 2026-11-09 | 本计划，依据 19:45 与 [docs/arch/09.md](../arch/09.md) 第 25、32 行 |
 | 有条件 PASS：补上主机名规范化停点和 `protocol.handle` 注入之后，按 19:45 进入步骤 4。非 GET / HEAD 仍是 405。PDF 响应仍不带页面 CSP | 审查接受这两项计划选择。纯数字 host 若被收成 IPv4，不在解析里兼容，也不改 URL。链接：[6739448337](https://github.com/wisdom-km/open-immerse-v2/pull/190#issuecomment-6739448337)。GitHub `created_at` 是 `2026-11-09T11:56:22Z` | 2026-11-09 19:56 | Forge 计划审查，非业主决定 |
 | 主机名被收成 IPv4 之后停住 | Electron 45.2.1 的 main 进程 `net.fetch("oi-asset://1")`，`protocol.handle` 收到 `oi-asset://0.0.0.1/`，响应 404。不在解析里兼容，也不改 URL。改 [docs/arch/09.md](../arch/09.md) 第 16、22 行必须另外请 Wisdom 批准 | 2026-11-09 | 实施时按停点停下，非业主决定 |
+| 「按推荐 A：改成 oi-asset://asset/<assetId>，在 PR190 里同步改 09.md 两句规格，并在 Electron 里实测合法 id 返回 200」 | 停点已经测到纯数字主机名被收成 IPv4。新形式把 `assetId` 放在路径段，主机名固定为 `asset`。只改 09.md 第 16、22 行的 URL 形式。链接：[6740451210](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6740451210)。GitHub `created_at` 是 `2026-11-09T12:48:50Z` | 2026-11-09 20:48 | Wisdom |
 
 批次 D 的原则检查由 Loom 做。本文件不写 UI，也不代替那份检查。Ready、合入和发版不在本文件的范围内。
 
@@ -211,4 +218,4 @@
 
 ## 自检
 
-- [x] 影响 arch / prd 吗？本两笔不影响。实现阶段也不改 PRD、ARCHITECTURE、changelog 或 manifest。规格已经写了第三类 PDF 的 404 与 `nosniff`。
+- [x] 影响 arch / prd 吗？步骤 1、2 不影响。步骤 4 也不改 PRD、ARCHITECTURE、changelog 或 manifest。步骤 5 按 20:48 只改 [docs/arch/09.md](../arch/09.md) 第 16、22 行的 URL 形式，并加 changelog 一行与 manifest 的唯一替换。不改 PRD。404 与 `nosniff` 的其余句子不动。
