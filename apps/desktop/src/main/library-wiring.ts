@@ -3,6 +3,7 @@ import {
   BrowserWindow,
   dialog,
   Menu,
+  protocol,
   type MenuItemConstructorOptions,
 } from "electron";
 import { platform } from "node:process";
@@ -10,6 +11,11 @@ import { platform } from "node:process";
 import { createLibraryMain, type LibraryMain } from "@oi/feature-library/main";
 
 import type { IpcCommandHandler } from "./ipc/ipc-router.js";
+import { createReadingAssetPath } from "./reading-asset-path.js";
+import {
+  handleReadingAssetProtocol,
+  type ReadingAssetRegistrar,
+} from "./reading-asset-protocol.js";
 import {
   libraryCommandChannels,
   type LibraryCommandChannel,
@@ -26,6 +32,7 @@ import {
 
 export function startLibrary(
   dataRoot: string,
+  register: ReadingAssetRegistrar = registerReadingAsset,
 ): ReadonlyMap<string, IpcCommandHandler> {
   const main = createLibraryMain({
     dataRoot,
@@ -36,6 +43,7 @@ export function startLibrary(
       },
     },
   });
+  handleReadingAssetProtocol(createReadingAssetPath(main, dataRoot), register);
   app.on("will-quit", () => {
     main.close();
   });
@@ -50,6 +58,13 @@ function withOpenDocument(
   const merged = new Map(commands);
   merged.set(openDocumentChannel, openDocumentHandler(main));
   return merged;
+}
+
+function registerReadingAsset(
+  scheme: string,
+  handler: Parameters<ReadingAssetRegistrar>[1],
+): void {
+  protocol.handle(scheme, handler);
 }
 
 function pickPdf():

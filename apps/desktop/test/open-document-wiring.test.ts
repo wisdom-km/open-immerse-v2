@@ -38,7 +38,7 @@ it("writes recent after open and does not put an older page back", async () => {
   const source = path.join(root, "Paper.pdf");
   writeFileSync(source, "%PDF-1.4\n% paper\n");
   picked.files = [source];
-  const handlers = startLibrary(path.join(root, "data"));
+  const handlers = startLibrary(path.join(root, "data"), () => undefined);
   const quit = picked.onQuit.splice(0);
   try {
     const id = await importedId(handlers);
@@ -71,7 +71,7 @@ it("writes recent after open and does not put an older page back", async () => {
 });
 
 it("returns handler_threw when the library cannot be opened", async () => {
-  const handlers = startLibrary("");
+  const handlers = startLibrary("", () => undefined);
   const result = await call(handlers, openDocumentChannel, {
     id: "ab".repeat(32),
   });

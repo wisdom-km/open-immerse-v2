@@ -65,6 +65,7 @@ export type { LibraryOpenPort } from "../application/library-open-port.js";
 export type LibraryMain = {
   readonly handlers: LibraryIpcHandlers;
   readonly reading: ReadingIpcHandlers;
+  readonly locate: (assetId: string) => string | undefined;
   readonly openPort: LibraryOpenPort | null;
   readonly clock: LibraryClock;
   readonly close: () => void;
@@ -80,6 +81,9 @@ export function createLibraryMain(options: LibraryMainOptions): LibraryMain {
     return {
       handlers: unavailableHandlers(),
       reading: unavailableReading(),
+      locate() {
+        return undefined;
+      },
       openPort: null,
       clock: options.clock,
       close() {
@@ -91,6 +95,7 @@ export function createLibraryMain(options: LibraryMainOptions): LibraryMain {
   return {
     handlers: built.handlers,
     reading: built.reading,
+    locate: built.locate,
     openPort: built.openPort,
     clock: options.clock,
     close: closeOnce(opened.storage),
@@ -128,11 +133,12 @@ function migrationsDirectory(): string {
 function handlersFor(
   storage: AppStorage,
   options: LibraryMainOptions,
-): Pick<LibraryMain, "handlers" | "reading" | "openPort"> {
+): Pick<LibraryMain, "handlers" | "reading" | "locate" | "openPort"> {
   const repository = createSqliteLibraryRepository(storage);
   const files = createFsPdfFileStore({
     layout: dataRootLayout(options.dataRoot),
   });
+  const reading = readingHandlers(repository);
   return {
     handlers: createLibraryIpcHandlers({
       importPdf: createImportPdf({
@@ -149,22 +155,28 @@ function handlersFor(
       relocateSource: createRelocateSource({ repository, files }),
       pickPdf: options.pickPdf,
     }),
-    reading: readingHandlers(repository),
+    reading: reading.reading,
+    locate: reading.locate,
     openPort: createLibraryOpenPort(repository),
   };
 }
 
 function readingHandlers(
   repository: LibraryRepository & LibraryProgressPageUpdate,
-): ReadingIpcHandlers {
+): Pick<LibraryMain, "reading" | "locate"> {
   const table = createReadingGenerationTable();
   const getProgressPage = createGetProgressPage(repository);
   const setProgressPage = createSetProgressPage(repository);
   return {
-    bindReadingAsset: createBindReadingAssetCommand(getProgressPage, table),
-    revokeReadingAsset: createRevokeReadingAssetCommand(table),
-    getProgressPage: createGetProgressPageCommand(getProgressPage, table),
-    setProgressPage: createSetProgressPageCommand(setProgressPage, table),
+    reading: {
+      bindReadingAsset: createBindReadingAssetCommand(getProgressPage, table),
+      revokeReadingAsset: createRevokeReadingAssetCommand(table),
+      getProgressPage: createGetProgressPageCommand(getProgressPage, table),
+      setProgressPage: createSetProgressPageCommand(setProgressPage, table),
+    },
+    locate(assetId) {
+      return table.locate(assetId);
+    },
   };
 }
 
