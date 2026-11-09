@@ -145,7 +145,7 @@ Box 与真机：
 | 2 | 只在 `docs/approvals.md` 追加 20:06 原话，并把 125 改为 126。然后停 | `5ffc1f3`。台账 125 改为 126 | `docs/approvals.md` |
 | 3 | Forge 亲读步骤 1 与步骤 2。有条件 PASS 见评论 6739982998。本笔只改本文件，写入三条必改 | `47f416f` 只改本文件。三条必改已写入。build 脚本未改 | 评论 6739982998 |
 | 4 | 按改正后的「改哪些文件」接线。不在步骤 1、2、3 | `058f881` 接线，`724f761` 修载荷类型，`fb075ec` 把三处仍写「未暴露」的测试改成已暴露。`open-document-wiring.ts` 79 行。`library-wiring.ts` +14/−1。全量 check 在 `724f761` 停在 G12：722 行。测试对齐后 `check-pr-size` 是 731。没有写 `G12:`。停点 7 命中，不再往下改行数。N1：`library-open-port.ts` 87 行，预算 +80。`open-document-wiring.test.ts` 181 行，预算 +160 | `docs/evidence/191/commands.md` |
-| 5 | 按 Forge 评论 6741920775 修 B1：补 ingest 的 `tsconfig.build.json`，desktop `build` 在 library 之后编译 ingest。用 merge commit 合入 main `b58c8f8`。台账四行按时间保留，计数改为 129。新测试里 `startLibrary` 的第二个参数是 `() => undefined`。不改规格，不让 `openDocument` 提交解析 | 本笔只改本文件 | 该提交 |
+| 5 | 按 Forge 评论 6741920775 修 B1：补 ingest 的 `tsconfig.build.json`，desktop `build` 在 library 之后编译 ingest。用 merge commit 合入 main `b58c8f8`。台账四行按时间保留，计数改为 129。新测试里 `startLibrary` 的第二个参数是 `() => undefined`。不改规格，不让 `openDocument` 提交解析 | `1de120c` 只改本文件。`c7284cb` 用 merge commit 合入 `b58c8f8`，台账 129。`2ef5955` 补 `tsconfig.build.json`，build 在 library 之后编译 ingest，冒烟断言加上 `ingest` | `docs/evidence/191/commands.md` |
 
 ## 决策记录（Decision Log）
 

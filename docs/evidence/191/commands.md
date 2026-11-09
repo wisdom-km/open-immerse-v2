@@ -50,10 +50,26 @@ Wisdom 原话在 `docs/approvals.md` 2026-11-09 21:06 那一行。来源：[6740
 
 该提交上 `node tools/check-pr-size/check.mjs --base 631859c440320328164f6b3ecc0076dd7ca7ea94` 退出码 0：`check-pr-size: 785 non-generated lines`。
 
-`52c51c798d379ea1692e87238a8ba851554923d6`（tree `cd31e275c3d4b42416a1e6a9e3d58cedcf2e4643`）只追加 21:06 原话，计数从 126 改为 127。再量退出码 0：`check-pr-size: 786 non-generated lines`。PR #190 已写成 127。后合入的一方用 merge commit，把计数改为 128。
+`52c51c798d379ea1692e87238a8ba851554923d6`（tree `cd31e275c3d4b42416a1e6a9e3d58cedcf2e4643`）只追加 21:06 原话，计数从 126 改为 127。再量退出码 0：`check-pr-size: 786 non-generated lines`。当时把合并后的计数写成 128，算错了。合入 main 之后是 129，见下节。
 
-Windows 修复仍在历史上：`92730a1312ac7e843a3dfd6ffd5a68a4763ee91c`。`apps/desktop/test/open-document-wiring.test.ts` 仍先调用 `will-quit` 再 `rmSync`。本机 Linux 跑 `corepack pnpm exec vitest run apps/desktop/test`：21 个文件，80 通过，0 失败，类型错误 0。没有在 Windows 上复跑。
+Windows 修复仍在历史上：`92730a1312ac7e843a3dfd6ffd5a68a4763ee91c`。`apps/desktop/test/open-document-wiring.test.ts` 仍先调用 `will-quit` 再 `rmSync`。本机 Linux 跑 `corepack pnpm exec vitest run apps/desktop/test`：21 个文件，80 通过，0 失败，类型错误 0。`ca29bca` 的 CI 上，Desktop unit tests 这一步已经成功。
 
 含本节的 `check-pr-size` 是 802。全量 `corepack pnpm run check` 跑在含本节的那一笔上。那一笔的 SHA 与 tree 写在下一笔，避免写进自己的正文。
 
 全量 check 退出码 0。对象 `9f16b4aa01383ce5070ea7fb3dae936ece77b293`（tree `7ab57fab78cb53cfffc109f6825db827b0037d76`）。含该提交是 802。含本段是 804。
+
+## 合入 main 并编译 ingest
+
+基线改为 `origin/main` `b58c8f8807322018c1b4adc898ff6b9fd1aa2ad6`。台账保留 19:45、20:06、20:48、21:06。21:06 原话未改。范围栏里的 128 改为 129。尾行是 129。
+
+`c7284cbb3face338b90db12167f193dd5ca58370` 是 merge commit。`open-document-wiring.test.ts` 两处 `startLibrary` 的第二个参数是 `() => undefined`。`readingHandlers` 只调用一次。
+
+`2ef5955a8c2cedc7142555b8085cd6c63b06d770`（tree `f1646c971231ecdcbc0a38985da5e5297c3373f5`）补了 `packages/features/ingest/tsconfig.build.json`，desktop `build` 在 library 之后编译 ingest。`pnpm run build` 退出码 0。`packages/features/ingest/dist/adapters/ipc-handlers.js` 存在。node 导入 `apps/desktop/dist/main/library-wiring.js` 与 `dist/main/index.js` 都不再报 `ERR_MODULE_NOT_FOUND`，剩下的是 node 里加载 electron 的命名导出错误。
+
+Playwright Electron smoke：27 通过，11.7 秒。隔离断言改为 `keys` 含 `ingest` 与 `library`。`ca29bca` 上同一步跑了 42 分钟没有结束；main 上同一步是 38 秒。
+
+`GATE_BASE=origin/main` 的全量 `pnpm run check` 跑在 `2ef5955`，退出码 0。`check-pr-size: 839 non-generated lines`。dependency-cruiser 337 modules / 983 dependencies，无违规。`check-one-slice` 为 1。codegen 与 `git diff --exit-code` 退出码 0。`G12:` 仍在 `85c0029` 的说明里。
+
+`packages/features/ingest/src` 相对 `origin/main` 的 diff 是 0。`open-document-wiring.ts` 没有 `submitParse`。打开仍不触发解析。
+
+含本节再量的 `check-pr-size` 是 855。
