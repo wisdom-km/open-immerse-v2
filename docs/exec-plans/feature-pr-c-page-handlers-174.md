@@ -33,10 +33,10 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它 |  |  |
-| 2 | 只在 `docs/approvals.md` 追加 10:38 原话、时间、范围、来源，并改文末计数。然后停 |  |  |
-| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 |  |  |
-| 4 | 按「行为」实现两个 command、出口和测试。规格句子若因此过时，在同一次实现里同步。不在步骤 1、2 |  |  |
+| 1 | 本文件。第一笔只有它 | `3cc73c2d77b671d86fceb7e45905bac0c0b97c57` 只有本文件，+145 | 该提交 |
+| 2 | 只在 `docs/approvals.md` 追加 10:38 原话、时间、范围、来源，并改文末计数。然后停 | `66be7b4374eb39b7701ac8454bcf90af5f50c4a9` 只有 `docs/approvals.md`，+2/-1 | 该提交 |
+| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 | 2026-11-09 10:50 Asia/Shanghai PASS，附两条绑定条件。评论 [6731055619](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6731055619) | 该评论 |
+| 4 | 按「行为」实现两个 command、出口和测试。规格句子若因此过时，在同一次实现里同步。不在步骤 1、2 | `a8c0c7262bb80eca97fb17d67fe40d44e25f7270` 只在 `packages/features/library/` 增加两个 command、`index.ts` 出口和三份测试。「规格后续更新」按 10:50 绑定条件不执行。PRD、ARCHITECTURE、`docs/spec-changelog.md` 与 manifest 的 diff 为 0。文档门禁没有因此失败 | [commands.md](../evidence/183/commands.md) |
 
 ## 行为
 
@@ -141,5 +141,5 @@ G12：本批不改 contracts。非生成 diff 超过 600 行时拆分或写具�
 
 ## 自检
 
-- [ ] 影响 arch / prd 吗？实现阶段可能影响。清单在「规格后续更新」。本两笔不改正文。
-- [ ] Forge 已亲读本文件与台账提交并 PASS。本文件提交时这一项未完成。
+- [x] 影响 arch / prd 吗？页码 handler 的句子可能过时。10:50 绑定条件不允许改规格正文，本批这些文件的 diff 为 0。文档门禁在实现 tip 上通过，没有停下。
+- [x] Forge 已亲读计划 `3cc73c2d77b671d86fceb7e45905bac0c0b97c57` 与台账 `66be7b4374eb39b7701ac8454bcf90af5f50c4a9` 并 PASS（附条件）。评论 [6731055619](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6731055619)。
