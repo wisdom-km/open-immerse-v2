@@ -389,6 +389,26 @@
       "source": "PRD.md",
       "old": "定义契约不等于保存或恢复已经实现。",
       "new": "定义契约不等于保存或恢复已经实现。2026-11-09 03:39 的 library core 已能按 id 读写已有页码；重开的用户路径、handler 与 `expose` 为 true 仍未验收。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "代际不入库。先核代际还是先查库、到上界不回绕、重载后清表，都是以后的 runtime，本节不写成已经实现。",
+      "new": "代际不入库。先查表再查库、到上界不回绕、进程新起时表为空，已按 2026-11-09 12:04 的原句在 library application 实现：闭包内存，不入库；每个文献 id 只有一条当前代际，新的 bind 替换旧的；generation 上界不回绕，bind 被拒绝时只回 id；revoke 不写库。`expose` 仍是 false，生产 IPC 仍未开通。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "这四条命令仍不表示重开恢复或 handler 已经实现。",
+      "new": "这四条命令仍不表示重开恢复已经实现。library command 能按表拒绝旧代际，生产 IPC 仍未挂上。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "library core 已能按 id 读写 `progressPage`，这不等于命令已经挂上 handler，也不表示保存或恢复已经实现。",
+      "new": "library core 已能按 id 读写 `progressPage`。library command 能按表拒绝旧代际。生产 IPC 仍未开通，也不表示保存或恢复已经实现。"
+    },
+    {
+      "source": "PRD.md",
+      "old": "2026-11-09 03:39 的 library core 已能按 id 读写已有页码；重开的用户路径、handler 与 `expose` 为 true 仍未验收。",
+      "new": "2026-11-09 03:39 的 library core 已能按 id 读写已有页码。2026-11-09 12:04 起 library command 能按内存代际表拒绝旧代际，并实现 bind 与 revoke；`expose` 仍为 false，生产 IPC 仍未开通。重开的用户路径与 `expose` 为 true 仍未验收。"
     }
   ]
 }
