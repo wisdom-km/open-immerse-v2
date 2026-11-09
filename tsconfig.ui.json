@@ -26,6 +26,7 @@
     "apps/desktop/src/renderer/**/*.tsx",
     "apps/desktop/src/preload/**/*.ts",
     "apps/desktop/test/oi-keys.test.ts",
+    "apps/desktop/test/parse-capability-surface.test.ts",
     "apps/desktop/test/reading-command-surface.test.ts"
   ]
 }
