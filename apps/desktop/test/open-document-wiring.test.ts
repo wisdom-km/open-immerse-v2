@@ -8,11 +8,20 @@ import type { IpcCommandContext } from "../src/main/ipc/ipc-router.js";
 import { startLibrary } from "../src/main/library-wiring.js";
 import { openDocumentChannel } from "../src/main/open-document-wiring.js";
 
-const picked = vi.hoisted(() => ({ files: [] as string[] }));
+const picked = vi.hoisted(() => ({
+  files: [] as string[],
+  onQuit: [] as Array<() => void>,
+}));
 
 vi.mock("electron", () => {
   return {
-    app: { on: () => undefined },
+    app: {
+      on(event: string, listener: () => void) {
+        if (event === "will-quit") {
+          picked.onQuit.push(listener);
+        }
+      },
+    },
     BrowserWindow: { getAllWindows: () => [] },
     dialog: { showOpenDialogSync: () => picked.files },
     Menu: {
@@ -30,6 +39,7 @@ it("writes recent after open and does not put an older page back", async () => {
   writeFileSync(source, "%PDF-1.4\n% paper\n");
   picked.files = [source];
   const handlers = startLibrary(path.join(root, "data"));
+  const quit = picked.onQuit.splice(0);
   try {
     const id = await importedId(handlers);
     expect(await recentIds(handlers)).not.toContain(id);
@@ -53,6 +63,9 @@ it("writes recent after open and does not put an older page back", async () => {
     expect(JSON.stringify(again)).not.toContain(root);
     expect(JSON.stringify(again)).not.toContain("message");
   } finally {
+    for (const listener of quit) {
+      listener();
+    }
     rmSync(root, { recursive: true, force: true });
   }
 });
