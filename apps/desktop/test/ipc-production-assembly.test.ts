@@ -6,6 +6,7 @@ import {
 } from "../src/main/ipc/ipc-router.js";
 import { libraryCommandChannels } from "../src/main/ipc/library-command-channels.js";
 import { ipcRegistry } from "../src/main/ipc/registry.generated.js";
+import { openDocumentChannel } from "../src/main/open-document-wiring.js";
 
 it("covers the generated registry with the production command list", () => {
   const commands = ipcRegistry
@@ -14,6 +15,7 @@ it("covers the generated registry with the production command list", () => {
   const handlers = new Map<string, IpcCommandHandler>(
     libraryCommandChannels.map((channel) => [channel, unusedHandler]),
   );
+  handlers.set(openDocumentChannel, unusedHandler);
   const count = registerIpcRouter({
     registry: ipcRegistry,
     handlers,

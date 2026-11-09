@@ -16,6 +16,10 @@ import {
   type GetProgressPageCommand,
 } from "../application/get-progress-page-command.js";
 import type { LibraryIpcHandlers } from "../application/library-ipc.js";
+import {
+  createLibraryOpenPort,
+  type LibraryOpenPort,
+} from "../application/library-open-port.js";
 import type {
   LibraryProgressPageUpdate,
   LibraryRepository,
@@ -56,9 +60,13 @@ export type ReadingIpcHandlers = {
   readonly setProgressPage: SetProgressPageCommand;
 };
 
+export type { LibraryOpenPort } from "../application/library-open-port.js";
+
 export type LibraryMain = {
   readonly handlers: LibraryIpcHandlers;
   readonly reading: ReadingIpcHandlers;
+  readonly openPort: LibraryOpenPort | null;
+  readonly clock: LibraryClock;
   readonly close: () => void;
 };
 
@@ -72,6 +80,8 @@ export function createLibraryMain(options: LibraryMainOptions): LibraryMain {
     return {
       handlers: unavailableHandlers(),
       reading: unavailableReading(),
+      openPort: null,
+      clock: options.clock,
       close() {
         return undefined;
       },
@@ -81,6 +91,8 @@ export function createLibraryMain(options: LibraryMainOptions): LibraryMain {
   return {
     handlers: built.handlers,
     reading: built.reading,
+    openPort: built.openPort,
+    clock: options.clock,
     close: closeOnce(opened.storage),
   };
 }
@@ -116,7 +128,7 @@ function migrationsDirectory(): string {
 function handlersFor(
   storage: AppStorage,
   options: LibraryMainOptions,
-): Pick<LibraryMain, "handlers" | "reading"> {
+): Pick<LibraryMain, "handlers" | "reading" | "openPort"> {
   const repository = createSqliteLibraryRepository(storage);
   const files = createFsPdfFileStore({
     layout: dataRootLayout(options.dataRoot),
@@ -138,6 +150,7 @@ function handlersFor(
       pickPdf: options.pickPdf,
     }),
     reading: readingHandlers(repository),
+    openPort: createLibraryOpenPort(repository),
   };
 }
 

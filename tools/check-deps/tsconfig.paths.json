@@ -10,7 +10,14 @@
         "packages/features/library/src/adapters/library-main.ts"
       ],
       "@oi/feature-library/ui": ["packages/features/library/src/ui/index.ts"],
-      "@oi/feature-library": ["packages/features/library/src/index.ts"]
+      "@oi/feature-library": ["packages/features/library/src/index.ts"],
+      "@oi/feature-ingest": ["packages/features/ingest/src/index.ts"],
+      "@oi/feature-ingest/open-document": [
+        "packages/features/ingest/src/application/use-cases/open-document.ts"
+      ],
+      "@oi/feature-ingest/ipc": [
+        "packages/features/ingest/src/adapters/ipc-handlers.ts"
+      ]
     }
   },
   "files": [
@@ -20,6 +27,9 @@
     "../../packages/providers/src/index.ts",
     "../../packages/features/library/src/adapters/library-main.ts",
     "../../packages/features/library/src/ui/index.ts",
-    "../../packages/features/library/src/index.ts"
+    "../../packages/features/library/src/index.ts",
+    "../../packages/features/ingest/src/index.ts",
+    "../../packages/features/ingest/src/application/use-cases/open-document.ts",
+    "../../packages/features/ingest/src/adapters/ipc-handlers.ts"
   ]
 }

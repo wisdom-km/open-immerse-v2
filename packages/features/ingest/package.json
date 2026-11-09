@@ -3,6 +3,23 @@
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.js",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./open-document": {
+      "types": "./src/application/use-cases/open-document.js",
+      "development": "./src/application/use-cases/open-document.ts",
+      "default": "./dist/application/use-cases/open-document.js"
+    },
+    "./ipc": {
+      "types": "./src/adapters/ipc-handlers.js",
+      "development": "./src/adapters/ipc-handlers.ts",
+      "default": "./dist/adapters/ipc-handlers.js"
+    }
+  },
   "dependencies": {
     "@oi/contracts": "workspace:*",
     "@oi/feature-library": "workspace:*",

@@ -5,64 +5,80 @@ type Result<T, E> =
   | { readonly ok: false; readonly error: E };
 
 export type OiError<Channel extends string> =
-  Channel extends "library.bindReadingAsset"
-    ?
-        | "not_found"
-        | "rejected"
-        | "sender_rejected"
-        | "invalid_payload"
-        | "handler_threw"
-    : Channel extends "library.getProgressPage"
+  Channel extends "ingest.openDocument"
+    ? "not_found" | "sender_rejected" | "invalid_payload" | "handler_threw"
+    : Channel extends "library.bindReadingAsset"
       ?
           | "not_found"
           | "rejected"
           | "sender_rejected"
           | "invalid_payload"
           | "handler_threw"
-      : Channel extends "library.import"
+      : Channel extends "library.getProgressPage"
         ?
-            | "cancelled"
-            | "not_pdf"
-            | "hash_mismatch"
+            | "not_found"
+            | "rejected"
             | "sender_rejected"
             | "invalid_payload"
             | "handler_threw"
-        : Channel extends "library.importDropped"
+        : Channel extends "library.import"
           ?
+              | "cancelled"
               | "not_pdf"
               | "hash_mismatch"
               | "sender_rejected"
               | "invalid_payload"
               | "handler_threw"
-          : Channel extends "library.list"
-            ? "sender_rejected" | "invalid_payload" | "handler_threw"
-            : Channel extends "library.relocate"
-              ?
-                  | "not_found"
-                  | "cancelled"
-                  | "not_pdf"
-                  | "hash_mismatch"
-                  | "sender_rejected"
-                  | "invalid_payload"
-                  | "handler_threw"
-              : Channel extends "library.revokeReadingAsset"
+          : Channel extends "library.importDropped"
+            ?
+                | "not_pdf"
+                | "hash_mismatch"
+                | "sender_rejected"
+                | "invalid_payload"
+                | "handler_threw"
+            : Channel extends "library.list"
+              ? "sender_rejected" | "invalid_payload" | "handler_threw"
+              : Channel extends "library.relocate"
                 ?
-                    | "rejected"
+                    | "not_found"
+                    | "cancelled"
+                    | "not_pdf"
+                    | "hash_mismatch"
                     | "sender_rejected"
                     | "invalid_payload"
                     | "handler_threw"
-                : Channel extends "library.setProgressPage"
+                : Channel extends "library.revokeReadingAsset"
                   ?
-                      | "not_found"
                       | "rejected"
                       | "sender_rejected"
                       | "invalid_payload"
                       | "handler_threw"
-                  : never;
+                  : Channel extends "library.setProgressPage"
+                    ?
+                        | "not_found"
+                        | "rejected"
+                        | "sender_rejected"
+                        | "invalid_payload"
+                        | "handler_threw"
+                    : never;
 
 declare global {
   interface Window {
     readonly oi: {
+      readonly ingest: {
+        /** idempotent: true */
+        openDocument(
+          input: Readonly<{ id: string }>,
+        ): Promise<
+          Result<
+            Readonly<{ jobId: string }>,
+            | { readonly code: "not_found"; readonly retryable: false }
+            | { readonly code: "sender_rejected"; readonly retryable: false }
+            | { readonly code: "invalid_payload"; readonly retryable: false }
+            | { readonly code: "handler_threw"; readonly retryable: true }
+          >
+        >;
+      };
       readonly library: {
         /** idempotent: false */
         bindReadingAsset(input: Readonly<{ id: string }>): Promise<

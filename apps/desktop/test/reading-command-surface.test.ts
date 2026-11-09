@@ -10,6 +10,7 @@ const hidden = [
 ] as const;
 
 const exposed = [
+  "ingest.openDocument",
   "library.bindReadingAsset",
   "library.getProgressPage",
   "library.import",
@@ -31,9 +32,11 @@ it("keeps internal commands off the registry and the preload object", () => {
 });
 
 it("types the window and the preload return as the same exposed commands", () => {
-  expectTypeOf<keyof Window["oi"]>().toEqualTypeOf<"library">();
+  expectTypeOf<keyof Window["oi"]>().toEqualTypeOf<"ingest" | "library">();
   expectTypeOf<keyof Window["oi"]["library"]>().toEqualTypeOf<ExposedName>();
+  expectTypeOf<keyof Window["oi"]["ingest"]>().toEqualTypeOf<"openDocument">();
   expectTypeOf<PreloadName>().toEqualTypeOf<ExposedName>();
+  expectTypeOf<PreloadIngest>().toEqualTypeOf<"openDocument">();
 });
 
 type ExposedName =
@@ -47,6 +50,8 @@ type ExposedName =
   | "setProgressPage";
 
 type PreloadName = keyof ReturnType<typeof createOi>["library"];
+
+type PreloadIngest = keyof ReturnType<typeof createOi>["ingest"];
 
 function preload(): unknown {
   return createOi({

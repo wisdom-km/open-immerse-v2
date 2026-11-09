@@ -48,7 +48,7 @@ export const openDocument = {
   response: openDocumentResponse,
   errors: [notFound, ...ipcTransportErrors] as const,
   idempotent: true as const,
-  expose: false as const,
+  expose: true as const,
   transport: "invoke" as const,
 };
 
