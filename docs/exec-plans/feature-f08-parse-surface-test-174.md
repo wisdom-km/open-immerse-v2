@@ -4,19 +4,19 @@
 
 停点：第一笔提交只有本文件。第二笔提交只有 [docs/approvals.md](../approvals.md) 的 12:04 F-08 行和文末计数。然后停。Forge 亲读这两笔确切提交并 PASS 之前，不改 `apps/desktop/test/parse-capability-surface.test.ts`。本文件不是那个 PASS。只开 Draft。不含 Ready、合入或发版。
 
-Forge 2026-11-09 12:20 台账 PASS，计划有条件 PASS。评论 [6732111496](https://github.com/wisdom-km/open-immerse-v2/pull/185#issuecomment-6732111496)。三处配置名单待 Wisdom 决定。本修正笔只改本文件。等 Forge 下一条指令再实施步骤 4。
+Forge 2026-11-09 12:20 台账 PASS，计划有条件 PASS。评论 [6732111496](https://github.com/wisdom-km/open-immerse-v2/pull/185#issuecomment-6732111496)。随后 Wisdom 2026-11-09 12:25 批准三处路径名单，评论 [6732221360](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6732221360)。这句只在 Issue 评论里，没有补进 `docs/approvals.md`。步骤 4 的测试提交是 `29a82993400458a9a216755325d61cddc9609e66`。
 
-代际表在 `feature/reading-generation-table-174`。合入顺序是代际表先合，本 PR 后合。本分支不含那条分支的文件。
+代际表 PR #184 已合入 `main` `f59851d83fa8135d5cbb60e5ed08fcc40e2058b7`。本分支用 merge 接上，merge 提交 `3927cee8ce2131509e4fb9f3c5e9ff2d5024f0b1`。没有 rebase，没有 force-push。`docs/approvals.md` 保留 12:04 的两行，计数是 119。本 PR 仍是 Draft。不含 Ready、合入或发版。
 
 本任务没有 UI。不改 [DESIGN.md](../../DESIGN.md)、[docs/design-principles.md](../design-principles.md) 或 `docs/design/**`（N-10）。
 
-任务类型：本两笔和本修正笔是纯文档。步骤 4 改测试断言。三处配置名单待 Wisdom 决定，决定前不改。不是 UI 改动、seam 变更或 core 改动。
+任务类型：本两笔和本修正笔是纯文档。步骤 4 改测试断言，并按 12:25 的批准只把这一条测试路径加进三处名单。不是 UI 改动、seam 变更或 core 改动。
 
 ## 现状理解
 
 - 已有行为：`apps/desktop/test/parse-capability-surface.test.ts` 是 22 行。它用 `readFileSync` 把 `oi.generated.ts`、`oi-api.d.ts`、`registry.generated.ts` 读成文本，再断言三条通道、无前缀的 `saveParseService` 与 `getParseServiceStatus`、`secretRef` 和 `"secret"` 不出现。三条契约在 `packages/contracts` 里仍是 `expose: false`：`parsing.getParseCapabilities`、`settings.saveParseService`、`settings.getParseServiceStatus`。正式 codegen 只把 `expose: true` 写进 `ipcRegistry`、`createOi` 和 `Window["oi"]`。本树这三份生成导出的公开命令是 `library.import`、`library.importDropped`、`library.list`、`library.relocate`。
 - 相关的节：[docs/arch/05-02.md](../arch/05-02.md) F-08，[docs/arch/12.md](../arch/12.md)，[docs/arch/06.md](../arch/06.md)，[docs/arch/13.md](../arch/13.md) G2 与 G3，[docs/arch/02-05.md](../arch/02-05.md) 的 parsing 与 settings 行，[docs/prd/08.md](../prd/08.md)「M2 ③ 本批归属」，[RULES.md](../../RULES.md) §1.4、§2、§4、§9，[DESIGN.md](../../DESIGN.md) 与 [docs/design-principles.md](../design-principles.md) 只确认本批没有界面改动。同类写法在 [apps/desktop/test/reading-command-surface.test.ts](../../apps/desktop/test/reading-command-surface.test.ts)（68 行）：导入 `ipcRegistry` 与 `createOi`，走键路径，并用 `expectTypeOf` 看 `Window["oi"]`。
-- 还没做的部分：把这份解析公开面测试从读源码文本改成导出和类型断言。不新增 handler 或 runtime。不改 `expose`。不改生成文件、contracts、library 阅读 handler、页码 command、RULES 或 CI 工作流。
+- 还没做的部分：开工时还没有把这份测试从读源码文本改成导出和类型断言。步骤 4 已在 `29a82993400458a9a216755325d61cddc9609e66` 改完。不新增 handler 或 runtime。不改 `expose`。不改生成文件、contracts、library 阅读 handler、页码 command、RULES 或 CI 工作流。
 
 ## 来源核对
 
@@ -24,7 +24,7 @@ Forge 2026-11-09 12:20 台账 PASS，计划有条件 PASS。评论 [6732111496](
 | --- | --- | --- |
 | Issue #174 评论 | [6731960395](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6731960395) | 对得上。Wisdom 2026-11-09 12:04 Asia/Shanghai 点选「按推荐：两句原句都批准，两个 Draft 并行，代际表先合」。F-08 原句全文见下方决策记录。GitHub `created_at` 是 `2026-11-09T04:05:18Z`。台账时间用评论正文里的 12:04。 |
 | 同一评论的代际表原句 | 评论里的批准范围一 | 对得上，但不是本 PR 的实施范围。对方分支 tip `1defc1a00f400315c5bafdbcfcd355e5850bfaca` 已把那一句写入台账，并写明 F-08 由另一 Draft 抄录。该 tip 相对本基线只改了自己的执行计划和台账。 |
-| [apps/desktop/test/parse-capability-surface.test.ts](../../apps/desktop/test/parse-capability-surface.test.ts) | 现有断言 | 对得上。仍是 `readFileSync` 加七次 `not.toContain`。 |
+| [apps/desktop/test/parse-capability-surface.test.ts](../../apps/desktop/test/parse-capability-surface.test.ts) | 现有断言 | 写计划时对得上，当时是 `readFileSync` 加七次 `not.toContain`。`29a82993400458a9a216755325d61cddc9609e66` 已改成导出和类型断言，不再读文件。 |
 | [apps/desktop/test/reading-command-surface.test.ts](../../apps/desktop/test/reading-command-surface.test.ts) | 可参照的导出断言 | 对得上。导入 `ipcRegistry` 与 `createOi`。隐藏名单里已有这三条解析通道，也有四条阅读通道。本 PR 不改这个文件。 |
 | `eslint.config.js` | `readFileSync` | 对得上配置文本。测试目录没有禁止 `readFileSync` 的规则。`node:fs` 的限制只在 markdown adapters 的写入 API。本两笔没有重跑 lint，退出码未核实。 |
 | `tsconfig.json`、`tsconfig.ui.json` | `Window["oi"]` 所在项目 | 对得上。主项目 `lib` 只有 ES2023，并排除 renderer。`reading-command-surface.test.ts` 被主项目排除，改由带 DOM 的 `tsconfig.ui.json` 收录，同时列在 `eslint.config.js` 的 `allowDefaultProject`。本测试文件现在仍在主项目里。 |
@@ -35,10 +35,10 @@ Forge 2026-11-09 12:20 台账 PASS，计划有条件 PASS。评论 [6732111496](
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它 |  |  |
-| 2 | 只在 `docs/approvals.md` 追加 12:04 的 F-08 原话、原句全文和评论链接，并把文末批准计数从 117 改为 118。然后停 |  |  |
-| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 |  |  |
-| 4 | Wisdom 决定三处配置名单，并且 Forge 给出下一条指令之后，才按「断言」改测试。规格正文不改。决定前不实施 |  |  |
+| 1 | 本文件。第一笔只有它 | `3b6581e1c326c012c9378f7731cf2c3acf3aeed2` | 该提交只有本文件 |
+| 2 | 只在 `docs/approvals.md` 追加 12:04 的 F-08 原话、原句全文和评论链接，并把文末批准计数从 117 改为 118。然后停 | `3118e17ddc92a0f0963aa2f20935e75c3059152b` | 该提交只有台账 |
+| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 | 2026-11-09 12:20 台账 PASS，计划有条件 PASS。计划修正是 `34f9ae1ac0cd4aabb105614ee4fd27d8ff118cfa` | [6732111496](https://github.com/wisdom-km/open-immerse-v2/pull/185#issuecomment-6732111496) |
+| 4 | Wisdom 决定三处配置名单，并且 Forge 给出下一条指令之后，才按「断言」改测试。规格正文不改。决定前不实施 | `29a82993400458a9a216755325d61cddc9609e66` 改测试和三处路径。`3927cee8ce2131509e4fb9f3c5e9ff2d5024f0b1` merge `main` `f59851d83fa8135d5cbb60e5ed08fcc40e2058b7`，台账两行都留，计数 119 | [docs/evidence/185/commands.md](../evidence/185/commands.md) |
 
 ## 改哪一个文件
 
@@ -52,7 +52,7 @@ Forge 2026-11-09 12:20 台账 PASS，计划有条件 PASS。评论 [6732111496](
 | `tsconfig.ui.json` | `include` 加上这个测试 |
 | `eslint.config.js` | `allowDefaultProject` 加上这个测试 |
 
-这三处配置名单待 Wisdom 决定。原句写的是整改这一份测试，不改 RULES 或 CI，没有写到 `tsconfig.json`、`tsconfig.ui.json` 或 `eslint.config.js`。Forge 2026-11-09 12:20 不自行认定它们在批准范围内。决定前不改这三份文件，也不实施步骤 4。等 Forge 下一条指令再实施步骤 4。这三处若获准，只挪路径，不改编译选项，不新增规则，不放宽规则。`.github/workflows/` 不改。RULES 不改。
+Wisdom 2026-11-09 12:25 已批准这三处，原话是「按推荐：批准 F-08 改 tsconfig.json、tsconfig.ui.json、eslint.config.js 三处路径名单，只挤这一条测试路径，不改编译选项和规则」。评论 [6732221360](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6732221360)。`29a82993400458a9a216755325d61cddc9609e66` 每份只加了 `apps/desktop/test/parse-capability-surface.test.ts` 这一条。没有改编译选项，没有新增或放宽规则。`.github/workflows/` 不改。RULES 不改。这句批准没有写入 `docs/approvals.md`。
 
 不改：contracts、`expose`、生成文件、codegen、`packages/features/library/**`、页码 command、`ipc-handlers.ts`、`composition-root.ts`、`slots.ts`、`library-main.ts`、`library-wiring.ts`、desktop UI、协议、settings 实现、密钥存储、`reading-command-surface.test.ts`、`oi-keys.test.ts`、RULES、CI 工作流、DESIGN、原则、`docs/spec-changelog.md`、`tools/compare-spec-bytes/manifest.json`。不新增 handler 或 runtime。不新增依赖。不新增测试文件，也不把键行走抽到 `utils`。
 
@@ -104,7 +104,7 @@ Forge 2026-11-09 12:20 台账 PASS，计划有条件 PASS。评论 [6732111496](
 | `parse-capability-surface.test.ts` | 22 行 | 建议不超过 200 行。规格建议上限 600，硬上限 800。超过 200 行时，实现 PR 写明为什么不拆。不拆到第二个文件 |
 | 每个函数 | 现有回调很短 | 建议不超过 50 行，硬上限 80。schema 行走若会超过 80，拆成同文件里的具名函数 |
 | 新增文件 | 无 | 无 |
-| `tsconfig.json`、`tsconfig.ui.json`、`eslint.config.js` | 该测试不在 UI 名单 | 待 Wisdom 决定。决定前不改。若获准，每份只加或只排除这一条路径 |
+| `tsconfig.json`、`tsconfig.ui.json`、`eslint.config.js` | 该测试不在 UI 名单 | 12:25 已批准。每份只加这一条路径，各 +1 行 |
 | G12 | 不适用 | 非生成 diff 按上面的预算，低于 600 行。不预写 `G12:` |
 
 `composition-root.ts` 与 `slots.ts` 的 diff 是 0。
@@ -122,12 +122,12 @@ Forge 2026-11-09 12:20 台账 PASS，计划有条件 PASS。评论 [6732111496](
 
 ## 未核实
 
-- 本两笔没有重跑 lint。配置文本里没有测试目录的 `readFileSync` 禁令。F-08 的「怎么拦」仍写着 ESLint。本批不补那条规则，也不改 CI。退出码未核实。
-- 主项目收下 `Window["oi"]` 会失败，这是对照 `tsconfig.json` 与 `tsconfig.ui.json` 得出的。没有跑 `tsc`，失败信息原文未核实。
-- `createOi` 函数体里若留下没有挂到键上的通道字符串，导出和类型断言看不见。写计划时读过本树三份生成文件，这三条通道、`secretRef` 和 `"secret"` 不在导出的通道、函数键和 `Window["oi"]` 字段上。没有重跑 codegen。
-- 代际表实现笔还没有。他们的计划 tip 不改公开面。PASS 之后的实现是否仍不写入 registry 与 preload，要等那个 tip 再看。本测试用「不出现」，不锁四条正例。
-- 代际表先合时，`docs/approvals.md` 会和本分支的第二笔冲突。对方 tip 已把计数写成 118，并留给本 Draft 抄 F-08。rebase 时保留两行，计数改为 119。本两笔不提前写成 119，因为本分支还没有他们那一行。
+- 写计划时没有重跑 lint。配置文本里没有测试目录的 `readFileSync` 禁令。F-08 的「怎么拦」仍写着 ESLint。本批不补那条规则，也不改 CI。步骤 4 之后的 lint 退出码见 [docs/evidence/185/commands.md](../evidence/185/commands.md)。
+- `createOi` 函数体里若留下没有挂到键上的通道字符串，导出和类型断言看不见。`3927cee8ce2131509e4fb9f3c5e9ff2d5024f0b1` 上 codegen 之后 `git diff --exit-code` 通过。函数体字符串仍不是本测试的公开面。
+- 代际表已合入 `main` `f59851d83fa8135d5cbb60e5ed08fcc40e2058b7`。merge 之后本测试通过，这十条名字不在当时的公开面上。以后哪一次批准把 `parsing` 或 `settings` 开放到公开面，须在同一次改本测试。
+- `docs/approvals.md` 的冲突已用 merge 解开：两行都留，计数 119。没有 rebase。
 - Box 与真机环境是否就绪，未核实。本批本来不跑。
+- 全量第一次有一条与本改动无关的提交说明测试超时。单独重跑通过。数字见证据。最终 tip 若在证据提交之后，以该 tip 上的那一次为准。
 
 ## 决策记录（Decision Log）
 
@@ -137,11 +137,12 @@ Forge 2026-11-09 12:20 台账 PASS，计划有条件 PASS。评论 [6732111496](
 | 「批准单独 Draft 整改 apps/desktop/test/parse-capability-surface.test.ts 的源码文本断言。改为 registry、createOi 与 Window["oi"] 的导出和类型断言，保留三条解析契约不出现在公开面上。不读生成文件或 src 文本。不新增 handler 或 runtime，不改 expose、RULES 或 CI。不与阅读 handler 同一 PR。第一笔只有执行计划，第二笔只抄录批准台账，Forge 亲读这两笔 PASS 之后才改测试。只开 Draft，不授权 Ready、合入或发版。」 | 本 PR 只实施这一句。同一评论里的代际表原句不在本分支实施。这句不是执行计划 PASS | 2026-11-09 12:04 | Wisdom |
 | 本文件只断言十条禁止名不出现，不把公开键锁成恰好四条 library 命令 | 正例已在阅读公开面测试。Forge 审查可改。不是业主决定 | 2026-11-09 | 本计划的写法 |
 | 删掉「CI 已跑全量则 Cloud 不再跑第二遍」。实现 tip 跑目标测试、覆盖它的 typecheck 与 lint，并 Cloud 本机全量一次，如实计数。`parsing` 与 `settings` 将来合法开放时本测试会失败，须随该批准同步改，不得静默删除。三处配置名单待 Wisdom 决定 | Forge 审查的必须修正，不需另批。不是业主决定。评论 [6732111496](https://github.com/wisdom-km/open-immerse-v2/pull/185#issuecomment-6732111496) | 2026-11-09 12:20 | Forge 排序，非业主决定 |
+| 「按推荐：批准 F-08 改 tsconfig.json、tsconfig.ui.json、eslint.config.js 三处路径名单，只挤这一条测试路径，不改编译选项和规则」 | 只批准把这一条测试路径挤进三处名单。不改编译选项和规则。没有写入 `docs/approvals.md`。链接：[6732221360](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6732221360) | 2026-11-09 12:25 | Wisdom |
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：本两笔无。步骤 4 再写。
+- [docs/evidence/185/commands.md](../evidence/185/commands.md)
 
 ## 自检
 
-- [ ] 影响 arch / prd 吗？不影响。本两笔和步骤 4 都不改规格正文。F-08 的拦法句子保持原样。
+- [x] 影响 arch / prd 吗？不影响。本两笔和步骤 4 都不改规格正文。F-08 的拦法句子保持原样。`docs/arch/02-05.md`、`docs/arch/09-01.md`、`docs/prd/08.md` 的改动来自已合入的 #184，不是本 PR 新写的规格。
