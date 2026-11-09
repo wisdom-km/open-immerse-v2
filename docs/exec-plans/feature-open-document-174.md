@@ -2,7 +2,7 @@
 
 分支 `feature/open-document-174`。基线是远端 `main` `631859c440320328164f6b3ecc0076dd7ca7ea94`（提交说明 `fix(library): 同一篇文献的代际只增不减 (#174) (#189)`）。本文件按 [docs/exec-plans/TEMPLATE.md](TEMPLATE.md) 编写。它必须自包含。
 
-停点：第一笔提交只有本文件。第二笔提交只有 [docs/approvals.md](../approvals.md) 的 2026-11-09 20:06 行。然后停。Forge 亲读这两笔确切提交并 PASS 之前，不改契约、不改 codegen、不改装配。本文件不是那个 PASS。
+停点：第一笔提交只有本文件。第二笔提交只有 [docs/approvals.md](../approvals.md) 的 2026-11-09 20:06 行。Forge 对那两笔的审查是有条件 PASS（[6739982998](https://github.com/wisdom-km/open-immerse-v2/pull/191#issuecomment-6739982998)，2026-11-09 20:27 Asia/Shanghai）。第三条必改落在 PR 描述，不另改文件。这一笔仍只改本文件，把前两条写进下面的表和 (a)。下一次提交才是步骤 4。本文件在这一笔之前不是那个 PASS。
 
 本任务没有 UI。不改 [DESIGN.md](../../DESIGN.md)、[docs/design-principles.md](../design-principles.md) 或 `docs/design/**`（N-10）。
 
@@ -37,7 +37,7 @@
 
 [docs/arch/09.md](../arch/09.md) 第 12 行「解析与打开阅读仍走 `ingest.openDocument`（返回 `jobId`）。M2 ② 不接 ingest（#166 推后项）。」前半句是这条通道的归属：解析将来仍从这里进，不从文献库导入进。后半句是 #166 的推后项，指的是导入。导入实现在 [import-pdf.ts](../../packages/features/library/src/application/use-cases/import-pdf.ts) 第 28–30 行写明本用例不调用注入的 `openDocument`，第 45–61 行与第 77–97 行的函数体也没有这句调用。[library-main.ts](../../packages/features/library/src/adapters/library-main.ts) 第 130–134 行的注入仍是空函数。本批保持这个空函数。把生产打开接到 `createOpenDocument`，不把导入接到它。
 
-[docs/arch/04-02.md](../arch/04-02.md) 第 8 行、[docs/arch/07-12.md](../arch/07-12.md) 第 26 行、[docs/prd/06-01-12.md](../prd/06-01-12.md) AC-91 仍写：`open-document` 读取路线并按 `multimodal-layout` 提交版面、识别或评分作业；`ing_route` 缺失或读不出路线时不提交。这些句子点名的 `ingest-policy.ts`、`route-presets.ts`、`sqlite-route-store.ts` 在 `631859c` 的 ingest 源码里不存在。AC-91 的里程碑列是 M3。当前函数体对不上这三处的「提交作业」。本批若去补上那三处，调用就会提交作业。那超出 20:06 的「先核实不触发解析」。本批不补。也不把这三处改写成「只写最近」：那是规格行为变更，20:06 没有批。规格保持原句。实现阶段只在 [docs/arch/02-05.md](../arch/02-05.md) 第 30 行把「`openDocument` 与 `setZoom` 不改」里已经失真的前半改成：生产 IPC 已挂上已有用例，`expose` 为 true，仍不提交解析作业，仍不等于 AC-11 已验收。`setZoom` 仍不改。
+[docs/arch/04-02.md](../arch/04-02.md) 第 8 行、[docs/arch/07-12.md](../arch/07-12.md) 第 26 行、[docs/prd/06-01-12.md](../prd/06-01-12.md) AC-91 仍写：`open-document` 读取路线并按 `multimodal-layout` 提交版面、识别或评分作业；`ing_route` 缺失或读不出路线时不提交。这些句子点名的 `ingest-policy.ts`、`route-presets.ts`、`sqlite-route-store.ts` 在 `631859c` 的 ingest 源码里不存在。AC-91 的里程碑列是 M3。当前函数体对不上这三处的「提交作业」。本批若去补上那三处，调用就会提交作业。那超出 20:06 的「先核实不触发解析」。本批不补。也不把这三处改写成「只写最近」：那是规格行为变更，20:06 没有批。规格保持原句。实现阶段只在 [docs/arch/02-05.md](../arch/02-05.md) 第 30 行把「`openDocument` 与 `setZoom` 不改」里已经失真的前半改成：生产 IPC 已挂上已有用例，`expose` 为 true，仍不提交解析作业，仍不等于 AC-11 已验收。同一句写明：路线读取与按路线提交作业（04-02 第 8 行、07-12 第 26 行、AC-91，M3）仍未实现，本批不触发。`setZoom` 仍不改。不改 04-02、07-12、AC-91 的原句。
 
 因此：接线当前命令不会触发解析。返回的 `jobId` 只是本进程这份打开记忆里的字符串。不需要为了避开解析去改契约形状。
 
@@ -71,7 +71,7 @@
 
 ## (c) 改哪些文件
 
-物理行数含空行和注释，按 [docs/arch/06.md](../arch/06.md)。函数低于 80 行，圈复杂度不超过 15，参数不超过 4 个。下表是实现阶段的增量目标。本两笔不改这些文件。
+物理行数含空行和注释，按 [docs/arch/06.md](../arch/06.md)。函数低于 80 行，圈复杂度不超过 15，参数不超过 4 个。下表是步骤 4 的增量目标。这一笔不改这些文件。
 
 `index.ts` 的 diff 都是 0：`packages/contracts/src/index.ts`、`packages/features/ingest/src/index.ts`、`packages/features/library/src/index.ts`、`packages/features/jobs/src/index.ts`。
 
@@ -82,20 +82,26 @@
 | `packages/contracts/src/ipc/ingest.ts` | `expose` 改为 true。通道、schema、错误码、幂等不动 | 78 | 改 1 处，行数 +0 |
 | `packages/contracts/test/ipc-ingest.test.ts` | `expose` 断言改为 true | 160 | +10 以内 |
 | `packages/features/ingest/src/**` | 无。含 `open-document.ts` 与 `index.ts` | 见各文件 | diff 0 |
-| `library-main.ts` | 同一次打开的仓库可供打开用例使用。存储打不开时打开命令走现有的 `handler_threw`。第 130–134 行的空函数保留 | 195 | +40 以内 |
-| `library-wiring.ts` | `startLibrary` 返回的 map 加上 `ingest.openDocument`。用已导出的 `createOpenDocument` 与 `createUpdateProgress`。`Openings` 与 `JobIdSource` 由这一处的闭包实现：十进制字符串经 `parseJobId`，不写 jobs。查找端口只交出 `progressPage`，不交出 `originalPath`，错误体不带 `message` | 174 | +70 以内 |
-| `apps/desktop/package.json` | 依赖 `@oi/feature-ingest`。若 nodenext 解析需要，构建脚本在 library 之后编译 ingest | 23 | +6 以内 |
-| `packages/features/ingest/package.json` | 照 library 为包根增加 exports，指向已有的 `src/index.ts`。不新出口 `createMemoryOpenings` | 11 | +12 以内 |
-| `tools/check-deps/tsconfig.paths.json` | 增加 `@oi/feature-ingest` → `src/index.ts` | 25 | +4 以内 |
+| `library-main.ts` | 同一次打开的仓库经一个端口交给打开装配。端口只读 `progressPage`、写打开进度、解析 id、格式化时间。存储打不开时该端口为 null，打开命令走现有的 `handler_threw`。第 130–134 行的空函数保留。不在这里装配 `createOpenDocument` | 195 | +40 以内 |
+| 新建 `packages/features/library/src/application/library-open-port.ts` | 实现上面的端口。`decimalJobId` 把十进制字符串交给已有的 `parseJobId`，不写 jobs。错误只留 `code`，不留 `message`，不留 `originalPath`。desktop 不值导入 `@oi/contracts`：§5.1 没有 MAIN → C | 无 | +80 以内 |
+| 新建 `apps/desktop/src/main/open-document-wiring.ts` | ingest 侧装配。`Openings` 与 `JobIdSource` 的闭包在这里。`JobIdSource` 只产出十进制字符串并调用端口的 `decimalJobId`。调用已导出的 `createOpenDocument` 与 `createIngestIpcHandlers`。查找只把端口的 `progressPage` 交进去 | 无 | ≤90 |
+| `library-wiring.ts` | `startLibrary` 把上面那个文件返回的一条 `ingest.openDocument` 并入 map。不在这里写 `Openings`、`JobIdSource` 或 `createOpenDocument` | 174 | +15 以内 |
+| `apps/desktop/package.json` | 只加依赖 `@oi/feature-ingest`。不改 `build` 脚本。Electron 的默认条件仍指向 `dist`；本批的 `pnpm check` 不跑这条脚本。若 desktop 的 `tsc` 或依赖检查必须先有 `dist`，才把编译 ingest 加回脚本，并在实际列写明 | 23 | +2 以内 |
+| `packages/features/ingest/package.json` | 包根 exports 指向已有的 `src/index.ts`。另加两条子路径：`./open-document` 指向已有的用例文件，`./ipc` 指向已有的 `ipc-handlers.ts`。desktop 只导入这两条，不导入包根：包根会跟进 domain，§5.1 没有 MAIN → DOM。不新出口 `createMemoryOpenings` | 11 | +24 以内 |
+| `tools/check-deps/tsconfig.paths.json` | 增加包根和上面两条子路径，都指向已有源文件 | 25 | +12 以内 |
 | 新建 `apps/desktop/test/open-document-wiring.test.ts` | 见测试 | 无 | +160 以内 |
+| `ipc-production-assembly.test.ts` | registry 多了 `ingest.openDocument` 之后，生产 handler 表要有这一条，否则 `missing ipc handler` | 39 | +8 以内 |
+| `tools/check-arch-graph/check.test.ts` | desktop 值导入用例文件后，已画出的 MAIN → APP 从计划边变成已实现。`planned` 从 15 改为 14。不改 §5.1 | 见文件 | +4 以内 |
 | `reading-command-surface.test.ts`、`oi-keys.test.ts` | 公开面出现 `ingest.openDocument` | 76、42 | 各 +15 以内 |
 | `composition-root.ts`、`slots.ts`、四个 `index.ts` | 无 | 27、3、200、20、82、2 | diff 0 |
 | `docs/arch/02-05.md`、`docs/spec-changelog.md`、`tools/compare-spec-bytes/manifest.json` | 只改第 30 行里 `openDocument` 那半句。changelog 一行。manifest 一条唯一替换。不改基线 `f8d5d01`，不改 `compare.mjs` | 见各文件 | 合计 +20 以内 |
 | codegen 三文件 | 正式 `pnpm codegen`。不手改（N-09） | 生成物 | 约 +70。超了以实测为准 |
 
-G18 只数 `packages/features/<切片>/src/`（[check.mjs](../../tools/check-one-slice/check.mjs) 第 35–40 行）。本批 ingest 的 `src/` 是 0，library 的 `src/` 只有 `library-main.ts`。一个切片。
+G18 只数 `packages/features/<切片>/src/`（[check.mjs](../../tools/check-one-slice/check.mjs) 第 35–40 行）。本批 ingest 的 `src/` 是 0。library 的 `src/` 是 `library-main.ts` 与新建的 `library-open-port.ts`。一个切片。desktop 的装配文件不进这个计数。
 
-G12 估计：上表手写增量约 280 行，codegen 约 70 行，本计划文件另计。`check-pr-size` 用 `base...HEAD`，实现提交上去之后会把本文件一并计入。合计可能超过 600。超过就停，报告数字，不预写 `G12:`，不手改生成物，也不把 `expose` 拆到另一次合入。先例是 [docs/approvals.md](../approvals.md) 第 130 行：`expose` 为 true 与 handler 同一次合入。
+G12 估计：上表手写增量约 400 行，codegen 约 80 行，本计划文件与台账另计。`check-pr-size` 用 `base...HEAD`，实现提交上去之后会把本文件一并计入。合计可能超过 600。超过就停，报告数字，不预写 `G12:`，不手改生成物，也不把 `expose` 拆到另一次合入。先例是 [docs/approvals.md](../approvals.md) 第 130 行：`expose` 为 true 与 handler 同一次合入。
+
+与 Draft PR #190（`feature/oi-asset-protocol-174`）同改 `library-main.ts`、`library-wiring.ts`，且两边台账计数都写成 126。后合入的一方用 merge commit（不 rebase、不 force-push）解决冲突，并把计数改为 127。这句写进 PR 描述。
 
 ## (d) 测试
 
@@ -117,7 +123,7 @@ Box 与真机：
 
 ## (e) 停点
 
-1. 本两笔之后停。Forge PASS 这两笔之前没有实现提交。
+1. 步骤 1 与步骤 2 之后，Forge 有条件 PASS 之前没有实现提交。这一笔把条件写进计划。写完这一笔就可以做步骤 4。
 2. 实现时若调用链出现 `submitParse`、`ing_route`、`ingest-policy`、jobs 写入、worker 或 PDF.js，停下来问。不改用例把这些调用藏掉。
 3. dependency-cruiser 若拒绝 `apps/desktop/src/main` 依赖 `@oi/feature-ingest`，停。不改依赖矩阵，不写 ADR。
 4. `composition-root.ts`、`slots.ts` 或任一 `index.ts` 必须改才能接上，停。
@@ -136,8 +142,8 @@ Box 与真机：
 | --- | --- | --- | --- |
 | 1 | 本文件。第一笔只有它 |  |  |
 | 2 | 只在 `docs/approvals.md` 追加 20:06 原话，并把 125 改为 126。然后停 |  |  |
-| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 |  |  |
-| 4 | 按「改哪些文件」接线。不在步骤 1、2 |  |  |
+| 3 | Forge 亲读步骤 1 与步骤 2。有条件 PASS 见评论 6739982998。本笔只改本文件，写入三条必改 |  |  |
+| 4 | 按改正后的「改哪些文件」接线。不在步骤 1、2、3 |  |  |
 
 ## 决策记录（Decision Log）
 
@@ -146,12 +152,16 @@ Box 与真机：
 | 「按推荐 A：单开一小批，先出计划并核实不触发解析，会触发就停下来再问」 | 本分支只写这一小批的计划与台账。链接：[6739648033](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6739648033) | 2026-11-09 20:06 | Wisdom |
 | 接线当前用例，不实现 §4.2 的提交作业 | (a) 已核实当前函数不提交解析。补上 §4.2 会触发。20:06 没有批改那句规格 | 2026-11-09 | 本计划，Forge 可在 PASS 前退回 |
 | 调用顺序按 (b) | 第 1 步写回的是它刚刚读到的页，并且在它的 Promise 落实前写完。第 4 步在这之后 | 2026-11-09 | 本计划，依据 20:06 要求的顺序 |
+| ingest 装配单独放在 `open-document-wiring.ts`；`library-wiring.ts` 只并入一条通道 | 一个文件不混两个切片的装配。文件不超过 90 行，`library-wiring.ts` 不超过 +15 | 2026-11-09 20:27 | Forge 排序，非业主决定。评论 6739982998 |
+| 02-05 第 30 行同时写明路线读取与按路线提交作业仍未实现、本批不触发 | 避免读者以为 04-02 已落地。不改 04-02、07-12、AC-91 的原句 | 2026-11-09 20:27 | Forge 排序，非业主决定。评论 6739982998 |
+| 与 PR #190 冲突时后合者用 merge，计数改为 127 | 两边都改 `library-main.ts`、`library-wiring.ts`，台账都写成 126。不 rebase，不 force-push | 2026-11-09 20:27 | Forge 排序，非业主决定。评论 6739982998 |
+| 不改 `apps/desktop/package.json` 的 build 脚本 | 该改动不是接线所必需。只加 workspace 依赖 | 2026-11-09 20:27 | Forge 排序，非业主决定。评论 6739982998 |
 
 批次 D 的界面、配置存储与降级 chip 不在本文件的实施范围内。同一条评论的另外两句也不在本文件。
 
 ## 不改
 
-`open-document.ts`、ingest 的 `index.ts` 与其余 `src/**`、library 的 `index.ts`、jobs 的 `index.ts`、contracts 的 `index.ts`、`import-pdf.ts`、两个页码用例、`reading-generation-table.ts`、`composition-root.ts`、`slots.ts`、`ipc-router.ts`、`pass-through.ts`、`accept-result.ts`、CSP、Range、`oi-asset://`、`setZoom`、`getZoom`、`reader.setPage`、`session.save`、`session.restore`、settings、safeStorage、密钥、RULES、CI、门禁、DESIGN、原则、`docs/arch/04-02.md`、`docs/arch/07-12.md`、`docs/arch/09.md` 第 12 行、`parse-capability-surface.test.ts` 的禁止名单。
+`open-document.ts`、ingest 的 `index.ts` 与其余 `src/**`、library 的 `index.ts`、jobs 的 `index.ts`、contracts 的 `index.ts`、`import-pdf.ts`、两个页码用例、`reading-generation-table.ts`、`composition-root.ts`、`slots.ts`、`ipc-router.ts`、`pass-through.ts`、`accept-result.ts`、`apps/desktop/package.json` 的 build 脚本、CSP、Range、`oi-asset://`、`setZoom`、`getZoom`、`reader.setPage`、`session.save`、`session.restore`、settings、safeStorage、密钥、RULES、CI、门禁、DESIGN、原则、`docs/arch/04-02.md`、`docs/arch/07-12.md`、`docs/arch/09.md` 第 12 行、`docs/arch/05-01.md`、`parse-capability-surface.test.ts` 的禁止名单。
 
 ## 还没核实
 
@@ -165,4 +175,4 @@ Box 与真机：
 
 ## 自检
 
-- [x] 影响 arch / prd 吗？本两笔不影响。实现阶段只改 `docs/arch/02-05.md` 第 30 行里 `openDocument` 那半句，并加 changelog 一行和 manifest 的唯一替换。
+- [x] 影响 arch / prd 吗？本计划改正这一笔不影响。实现阶段只改 `docs/arch/02-05.md` 第 30 行里 `openDocument` 那半句，并写明路线读取与按路线提交作业仍未实现、本批不触发。changelog 一行。manifest 一条唯一替换。不改 04-02、07-12、AC-91、05-01。
