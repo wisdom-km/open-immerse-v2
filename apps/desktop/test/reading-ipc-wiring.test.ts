@@ -95,6 +95,61 @@ it("routes the current generation and rejects the others", async () => {
   }
 });
 
+it("rejects the revoked generation after the next bind", async () => {
+  const root = mkdtempSync(path.join(tmpdir(), "oitest-reading-ipc-again-"));
+  const main = openMain(root);
+  try {
+    const id = await importedId(main);
+    const listeners = bindReading(main);
+    expect(await call(listeners, "library.bindReadingAsset", { id })).toEqual({
+      ok: true,
+      value: { id, assetId: "1", generation: 1 },
+    });
+    expect(
+      await call(listeners, "library.setProgressPage", {
+        id,
+        generation: 1,
+        progressPage: 4,
+      }),
+    ).toEqual({
+      ok: true,
+      value: { id, generation: 1, progressPage: 4 },
+    });
+    expect(
+      await call(listeners, "library.revokeReadingAsset", {
+        id,
+        generation: 1,
+      }),
+    ).toEqual({ ok: true, value: { id, generation: 1 } });
+    expect(await call(listeners, "library.bindReadingAsset", { id })).toEqual({
+      ok: true,
+      value: { id, assetId: "2", generation: 2 },
+    });
+    await expectRejected(listeners, "library.getProgressPage", {
+      id,
+      generation: 1,
+    });
+    await expectRejected(listeners, "library.setProgressPage", {
+      id,
+      generation: 1,
+      progressPage: 4,
+    });
+    await expectRejected(listeners, "library.revokeReadingAsset", {
+      id,
+      generation: 1,
+    });
+    expect(
+      await call(listeners, "library.getProgressPage", { id, generation: 2 }),
+    ).toEqual({
+      ok: true,
+      value: { id, generation: 2, progressPage: 4 },
+    });
+  } finally {
+    main.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 it("starts at generation 1 when another library main opens the same files", async () => {
   const root = mkdtempSync(path.join(tmpdir(), "oitest-reading-ipc-next-"));
   const first = openMain(root);
@@ -174,6 +229,28 @@ function bindReading(main: LibraryMain): ReadonlyMap<string, IpcListener> {
     nowIso: () => "2026-11-09T07:20:00.000Z",
   });
   return listeners;
+}
+
+async function expectRejected(
+  listeners: ReadonlyMap<string, IpcListener>,
+  channel: string,
+  payload: {
+    readonly id: string;
+    readonly generation: number;
+    readonly progressPage?: number;
+  },
+): Promise<void> {
+  const result = await call(listeners, channel, payload);
+  expect(result).toEqual({
+    ok: false,
+    error: {
+      code: "rejected",
+      retryable: false,
+      id: payload.id,
+      generation: payload.generation,
+    },
+  });
+  expect(JSON.stringify(result).includes("assetId")).toBe(false);
 }
 
 function call(
