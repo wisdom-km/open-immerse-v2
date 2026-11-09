@@ -149,7 +149,7 @@ desktop UI、`oi-asset://`、CSP、Range、settings、safeStorage、密钥、RUL
 | commandMap 测试默认不做 | 不在 17:14 原话里 | 2026-11-09 | 本计划，标为待批准的可选项 |
 | 「按推荐：按 PR189 计划 38fce75a 实施代际只增不减，并补生产 commandMap 四条阅读通道的映射测试；不 Ready/合入/发版」 | 按计划 `38fce75a` 实施，并补生产 commandMap 测试。链接：[6738024462](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6738024462)。Forge 计划审查 PASS：[6736646809](https://github.com/wisdom-km/open-immerse-v2/pull/189#issuecomment-6736646809) | 2026-11-09 18:42 | Wisdom |
 
-批次 C、批次 D、本 Draft 的实施、Ready、合入和发版不在本文件的实施范围内。
+批次 C、批次 D、Ready、合入和发版仍不在本文件的范围内。步骤 4 已按 18:42 实施。
 
 ## 证据链接
 
