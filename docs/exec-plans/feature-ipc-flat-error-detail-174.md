@@ -44,10 +44,10 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它 |  |  |
-| 2 | 只在 `docs/approvals.md` 追加 13:50 原话、所批原句全文、时间和登记链接，并改文末计数。然后停 |  |  |
-| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 |  |  |
-| 4 | 按「行为」与「原句对照」实现。不在步骤 1、2 |  |  |
+| 1 | 本文件。第一笔只有它 | `dda5ad0a5d76b9501bfd6bce7b7072cef1cc5eed` 只有本文件，+191 | 该提交 |
+| 2 | 只在 `docs/approvals.md` 追加 13:50 原话、所批原句全文、时间和登记链接，并改文末计数。然后停 | `720294557631353be8387b1d02df327a19b23087` 只有 `docs/approvals.md`，+2/−1 | 该提交 |
+| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 | 2026-11-09 14:06 Asia/Shanghai PASS。评论 [6733486945](https://github.com/wisdom-km/open-immerse-v2/pull/187#issuecomment-6733486945)。GitHub `created_at` 是 `2026-11-09T06:06:27Z` | 该评论 |
+| 4 | 按「行为」与「原句对照」实现。不在步骤 1、2 | `bb9d2d4d1a3b41b7b24234db64dc4bb7d3d685ce` 只改 `accept-result.ts`（+34/−16，完成后 103 行）、`pass-through.ts`（+7/−4，完成后 33 行）、新建 `accept-result.test.ts`（+114，114 行），并改 `ipc-router.test.ts` 两处断言与用例名（+7/−4，完成后 498 行）。跳过名单的最终结论：复制自有键时跳过 `code`、`retryable`、`message`、`detail`。不跳过 `stack`。原句只要求不出现 `message`；把 `stack` 写进跳过名单是原句外的行为，所以新测试只夹 `message`，不断言 `stack`。冲突规则：先留下错误对象上的扁平字段，`detail` 里的同名键不覆盖。不另写冲突测试。不按 error schema 校验附加字段 | 该提交上的全量，见证据链接。回填本表的提交不再跑全量 |
 
 ## 原句对照
 
@@ -184,7 +184,13 @@
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：本两笔无。实现 tip 的命令记录在步骤 4 之后再写。
+- 不另建 `docs/evidence/187/`。本批只允许计划回填和点名的代码文件。全量记在这里，也记在 PR #187 描述。
+- 实现 tip `bb9d2d4d1a3b41b7b24234db64dc4bb7d3d685ce`，tree `435efa42d289352fa8014dd15ac47bfdeb060c94`。Node v22.23.4。pnpm 10.34.9。`GATE_BASE=origin/main`。`GITLEAKS_BIN` 未设置。
+- `corepack pnpm run check` 退出码 0。`check-pr-size: 380 non-generated lines`。`check-one-slice: 0 feature slice(s)`。`check-hotspots` 通过。
+- `corepack pnpm test` 退出码 0。170 个文件通过。719 通过，3 跳过，0 失败。类型错误 0。3 个跳过是 `GITLEAKS_BIN` 未设置时的 detect，日志只有 `phase=binary`：`reject-access-key`、`allow-oitest`、`reject-nottest`。这不是具名 G9 通过。
+- `node tools/check-docs/check.mjs` 退出码 0。`node tools/check-arch-graph/check.mjs` 退出码 0（`unmapped 0`）。
+- Python：ruff check、ruff format、pyright、lint-imports 退出码都是 0。pytest 181 通过，退出码 0。
+- 没有出现 #186 的 5000ms 超时。Box 未跑。真机未跑。Electron 未跑。没有为计数再跑一次全量。
 
 ## 自检
 
