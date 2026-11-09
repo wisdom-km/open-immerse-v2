@@ -36,6 +36,7 @@ it("rejects an out-of-range page from the real read use case", async () => {
   });
   const command = createGetProgressPageCommand(
     createGetProgressPage(repository),
+    openGeneration(3),
   );
   const settled = await command({ id, generation: 3 });
   expect(settled).toEqual({
@@ -61,11 +62,14 @@ function runSqlite(): Promise<void> {
       progressPage: null,
     });
     expect(inserted.ok).toBe(true);
+    const generations = openGenerations([2, 5]);
     const read = createGetProgressPageCommand(
       createGetProgressPage(repository),
+      generations,
     );
     const write = createSetProgressPageCommand(
       createSetProgressPage(repository),
+      generations,
     );
     const before = read({ id, generation: 2 });
     const written = write({ id, generation: 5, progressPage: 4 });
@@ -86,6 +90,22 @@ function runSqlite(): Promise<void> {
     );
   });
   return pending;
+}
+
+function openGeneration(generation: number) {
+  return {
+    matches(_id: unknown, value: number) {
+      return value === generation;
+    },
+  };
+}
+
+function openGenerations(generations: readonly number[]) {
+  return {
+    matches(_id: unknown, generation: number) {
+      return generations.includes(generation);
+    },
+  };
 }
 
 function mustId(value: string) {

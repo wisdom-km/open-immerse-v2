@@ -70,4 +70,13 @@ export { createGetProgressPageCommand } from "./application/get-progress-page-co
 export type { GetProgressPageCommand } from "./application/get-progress-page-command.js";
 export { createSetProgressPageCommand } from "./application/set-progress-page-command.js";
 export type { SetProgressPageCommand } from "./application/set-progress-page-command.js";
+export { createReadingGenerationTable } from "./application/reading-generation-table.js";
+export type {
+  ReadingGenerationLookup,
+  ReadingGenerationTable,
+} from "./application/reading-generation-table.js";
+export { createBindReadingAssetCommand } from "./application/bind-reading-asset-command.js";
+export type { BindReadingAssetCommand } from "./application/bind-reading-asset-command.js";
+export { createRevokeReadingAssetCommand } from "./application/revoke-reading-asset-command.js";
+export type { RevokeReadingAssetCommand } from "./application/revoke-reading-asset-command.js";
 export { createLibraryIpcHandlers } from "./adapters/ipc-handlers.js";

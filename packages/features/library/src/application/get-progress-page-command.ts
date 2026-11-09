@@ -5,6 +5,7 @@ import {
   type LibraryEntryId,
 } from "../domain/document-identity.js";
 import type { LibraryCode } from "../domain/library-failure.js";
+import type { ReadingGenerationLookup } from "./reading-generation-table.js";
 import type {
   GetProgressPage,
   GetProgressPageValue,
@@ -21,17 +22,26 @@ type ReadRequest = {
   readonly generation: number;
 };
 
-/** generation 原样来自请求，不证明代际仍活着。 */
+/** 成功体的 generation 是请求原值。不是当前代际时不调用用例。 */
 export function createGetProgressPageCommand(
   getProgressPage: GetProgressPage,
+  generations: ReadingGenerationLookup,
 ): GetProgressPageCommand {
-  return (input) => Promise.resolve(runGet(getProgressPage, input));
+  return (input) =>
+    Promise.resolve(runGet(getProgressPage, generations, input));
 }
 
-function runGet(getProgressPage: GetProgressPage, input: unknown): ReadResult {
+function runGet(
+  getProgressPage: GetProgressPage,
+  generations: ReadingGenerationLookup,
+  input: unknown,
+): ReadResult {
   const request = parseReadRequest(input);
   if (request === undefined) {
     return invalidPayload();
+  }
+  if (!generations.matches(request.id, request.generation)) {
+    return rejected(request);
   }
   const found = getProgressPage({ id: request.id });
   if (!found.ok) {

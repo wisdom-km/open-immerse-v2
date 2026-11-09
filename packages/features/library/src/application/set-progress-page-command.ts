@@ -5,6 +5,7 @@ import {
   type LibraryEntryId,
 } from "../domain/document-identity.js";
 import type { LibraryCode } from "../domain/library-failure.js";
+import type { ReadingGenerationLookup } from "./reading-generation-table.js";
 import type {
   SetProgressPage,
   SetProgressPageValue,
@@ -22,17 +23,26 @@ type WriteRequest = {
   readonly progressPage: number;
 };
 
-/** generation 原样来自请求，不证明代际仍活着。不调用 updateProgress。 */
+/** 成功体的 generation 是请求原值。不是当前代际时不调用用例。不调用 updateProgress。 */
 export function createSetProgressPageCommand(
   setProgressPage: SetProgressPage,
+  generations: ReadingGenerationLookup,
 ): SetProgressPageCommand {
-  return (input) => Promise.resolve(runSet(setProgressPage, input));
+  return (input) =>
+    Promise.resolve(runSet(setProgressPage, generations, input));
 }
 
-function runSet(setProgressPage: SetProgressPage, input: unknown): WriteResult {
+function runSet(
+  setProgressPage: SetProgressPage,
+  generations: ReadingGenerationLookup,
+  input: unknown,
+): WriteResult {
   const request = parseWriteRequest(input);
   if (request === undefined) {
     return invalidPayload();
+  }
+  if (!generations.matches(request.id, request.generation)) {
+    return rejected(request);
   }
   const written = setProgressPage({
     id: request.id,

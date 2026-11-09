@@ -45,7 +45,7 @@ it("returns the use case page and the request generation", async () => {
   const command = createSetProgressPageCommand((request) => {
     calls.push(request);
     return stored(request.id, 9);
-  });
+  }, openGeneration(5));
   const settled = await command({ id, generation: 5, progressPage: 4 });
   expect(calls).toEqual([{ id, progressPage: 4 }]);
   expect(settled).toEqual({
@@ -86,6 +86,37 @@ it("returns rejected with only the request id and generation", async () => {
   expect(JSON.stringify(settled).includes("4")).toBe(false);
 });
 
+it("rejects a generation that is not current without calling the use case", async () => {
+  const calls: unknown[] = [];
+  const command = createSetProgressPageCommand(
+    (request) => {
+      calls.push(request);
+      return stored(request.id, 4);
+    },
+    { matches: () => false },
+  );
+  const settled = await command({ id, generation: 4, progressPage: 2 });
+  expect(calls).toEqual([]);
+  expect(settled).toEqual({
+    ok: false,
+    error: { code: "rejected", retryable: false, id, generation: 4 },
+  });
+  expect(JSON.stringify(settled).includes("progressPage")).toBe(false);
+});
+
+it("does not consult the table when the write request is invalid", async () => {
+  let seen = 0;
+  const command = createSetProgressPageCommand(() => stored(id, 1), {
+    matches() {
+      seen += 1;
+      return false;
+    },
+  });
+  const settled = await command({ id, generation: 0, progressPage: 1 });
+  expect(seen).toBe(0);
+  expect(settled).toEqual(invalidPayload);
+});
+
 it("maps an unexpected library code to handler_threw", async () => {
   const settled = await failWrite("cancelled");
   expect(settled).toEqual({
@@ -102,7 +133,7 @@ async function expectWriteSample(
   const command = createSetProgressPageCommand((request) => {
     calls.push(request);
     return stored(request.id, request.progressPage);
-  });
+  }, openSample(sample));
   const settled = await command(asWrite(sample));
   const accepted = check(schema, sample);
   expect(calls).toHaveLength(accepted ? 1 : 0);
@@ -164,7 +195,7 @@ async function failWrite(code: "not_found" | "rejected" | "cancelled") {
   const command = createSetProgressPageCommand((request) => {
     calls.push(request);
     return { ok: false, error: libraryFailure(code) };
-  });
+  }, openGeneration(8));
   const settled = await command({ id, generation: 8, progressPage: 4 });
   expect(calls).toEqual([{ id, progressPage: 4 }]);
   return settled;
@@ -197,6 +228,23 @@ function progressOf(sample: unknown): number {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object";
+}
+
+function openGeneration(generation: number) {
+  return {
+    matches(_id: unknown, value: number) {
+      return value === generation;
+    },
+  };
+}
+
+function openSample(sample: unknown) {
+  const generation = isRecord(sample) ? sample.generation : undefined;
+  return {
+    matches(_id: unknown, value: number) {
+      return typeof generation === "number" && value === generation;
+    },
+  };
 }
 
 function mustId(value: string) {
