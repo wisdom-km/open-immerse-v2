@@ -51,10 +51,10 @@ function harness(page: number | null = null) {
   };
 }
 
-it("keeps openDocument unexposed when the handlers are created", () => {
+it("creates the openDocument handler for the exposed command", () => {
   const { handlers } = harness();
   expect(Object.keys(handlers)).toEqual(["openDocument"]);
-  expect(openDocument.expose).toBe(false);
+  expect(openDocument.expose).toBe(true);
   expect(openDocument.idempotent).toBe(true);
   expect(openDocument.channel).toBe("ingest.openDocument");
 });

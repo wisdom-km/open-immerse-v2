@@ -20,6 +20,7 @@ const invokeEvent: IpcInvokeEvent = { senderFrame: frame, sender: { id: 1 } };
 it("registers one handle for each exposed library command", () => {
   const channels = ipcRegistry.map((entry) => entry.channel);
   expect(channels).toEqual([
+    "ingest.openDocument",
     "library.bindReadingAsset",
     "library.getProgressPage",
     "library.import",
