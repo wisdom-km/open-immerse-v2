@@ -35,7 +35,15 @@ export function openDocumentHandler(main: LibraryMain): IpcCommandHandler {
       openings: memoryOpenings(),
     }),
   });
-  return (payload) => handlers.openDocument(payload);
+  return (payload) => handlers.openDocument(asOpen(payload));
+}
+
+function asOpen(
+  payload: unknown,
+): Parameters<ReturnType<typeof createIngestIpcHandlers>["openDocument"]>[0] {
+  return payload as Parameters<
+    ReturnType<typeof createIngestIpcHandlers>["openDocument"]
+  >[0];
 }
 
 function unavailable(): ReturnType<IpcCommandHandler> {
