@@ -49,7 +49,7 @@
 | 2 | 只在 `docs/approvals.md` 追加 19:45 原话、所批范围、时间和登记链接，并把文末批准数从 125 改为 126。然后停 | `2e70df084793f57e8b3816f9b230b633f072119b`，tree `2dba7d765962fd74c315d3058b4a7f0554a1a826`。只改 `docs/approvals.md`。批准数 126 | 无 |
 | 3 | Forge 亲读步骤 1 与步骤 2。有条件 PASS 要求先把主机名规范化停点和可测性写进本文件。那一笔即视为 PASS，之前没有步骤 4 | 评论 [6739448337](https://github.com/wisdom-km/open-immerse-v2/pull/190#issuecomment-6739448337)。补充 `22012818ce48525d529402623243f9e6d47b326a`，tree `cd97a8a0d1792e5557ec718032ba5493da9be460`。只改本文件。这一笔即 PASS | 无 |
 | 4 | 按「行为」实现。不在步骤 1、2 | 实现 `94e5ac2f54852534d2b7f5557b52f8fd133a6a4d`，tree `fab6c6c43e192139aabfd5ae2781f6def4cb4c51`。类型修正 `1dddc5a058c8823bbedef425083966ad7bfdab32`，tree `1c119730674fe8af9b1e307707341aab16c60912`。全量在这个 tip。`protocol.handle` 注入。`library-wiring.ts` +15。四个热点和 `index.ts` 的 diff 是 0。Electron 45.2.1 的 main 进程 `net.fetch("oi-asset://1")` 时，`protocol.handle` 收到 `oi-asset://0.0.0.1/`，状态 404。没有改解析去兼容 IPv4，也没有改 URL。合法 `assetId` 在这次真实请求里不是 200。停在这里 | [docs/evidence/190/commands.md](../evidence/190/commands.md) |
-| 5 | 按 20:48 把 URL 改成 `oi-asset://asset/<assetId>`。主机名必须是 `asset`，路径恰好一段。其他一律 404 且体为空。只改 [docs/arch/09.md](../arch/09.md) 第 16、22 行的 URL 形式，加 changelog 一行和 manifest 的唯一替换。Electron 里对合法、未登记、已撤销各 fetch 一次。收到的 URL 再被改写，或合法 id 不是 200，就停，不加兼容 |  |  |
+| 5 | 按 20:48 把 URL 改成 `oi-asset://asset/<assetId>`。主机名必须是 `asset`，路径恰好一段。其他一律 404 且体为空。只改 [docs/arch/09.md](../arch/09.md) 第 16、22 行的 URL 形式，加 changelog 一行和 manifest 的唯一替换。Electron 里对合法、未登记、已撤销各 fetch 一次。收到的 URL 再被改写，或合法 id 不是 200，就停，不加兼容 | 计划 `90a0a41457b49a4b18dc31bc4ab459d46432337e`。台账 `aa552341100dd69f46542e259df32cefd45d7e71`，批准数 127。实现 `f7425f17560b616bbe4c7a934c8781c3ea653e9a`，tree `0e55e873ab933e10d53110976234fc2e46a2cfe9`。全量在这个实现 tip，`check-pr-size` 1110。Electron 45.2.1 main 的 `net.fetch("oi-asset://asset/1")` 收到的 `request.url` 仍是 `oi-asset://asset/1`，状态 200，`application/pdf`，`nosniff`。`oi-asset://asset/9` 与撤销后再取同一 URL 都是 404，体为空。没有改解析去兼容别的写法 | [docs/evidence/190/commands.md](../evidence/190/commands.md) |
 
 ## 目标
 
@@ -192,7 +192,7 @@
 ## 还没核实
 
 - `standard: true` 是否必要。见停点。本批没有跑 Electron 45.2.1 去核对「`registerSchemesAsPrivileged` 只能调用一次」。
-- 纯数字主机名会被收成 IPv4。见「主机名规范化」的实测。20:48 已批准改成 `oi-asset://asset/<assetId>`。步骤 5 的 Electron 结果在跑完之前不写成 200。
+- 纯数字主机名会被收成 IPv4。见「主机名规范化」的实测。步骤 5 改成 `oi-asset://asset/<assetId>` 之后，同一套 Electron main 请求收到的 URL 没有再被改写，合法 id 是 200。见证据。
 - 现行 CSP 能否读到这份 PDF。见停点。本批不打开窗口，所以这项保持未核实。
 - PDF.js 6.5.438 不经 `blob:` worker 能否打开 `oi-asset://`。见停点。
 - 第二个 `createLibraryMain` 仍是空表。这不能代替杀掉 OS 进程再拉起。本批不把「没杀进程」写成重启已验证，也不为协议把代际表入库。
@@ -214,7 +214,7 @@
 
 ## 证据链接
 
-- [docs/evidence/190/commands.md](../evidence/190/commands.md)：步骤 4 的全量和 main 进程 fetch。步骤 1 至 3 无。
+- [docs/evidence/190/commands.md](../evidence/190/commands.md)：步骤 4 的全量和旧 URL 的 main 进程 fetch，以及步骤 5 的新 URL 实测。步骤 1 至 3 无。
 
 ## 自检
 
