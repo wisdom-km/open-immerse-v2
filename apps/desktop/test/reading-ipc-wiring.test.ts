@@ -7,6 +7,7 @@ import { expect, it } from "vitest";
 
 import {
   registerIpcRouter,
+  type IpcCommandHandler,
   type IpcListener,
 } from "../src/main/ipc/ipc-router.js";
 import type { IpcPassThrough } from "../src/main/ipc/pass-through.js";
@@ -142,7 +143,7 @@ function bindReading(main: LibraryMain): ReadonlyMap<string, IpcListener> {
     registry: ipcRegistry.filter((entry) =>
       (channels as readonly string[]).includes(entry.channel),
     ),
-    handlers: new Map([
+    handlers: new Map<string, IpcCommandHandler>([
       [
         "library.bindReadingAsset",
         (payload) => reading.bindReadingAsset(payload as never),

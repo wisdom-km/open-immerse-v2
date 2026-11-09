@@ -5,7 +5,9 @@ export type IpcJsonSchema = {
   readonly anyOf?: readonly IpcJsonSchema[];
   readonly const?: string | number | boolean | null;
   readonly items?: IpcJsonSchema;
+  readonly maximum?: number;
   readonly minLength?: number;
+  readonly minimum?: number;
   readonly pattern?: string;
   readonly properties?: Readonly<Record<string, IpcJsonSchema>>;
   readonly required?: readonly string[];
