@@ -47,11 +47,32 @@ it("issues a decimal asset id that is not the document id", () => {
   expect(bound.assetId).not.toBe(id);
 });
 
+it("keeps raising the generation after revoke", () => {
+  const table = createReadingGenerationTable();
+  expect(table.bind(id)).toEqual({ ok: true, assetId: "1", generation: 1 });
+  expect(table.revoke(id, 1)).toBe(true);
+  expect(table.matches(id, 1)).toBe(false);
+  expect(table.bind(id)).toEqual({ ok: true, assetId: "2", generation: 2 });
+  expect(table.matches(id, 1)).toBe(false);
+  expect(table.matches(id, 2)).toBe(true);
+  expect(table.revoke(id, 1)).toBe(false);
+  expect(table.bind(other)).toEqual({ ok: true, assetId: "3", generation: 1 });
+});
+
 it("does not wrap or replace the current generation at the ceiling", () => {
   const table = createReadingGenerationTable(id);
   expect(table.matches(id, Number.MAX_SAFE_INTEGER)).toBe(true);
   expect(table.bind(id)).toEqual({ ok: false, reason: "exhausted" });
   expect(table.matches(id, Number.MAX_SAFE_INTEGER)).toBe(true);
+  expect(table.matches(id, 1)).toBe(false);
+  expect(table.bind(other)).toEqual({ ok: true, assetId: "2", generation: 1 });
+});
+
+it("stays exhausted after the ceiling generation is revoked", () => {
+  const table = createReadingGenerationTable(id);
+  expect(table.revoke(id, Number.MAX_SAFE_INTEGER)).toBe(true);
+  expect(table.matches(id, Number.MAX_SAFE_INTEGER)).toBe(false);
+  expect(table.bind(id)).toEqual({ ok: false, reason: "exhausted" });
   expect(table.matches(id, 1)).toBe(false);
   expect(table.bind(other)).toEqual({ ok: true, assetId: "2", generation: 1 });
 });

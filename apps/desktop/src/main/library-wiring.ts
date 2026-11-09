@@ -89,7 +89,8 @@ function dispatchOpenFile(): Promise<void> {
   });
 }
 
-function commandMap(
+/** 测试断言四条阅读通道。生产 `startLibrary` 用这一张表。 */
+export function commandMap(
   main: LibraryMain,
 ): ReadonlyMap<LibraryCommandChannel, IpcCommandHandler> {
   const handlers = main.handlers;
