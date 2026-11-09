@@ -97,6 +97,36 @@ it("returns rejected with only the request id and generation", async () => {
   expect(JSON.stringify(settled).includes("progressPage")).toBe(false);
 });
 
+it("rejects a generation that is not current without calling the use case", async () => {
+  const calls: unknown[] = [];
+  const command = createGetProgressPageCommand(
+    (request) => {
+      calls.push(request);
+      return stored(request.id, 1);
+    },
+    { matches: () => false },
+  );
+  const settled = await command({ id, generation: 4 });
+  expect(calls).toEqual([]);
+  expect(settled).toEqual({
+    ok: false,
+    error: { code: "rejected", retryable: false, id, generation: 4 },
+  });
+});
+
+it("does not consult the table when the read request is invalid", async () => {
+  let seen = 0;
+  const command = createGetProgressPageCommand(() => stored(id, null), {
+    matches() {
+      seen += 1;
+      return false;
+    },
+  });
+  const settled = await command({ id, generation: 0 });
+  expect(seen).toBe(0);
+  expect(settled).toEqual(invalidPayload);
+});
+
 it("maps an unexpected library code to handler_threw", async () => {
   const settled = await failRead("not_pdf");
   expect(settled).toEqual({
@@ -113,7 +143,7 @@ async function expectReadSample(
   const command = createGetProgressPageCommand((request) => {
     calls.push(request);
     return stored(request.id, null);
-  });
+  }, openSample(sample));
   const settled = await command(asRead(sample));
   const accepted = check(schema, sample);
   expect(calls).toHaveLength(accepted ? 1 : 0);
@@ -179,15 +209,18 @@ async function readReturning(
   const command = createGetProgressPageCommand((request) => {
     calls.push(request);
     return stored(request.id, progressPage);
-  });
+  }, openGeneration(generation));
   return { calls, result: await command({ id, generation }) };
 }
 
 async function failRead(code: "not_found" | "rejected" | "not_pdf") {
-  const command = createGetProgressPageCommand(() => ({
-    ok: false,
-    error: libraryFailure(code),
-  }));
+  const command = createGetProgressPageCommand(
+    () => ({
+      ok: false,
+      error: libraryFailure(code),
+    }),
+    openGeneration(8),
+  );
   return command({ id, generation: 8 });
 }
 
@@ -211,6 +244,23 @@ function generationOf(sample: unknown): number {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object";
+}
+
+function openGeneration(generation: number) {
+  return {
+    matches(_id: unknown, value: number) {
+      return value === generation;
+    },
+  };
+}
+
+function openSample(sample: unknown) {
+  const generation = isRecord(sample) ? sample.generation : undefined;
+  return {
+    matches(_id: unknown, value: number) {
+      return typeof generation === "number" && value === generation;
+    },
+  };
 }
 
 function mustId(value: string) {
