@@ -17,9 +17,9 @@ const id = "ab".repeat(32);
 const generation = 3;
 const above = Number.MAX_SAFE_INTEGER + 1;
 
-it("keeps the progress commands unexposed", () => {
-  expect(getProgressPage.expose).toBe(false);
-  expect(setProgressPage.expose).toBe(false);
+it("exposes the progress page commands", () => {
+  expect(getProgressPage.expose).toBe(true);
+  expect(setProgressPage.expose).toBe(true);
   expect(getProgressPage.idempotent).toBe(true);
   expect(setProgressPage.idempotent).toBe(true);
   expect(getProgressPage).toBe(exportedGet);

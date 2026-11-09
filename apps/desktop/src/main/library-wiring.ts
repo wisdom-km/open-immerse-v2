@@ -93,12 +93,21 @@ function commandMap(
   main: LibraryMain,
 ): ReadonlyMap<LibraryCommandChannel, IpcCommandHandler> {
   const handlers = main.handlers;
+  const reading = main.reading;
   const bound: Record<LibraryCommandChannel, IpcCommandHandler> = {
     "library.import": (payload) => handlers.import(asImport(payload)),
     "library.importDropped": (_payload, context) =>
       importDropped(handlers, context.droppedFilePath),
     "library.list": (payload) => handlers.list(asList(payload)),
     "library.relocate": (payload) => handlers.relocate(asRelocate(payload)),
+    "library.bindReadingAsset": (payload) =>
+      reading.bindReadingAsset(asBind(payload)),
+    "library.revokeReadingAsset": (payload) =>
+      reading.revokeReadingAsset(asRevoke(payload)),
+    "library.getProgressPage": (payload) =>
+      reading.getProgressPage(asGetProgress(payload)),
+    "library.setProgressPage": (payload) =>
+      reading.setProgressPage(asSetProgress(payload)),
   };
   return new Map(
     libraryCommandChannels.map((channel) => [channel, bound[channel]]),
@@ -124,6 +133,30 @@ function asRelocate(
   payload: unknown,
 ): Parameters<LibraryMain["handlers"]["relocate"]>[0] {
   return payload as Parameters<LibraryMain["handlers"]["relocate"]>[0];
+}
+
+function asBind(
+  payload: unknown,
+): Parameters<LibraryMain["reading"]["bindReadingAsset"]>[0] {
+  return payload as Parameters<LibraryMain["reading"]["bindReadingAsset"]>[0];
+}
+
+function asRevoke(
+  payload: unknown,
+): Parameters<LibraryMain["reading"]["revokeReadingAsset"]>[0] {
+  return payload as Parameters<LibraryMain["reading"]["revokeReadingAsset"]>[0];
+}
+
+function asGetProgress(
+  payload: unknown,
+): Parameters<LibraryMain["reading"]["getProgressPage"]>[0] {
+  return payload as Parameters<LibraryMain["reading"]["getProgressPage"]>[0];
+}
+
+function asSetProgress(
+  payload: unknown,
+): Parameters<LibraryMain["reading"]["setProgressPage"]>[0] {
+  return payload as Parameters<LibraryMain["reading"]["setProgressPage"]>[0];
 }
 
 function importDropped(

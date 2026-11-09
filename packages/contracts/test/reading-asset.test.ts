@@ -23,9 +23,9 @@ import {
 const id = "ab".repeat(32);
 const generation = 2;
 
-it("keeps the reading asset commands unexposed", () => {
-  expect(bindReadingAsset.expose).toBe(false);
-  expect(revokeReadingAsset.expose).toBe(false);
+it("exposes bind and revoke and keeps openDocument and setZoom hidden", () => {
+  expect(bindReadingAsset.expose).toBe(true);
+  expect(revokeReadingAsset.expose).toBe(true);
   expect(bindReadingAsset.idempotent).toBe(false);
   expect(revokeReadingAsset.idempotent).toBe(false);
   expect(bindReadingAsset).toBe(exportedBind);

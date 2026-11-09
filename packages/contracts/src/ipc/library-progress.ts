@@ -62,7 +62,7 @@ const writeResponse = Type.Object(
 );
 
 /**
- * 读页的内部契约。expose 为 false。
+ * 读页的内部契约。expose 为 true。
  * 成功页可以是 null。被拒绝时 detail 原样是请求里的一对。
  */
 export const getProgressPage = {
@@ -72,12 +72,12 @@ export const getProgressPage = {
   response: readResponse,
   errors: [notFound, pairRejected, ...ipcTransportErrors] as const,
   idempotent: true as const,
-  expose: false as const,
+  expose: true as const,
   transport: "invoke" as const,
 };
 
 /**
- * 写页的内部契约。expose 为 false。
+ * 写页的内部契约。expose 为 true。
  * 请求不接受 null。被拒绝时 detail 不含页码。
  */
 export const setProgressPage = {
@@ -87,7 +87,7 @@ export const setProgressPage = {
   response: writeResponse,
   errors: [notFound, pairRejected, ...ipcTransportErrors] as const,
   idempotent: true as const,
-  expose: false as const,
+  expose: true as const,
   transport: "invoke" as const,
 };
 

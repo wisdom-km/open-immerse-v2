@@ -32,6 +32,94 @@ export type IpcRegistryEntry = IpcRegistryCommand | IpcRegistryEvent;
 export const ipcRegistry: readonly IpcRegistryEntry[] = [
   {
     kind: "command",
+    channel: "library.bindReadingAsset",
+    idempotent: false,
+    transport: "invoke",
+    request: {
+      additionalProperties: false,
+      properties: {
+        id: {
+          pattern: "^[0-9a-f]{64}$",
+          type: "string",
+        },
+      },
+      required: ["id"],
+      type: "object",
+    },
+    response: {
+      additionalProperties: false,
+      properties: {
+        assetId: {
+          minLength: 1,
+          pattern: "^[^/\\\\]+$",
+          type: "string",
+        },
+        generation: {
+          maximum: 9007199254740991,
+          minimum: 1,
+          type: "integer",
+        },
+        id: {
+          pattern: "^[0-9a-f]{64}$",
+          type: "string",
+        },
+      },
+      required: ["id", "assetId", "generation"],
+      type: "object",
+    },
+  },
+  {
+    kind: "command",
+    channel: "library.getProgressPage",
+    idempotent: true,
+    transport: "invoke",
+    request: {
+      additionalProperties: false,
+      properties: {
+        generation: {
+          maximum: 9007199254740991,
+          minimum: 1,
+          type: "integer",
+        },
+        id: {
+          pattern: "^[0-9a-f]{64}$",
+          type: "string",
+        },
+      },
+      required: ["id", "generation"],
+      type: "object",
+    },
+    response: {
+      additionalProperties: false,
+      properties: {
+        generation: {
+          maximum: 9007199254740991,
+          minimum: 1,
+          type: "integer",
+        },
+        id: {
+          pattern: "^[0-9a-f]{64}$",
+          type: "string",
+        },
+        progressPage: {
+          anyOf: [
+            {
+              maximum: 9007199254740991,
+              minimum: 1,
+              type: "integer",
+            },
+            {
+              type: "null",
+            },
+          ],
+        },
+      },
+      required: ["id", "generation", "progressPage"],
+      type: "object",
+    },
+  },
+  {
+    kind: "command",
     channel: "library.import",
     idempotent: false,
     transport: "invoke",
@@ -308,6 +396,92 @@ export const ipcRegistry: readonly IpcRegistryEntry[] = [
         },
       },
       required: ["entry"],
+      type: "object",
+    },
+  },
+  {
+    kind: "command",
+    channel: "library.revokeReadingAsset",
+    idempotent: false,
+    transport: "invoke",
+    request: {
+      additionalProperties: false,
+      properties: {
+        generation: {
+          maximum: 9007199254740991,
+          minimum: 1,
+          type: "integer",
+        },
+        id: {
+          pattern: "^[0-9a-f]{64}$",
+          type: "string",
+        },
+      },
+      required: ["id", "generation"],
+      type: "object",
+    },
+    response: {
+      additionalProperties: false,
+      properties: {
+        generation: {
+          maximum: 9007199254740991,
+          minimum: 1,
+          type: "integer",
+        },
+        id: {
+          pattern: "^[0-9a-f]{64}$",
+          type: "string",
+        },
+      },
+      required: ["id", "generation"],
+      type: "object",
+    },
+  },
+  {
+    kind: "command",
+    channel: "library.setProgressPage",
+    idempotent: true,
+    transport: "invoke",
+    request: {
+      additionalProperties: false,
+      properties: {
+        generation: {
+          maximum: 9007199254740991,
+          minimum: 1,
+          type: "integer",
+        },
+        id: {
+          pattern: "^[0-9a-f]{64}$",
+          type: "string",
+        },
+        progressPage: {
+          maximum: 9007199254740991,
+          minimum: 1,
+          type: "integer",
+        },
+      },
+      required: ["id", "generation", "progressPage"],
+      type: "object",
+    },
+    response: {
+      additionalProperties: false,
+      properties: {
+        generation: {
+          maximum: 9007199254740991,
+          minimum: 1,
+          type: "integer",
+        },
+        id: {
+          pattern: "^[0-9a-f]{64}$",
+          type: "string",
+        },
+        progressPage: {
+          maximum: 9007199254740991,
+          minimum: 1,
+          type: "integer",
+        },
+      },
+      required: ["id", "generation", "progressPage"],
       type: "object",
     },
   },

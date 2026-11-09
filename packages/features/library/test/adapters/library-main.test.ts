@@ -51,16 +51,29 @@ it("returns handler_threw when the data root cannot be opened", async () => {
   try {
     const listed = await main.handlers.list({ view: "recent" });
     const imported = await main.handlers.import({});
-    expect(listed).toEqual({
+    const bind = await main.reading.bindReadingAsset({} as never);
+    const revoke = await main.reading.revokeReadingAsset({} as never);
+    const read = await main.reading.getProgressPage({} as never);
+    const write = await main.reading.setProgressPage({} as never);
+    const threw = {
       ok: false,
       error: { code: "handler_threw", retryable: true },
-    });
-    expect(imported).toEqual({
-      ok: false,
-      error: { code: "handler_threw", retryable: true },
-    });
-    expect(JSON.stringify(listed).includes(secret)).toBe(false);
-    expect(JSON.stringify(imported).includes(secret)).toBe(false);
+    };
+    expect(listed).toEqual(threw);
+    expect(imported).toEqual(threw);
+    expect(bind).toEqual(threw);
+    expect(revoke).toEqual(threw);
+    expect(read).toEqual(threw);
+    expect(write).toEqual(threw);
+    const encoded = JSON.stringify([
+      listed,
+      imported,
+      bind,
+      revoke,
+      read,
+      write,
+    ]);
+    expect(encoded.includes(secret)).toBe(false);
   } finally {
     main.close();
   }

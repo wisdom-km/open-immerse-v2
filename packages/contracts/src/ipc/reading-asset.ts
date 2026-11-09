@@ -61,7 +61,7 @@ const pair = Type.Object(
 );
 
 /**
- * 登记的内部契约。expose 为 false。
+ * 登记的内部契约。expose 为 true。
  * 被拒绝时 detail 只有请求里的 id，不带 generation。
  * 本对象不查活代际，不写库。
  */
@@ -72,12 +72,12 @@ export const bindReadingAsset = {
   response: bindResponse,
   errors: [notFound, bindRejected, ...ipcTransportErrors] as const,
   idempotent: false as const,
-  expose: false as const,
+  expose: true as const,
   transport: "invoke" as const,
 };
 
 /**
- * 撤销的内部契约。expose 为 false。
+ * 撤销的内部契约。expose 为 true。
  * 被拒绝时 detail 原样是请求里的 id 与 generation。
  * 本对象不删表。
  */
@@ -88,7 +88,7 @@ export const revokeReadingAsset = {
   response: pair,
   errors: [pairRejected, ...ipcTransportErrors] as const,
   idempotent: false as const,
-  expose: false as const,
+  expose: true as const,
   transport: "invoke" as const,
 };
 
