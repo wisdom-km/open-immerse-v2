@@ -10,6 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { parseLibraryEntryId, type LibraryEntryId } from "@oi/feature-library";
 import { createLibraryMain, type LibraryMain } from "@oi/feature-library/main";
 import { expect, it, vi } from "vitest";
 
@@ -63,7 +64,7 @@ type Paper = {
   readonly main: LibraryMain;
   readonly dataRoot: string;
   readonly root: string;
-  readonly id: string;
+  readonly id: LibraryEntryId;
   readonly assetId: string;
   readonly generation: number;
 };
@@ -315,6 +316,14 @@ function trap(): ReadingAssetPort {
   };
 }
 
+function asEntryId(value: string): LibraryEntryId {
+  const parsed = parseLibraryEntryId(value);
+  if (parsed === undefined) {
+    throw new Error("id");
+  }
+  return parsed;
+}
+
 function assetUrl(assetId: string): string {
   return `oi-asset://${assetId}`;
 }
@@ -357,7 +366,7 @@ async function boundPaper(
   if (!imported.ok) {
     throw new Error("import");
   }
-  const id = imported.value.entry.id;
+  const id = asEntryId(imported.value.entry.id);
   const bound = await main.reading.bindReadingAsset({ id });
   if (!bound.ok) {
     throw new Error("bind");
