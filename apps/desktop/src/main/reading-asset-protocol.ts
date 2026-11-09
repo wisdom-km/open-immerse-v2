@@ -59,10 +59,10 @@ function assetIdFrom(requestUrl: string): string | undefined {
     return undefined;
   }
   const url = parseUrl(requestUrl);
-  if (url === null || !isAssetUrl(url) || url.hostname.includes("..")) {
+  if (url === null || !isAssetUrl(url)) {
     return undefined;
   }
-  return url.hostname;
+  return oneSegment(url.pathname);
 }
 
 function parseUrl(requestUrl: string): URL | null {
@@ -81,9 +81,19 @@ function isAssetUrl(url: URL): boolean {
     url.port === "" &&
     url.search === "" &&
     url.hash === "" &&
-    (url.pathname === "" || url.pathname === "/") &&
-    url.hostname !== ""
+    url.hostname === "asset"
   );
+}
+
+function oneSegment(pathname: string): string | undefined {
+  if (!pathname.startsWith("/") || pathname.length < 2) {
+    return undefined;
+  }
+  const segment = pathname.slice(1);
+  if (segment.includes("/") || segment === "." || segment === "..") {
+    return undefined;
+  }
+  return segment;
 }
 
 function readSourcePdf(filePath: string): Uint8Array | undefined {

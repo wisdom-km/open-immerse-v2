@@ -76,8 +76,12 @@ it("registers oi-asset through the injected function when startLibrary runs", ()
     const handlers = startLibrary(root, (scheme, handler) => {
       seen = true;
       expect(scheme).toBe("oi-asset");
-      expect(handler({ url: "oi-asset://1", method: "GET" }).status).toBe(404);
-      expect(handler({ url: "oi-asset://1", method: "POST" }).status).toBe(405);
+      expect(handler({ url: "oi-asset://asset/1", method: "GET" }).status).toBe(
+        404,
+      );
+      expect(
+        handler({ url: "oi-asset://asset/1", method: "POST" }).status,
+      ).toBe(405);
     });
     expect(seen).toBe(true);
     expect(handlers.has("library.bindReadingAsset")).toBe(true);
@@ -115,7 +119,7 @@ it("returns 200 without a body when HEAD reads the current source pdf", async ()
 it("returns 404 when the asset id was never bound", async () => {
   await withPaper(async (paper) => {
     const response = respondToReadingAsset(
-      "oi-asset://9",
+      "oi-asset://asset/9",
       "GET",
       createReadingAssetPath(paper.main, paper.dataRoot),
     );
@@ -157,29 +161,35 @@ it("returns 404 when the asset id is from the previous generation", async () => 
   });
 });
 
-it("returns 404 when the host is the document id or keeps a leading zero", async () => {
+it("returns 404 when the path is the document id or keeps a leading zero", async () => {
   await withPaper(async (paper) => {
     expect(paper.assetId).toBe("1");
     const port = createReadingAssetPath(paper.main, paper.dataRoot);
     const document = respondToReadingAsset(
-      `oi-asset://${paper.id}`,
+      `oi-asset://asset/${paper.id}`,
       "GET",
       port,
     );
-    const padded = respondToReadingAsset("oi-asset://01", "GET", port);
+    const padded = respondToReadingAsset("oi-asset://asset/01", "GET", port);
     await expectEmpty(document, 404, [paper.root, paper.id]);
     await expectEmpty(padded, 404, [paper.root]);
   });
 });
 
-it("returns 404 when the host is an ipv4 spelling of the asset id", async () => {
+it("returns 404 when the host is numeric or an ipv4 spelling", async () => {
   await withPaper(async (paper) => {
     expect(paper.assetId).toBe("1");
+    const numeric = respondToReadingAsset(
+      "oi-asset://1",
+      "GET",
+      createReadingAssetPath(paper.main, paper.dataRoot),
+    );
     const response = respondToReadingAsset(
       "oi-asset://0.0.0.1/",
       "GET",
       createReadingAssetPath(paper.main, paper.dataRoot),
     );
+    await expectEmpty(numeric, 404, [paper.root]);
     await expectEmpty(response, 404, [paper.root]);
   });
 });
@@ -192,6 +202,12 @@ it("returns 404 when dotdot or percent-encoded dotdot is in the url", () => {
     "oi-asset://%2E%2E/",
     "oi-asset://1/%2e%2e",
     "oi-asset://1/..",
+    "oi-asset://asset/../secret",
+    "oi-asset://asset/..",
+    "oi-asset://asset/%2e%2e",
+    "oi-asset://asset/%2E%2E",
+    "oi-asset://asset/1/%2e%2e",
+    "oi-asset://asset/1/..",
   ];
   for (const url of urls) {
     const response = respondToReadingAsset(url, "GET", trap());
@@ -202,12 +218,15 @@ it("returns 404 when dotdot or percent-encoded dotdot is in the url", () => {
 
 it("returns 404 when the url has userinfo, a port, a query, a fragment, or another scheme", () => {
   const urls = [
-    "oi-asset://user:pass@1",
-    "oi-asset://1:80",
-    "oi-asset://1?x=1",
-    "oi-asset://1#frag",
-    "oi-asset://1/extra",
-    "http://1",
+    "oi-asset://user:pass@asset/1",
+    "oi-asset://asset:80/1",
+    "oi-asset://asset/1?x=1",
+    "oi-asset://asset/1#frag",
+    "oi-asset://asset/1/extra",
+    "oi-asset://asset/",
+    "oi-asset://asset",
+    "oi-asset://other/1",
+    "http://asset/1",
     "not a url",
   ];
   for (const url of urls) {
@@ -216,16 +235,18 @@ it("returns 404 when the url has userinfo, a port, a query, a fragment, or anoth
 });
 
 it("returns 405 when the method is not GET or HEAD", () => {
-  expect(respondToReadingAsset("oi-asset://1", "POST", trap()).status).toBe(
-    405,
-  );
-  expect(respondToReadingAsset("oi-asset://1", "PUT", trap()).status).toBe(405);
+  expect(
+    respondToReadingAsset("oi-asset://asset/1", "POST", trap()).status,
+  ).toBe(405);
+  expect(
+    respondToReadingAsset("oi-asset://asset/1", "PUT", trap()).status,
+  ).toBe(405);
 });
 
 it("returns 404 when a source symlink points outside the entry", async () => {
   const fixture = linkedPdf("file");
   try {
-    const response = respondToReadingAsset("oi-asset://1", "GET", () => {
+    const response = respondToReadingAsset("oi-asset://asset/1", "GET", () => {
       return fixture.filePath;
     });
     await expectEmpty(response, 404, [fixture.root, fixture.outside]);
@@ -238,7 +259,7 @@ it("returns 404 when a source symlink points outside the entry", async () => {
 it("returns 404 when the entry directory symlink points outside", async () => {
   const fixture = linkedPdf("directory");
   try {
-    const response = respondToReadingAsset("oi-asset://1", "GET", () => {
+    const response = respondToReadingAsset("oi-asset://asset/1", "GET", () => {
       return fixture.filePath;
     });
     await expectEmpty(response, 404, [fixture.root, fixture.outside]);
@@ -255,7 +276,7 @@ it("returns 404 when the file is not a pdf", async () => {
     mkdirSync(path.dirname(filePath));
     writeFileSync(filePath, "<svg></svg>\n");
     const response = respondToReadingAsset(
-      "oi-asset://1",
+      "oi-asset://asset/1",
       "GET",
       () => filePath,
     );
@@ -287,7 +308,7 @@ it("returns 404 when the data root cannot be opened", async () => {
   });
   try {
     const response = respondToReadingAsset(
-      "oi-asset://1",
+      "oi-asset://asset/1",
       "GET",
       createReadingAssetPath(main, `${secret}\u0000`),
     );
@@ -325,7 +346,7 @@ function asEntryId(value: string): LibraryEntryId {
 }
 
 function assetUrl(assetId: string): string {
-  return `oi-asset://${assetId}`;
+  return `oi-asset://asset/${assetId}`;
 }
 
 function mustPath(filePath: string | undefined): string {
