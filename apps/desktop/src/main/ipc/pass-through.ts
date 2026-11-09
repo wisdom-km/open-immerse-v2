@@ -1,11 +1,14 @@
+export type IpcErrorFields = {
+  readonly code: string;
+  readonly retryable: boolean;
+  readonly [key: string]: unknown;
+};
+
 export type IpcPassThrough =
   | { readonly ok: true; readonly value: unknown }
   | {
       readonly ok: false;
-      readonly error: {
-        readonly code: string;
-        readonly retryable: boolean;
-      };
+      readonly error: IpcErrorFields;
     };
 
 export function isPassThrough(value: unknown): value is IpcPassThrough {

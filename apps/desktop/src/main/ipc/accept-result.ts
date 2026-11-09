@@ -1,4 +1,4 @@
-import type { IpcPassThrough } from "./pass-through.js";
+import type { IpcErrorFields, IpcPassThrough } from "./pass-through.js";
 import { payloadMatches } from "./payload-schema.js";
 import type { IpcJsonSchema } from "./registry.generated.js";
 
@@ -11,11 +11,6 @@ const transportRetryable = {
 } as const;
 
 type TransportCode = keyof typeof transportRetryable;
-
-type ErrorBody = {
-  readonly code: string;
-  readonly retryable: boolean;
-};
 
 export function acceptHandlerResult(
   response: IpcJsonSchema,
@@ -41,7 +36,7 @@ function acceptValue(
   return { ok: true, value: produced.value };
 }
 
-function acceptError(error: ErrorBody): IpcPassThrough {
+function acceptError(error: IpcErrorFields): IpcPassThrough {
   if (isTransportCode(error.code)) {
     return transportError(error.code);
   }
@@ -63,18 +58,41 @@ function transportError(code: TransportCode): IpcPassThrough {
   };
 }
 
-function businessError(error: ErrorBody): IpcPassThrough {
-  const code = error.code;
-  const retryable = error.retryable;
-  if (!hasDetail(error) || error.detail === undefined) {
-    return { ok: false, error: { code, retryable } };
+function businessError(error: IpcErrorFields): IpcPassThrough {
+  const fields: Record<string, unknown> = {};
+  copyBusinessFields(error, fields);
+  if (isPlainObject(error.detail)) {
+    copyBusinessFields(error.detail, fields);
   }
-  const body = { code, retryable, detail: error.detail };
-  return { ok: false, error: body };
+  return {
+    ok: false,
+    error: { code: error.code, retryable: error.retryable, ...fields },
+  };
 }
 
-function hasDetail(error: object): error is { readonly detail: unknown } {
-  return Object.hasOwn(error, "detail");
+function copyBusinessFields(
+  source: Readonly<Record<string, unknown>>,
+  target: Record<string, unknown>,
+): void {
+  for (const key of Object.keys(source)) {
+    if (isSkippedField(key) || Object.hasOwn(target, key)) {
+      continue;
+    }
+    target[key] = source[key];
+  }
+}
+
+function isSkippedField(key: string): boolean {
+  return (
+    key === "code" ||
+    key === "retryable" ||
+    key === "message" ||
+    key === "detail"
+  );
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function invalidPayload(): IpcPassThrough {
