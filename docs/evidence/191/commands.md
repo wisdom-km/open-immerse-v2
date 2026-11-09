@@ -55,3 +55,5 @@ Wisdom 原话在 `docs/approvals.md` 2026-11-09 21:06 那一行。来源：[6740
 Windows 修复仍在历史上：`92730a1312ac7e843a3dfd6ffd5a68a4763ee91c`。`apps/desktop/test/open-document-wiring.test.ts` 仍先调用 `will-quit` 再 `rmSync`。本机 Linux 跑 `corepack pnpm exec vitest run apps/desktop/test`：21 个文件，80 通过，0 失败，类型错误 0。没有在 Windows 上复跑。
 
 含本节的 `check-pr-size` 是 802。全量 `corepack pnpm run check` 跑在含本节的那一笔上。那一笔的 SHA 与 tree 写在下一笔，避免写进自己的正文。
+
+全量 check 退出码 0。对象 `9f16b4aa01383ce5070ea7fb3dae936ece77b293`（tree `7ab57fab78cb53cfffc109f6825db827b0037d76`）。含该提交是 802。含本段是 804。
