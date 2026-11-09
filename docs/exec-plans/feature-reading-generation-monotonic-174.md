@@ -29,10 +29,10 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它 |  |  |
-| 2 | 只在 `docs/approvals.md` 追加 17:14 原话、所批范围、时间和登记链接，并改文末计数。然后停 |  |  |
-| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 |  |  |
-| 4 | 按「根因」和「修法」实现。不在步骤 1、2 |  |  |
+| 1 | 本文件。第一笔只有它 | `38fce75ac24fbd977c4d78f8301d1cf1f19bbd9b`，tree `96e2568459be8ee05e99574fd8df30a5f9522f9b`。只有本文件 | 该提交 |
+| 2 | 只在 `docs/approvals.md` 追加 17:14 原话、所批范围、时间和登记链接，并改文末计数。然后停 | `2e4fed575515f4b0100b30d7567a7f7354a6bb39`，tree `43fafc0ed48343972b68b84afbb9fcb60c7fcf6d`。只改台账，计数 124 | 该提交 |
+| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 | PASS：[6736646809](https://github.com/wisdom-km/open-immerse-v2/pull/189#issuecomment-6736646809)。审查时 tip 是 `2e4fed57` | 该评论 |
+| 4 | 按「根因」和「修法」实现。不在步骤 1、2 | 18:42 台账 `f461eac564ea267014785ef9f4f993983ac6359b`，tree `405e52bdaff26e108438b793399f26fe25fa94c9`，只改 `docs/approvals.md`，计数 125。实现 `083407dcfe3cd816353ea6c27808997a1b2159d8`，tree `0805c5961098237d9478cf9ea5c6adb4a5668a47`。高水位在闭包内，不入库。`library-wiring.ts` 只加测试导出（+2/−1）。`reading-ipc-wiring.test.ts` +77，新开一条 `it`，避免原函数超过 80 行。commandMap 测试 68 行。相对 `origin/main` `79959ad`，这个 tip 的非生成行数是 350。四个热点 diff 为 0 | [docs/evidence/189/commands.md](../evidence/189/commands.md) |
 
 ## 根因
 
@@ -114,6 +114,8 @@ assetId 仍由 `issued.next` 在这张表的进程内从 1 递增。revoke 不�
 
 这是 nit，不在 17:14 原话里。默认不做。若以后另批，再加一个断言生产 map 的四条阅读通道，预计 +80 行以内，并且不得为此再建一张代际表。`library-wiring.ts` 顶层引用了 Electron。未批之前不导出 `commandMap`，不加依赖，也不改这个文件。
 
+2026-11-09 18:42 已另批。实现是 `apps/desktop/test/library-command-map.test.ts`。`commandMap` 改为测试可见的导出。测试把同一次 `createLibraryMain` 上的四个方法换成哨兵，不另建代际表。Electron 在该测试文件里被替掉，没有加依赖。
+
 ## Box 和真机
 
 本两笔不跑 Box，不跑真机，不写 PASS。
@@ -145,12 +147,13 @@ desktop UI、`oi-asset://`、CSP、Range、settings、safeStorage、密钥、RUL
 | 「代际编号重新从 1 开始的问题在批次 D 前单独开计划加台账两笔的 Draft，修成同一篇文献只增不减」 | 本分支只写计划和台账。不实施。链接：[6736397407](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6736397407) | 2026-11-09 17:14 | Wisdom |
 | 高水位在工厂闭包内，不入库 | 17:14 要求只增不减，没有要求越过进程。入库会改掉 12:04 已写的「不入库」和「进程新起时表为空」，并替 [docs/arch/09.md](../arch/09.md) 第 23 行未签名的崩溃清表做决定 | 2026-11-09 | 本计划的选择，Forge 可在 PASS 前退回 |
 | commandMap 测试默认不做 | 不在 17:14 原话里 | 2026-11-09 | 本计划，标为待批准的可选项 |
+| 「按推荐：按 PR189 计划 38fce75a 实施代际只增不减，并补生产 commandMap 四条阅读通道的映射测试；不 Ready/合入/发版」 | 按计划 `38fce75a` 实施，并补生产 commandMap 测试。链接：[6738024462](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6738024462)。Forge 计划审查 PASS：[6736646809](https://github.com/wisdom-km/open-immerse-v2/pull/189#issuecomment-6736646809) | 2026-11-09 18:42 | Wisdom |
 
 批次 C、批次 D、本 Draft 的实施、Ready、合入和发版不在本文件的实施范围内。
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：本两笔无。实现 tip 的命令记录在步骤 4 之后再写。
+- `docs/evidence/189/commands.md`：实现 tip `083407dcfe3cd816353ea6c27808997a1b2159d8` 的命令记录。回填本列的提交不重跑全量。
 
 ## 自检
 
