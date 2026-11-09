@@ -66,4 +66,8 @@ export type {
   SetProgressPageInput,
   SetProgressPageValue,
 } from "./application/use-cases/set-progress-page.js";
+export { createGetProgressPageCommand } from "./application/get-progress-page-command.js";
+export type { GetProgressPageCommand } from "./application/get-progress-page-command.js";
+export { createSetProgressPageCommand } from "./application/set-progress-page-command.js";
+export type { SetProgressPageCommand } from "./application/set-progress-page-command.js";
 export { createLibraryIpcHandlers } from "./adapters/ipc-handlers.js";
