@@ -45,10 +45,10 @@
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本文件。第一笔只有它 |  |  |
-| 2 | 只在 `docs/approvals.md` 追加 19:45 原话、所批范围、时间和登记链接，并把文末批准数从 125 改为 126。然后停 |  |  |
-| 3 | Forge 亲读步骤 1 与步骤 2。有条件 PASS 要求先把主机名规范化停点和可测性写进本文件。那一笔即视为 PASS，之前没有步骤 4 |  |  |
-| 4 | 按「行为」实现。不在步骤 1、2 |  |  |
+| 1 | 本文件。第一笔只有它 | `3d6ca2ab0d14cdc0e10a46a92ec134c8a076a219`，tree `f9d7522897b361c112e991c86e31ec61cc288ead`。只新增本文件 | 无 |
+| 2 | 只在 `docs/approvals.md` 追加 19:45 原话、所批范围、时间和登记链接，并把文末批准数从 125 改为 126。然后停 | `2e70df084793f57e8b3816f9b230b633f072119b`，tree `2dba7d765962fd74c315d3058b4a7f0554a1a826`。只改 `docs/approvals.md`。批准数 126 | 无 |
+| 3 | Forge 亲读步骤 1 与步骤 2。有条件 PASS 要求先把主机名规范化停点和可测性写进本文件。那一笔即视为 PASS，之前没有步骤 4 | 评论 [6739448337](https://github.com/wisdom-km/open-immerse-v2/pull/190#issuecomment-6739448337)。补充 `22012818ce48525d529402623243f9e6d47b326a`，tree `cd97a8a0d1792e5557ec718032ba5493da9be460`。只改本文件。这一笔即 PASS | 无 |
+| 4 | 按「行为」实现。不在步骤 1、2 | 实现 `94e5ac2f54852534d2b7f5557b52f8fd133a6a4d`，tree `fab6c6c43e192139aabfd5ae2781f6def4cb4c51`。类型修正 `1dddc5a058c8823bbedef425083966ad7bfdab32`，tree `1c119730674fe8af9b1e307707341aab16c60912`。全量在这个 tip。`protocol.handle` 注入。`library-wiring.ts` +15。四个热点和 `index.ts` 的 diff 是 0。Electron 45.2.1 的 main 进程 `net.fetch("oi-asset://1")` 时，`protocol.handle` 收到 `oi-asset://0.0.0.1/`，状态 404。没有改解析去兼容 IPv4，也没有改 URL。合法 `assetId` 在这次真实请求里不是 200。停在这里 | [docs/evidence/190/commands.md](../evidence/190/commands.md) |
 
 ## 目标
 
@@ -186,7 +186,7 @@
 ## 还没核实
 
 - `standard: true` 是否必要。见停点。本批没有跑 Electron 45.2.1 去核对「`registerSchemesAsPrivileged` 只能调用一次」。
-- 纯数字 `assetId` 在 `standard: true` 下会不会被收成 IPv4。见「主机名规范化」。Node 的 `new URL` 证明不了。实施时若跑了 main 进程 fetch，把实际收到的 URL 写进证据；没跑就保持「还没核实」。
+- 纯数字 `assetId` 在 `standard: true` 下会被收成 IPv4。Electron 45.2.1 main 进程里，`net.fetch("oi-asset://1")` 使 `protocol.handle` 收到 `oi-asset://0.0.0.1/`，状态 404。见证据。解析没有兼容这种形式，URL 形式也没改。要改规格必须另外请 Wisdom 批准。
 - 现行 CSP 能否读到这份 PDF。见停点。本批不打开窗口，所以这项保持未核实。
 - PDF.js 6.5.438 不经 `blob:` worker 能否打开 `oi-asset://`。见停点。
 - 第二个 `createLibraryMain` 仍是空表。这不能代替杀掉 OS 进程再拉起。本批不把「没杀进程」写成重启已验证，也不为协议把代际表入库。
@@ -201,12 +201,13 @@
 | 非 GET / HEAD 沿用 405 | oi-app 已是 405。19:45 的 404 矩阵没有这一行 | 2026-11-09 | 本计划的选择，Forge 可在 PASS 前退回 |
 | 窗口级 CSP、`standard` 与 PDF.js 不纳入本批测试 | 19:45 不做 UI，也不改 CSP。这三项要开窗口。不够用是停点，不是本批的放宽 | 2026-11-09 | 本计划，依据 19:45 与 [docs/arch/09.md](../arch/09.md) 第 25、32 行 |
 | 有条件 PASS：补上主机名规范化停点和 `protocol.handle` 注入之后，按 19:45 进入步骤 4。非 GET / HEAD 仍是 405。PDF 响应仍不带页面 CSP | 审查接受这两项计划选择。纯数字 host 若被收成 IPv4，不在解析里兼容，也不改 URL。链接：[6739448337](https://github.com/wisdom-km/open-immerse-v2/pull/190#issuecomment-6739448337)。GitHub `created_at` 是 `2026-11-09T11:56:22Z` | 2026-11-09 19:56 | Forge 计划审查，非业主决定 |
+| 主机名被收成 IPv4 之后停住 | Electron 45.2.1 的 main 进程 `net.fetch("oi-asset://1")`，`protocol.handle` 收到 `oi-asset://0.0.0.1/`，响应 404。不在解析里兼容，也不改 URL。改 [docs/arch/09.md](../arch/09.md) 第 16、22 行必须另外请 Wisdom 批准 | 2026-11-09 | 实施时按停点停下，非业主决定 |
 
 批次 D 的原则检查由 Loom 做。本文件不写 UI，也不代替那份检查。Ready、合入和发版不在本文件的范围内。
 
 ## 证据链接
 
-- `docs/evidence/<PR号>/`：本两笔无。不建证据目录。
+- [docs/evidence/190/commands.md](../evidence/190/commands.md)：步骤 4 的全量和 main 进程 fetch。步骤 1 至 3 无。
 
 ## 自检
 
