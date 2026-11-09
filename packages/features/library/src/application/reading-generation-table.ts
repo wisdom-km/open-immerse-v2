@@ -11,6 +11,7 @@ export type ReadingGenerationAdoption =
 export type ReadingGenerationTable = ReadingGenerationLookup & {
   bind(id: LibraryEntryId): ReadingGenerationAdoption;
   revoke(id: LibraryEntryId, generation: number): boolean;
+  locate(assetId: string): LibraryEntryId | undefined;
 };
 
 type CurrentGeneration = {
@@ -51,7 +52,27 @@ export function createReadingGenerationTable(
       rows.delete(id);
       return true;
     },
+    locate(assetId) {
+      return locatedId(rows, assetId);
+    },
   };
+}
+
+function locatedId(
+  rows: Map<LibraryEntryId, CurrentGeneration>,
+  assetId: string,
+): LibraryEntryId | undefined {
+  let found: LibraryEntryId | undefined;
+  for (const [id, row] of rows) {
+    if (row.assetId !== assetId) {
+      continue;
+    }
+    if (found !== undefined) {
+      return undefined;
+    }
+    found = id;
+  }
+  return found;
 }
 
 function adopt(

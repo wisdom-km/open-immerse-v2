@@ -59,6 +59,7 @@ export type ReadingIpcHandlers = {
 export type LibraryMain = {
   readonly handlers: LibraryIpcHandlers;
   readonly reading: ReadingIpcHandlers;
+  readonly locate: (assetId: string) => string | undefined;
   readonly close: () => void;
 };
 
@@ -72,6 +73,9 @@ export function createLibraryMain(options: LibraryMainOptions): LibraryMain {
     return {
       handlers: unavailableHandlers(),
       reading: unavailableReading(),
+      locate() {
+        return undefined;
+      },
       close() {
         return undefined;
       },
@@ -81,6 +85,7 @@ export function createLibraryMain(options: LibraryMainOptions): LibraryMain {
   return {
     handlers: built.handlers,
     reading: built.reading,
+    locate: built.locate,
     close: closeOnce(opened.storage),
   };
 }
@@ -116,11 +121,12 @@ function migrationsDirectory(): string {
 function handlersFor(
   storage: AppStorage,
   options: LibraryMainOptions,
-): Pick<LibraryMain, "handlers" | "reading"> {
+): Pick<LibraryMain, "handlers" | "reading" | "locate"> {
   const repository = createSqliteLibraryRepository(storage);
   const files = createFsPdfFileStore({
     layout: dataRootLayout(options.dataRoot),
   });
+  const reading = readingHandlers(repository);
   return {
     handlers: createLibraryIpcHandlers({
       importPdf: createImportPdf({
@@ -137,21 +143,27 @@ function handlersFor(
       relocateSource: createRelocateSource({ repository, files }),
       pickPdf: options.pickPdf,
     }),
-    reading: readingHandlers(repository),
+    reading: reading.reading,
+    locate: reading.locate,
   };
 }
 
 function readingHandlers(
   repository: LibraryRepository & LibraryProgressPageUpdate,
-): ReadingIpcHandlers {
+): Pick<LibraryMain, "reading" | "locate"> {
   const table = createReadingGenerationTable();
   const getProgressPage = createGetProgressPage(repository);
   const setProgressPage = createSetProgressPage(repository);
   return {
-    bindReadingAsset: createBindReadingAssetCommand(getProgressPage, table),
-    revokeReadingAsset: createRevokeReadingAssetCommand(table),
-    getProgressPage: createGetProgressPageCommand(getProgressPage, table),
-    setProgressPage: createSetProgressPageCommand(setProgressPage, table),
+    reading: {
+      bindReadingAsset: createBindReadingAssetCommand(getProgressPage, table),
+      revokeReadingAsset: createRevokeReadingAssetCommand(table),
+      getProgressPage: createGetProgressPageCommand(getProgressPage, table),
+      setProgressPage: createSetProgressPageCommand(setProgressPage, table),
+    },
+    locate(assetId) {
+      return table.locate(assetId);
+    },
   };
 }
 
