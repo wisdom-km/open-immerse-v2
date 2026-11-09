@@ -454,6 +454,16 @@
       "source": "ARCHITECTURE.md",
       "old": "每个文献 id 只有一条当前代际，新的 bind 替换旧的",
       "new": "每个文献 id 只有一条当前代际，新的 bind 替换旧的。同一张表内，revoke 后再 bind 的 generation 大于这张表已经发给这篇文献的代际，不回到 1。旧代际不匹配"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "URL 形如 `oi-asset://<assetId>`",
+      "new": "URL 形如 `oi-asset://asset/<assetId>`"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "URL 仍是 `oi-asset://<assetId>`",
+      "new": "URL 仍是 `oi-asset://asset/<assetId>`"
     }
   ]
 }

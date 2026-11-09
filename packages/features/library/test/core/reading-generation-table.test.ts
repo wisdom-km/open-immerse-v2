@@ -117,6 +117,22 @@ it("rejects the old generation on get, set, and revoke without calling a use cas
   expect(reads).toEqual([{ id }]);
 });
 
+it("returns undefined when the asset id is unknown, revoked, or replaced", () => {
+  const table = createReadingGenerationTable();
+  expect(table.locate("1")).toBeUndefined();
+  expect(table.bind(id)).toEqual({ ok: true, assetId: "1", generation: 1 });
+  expect(table.locate("1")).toBe(id);
+  expect(table.locate("01")).toBeUndefined();
+  expect(table.locate(id)).toBeUndefined();
+  expect(table.bind(id)).toEqual({ ok: true, assetId: "2", generation: 2 });
+  expect(table.locate("1")).toBeUndefined();
+  expect(table.locate("2")).toBe(id);
+  expect(table.revoke(id, 2)).toBe(true);
+  expect(table.locate("2")).toBeUndefined();
+  expect(table.bind(other)).toEqual({ ok: true, assetId: "3", generation: 1 });
+  expect(table.locate("3")).toBe(other);
+});
+
 function rejectedPair(generation: number) {
   return {
     ok: false as const,
