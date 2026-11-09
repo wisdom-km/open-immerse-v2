@@ -8,6 +8,10 @@ export const libraryCommandChannels = [
   "library.importDropped",
   "library.list",
   "library.relocate",
+  "library.bindReadingAsset",
+  "library.revokeReadingAsset",
+  "library.getProgressPage",
+  "library.setProgressPage",
 ] as const;
 
 export type LibraryCommandChannel = (typeof libraryCommandChannels)[number];

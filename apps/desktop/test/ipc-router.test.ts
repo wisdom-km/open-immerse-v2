@@ -20,10 +20,14 @@ const invokeEvent: IpcInvokeEvent = { senderFrame: frame, sender: { id: 1 } };
 it("registers one handle for each exposed library command", () => {
   const channels = ipcRegistry.map((entry) => entry.channel);
   expect(channels).toEqual([
+    "library.bindReadingAsset",
+    "library.getProgressPage",
     "library.import",
     "library.importDropped",
     "library.list",
     "library.relocate",
+    "library.revokeReadingAsset",
+    "library.setProgressPage",
   ]);
   const handlers = new Map<string, IpcCommandHandler>(
     channels.map((channel) => [

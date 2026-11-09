@@ -409,6 +409,46 @@
       "source": "PRD.md",
       "old": "2026-11-09 03:39 的 library core 已能按 id 读写已有页码；重开的用户路径、handler 与 `expose` 为 true 仍未验收。",
       "new": "2026-11-09 03:39 的 library core 已能按 id 读写已有页码。2026-11-09 12:04 起 library command 能按内存代际表拒绝旧代际，并实现 bind 与 revoke；`expose` 仍为 false，生产 IPC 仍未开通。重开的用户路径与 `expose` 为 true 仍未验收。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "页码命令在 `ipc/library-progress.ts`，本批 `expose` 为 false",
+      "new": "页码命令在 `ipc/library-progress.ts`，生产 IPC 已挂上，仍不等于重开已验收"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "`expose` 都是 false。正式 codegen 不写入 preload、公开声明或 registry。",
+      "new": "当时 `expose` 都是 false。正式 codegen 现已写入 preload、公开声明和 registry。生产 IPC 已挂上，仍不等于重开已验收。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "`expose` 仍是 false，生产 IPC 仍未开通。",
+      "new": "生产 IPC 已挂上，仍不等于重开已验收。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "生产 IPC 仍未挂上。",
+      "new": "生产 IPC 已挂上，仍不等于重开已验收。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "不声明安全整数。`expose` 仍是 false。",
+      "new": "不声明安全整数。生产 IPC 已挂上，仍不等于重开已验收。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "本批 `expose` 为 false。library core 已能按 id 读写 `progressPage`。library command 能按表拒绝旧代际。生产 IPC 仍未开通，也不表示保存或恢复已经实现。",
+      "new": "library core 已能按 id 读写 `progressPage`。library command 能按表拒绝旧代际。生产 IPC 已挂上，仍不等于重开已验收，也不表示保存或恢复已经实现。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "本批这两条以及两条页码命令的 `expose` 为 false。重复登记是否沿用同一个 `assetId`、重载或崩溃后是否清表、以及先核代际还是先查库，仍不在本节写成签名。",
+      "new": "本批这两条以及两条页码命令的生产 IPC 已挂上，仍不等于重开已验收。重复登记是否沿用同一个 `assetId`、重载或崩溃后是否清表、以及先查表再查库，仍不在本节写成签名。"
+    },
+    {
+      "source": "PRD.md",
+      "old": "`expose` 仍为 false，生产 IPC 仍未开通。重开的用户路径与 `expose` 为 true 仍未验收。",
+      "new": "生产 IPC 已挂上。重开的用户路径仍未验收。不把 AC-11 标成通过。"
     }
   ]
 }

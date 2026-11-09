@@ -4,38 +4,100 @@ type Result<T, E> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly error: E };
 
-export type OiError<Channel extends string> = Channel extends "library.import"
-  ?
-      | "cancelled"
-      | "not_pdf"
-      | "hash_mismatch"
-      | "sender_rejected"
-      | "invalid_payload"
-      | "handler_threw"
-  : Channel extends "library.importDropped"
+export type OiError<Channel extends string> =
+  Channel extends "library.bindReadingAsset"
     ?
-        | "not_pdf"
-        | "hash_mismatch"
+        | "not_found"
+        | "rejected"
         | "sender_rejected"
         | "invalid_payload"
         | "handler_threw"
-    : Channel extends "library.list"
-      ? "sender_rejected" | "invalid_payload" | "handler_threw"
-      : Channel extends "library.relocate"
+    : Channel extends "library.getProgressPage"
+      ?
+          | "not_found"
+          | "rejected"
+          | "sender_rejected"
+          | "invalid_payload"
+          | "handler_threw"
+      : Channel extends "library.import"
         ?
-            | "not_found"
             | "cancelled"
             | "not_pdf"
             | "hash_mismatch"
             | "sender_rejected"
             | "invalid_payload"
             | "handler_threw"
-        : never;
+        : Channel extends "library.importDropped"
+          ?
+              | "not_pdf"
+              | "hash_mismatch"
+              | "sender_rejected"
+              | "invalid_payload"
+              | "handler_threw"
+          : Channel extends "library.list"
+            ? "sender_rejected" | "invalid_payload" | "handler_threw"
+            : Channel extends "library.relocate"
+              ?
+                  | "not_found"
+                  | "cancelled"
+                  | "not_pdf"
+                  | "hash_mismatch"
+                  | "sender_rejected"
+                  | "invalid_payload"
+                  | "handler_threw"
+              : Channel extends "library.revokeReadingAsset"
+                ?
+                    | "rejected"
+                    | "sender_rejected"
+                    | "invalid_payload"
+                    | "handler_threw"
+                : Channel extends "library.setProgressPage"
+                  ?
+                      | "not_found"
+                      | "rejected"
+                      | "sender_rejected"
+                      | "invalid_payload"
+                      | "handler_threw"
+                  : never;
 
 declare global {
   interface Window {
     readonly oi: {
       readonly library: {
+        /** idempotent: false */
+        bindReadingAsset(input: Readonly<{ id: string }>): Promise<
+          Result<
+            Readonly<{ assetId: string; generation: number; id: string }>,
+            | { readonly code: "not_found"; readonly retryable: false }
+            | ({
+                readonly code: "rejected";
+                readonly retryable: false;
+              } & Readonly<{ id: string }>)
+            | { readonly code: "sender_rejected"; readonly retryable: false }
+            | { readonly code: "invalid_payload"; readonly retryable: false }
+            | { readonly code: "handler_threw"; readonly retryable: true }
+          >
+        >;
+        /** idempotent: true */
+        getProgressPage(
+          input: Readonly<{ generation: number; id: string }>,
+        ): Promise<
+          Result<
+            Readonly<{
+              generation: number;
+              id: string;
+              progressPage: number | null;
+            }>,
+            | { readonly code: "not_found"; readonly retryable: false }
+            | ({
+                readonly code: "rejected";
+                readonly retryable: false;
+              } & Readonly<{ generation: number; id: string }>)
+            | { readonly code: "sender_rejected"; readonly retryable: false }
+            | { readonly code: "invalid_payload"; readonly retryable: false }
+            | { readonly code: "handler_threw"; readonly retryable: true }
+          >
+        >;
         /** idempotent: false */
         import(input: Readonly<{}>): Promise<
           Result<
@@ -118,6 +180,41 @@ declare global {
             | { readonly code: "cancelled"; readonly retryable: false }
             | { readonly code: "not_pdf"; readonly retryable: false }
             | { readonly code: "hash_mismatch"; readonly retryable: false }
+            | { readonly code: "sender_rejected"; readonly retryable: false }
+            | { readonly code: "invalid_payload"; readonly retryable: false }
+            | { readonly code: "handler_threw"; readonly retryable: true }
+          >
+        >;
+        /** idempotent: false */
+        revokeReadingAsset(
+          input: Readonly<{ generation: number; id: string }>,
+        ): Promise<
+          Result<
+            Readonly<{ generation: number; id: string }>,
+            | ({
+                readonly code: "rejected";
+                readonly retryable: false;
+              } & Readonly<{ generation: number; id: string }>)
+            | { readonly code: "sender_rejected"; readonly retryable: false }
+            | { readonly code: "invalid_payload"; readonly retryable: false }
+            | { readonly code: "handler_threw"; readonly retryable: true }
+          >
+        >;
+        /** idempotent: true */
+        setProgressPage(
+          input: Readonly<{
+            generation: number;
+            id: string;
+            progressPage: number;
+          }>,
+        ): Promise<
+          Result<
+            Readonly<{ generation: number; id: string; progressPage: number }>,
+            | { readonly code: "not_found"; readonly retryable: false }
+            | ({
+                readonly code: "rejected";
+                readonly retryable: false;
+              } & Readonly<{ generation: number; id: string }>)
             | { readonly code: "sender_rejected"; readonly retryable: false }
             | { readonly code: "invalid_payload"; readonly retryable: false }
             | { readonly code: "handler_threw"; readonly retryable: true }

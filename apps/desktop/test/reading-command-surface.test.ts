@@ -4,20 +4,20 @@ import { ipcRegistry } from "../src/main/ipc/registry.generated.js";
 import { createOi } from "../src/preload/oi.generated.js";
 
 const hidden = [
-  "library.bindReadingAsset",
-  "library.revokeReadingAsset",
-  "library.getProgressPage",
-  "library.setProgressPage",
   "parsing.getParseCapabilities",
   "settings.saveParseService",
   "settings.getParseServiceStatus",
 ] as const;
 
 const exposed = [
+  "library.bindReadingAsset",
+  "library.getProgressPage",
   "library.import",
   "library.importDropped",
   "library.list",
   "library.relocate",
+  "library.revokeReadingAsset",
+  "library.setProgressPage",
 ] as const;
 
 it("keeps internal commands off the registry and the preload object", () => {
@@ -36,7 +36,15 @@ it("types the window and the preload return as the same exposed commands", () =>
   expectTypeOf<PreloadName>().toEqualTypeOf<ExposedName>();
 });
 
-type ExposedName = "import" | "importDropped" | "list" | "relocate";
+type ExposedName =
+  | "bindReadingAsset"
+  | "getProgressPage"
+  | "import"
+  | "importDropped"
+  | "list"
+  | "relocate"
+  | "revokeReadingAsset"
+  | "setProgressPage";
 
 type PreloadName = keyof ReturnType<typeof createOi>["library"];
 

@@ -35,6 +35,44 @@ export function createOi(bridge: IpcBridge) {
   return {
     library: {
       /** idempotent: false */
+      bindReadingAsset(input: Readonly<{ id: string }>): Promise<
+        Result<
+          Readonly<{ assetId: string; generation: number; id: string }>,
+          | { readonly code: "not_found"; readonly retryable: false }
+          | ({
+              readonly code: "rejected";
+              readonly retryable: false;
+            } & Readonly<{ id: string }>)
+          | { readonly code: "sender_rejected"; readonly retryable: false }
+          | { readonly code: "invalid_payload"; readonly retryable: false }
+          | { readonly code: "handler_threw"; readonly retryable: true }
+        >
+      > {
+        return call(bridge, "library.bindReadingAsset", input);
+      },
+      /** idempotent: true */
+      getProgressPage(
+        input: Readonly<{ generation: number; id: string }>,
+      ): Promise<
+        Result<
+          Readonly<{
+            generation: number;
+            id: string;
+            progressPage: number | null;
+          }>,
+          | { readonly code: "not_found"; readonly retryable: false }
+          | ({
+              readonly code: "rejected";
+              readonly retryable: false;
+            } & Readonly<{ generation: number; id: string }>)
+          | { readonly code: "sender_rejected"; readonly retryable: false }
+          | { readonly code: "invalid_payload"; readonly retryable: false }
+          | { readonly code: "handler_threw"; readonly retryable: true }
+        >
+      > {
+        return call(bridge, "library.getProgressPage", input);
+      },
+      /** idempotent: false */
       import(input: Readonly<{}>): Promise<
         Result<
           Readonly<{
@@ -128,6 +166,45 @@ export function createOi(bridge: IpcBridge) {
         >
       > {
         return call(bridge, "library.relocate", input);
+      },
+      /** idempotent: false */
+      revokeReadingAsset(
+        input: Readonly<{ generation: number; id: string }>,
+      ): Promise<
+        Result<
+          Readonly<{ generation: number; id: string }>,
+          | ({
+              readonly code: "rejected";
+              readonly retryable: false;
+            } & Readonly<{ generation: number; id: string }>)
+          | { readonly code: "sender_rejected"; readonly retryable: false }
+          | { readonly code: "invalid_payload"; readonly retryable: false }
+          | { readonly code: "handler_threw"; readonly retryable: true }
+        >
+      > {
+        return call(bridge, "library.revokeReadingAsset", input);
+      },
+      /** idempotent: true */
+      setProgressPage(
+        input: Readonly<{
+          generation: number;
+          id: string;
+          progressPage: number;
+        }>,
+      ): Promise<
+        Result<
+          Readonly<{ generation: number; id: string; progressPage: number }>,
+          | { readonly code: "not_found"; readonly retryable: false }
+          | ({
+              readonly code: "rejected";
+              readonly retryable: false;
+            } & Readonly<{ generation: number; id: string }>)
+          | { readonly code: "sender_rejected"; readonly retryable: false }
+          | { readonly code: "invalid_payload"; readonly retryable: false }
+          | { readonly code: "handler_threw"; readonly retryable: true }
+        >
+      > {
+        return call(bridge, "library.setProgressPage", input);
       },
     },
   };

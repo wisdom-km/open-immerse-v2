@@ -7,11 +7,34 @@ import {
   type AppStorage,
 } from "@oi/platform-node";
 
+import {
+  createBindReadingAssetCommand,
+  type BindReadingAssetCommand,
+} from "../application/bind-reading-asset-command.js";
+import {
+  createGetProgressPageCommand,
+  type GetProgressPageCommand,
+} from "../application/get-progress-page-command.js";
 import type { LibraryIpcHandlers } from "../application/library-ipc.js";
+import type {
+  LibraryProgressPageUpdate,
+  LibraryRepository,
+} from "../application/ports/library-repository.js";
 import type { PdfPicker } from "../application/ports/pdf-picker.js";
+import { createReadingGenerationTable } from "../application/reading-generation-table.js";
+import {
+  createRevokeReadingAssetCommand,
+  type RevokeReadingAssetCommand,
+} from "../application/revoke-reading-asset-command.js";
+import {
+  createSetProgressPageCommand,
+  type SetProgressPageCommand,
+} from "../application/set-progress-page-command.js";
+import { createGetProgressPage } from "../application/use-cases/get-progress-page.js";
 import { createImportPdf } from "../application/use-cases/import-pdf.js";
 import { createListLibrary } from "../application/use-cases/list-library.js";
 import { createRelocateSource } from "../application/use-cases/relocate-source.js";
+import { createSetProgressPage } from "../application/use-cases/set-progress-page.js";
 import { createFsPdfFileStore } from "./fs-pdf-file-store.js";
 import { createLibraryIpcHandlers } from "./ipc-handlers.js";
 import { createSqliteLibraryRepository } from "./sqlite-library-repository.js";
@@ -26,8 +49,16 @@ export type LibraryMainOptions = {
   readonly clock: LibraryClock;
 };
 
+export type ReadingIpcHandlers = {
+  readonly bindReadingAsset: BindReadingAssetCommand;
+  readonly revokeReadingAsset: RevokeReadingAssetCommand;
+  readonly getProgressPage: GetProgressPageCommand;
+  readonly setProgressPage: SetProgressPageCommand;
+};
+
 export type LibraryMain = {
   readonly handlers: LibraryIpcHandlers;
+  readonly reading: ReadingIpcHandlers;
   readonly close: () => void;
 };
 
@@ -40,13 +71,16 @@ export function createLibraryMain(options: LibraryMainOptions): LibraryMain {
   if (!opened.ok) {
     return {
       handlers: unavailableHandlers(),
+      reading: unavailableReading(),
       close() {
         return undefined;
       },
     };
   }
+  const built = handlersFor(opened.storage, options);
   return {
-    handlers: handlersFor(opened.storage, options),
+    handlers: built.handlers,
+    reading: built.reading,
     close: closeOnce(opened.storage),
   };
 }
@@ -82,26 +116,43 @@ function migrationsDirectory(): string {
 function handlersFor(
   storage: AppStorage,
   options: LibraryMainOptions,
-): LibraryIpcHandlers {
+): Pick<LibraryMain, "handlers" | "reading"> {
   const repository = createSqliteLibraryRepository(storage);
   const files = createFsPdfFileStore({
     layout: dataRootLayout(options.dataRoot),
   });
-  return createLibraryIpcHandlers({
-    importPdf: createImportPdf({
-      repository,
-      files,
-      clock: options.clock,
-      ingest: {
-        openDocument() {
-          return undefined;
+  return {
+    handlers: createLibraryIpcHandlers({
+      importPdf: createImportPdf({
+        repository,
+        files,
+        clock: options.clock,
+        ingest: {
+          openDocument() {
+            return undefined;
+          },
         },
-      },
+      }),
+      listLibrary: createListLibrary(repository),
+      relocateSource: createRelocateSource({ repository, files }),
+      pickPdf: options.pickPdf,
     }),
-    listLibrary: createListLibrary(repository),
-    relocateSource: createRelocateSource({ repository, files }),
-    pickPdf: options.pickPdf,
-  });
+    reading: readingHandlers(repository),
+  };
+}
+
+function readingHandlers(
+  repository: LibraryRepository & LibraryProgressPageUpdate,
+): ReadingIpcHandlers {
+  const table = createReadingGenerationTable();
+  const getProgressPage = createGetProgressPage(repository);
+  const setProgressPage = createSetProgressPage(repository);
+  return {
+    bindReadingAsset: createBindReadingAssetCommand(getProgressPage, table),
+    revokeReadingAsset: createRevokeReadingAssetCommand(table),
+    getProgressPage: createGetProgressPageCommand(getProgressPage, table),
+    setProgressPage: createSetProgressPageCommand(setProgressPage, table),
+  };
 }
 
 function unavailableHandlers(): LibraryIpcHandlers {
@@ -110,6 +161,15 @@ function unavailableHandlers(): LibraryIpcHandlers {
     importDropped: () => failed(),
     list: () => failed(),
     relocate: () => failed(),
+  };
+}
+
+function unavailableReading(): ReadingIpcHandlers {
+  return {
+    bindReadingAsset: () => failed(),
+    revokeReadingAsset: () => failed(),
+    getProgressPage: () => failed(),
+    setProgressPage: () => failed(),
   };
 }
 

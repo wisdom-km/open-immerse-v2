@@ -9,10 +9,14 @@ it("lists the exposed library commands", () => {
     subscribe: () => () => undefined,
   });
   expect(keyPaths(oi)).toEqual([
+    "library.bindReadingAsset",
+    "library.getProgressPage",
     "library.import",
     "library.importDropped",
     "library.list",
     "library.relocate",
+    "library.revokeReadingAsset",
+    "library.setProgressPage",
   ]);
   expect("invoke" in oi).toBe(false);
   expect("invokeDropped" in oi).toBe(false);
