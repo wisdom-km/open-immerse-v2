@@ -232,7 +232,7 @@ it("strips transport errors to code and retryable when the handler adds fields",
   }
 });
 
-it("drops a message when a business error keeps its detail", async () => {
+it("drops a message when a business error flattens nested detail", async () => {
   const harness = bind(
     [command],
     handler(() =>
@@ -254,7 +254,7 @@ it("drops a message when a business error keeps its detail", async () => {
     error: {
       code: "not_found",
       retryable: false,
-      detail: { id: "doc-1" },
+      id: "doc-1",
     },
   });
   const encoded = JSON.stringify(result);
@@ -275,7 +275,7 @@ it("returns the handler result when the payload is valid", async () => {
   expect(await invoke(harness.listeners, { id: "doc-1" })).toBe(success);
 });
 
-it("keeps business detail when the handler returns an error result", async () => {
+it("keeps the business id when a handler returns nested detail", async () => {
   const failure = {
     ok: false as const,
     error: { code: "not_found", retryable: false, detail: { id: "doc-1" } },
@@ -284,7 +284,10 @@ it("keeps business detail when the handler returns an error result", async () =>
     [command],
     handler(() => Promise.resolve(failure)),
   );
-  expect(await invoke(harness.listeners, { id: "doc-1" })).toEqual(failure);
+  expect(await invoke(harness.listeners, { id: "doc-1" })).toEqual({
+    ok: false,
+    error: { code: "not_found", retryable: false, id: "doc-1" },
+  });
 });
 
 it("returns handler_threw when the handler does not return a result", async () => {
