@@ -112,3 +112,60 @@ it("drops message when a business error carries message", async () => {
   }
   expect(JSON.stringify(result).includes("secret-message")).toBe(false);
 });
+
+it("keeps the ordinary prototype when a business error carries __proto__", async () => {
+  const error = {
+    code: "rejected",
+    retryable: false,
+    id: "doc-1",
+    detail: { generation: 3 },
+  };
+  defineOwn(error, { polluted: true });
+  defineOwn(error.detail, { polluted: true });
+  const listener = listen(() => Promise.resolve({ ok: false, error }));
+  const result = await listener(invokeEvent, { id: "doc-1" });
+  expect(result).toEqual({
+    ok: false,
+    error: { code: "rejected", retryable: false, id: "doc-1", generation: 3 },
+  });
+  if (!result.ok) {
+    expect(Object.getPrototypeOf(result.error)).toBe(Object.prototype);
+    expect(Object.hasOwn(result.error, "__proto__")).toBe(false);
+  }
+  expect(JSON.stringify(result).includes("polluted")).toBe(false);
+});
+
+it("drops stack when a business error carries stack", async () => {
+  const listener = listen(() =>
+    Promise.resolve({
+      ok: false,
+      error: {
+        code: "rejected",
+        retryable: false,
+        id: "doc-1",
+        stack: "secret-stack",
+        detail: { generation: 2, stack: "secret-detail-stack" },
+      },
+    }),
+  );
+  const result = await listener(invokeEvent, { id: "doc-1" });
+  expect(result).toEqual({
+    ok: false,
+    error: { code: "rejected", retryable: false, id: "doc-1", generation: 2 },
+  });
+  if (!result.ok) {
+    expect("stack" in result.error).toBe(false);
+  }
+  const encoded = JSON.stringify(result);
+  expect(encoded.includes("secret-stack")).toBe(false);
+  expect(encoded.includes("secret-detail-stack")).toBe(false);
+});
+
+function defineOwn(target: object, value: object): void {
+  Object.defineProperty(target, "__proto__", {
+    value,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+}

@@ -83,11 +83,14 @@ function copyBusinessFields(
 }
 
 function isSkippedField(key: string): boolean {
+  // Assigning "__proto__" changes [[Prototype]]. It is not a business field.
   return (
     key === "code" ||
     key === "retryable" ||
     key === "message" ||
-    key === "detail"
+    key === "detail" ||
+    key === "stack" ||
+    key === "__proto__"
   );
 }
 
