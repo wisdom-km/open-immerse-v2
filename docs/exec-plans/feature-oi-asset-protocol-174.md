@@ -2,7 +2,7 @@
 
 分支 `feature/oi-asset-protocol-174`。基线是远端 `main` `631859c440320328164f6b3ecc0076dd7ca7ea94`（PR #189 squash 合入，tree `b5259e5b4ba1defc681c52d89cc4612fcf431958`）。本文件按 [docs/exec-plans/TEMPLATE.md](TEMPLATE.md) 编写，格式沿用 [feature-reading-generation-monotonic-174.md](feature-reading-generation-monotonic-174.md)。它必须自包含。
 
-停点：第一笔提交只有本文件。第二笔提交只有 [docs/approvals.md](../approvals.md) 的 2026-11-09 19:45 行。然后停。Forge 亲读这两笔确切提交并 PASS 之前，不注册 `oi-asset`，不读 `source.pdf`，不改测试。本文件不是那个 PASS。
+停点：第一笔提交只有本文件。第二笔提交只有 [docs/approvals.md](../approvals.md) 的 2026-11-09 19:45 行。Forge 计划审查 [6739448337](https://github.com/wisdom-km/open-immerse-v2/pull/190#issuecomment-6739448337) 是有条件 PASS：把「主机名规范化」和「可测性」写进本文件的那一笔即视为 PASS，其后才进入步骤 4。那一笔之前不注册 `oi-asset`，不读 `source.pdf`，不改测试。
 
 本任务没有 UI。不改 [DESIGN.md](../../DESIGN.md)、[docs/design-principles.md](../design-principles.md) 或 `docs/design/**`（N-10）。[docs/design-principles.md](../design-principles.md) 的 P7 保持：这一批没有界面。
 
@@ -47,7 +47,7 @@
 | --- | --- | --- | --- |
 | 1 | 本文件。第一笔只有它 |  |  |
 | 2 | 只在 `docs/approvals.md` 追加 19:45 原话、所批范围、时间和登记链接，并把文末批准数从 125 改为 126。然后停 |  |  |
-| 3 | Forge 亲读步骤 1 与步骤 2 的确切提交。PASS 之前没有步骤 4 |  |  |
+| 3 | Forge 亲读步骤 1 与步骤 2。有条件 PASS 要求先把主机名规范化停点和可测性写进本文件。那一笔即视为 PASS，之前没有步骤 4 |  |  |
 | 4 | 按「行为」实现。不在步骤 1、2 |  |  |
 
 ## 目标
@@ -110,13 +110,13 @@
 
 | 路径 | 只做的事 | 现在 | 目标 | 完成后上限 |
 | --- | --- | --- | --- | --- |
-| 新建 `apps/desktop/src/main/reading-asset-protocol.ts` | 纯函数加 `protocol.handle`。处理与 `app-protocol.ts` 分开 | 无 | +160 | 建议 400，硬上限 600 |
+| 新建 `apps/desktop/src/main/reading-asset-protocol.ts` | 纯函数。不 `import "electron"`。`protocol.handle` 由调用方注入。处理与 `app-protocol.ts` 分开 | 无 | +160 | 建议 400，硬上限 600 |
 | 新建 `apps/desktop/src/main/reading-asset-path.ts` | 端口：当前行 id → `librarySourcePath` | 无 | +70 | 建议 400，硬上限 600 |
 | `app-protocol.ts` | 同一次 `registerSchemesAsPrivileged` 加上 `oi-asset`，特权对象与 `oi-app` 相同：只有 `standard: true` 与 `secure: true`。不把处理函数放进这个文件 | 17 | +8 | 硬上限 600 |
 | `reading-generation-table.ts` | `locate`。不改 bind / revoke 的数字 | 72 | +25 | 建议 400，硬上限 600 |
 | `reading-generation-table.test.ts` | 未登记、撤销、再 bind 后旧 `assetId` 找不到，新的找得到 | 161 | +45 | 建议 600，硬上限 800 |
 | `library-main.ts` | 把 `locate` 接到同一个闭包。失败路径返回 `undefined` | 195 | +20 | 建议 400，硬上限 600 |
-| `library-wiring.ts` | `startLibrary` 在创建 main 之后调用 `handle`，传入端口。返回的 map 不变 | 174 | +12 | 建议 400，硬上限 600。本文件若超过 +30 行就停 |
+| `library-wiring.ts` | `startLibrary` 在创建 main 之后调用注入的注册函数，传入端口。生产默认才是 `protocol.handle`。返回的 map 不变 | 174 | +12 | 建议 400，硬上限 600。本文件若超过 +30 行就停 |
 | 新建 `apps/desktop/test/reading-asset-protocol.test.ts` | 矩阵与合法 GET / HEAD。用例名 `<结果> when <条件>`，与同目录英文用例一致 | 无 | +240 | 建议 600，硬上限 800 |
 | `composition-root.ts` | 无 | 27 | 0 | 入口硬上限 150 |
 | `slots.ts` | 无 | 3 | 0 | 硬上限 600 |
@@ -134,7 +134,7 @@
 
 ## 测试矩阵
 
-行为测试调用纯函数，与 `protocol-response.test.ts` 调用 `respond` 相同。不单独起 Electron 去测 `protocol.handle`。一条用例用 `createLibraryMain`：临时数据根、导入合成 PDF、bind，再把这个 main 的端口交给纯函数。这样断言端口看的是同一张表。不把代际判断重写进测试。不改 `reading-ipc-wiring.test.ts`。
+行为测试调用纯函数，与 `protocol-response.test.ts` 调用 `respond` 相同。404 矩阵不单独起 Electron。主机名规范化那一条停点除外：它在真实 Electron 的 main 进程里请求一次，不开窗口。一条用例用 `createLibraryMain`：临时数据根、导入合成 PDF、bind，再把这个 main 的端口交给纯函数。这样断言端口看的是同一张表。不把代际判断重写进测试。不改 `reading-ipc-wiring.test.ts`。
 
 | 账本 | 本批要覆盖的 | 不在本批 |
 | --- | --- | --- |
@@ -145,7 +145,23 @@
 | Box | 实现阶段跑 `reading-asset-protocol.test.ts` 这一个定向协议测试。本两笔不跑。跑过才写结果。不预写 PASS | 不把 Box 写成真机，也不写成窗口级加载 |
 | 真机 | 不跑真机，原因是本批不做窗口级加载。404 矩阵和 GET / HEAD 在 Node 里调用纯函数就能看见。没有必须靠窗口才能验证、而又属于本批的项 | AC-11、3A、PRC-01–26、UIX-57 与 8 GB 录屏仍未验收。不把 AC-67 ② 整句标成通过：图片类型那一半和 Fuses 不在本批 |
 
+## 可测性
+
+`startLibrary` 的 Node 测试，包括 [apps/desktop/test/library-command-map.test.ts](../../apps/desktop/test/library-command-map.test.ts)，不能因为导入 `electron` 而失败。这个测试现在导入的是 `commandMap`，并且已经 `vi.mock("electron")`。`protocol.handle` 的注册用注入：处理函数文件不 `import "electron"`；`startLibrary` 增加一个注册函数参数，缺省时才调用 `protocol.handle`。调用方不传这个参数，所以 `composition-root.ts` 保持 0。`library-wiring.ts` 的改动不超过 +30 行。做不到就停下来，说明原因，不把 `protocol` 写进测试的 mock 里硬凑。
+
 ## 停点
+
+### 主机名规范化
+
+在真实 Electron 的 main 进程里，用 `net.fetch` 或 `session.fetch` 请求一次 `oi-asset://<真实 assetId>`。不开窗口，不涉及 CSP。要核实两件事：`protocol.handle` 实际收到的 URL，以及合法 `assetId` 是否返回 200。
+
+原因：Chromium 对 `standard: true` 的 scheme 可能把纯数字 host 规范化成 IPv4 形式，例如 `oi-asset://1` 变成 `oi-asset://0.0.0.1/`。这一点还没核实。Node 的 `new URL` 对非特殊方案不会这样做，所以上面的纯函数测试发现不了。
+
+如果确实被规范化：停下来报告。不要在解析里兼容 IPv4 形式，也不要改 URL 形式。改规格必须另外请 Wisdom 批准，[docs/arch/09.md](../arch/09.md) 第 16、22 行都写着 `oi-asset://<assetId>`。
+
+这一步可以在实施环境、Box 的 Electron 或 CI 的 desktop-e2e 里做。环境起不了真实 Electron 时，证据写「还没核实」，交给 Box，不把未跑的结果写成 200。
+
+### 必须开窗口的三项
 
 下面三项必须打开窗口才能验证。本批不加这些测试，也不把它们写成已通过。实施时若发现不做窗口就无法证明本批的 404 或 GET / HEAD，停，不擅自加窗口加载。
 
@@ -170,6 +186,7 @@
 ## 还没核实
 
 - `standard: true` 是否必要。见停点。本批没有跑 Electron 45.2.1 去核对「`registerSchemesAsPrivileged` 只能调用一次」。
+- 纯数字 `assetId` 在 `standard: true` 下会不会被收成 IPv4。见「主机名规范化」。Node 的 `new URL` 证明不了。实施时若跑了 main 进程 fetch，把实际收到的 URL 写进证据；没跑就保持「还没核实」。
 - 现行 CSP 能否读到这份 PDF。见停点。本批不打开窗口，所以这项保持未核实。
 - PDF.js 6.5.438 不经 `blob:` worker 能否打开 `oi-asset://`。见停点。
 - 第二个 `createLibraryMain` 仍是空表。这不能代替杀掉 OS 进程再拉起。本批不把「没杀进程」写成重启已验证，也不为协议把代际表入库。
@@ -183,6 +200,7 @@
 | 查找只用当前代际行，不另建资产表 | 19:45 要求按 `assetId` 读 `source.pdf`。表里已经有当前 `assetId`。第二张表会和 revoke 脱节 | 2026-11-09 | 本计划的选择，Forge 可在 PASS 前退回 |
 | 非 GET / HEAD 沿用 405 | oi-app 已是 405。19:45 的 404 矩阵没有这一行 | 2026-11-09 | 本计划的选择，Forge 可在 PASS 前退回 |
 | 窗口级 CSP、`standard` 与 PDF.js 不纳入本批测试 | 19:45 不做 UI，也不改 CSP。这三项要开窗口。不够用是停点，不是本批的放宽 | 2026-11-09 | 本计划，依据 19:45 与 [docs/arch/09.md](../arch/09.md) 第 25、32 行 |
+| 有条件 PASS：补上主机名规范化停点和 `protocol.handle` 注入之后，按 19:45 进入步骤 4。非 GET / HEAD 仍是 405。PDF 响应仍不带页面 CSP | 审查接受这两项计划选择。纯数字 host 若被收成 IPv4，不在解析里兼容，也不改 URL。链接：[6739448337](https://github.com/wisdom-km/open-immerse-v2/pull/190#issuecomment-6739448337)。GitHub `created_at` 是 `2026-11-09T11:56:22Z` | 2026-11-09 19:56 | Forge 计划审查，非业主决定 |
 
 批次 D 的原则检查由 Loom 做。本文件不写 UI，也不代替那份检查。Ready、合入和发版不在本文件的范围内。
 
