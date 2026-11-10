@@ -10,7 +10,12 @@ export function registerAppScheme(): void {
     { scheme: SCHEME, privileges: { standard: true, secure: true } },
     {
       scheme: ASSET_SCHEME,
-      privileges: { standard: true, secure: true, supportFetchAPI: true },
+      privileges: {
+        standard: true,
+        secure: true,
+        supportFetchAPI: true,
+        corsEnabled: true,
+      },
     },
   ]);
 }

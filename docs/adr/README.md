@@ -44,6 +44,6 @@ M1 要登记的第一批独立 ADR 仍未建页：`formula-source`、Markdown �
 | 0005 | 只暂缓 `allows a synthetic key that uses the oitest_ prefix (G9)` 的隔离，到 PR-C 合入前。不改 §4 的通用规则 | [0005-g9-oitest-quarantine-exception.md](0005-g9-oitest-quarantine-exception.md) |
 | 0006 | 渲染进程读取 `oi-asset` 时，只把 `connect-src` 增加 `oi-asset:`。状态是采纳 | [0006-renderer-oi-asset-csp.md](0006-renderer-oi-asset-csp.md) |
 | 0007 | 渲染进程 `fetch` `oi-asset` 时，只给该方案注册加上 `supportFetchAPI: true`。状态是采纳 | [0007-oi-asset-fetch-scheme.md](0007-oi-asset-fetch-scheme.md) |
-| 0008 | `supportFetchAPI` 之后，`oi-app` 页面跨源 `fetch` `oi-asset` 仍被 CORS 挡住。状态是提议 | [0008-oi-asset-fetch-cors.md](0008-oi-asset-fetch-cors.md) |
+| 0008 | 只给 `oi-asset` 加 `corsEnabled: true`，响应头只回 `oi-app://app`。状态是采纳 | [0008-oi-asset-fetch-cors.md](0008-oi-asset-fetch-cors.md) |
 
-Q1–Q12 之后的其余决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，2026-10-31 的 D-D、D-E、W-4，以及 2026-11-02 的面壁 API 主路线、同日 Jev 契约与 Jev API 客户端里程碑）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.15。本索引不抄那些段落。0001、0002、0003、0004、0005、0006、0007 的正文在各自的页上，这里不重抄。0006 已采纳，范围只有 `connect-src` 增加 `oi-asset:`。0007 已采纳，范围只有 `oi-asset` 的 `supportFetchAPI: true`。`oi-app` 不加。0008 仍是提议。
+Q1–Q12 之后的其余决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，2026-10-31 的 D-D、D-E、W-4，以及 2026-11-02 的面壁 API 主路线、同日 Jev 契约与 Jev API 客户端里程碑）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.15。本索引不抄那些段落。0001、0002、0003、0004、0005、0006、0007 的正文在各自的页上，这里不重抄。0006 已采纳，范围只有 `connect-src` 增加 `oi-asset:`。0007 已采纳，范围只有 `oi-asset` 的 `supportFetchAPI: true`。`oi-app` 不加。0008 已采纳，范围只有 `oi-asset` 的 `corsEnabled: true`，响应头只回 `oi-app://app`。
