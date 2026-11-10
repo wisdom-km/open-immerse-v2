@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useLayoutEffect, useState, type ReactElement } from "react";
 
 import {
   BACK_LABEL,
@@ -24,7 +24,7 @@ export function ReaderScreen(props: {
 }): ReactElement {
   const session = useReaderSession(props.client, props.id, props.onLeave);
   useLeaveKeys(session.leave);
-  useEffect(() => {
+  useLayoutEffect(() => {
     props.onBindLeave?.(session.leave);
     return () => {
       props.onBindLeave?.(undefined);

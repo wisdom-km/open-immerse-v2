@@ -1,6 +1,6 @@
 import { LibraryApp } from "@oi/feature-library/app";
 import { ReaderScreen } from "@oi/feature-reader/ui";
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 
 import { desktopReaderClient } from "./reader-client.js";
 import { openFileEvent, returnLibraryEvent } from "./shell-events.js";
@@ -11,6 +11,9 @@ export function Shell(): ReactElement {
   const [openId, setOpenId] = useState<string | undefined>(undefined);
   const [title, setTitle] = useState("");
   const leaveRef = useRef<(() => void) | undefined>(undefined);
+  const bindLeave = useCallback((leave: (() => void) | undefined) => {
+    leaveRef.current = leave;
+  }, []);
   useEffect(() => blockLibraryInput(openId !== undefined), [openId]);
   useEffect(() => {
     const onReturn = () => {
@@ -36,9 +39,7 @@ export function Shell(): ReactElement {
           id={openId}
           title={title}
           client={client}
-          onBindLeave={(leave) => {
-            leaveRef.current = leave;
-          }}
+          onBindLeave={bindLeave}
           onLeave={() => {
             leaveRef.current = undefined;
             setOpenId(undefined);

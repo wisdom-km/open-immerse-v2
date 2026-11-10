@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { ReaderClient } from "./reader-client.js";
+import type { Pair, ReaderClient } from "./reader-client.js";
 import { openReading, type ReadingView } from "./open-reading.js";
 import { overlapHeight, visiblePage } from "./visible-page.js";
 
@@ -28,8 +28,8 @@ export function useReaderSession(
   const columnRef = useRef<HTMLDivElement | null>(null);
   const shownRef = useRef<number | undefined>(undefined);
   const [phase, setPhase] = useState<ReaderPhase>({ kind: "loading" });
-  const phaseRef = useRef(phase);
-  phaseRef.current = phase;
+  const pairRef = useRef<Pair | undefined>(undefined);
+  pairRef.current = phase.kind === "view" ? phase.reading.pair : undefined;
   const [lostPlace, setLostPlace] = useState(false);
   const [shownPage, setShownPage] = useState<number | undefined>(undefined);
   useEffect(() => {
@@ -45,7 +45,7 @@ export function useReaderSession(
   const leave = useCallback(() => {
     finishReading(
       clientRef.current,
-      phaseRef.current,
+      pairRef.current,
       readVisible(columnRef.current),
       onLeaveRef.current,
     );
@@ -66,7 +66,7 @@ export function useReaderSession(
       }
       shownRef.current = page;
       setShownPage(page);
-      const pair = phase.kind === "view" ? phase.reading.pair : undefined;
+      const pair = pairRef.current;
       if (pair !== undefined) {
         void clientRef.current.writePage(pair.id, pair.generation, page);
       }
@@ -104,11 +104,11 @@ function watchReading(
 
 function finishReading(
   client: ReaderClient,
-  phase: ReaderPhase,
+  pair: Pair | undefined,
   page: number | undefined,
   onLeave: () => void,
 ): void {
-  const pair = phase.kind === "view" ? phase.reading.pair : undefined;
+  // 写页先于 revoke，依赖 main 的 setProgressPage 同步处理。
   if (pair !== undefined && page !== undefined) {
     void client.writePage(pair.id, pair.generation, page);
   }

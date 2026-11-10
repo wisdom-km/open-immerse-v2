@@ -9,6 +9,7 @@ import {
 import { afterEach, expect, it } from "vitest";
 
 import {
+  BACK_LABEL,
   LOST_PLACE,
   MISSING_DOCUMENT,
   UNREADABLE_PDF,
@@ -143,11 +144,84 @@ it("leaves through the bound menu callback", async () => {
     />,
   );
   expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
+  await waitFor(() => {
+    expect(typeof leave).toBe("function");
+  });
   layOut(1);
   leave?.();
   await waitFor(() => {
     expect(revokes).toEqual(["paper"]);
   });
+});
+
+it("revokes when the menu calls the callback captured before the page is shown", async () => {
+  const revokes: string[] = [];
+  const writes: number[] = [];
+  let first: (() => void) | undefined;
+  render(
+    <ReaderScreen
+      id="paper"
+      title="Paper"
+      client={fakeClient({
+        writePage(_id, _generation, page) {
+          writes.push(page);
+          return Promise.resolve();
+        },
+        revoke(id) {
+          revokes.push(id);
+          return Promise.resolve();
+        },
+      })}
+      onBindLeave={(next) => {
+        if (next !== undefined && first === undefined) {
+          first = next;
+        }
+      }}
+      onLeave={() => undefined}
+    />,
+  );
+  expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
+  layOut(1);
+  const captured = first;
+  expect(typeof captured).toBe("function");
+  captured?.();
+  await waitFor(() => {
+    expect(revokes).toEqual(["paper"]);
+  });
+  expect(writes).toEqual([1]);
+});
+
+it("revokes when the back button is clicked", async () => {
+  const revokes: string[] = [];
+  const writes: number[] = [];
+  let left = 0;
+  render(
+    <ReaderScreen
+      id="paper"
+      title="Paper"
+      client={fakeClient({
+        writePage(_id, _generation, page) {
+          writes.push(page);
+          return Promise.resolve();
+        },
+        revoke(id) {
+          revokes.push(id);
+          return Promise.resolve();
+        },
+      })}
+      onLeave={() => {
+        left += 1;
+      }}
+    />,
+  );
+  expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
+  layOut(1);
+  fireEvent.click(screen.getByRole("button", { name: BACK_LABEL }));
+  await waitFor(() => {
+    expect(revokes).toEqual(["paper"]);
+  });
+  expect(writes).toEqual([1]);
+  expect(left).toBe(1);
 });
 
 it("keeps the new title when an older open resolves later", async () => {
