@@ -16,6 +16,7 @@ export type ReadingView = {
   readonly pageCount: number | undefined;
   readonly page: number | undefined;
   readonly lostPlace: boolean;
+  readonly canWrite: boolean;
   readonly paint: PdfPaint | undefined;
   readonly cancel: PdfCancel | undefined;
   readonly close: () => Promise<void>;
@@ -115,6 +116,7 @@ function ready(
     pageCount: pdf.pageCount,
     page,
     lostPlace,
+    canWrite: !lostPlace,
     paint: (pageNumber, canvas) => pdf.paint(pageNumber, canvas),
     cancel(canvas) {
       pdf.cancel(canvas);
@@ -130,6 +132,7 @@ function blocked(code: string, pair?: Pair, pdf?: OpenedPdf): ReadingView {
     pageCount: undefined,
     page: undefined,
     lostPlace: false,
+    canWrite: false,
     paint: undefined,
     cancel: undefined,
     close: () => pdf?.close() ?? Promise.resolve(),

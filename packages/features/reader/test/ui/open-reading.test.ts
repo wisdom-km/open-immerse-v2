@@ -80,6 +80,7 @@ it("starts at page 1 when the stored page is null and does not write", async () 
   );
   expect(view.page).toBe(1);
   expect(view.lostPlace).toBe(false);
+  expect(view.canWrite).toBe(true);
   expect(view.sentence).toBeUndefined();
   expect(writes).toEqual([]);
 });
@@ -108,6 +109,7 @@ it("shows the clamped page and does not write before settle", async () => {
   );
   expect(view.page).toBe(2);
   expect(view.pageCount).toBe(2);
+  expect(view.canWrite).toBe(true);
   expect(writes).toEqual([]);
 });
 
@@ -152,6 +154,7 @@ it("starts at page 1 with the lost-place flag when the read fails", async () => 
   );
   expect(view.page).toBe(1);
   expect(view.lostPlace).toBe(true);
+  expect(view.canWrite).toBe(false);
   expect(view.sentence).toBeUndefined();
 });
 
@@ -204,6 +207,7 @@ it("ignores a progress response for another pair", async () => {
   );
   expect(view.page).toBe(1);
   expect(view.lostPlace).toBe(true);
+  expect(view.canWrite).toBe(false);
 });
 
 function paint(): Promise<void> {

@@ -18,6 +18,7 @@ type ReleaseState = {
   columnRef: { current: HTMLDivElement | null };
   releaseRef: { current: () => Promise<void> };
   finishedRef: { current: boolean };
+  canWriteRef: { current: boolean };
   shownRef: { current: number | undefined };
   visibleRef: { current: number | undefined };
 };
@@ -45,6 +46,7 @@ export function useReaderSession(
   const pairRef = useRef<Pair | undefined>(undefined);
   const releaseRef = useRef<() => Promise<void>>(noopClose);
   const finishedRef = useRef(false);
+  const canWriteRef = useRef(false);
   const [phase, setPhase] = useState<ReaderPhase>({ kind: "loading" });
   pairRef.current = phase.kind === "view" ? phase.reading.pair : undefined;
   const [lostPlace, setLostPlace] = useState(false);
@@ -56,6 +58,7 @@ export function useReaderSession(
     columnRef,
     releaseRef,
     finishedRef,
+    canWriteRef,
     shownRef,
     visibleRef,
   };
@@ -110,7 +113,7 @@ function scrollControls(
       state.visibleRef.current = page;
       setShownPage(page);
       const pair = state.pairRef.current;
-      if (pair !== undefined) {
+      if (pair !== undefined && state.canWriteRef.current) {
         void state.clientRef.current.writePage(pair.id, pair.generation, page);
       }
     },
@@ -145,6 +148,7 @@ function watchReading(input: WatchInput): () => void {
   input.setShownPage(undefined);
   input.shownRef.current = undefined;
   input.visibleRef.current = undefined;
+  input.canWriteRef.current = false;
   void openReading(input.clientRef.current, input.id).then(
     (reading) => {
       if (!alive || input.finishedRef.current) {
@@ -152,6 +156,7 @@ function watchReading(input: WatchInput): () => void {
         return;
       }
       input.releaseRef.current = reading.close;
+      input.canWriteRef.current = reading.canWrite;
       input.shownRef.current = reading.page;
       input.visibleRef.current = reading.page;
       input.setShownPage(reading.page);
@@ -181,10 +186,11 @@ function settleLeave(
     return;
   }
   release.finishedRef.current = true;
-  const page =
-    readVisible(release.columnRef.current) ??
-    release.visibleRef.current ??
-    release.shownRef.current;
+  const page = release.canWriteRef.current
+    ? (readVisible(release.columnRef.current) ??
+      release.visibleRef.current ??
+      release.shownRef.current)
+    : undefined;
   finishReading(
     release.clientRef.current,
     release.pairRef.current,
