@@ -34,6 +34,33 @@ export type IpcRegistryEntry = IpcRegistryCommand | IpcRegistryEvent;
 export const ipcRegistry: readonly IpcRegistryEntry[] = [
   {
     kind: "command",
+    channel: "ingest.openDocument",
+    idempotent: true,
+    transport: "invoke",
+    request: {
+      additionalProperties: false,
+      properties: {
+        id: {
+          pattern: "^[0-9a-f]{64}$",
+          type: "string",
+        },
+      },
+      required: ["id"],
+      type: "object",
+    },
+    response: {
+      additionalProperties: false,
+      properties: {
+        jobId: {
+          type: "string",
+        },
+      },
+      required: ["jobId"],
+      type: "object",
+    },
+  },
+  {
+    kind: "command",
     channel: "library.bindReadingAsset",
     idempotent: false,
     transport: "invoke",

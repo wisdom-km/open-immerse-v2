@@ -457,6 +457,11 @@
     },
     {
       "source": "ARCHITECTURE.md",
+      "old": "`openDocument` 与 `setZoom` 不改。",
+      "new": "`ingest.openDocument` 的生产 IPC 已挂上已有用例，`expose` 为 true，仍不提交解析作业，仍不等于 AC-11 已验收。路线读取与按路线提交作业（04-02 第 8 行、07-12 第 26 行、AC-91，M3）仍未实现，本批不触发。`setZoom` 仍不改。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
       "old": "URL 形如 `oi-asset://<assetId>`",
       "new": "URL 形如 `oi-asset://asset/<assetId>`"
     },

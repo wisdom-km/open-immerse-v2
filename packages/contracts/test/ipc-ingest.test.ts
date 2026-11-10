@@ -66,12 +66,12 @@ function keysOf(schema: unknown): string[] {
   return found;
 }
 
-it("exports one unexposed openDocument command", () => {
+it("exports one exposed openDocument command", () => {
   expect(ingestIpc.map((descriptor) => descriptor.channel)).toEqual([
     "ingest.openDocument",
   ]);
   expect(openDocument.kind).toBe("command");
-  expect(openDocument.expose).toBe(false);
+  expect(openDocument.expose).toBe(true);
   expect(openDocument.idempotent).toBe(true);
   expect(openDocument.transport).toBe("invoke");
   expect(openDocument).toBe(exportedOpenDocument);

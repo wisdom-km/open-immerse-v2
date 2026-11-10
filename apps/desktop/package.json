@@ -5,11 +5,12 @@
   "type": "module",
   "main": "dist/main/index.js",
   "scripts": {
-    "build": "tsc -p ../../packages/kernel/tsconfig.build.json && tsc -p ../../packages/contracts/tsconfig.build.json && tsc -p ../../packages/platform-node/tsconfig.build.json && tsc -p ../../packages/features/library/tsconfig.build.json && tsc -p tsconfig.main.json && tsc -p tsconfig.preload.json && node scripts/use-cjs-preload.mjs && node scripts/bundle-renderer.mjs",
+    "build": "tsc -p ../../packages/kernel/tsconfig.build.json && tsc -p ../../packages/contracts/tsconfig.build.json && tsc -p ../../packages/platform-node/tsconfig.build.json && tsc -p ../../packages/features/library/tsconfig.build.json && tsc -p ../../packages/features/ingest/tsconfig.build.json && tsc -p tsconfig.main.json && tsc -p tsconfig.preload.json && node scripts/use-cjs-preload.mjs && node scripts/bundle-renderer.mjs",
     "start": "pnpm run build && electron dist/main/index.js",
     "e2e": "pnpm run build && playwright test"
   },
   "dependencies": {
+    "@oi/feature-ingest": "workspace:*",
     "@oi/feature-library": "workspace:*",
     "@oi/platform-node": "workspace:*",
     "electron": "45.2.1",

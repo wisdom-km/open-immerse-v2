@@ -25,6 +25,10 @@ import {
   openFileScript,
   type ShellMenuEntry,
 } from "./library-menu.js";
+import {
+  openDocumentChannel,
+  openDocumentHandler,
+} from "./open-document-wiring.js";
 
 export function startLibrary(
   dataRoot: string,
@@ -44,7 +48,16 @@ export function startLibrary(
     main.close();
   });
   installFileMenu();
-  return commandMap(main);
+  return withOpenDocument(commandMap(main), main);
+}
+
+function withOpenDocument(
+  commands: ReadonlyMap<string, IpcCommandHandler>,
+  main: LibraryMain,
+): ReadonlyMap<string, IpcCommandHandler> {
+  const merged = new Map(commands);
+  merged.set(openDocumentChannel, openDocumentHandler(main));
+  return merged;
 }
 
 function registerReadingAsset(

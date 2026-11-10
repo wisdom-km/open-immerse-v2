@@ -12,7 +12,9 @@ test("exposes the library seam when window.oi is read", async ({ desktop }) => {
       import: typeof window.oi.library.import
     })`,
   );
-  expect(raw).toBe('{"keys":["library"],"library":true,"import":"function"}');
+  expect(raw).toBe(
+    '{"keys":["ingest","library"],"library":true,"import":"function"}',
+  );
 });
 
 test("enables context isolation when web preferences are read", async ({

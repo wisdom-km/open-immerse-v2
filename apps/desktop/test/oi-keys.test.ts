@@ -9,6 +9,7 @@ it("lists the exposed library commands", () => {
     subscribe: () => () => undefined,
   });
   expect(keyPaths(oi)).toEqual([
+    "ingest.openDocument",
     "library.bindReadingAsset",
     "library.getProgressPage",
     "library.import",

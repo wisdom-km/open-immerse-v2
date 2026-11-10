@@ -33,6 +33,22 @@ function callDropped<T>(
 
 export function createOi(bridge: IpcBridge) {
   return {
+    ingest: {
+      /** idempotent: true */
+      openDocument(
+        input: Readonly<{ id: string }>,
+      ): Promise<
+        Result<
+          Readonly<{ jobId: string }>,
+          | { readonly code: "not_found"; readonly retryable: false }
+          | { readonly code: "sender_rejected"; readonly retryable: false }
+          | { readonly code: "invalid_payload"; readonly retryable: false }
+          | { readonly code: "handler_threw"; readonly retryable: true }
+        >
+      > {
+        return call(bridge, "ingest.openDocument", input);
+      },
+    },
     library: {
       /** idempotent: false */
       bindReadingAsset(input: Readonly<{ id: string }>): Promise<

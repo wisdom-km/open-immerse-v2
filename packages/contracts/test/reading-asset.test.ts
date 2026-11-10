@@ -23,14 +23,14 @@ import {
 const id = "ab".repeat(32);
 const generation = 2;
 
-it("exposes bind and revoke and keeps openDocument and setZoom hidden", () => {
+it("exposes bind, revoke, and openDocument, and keeps setZoom hidden", () => {
   expect(bindReadingAsset.expose).toBe(true);
   expect(revokeReadingAsset.expose).toBe(true);
   expect(bindReadingAsset.idempotent).toBe(false);
   expect(revokeReadingAsset.idempotent).toBe(false);
   expect(bindReadingAsset).toBe(exportedBind);
   expect(revokeReadingAsset).toBe(exportedRevoke);
-  expect(openDocument.expose).toBe(false);
+  expect(openDocument.expose).toBe(true);
   expect(setZoom.expose).toBe(false);
   expectTypeOf(bindReadingAsset).toExtend<IpcCommandDescriptor>();
   expectTypeOf(revokeReadingAsset).toExtend<IpcCommandDescriptor>();

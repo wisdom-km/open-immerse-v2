@@ -53,6 +53,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@oi/feature-ingest':
+        specifier: workspace:*
+        version: link:../../packages/features/ingest
       '@oi/feature-library':
         specifier: workspace:*
         version: link:../../packages/features/library
