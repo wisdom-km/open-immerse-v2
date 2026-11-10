@@ -14,6 +14,7 @@ Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策�
 
 | 日期 | PR | 文件 | 摘要 |
 | --- | --- | --- | --- |
+| 2026-11-10 | [#199](https://github.com/wisdom-km/open-immerse-v2/pull/199) | `docs/adr/0010-pdf-image-wasm.md`、`docs/spec-changelog.md` | Refs #174。同一张含图页表追加清单里的七份出版社版。JPEG、Flate 与 qe533 的矢量图画出。没有新的解码缺口。ADR 0010 仍是提议，范围仍是 JPX 与 CCITT。不改 CSP，不提供 `.wasm`。规格正文未改。规格版本仍是 v0.6 |
 | 2026-11-10 | [#199](https://github.com/wisdom-km/open-immerse-v2/pull/199) | `docs/adr/0010-pdf-image-wasm.md`、`docs/spec-changelog.md` | Refs #174。同一张含图页表追加三份出版社期刊。PLOS 与 BMC 的 JPEG（含 `icc`）画出，Elsevier 的矢量图画出。没有新的解码缺口。ADR 0010 仍是提议，范围仍是 JPX 与 CCITT。不改 CSP，不提供 `.wasm`。规格正文未改。规格版本仍是 v0.6 |
 | 2026-11-10 | [#199](https://github.com/wisdom-km/open-immerse-v2/pull/199) | `docs/adr/0010-pdf-image-wasm.md`、`docs/adr/README.md`、`docs/spec-changelog.md` | Refs #174。五份真实 PDF 的含图页窗口测量。Flate 与 JPEG 画出。JPX 与 CCITT 因没有 `wasmUrl` 解不开，纯 JS 后备文件未被加载。ADR 0010 提议停下。不改 CSP，不提供 `.wasm`，不把缺图改成占位。不改 0006、0007、0008、0009，不改 `csp.ts`、方案注册、Range、core。规格正文未改。规格版本仍是 v0.6 |
 | 2026-11-10 | [#199](https://github.com/wisdom-km/open-immerse-v2/pull/199) | `docs/arch/09.md`、`docs/adr/0009-pdfjs-worker-src.md`、`docs/adr/README.md`、`docs/spec-changelog.md`、`tools/compare-spec-bytes/manifest.json` | Refs #174。Wisdom 2026-11-10 12:29 批准只把 `pdf.worker.mjs` 复制成同源 `pdf.worker.js` 并设置 `workerSrc`。ADR 0009 改为采纳。不改 CSP，不放行 `.mjs`，不用 `blob:`，不加 `wasm-unsafe-eval`。不改 0006、0007、0008，不改方案注册、Range、core。manifest 只追加唯一替换。不改基线 `f8d5d01`，不改 `compare.mjs`。规格版本仍是 v0.6 |

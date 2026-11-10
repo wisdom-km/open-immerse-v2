@@ -12,6 +12,8 @@
 
 同一窗口后来又打开三份出版社期刊。PLOS ONE 第 4 页与 BMC 第 3 页的 JPEG 在 `pdfimages` 里带 `icc`，图仍然画出，没有 `wasmUrl` 或 `qcms` 警告。Elsevier 第 9 页没有位图，矢量图画出。这三份没有新的解码缺口。记录在 `docs/evidence/199/commands.md` 的同一张表。
 
+同一张表再追加清单里的七份出版社版。pcbi-1005421、s41467-018-07210-0、s41598-023-31124-7、pone-0215032 的 JPEG 画出。s41467-026-69035-6 与 fms-2021-7 的 Flate 画出。qe533 没有位图，矢量图画出。没有新的解码缺口。
+
 liushang 的 JPX 与 CCITT 没有画出：
 
 - 控制台：`#getWasmInstance: UnknownErrorException: Ensure that the wasmUrl API parameter is provided.`

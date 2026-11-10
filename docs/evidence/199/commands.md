@@ -72,7 +72,7 @@ default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' oi-asset
 
 ## 含图页
 
-PDF 本体不入库。页码用 poppler 24.02.0 的 `pdfimages -list`。它把 Flate 印成 `image`。前五份的计数与 Forge 给出的一致：Attention 6 张 Flate，DPO 4 张 Flate，DDPM 3 张 Flate 加 19 张 JPEG，Transformer-XL 30 张 Flate，liushang 181 张 Flate 加 343 张 JPEG 加 39 张 JPX 加 2 张 CCITT。后三份也一致：PLOS ONE 11 张 JPEG，BMC 2 张 Flate 加 8 张 JPEG，Elsevier 没有位图。Producer 也与给出的一致。来源按文件本身归类：四篇 pdfTeX 是 arXiv；liushang 是 Acrobat 排出的教科书版面，算出版社版，不是扫描页；三份期刊是出版社版。
+PDF 本体不入库。页码用 poppler 24.02.0 的 `pdfimages -list`。它把 Flate 印成 `image`。前五份的计数与 Forge 给出的一致：Attention 6 张 Flate，DPO 4 张 Flate，DDPM 3 张 Flate 加 19 张 JPEG，Transformer-XL 30 张 Flate，liushang 181 张 Flate 加 343 张 JPEG 加 39 张 JPX 加 2 张 CCITT。后三份也一致：PLOS ONE 11 张 JPEG，BMC 2 张 Flate 加 8 张 JPEG，Elsevier 没有位图。清单里的七份也一致：pcbi-1005421 21 张 JPEG，s41467-018-07210-0 1 张 Flate 加 10 张 JPEG，s41598-023-31124-7 1 张 Flate 加 33 张 JPEG，s41467-026-69035-6 2 张 Flate，pone-0215032 20 张 JPEG，fms-2021-7 2 张 Flate，qe533 没有位图。Producer 也与给出的一致。来源按文件本身归类：四篇 pdfTeX 是 arXiv；liushang 是 Acrobat 排出的教科书版面，算出版社版，不是扫描页；期刊与 Cambridge、Quantitative Economics 都是出版社版。
 
 每份经文献库导入，从「全部论文」双击打开。Electron 45.2.1，`xvfb-run -a`，生产壳。`contextIsolation` 与 `sandbox` 为 true，`nodeIntegration` 为 false。文档是 `oi-app://app/index.html`。每份的 `oi-asset://asset/1` 与 `oi-app://app/pdf.worker.js` 都是 200。资源类型只有 document、stylesheet、script、fetch。没有 `.wasm`、`blob:`、`.mjs`，也没有别的文件请求。没有 `securitypolicyviolation`。
 
@@ -87,11 +87,20 @@ PDF 本体不入库。页码用 poppler 24.02.0 的 `pdfimages -list`。它把 F
 | PLOS ONE | 出版社版 | 4 | JPEG | 画出。Fig 1 的发病率曲线在。页脚是 4/25。控制台没有应用警告。截图 [img-plos-p4.png](img-plos-p4.png) |
 | BMC Public Health | 出版社版 | 3 | JPEG | 画出。Fig 1 的彩色地图在。控制台没有应用警告。截图 [img-bmc-p3.png](img-bmc-p3.png) |
 | Elsevier | 出版社版 | 9 | 无位图，矢量图 | 画出。Figure 1 与 Figure 2 的折线和误差棒在。控制台没有应用警告。截图 [img-elsevier-p9.png](img-elsevier-p9.png) |
+| pcbi-1005421 | 出版社版 | 4 | JPEG | 画出。Fig 1 的示意图和能量曲线在。页脚是 4/16。控制台没有应用警告。截图 [img-pcbi-p4.png](img-pcbi-p4.png) |
+| s41467-018-07210-0 | 出版社版 | 6 | JPEG | 画出。Fig. 4 与 Fig. 5 的彩色图在。控制台没有应用警告。截图 [img-s41467-018-p6.png](img-s41467-018-p6.png) |
+| s41598-023-31124-7 | 出版社版 | 5 | JPEG | 画出。Figure 1 的流程图在。控制台没有应用警告。截图 [img-s41598-p5.png](img-s41598-p5.png) |
+| s41467-026-69035-6 | 出版社版 | 1 | Flate | 画出。全文只有这一页有位图：刊名条和 Check for updates 图标都在。控制台没有应用警告。截图 [img-s41467-026-p1.png](img-s41467-026-p1.png) |
+| pone-0215032 | 出版社版 | 7 | JPEG | 画出。Fig 1 的色带在。页脚是 7/18。控制台没有应用警告。截图 [img-pone-p7.png](img-pone-p7.png) |
+| fms-2021-7 | 出版社版 | 1 | Flate | 画出。刊名条、Cambridge 标和 CrossMark 在。另有 PostScript 退回 JS 的警告。截图 [img-fms-p1.png](img-fms-p1.png) |
+| qe533 | 出版社版 | 22 | 无位图，矢量图 | 画出。Figure 1 的两条折线在。控制台没有应用警告。截图 [img-qe533-p22.png](img-qe533-p22.png) |
 
 liushang 的控制台还有：`Ensure that the wasmUrl API parameter is provided.`，`Failed to resolve module specifier 'nullopenjpeg_nowasm_fallback.js'`，`nulljbig2_nowasm_fallback.js`，35 条 `JpxError`，一条 `Jbig2Error: JBig2 failed to initialize` 并忽略 XObject。另有 `Failed to compile PostScript function to wasm, falling back to JS`，以及一条 `cMapUrl` 未提供。中文正文仍然画出。这些警告不是 CSP 违规。
 
 Transformer-XL 第一次在绘制未完成时滚动，第二次 `render` 把画布清掉，截图是空白。等该页像素稳定后再导出，图和正文都在。表里用的是这一张。
 
 PLOS 第 4 页与 BMC 第 3 页的 JPEG 在 `pdfimages` 里带 `icc`。这两页没有 `qcms` 或 `wasmUrl` 警告，图仍然画出。Elsevier 没有位图，矢量图也画出。这三份没有新的解码缺口。
+
+清单七份同样没有新的解码缺口。s41467-026-69035-6 的两张 Flate 都在第 1 页，是刊名条和 46×40 的图标。fms-2021-7 的两张 Flate 都在第 1 页，其中一张是软掩膜；刊名条画出。它的控制台有一条 `Failed to compile PostScript function to wasm, falling back to JS`，正文和公式仍在，没有 `.wasm` 请求。qe533 第 22 页没有位图，矢量折线画出。
 
 ADR 0010 仍是提议，范围仍是 JPX 与 CCITT。不改 CSP，不提供 `.wasm`，不把缺图改成占位。不 Ready，不合入，不发版。
