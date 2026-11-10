@@ -21,6 +21,7 @@ export function LibraryTable(props: {
   readonly selectedId: string;
   readonly onSort: (field: SortField) => void;
   readonly onSelect: (id: string) => void;
+  readonly onOpen?: (id: string) => void;
 }): ReactElement {
   return (
     <table>
@@ -47,6 +48,7 @@ export function LibraryTable(props: {
             row={row}
             selected={row.id === props.selectedId}
             onSelect={props.onSelect}
+            onOpen={props.onOpen}
           />
         ))}
       </tbody>
@@ -58,6 +60,7 @@ function LibraryTableRow(props: {
   readonly row: LibraryRow;
   readonly selected: boolean;
   readonly onSelect: (id: string) => void;
+  readonly onOpen?: (id: string) => void;
 }): ReactElement {
   return (
     <tr
@@ -66,9 +69,13 @@ function LibraryTableRow(props: {
       onClick={() => {
         props.onSelect(props.row.id);
       }}
-      onDoubleClick={stopPointer}
+      onDoubleClick={() => {
+        props.onOpen?.(props.row.id);
+      }}
       onContextMenu={stopPointer}
-      onKeyDown={stopEnter}
+      onKeyDown={(event) => {
+        openSelected(event, props);
+      }}
     >
       <td>{props.row.title}</td>
       <td>—</td>
@@ -82,8 +89,16 @@ function stopPointer(event: MouseEvent<HTMLTableRowElement>): void {
   event.preventDefault();
 }
 
-function stopEnter(event: KeyboardEvent<HTMLTableRowElement>): void {
-  if (event.key === "Enter") {
-    event.preventDefault();
+function openSelected(
+  event: KeyboardEvent<HTMLTableRowElement>,
+  target: {
+    readonly selected: boolean;
+    readonly row: LibraryRow;
+    readonly onOpen?: (id: string) => void;
+  },
+): void {
+  if (event.key !== "Enter" || !target.selected) {
+    return;
   }
+  target.onOpen?.(target.row.id);
 }

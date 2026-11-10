@@ -281,7 +281,89 @@ it("selects the row when it is clicked", async () => {
   fireEvent.doubleClick(row);
   fireEvent.keyDown(row, { key: "Enter" });
   expect(calls.length).toBe(before);
+  expect(calls.some((call) => call.channel === "library.import")).toBe(false);
   expect(calls.some((call) => call.channel === "library.relocate")).toBe(false);
+});
+
+const other: Entry = {
+  id: "paper-2",
+  fileName: "other.pdf",
+  title: "Other",
+  addedAt: "2026-11-05T03:00:00.000Z",
+  openedAt: null,
+};
+
+it("selects on click and opens that row on double click", async () => {
+  const opened: string[] = [];
+  const calls = install({
+    list: () => okList([paper, other]),
+  });
+  render(
+    <LibraryApp
+      onOpen={(id) => {
+        opened.push(id);
+      }}
+    />,
+  );
+  const row = await screen.findByRole("row", { name: /Paper/ });
+  fireEvent.click(row);
+  expect(row.getAttribute("aria-selected")).toBe("true");
+  expect(opened).toEqual([]);
+  fireEvent.contextMenu(row);
+  expect(opened).toEqual([]);
+  fireEvent.doubleClick(row);
+  expect(opened).toEqual(["paper-1"]);
+  expect(calls.some((call) => call.channel === "library.import")).toBe(false);
+});
+
+it("opens the selected row on enter and leaves the other row", async () => {
+  const opened: string[] = [];
+  const calls = install({
+    list: () => okList([paper, other]),
+  });
+  render(
+    <LibraryApp
+      onOpen={(id) => {
+        opened.push(id);
+      }}
+    />,
+  );
+  const paperRow = await screen.findByRole("row", { name: /Paper/ });
+  const otherRow = screen.getByRole("row", { name: /Other/ });
+  fireEvent.keyDown(otherRow, { key: "Enter" });
+  fireEvent.click(paperRow);
+  fireEvent.keyDown(otherRow, { key: "Enter" });
+  expect(opened).toEqual([]);
+  fireEvent.keyDown(paperRow, { key: "Enter" });
+  expect(opened).toEqual(["paper-1"]);
+  expect(calls.some((call) => call.channel === "library.import")).toBe(false);
+});
+
+it("imports from open file and does not open the selected row", async () => {
+  const opened: string[] = [];
+  const calls = install({
+    list: () => okList([paper]),
+    import: () => okImport(false),
+  });
+  render(
+    <LibraryApp
+      onOpen={(id) => {
+        opened.push(id);
+      }}
+    />,
+  );
+  const row = await screen.findByRole("row", { name: /Paper/ });
+  fireEvent.click(row);
+  const button = screen.getByRole("button", { name: "打开文件…" });
+  button.focus();
+  fireEvent.keyDown(button, { key: "Enter" });
+  fireEvent.click(button);
+  expect(opened).toEqual([]);
+  await waitFor(() => {
+    expect(
+      calls.filter((call) => call.channel === "library.import"),
+    ).toHaveLength(1);
+  });
 });
 
 it("keeps the nav working when list fails", async () => {
