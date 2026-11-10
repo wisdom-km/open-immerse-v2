@@ -1,6 +1,8 @@
 # 0011 阅读屏进出后标签页工作集不回落
 
-状态：提议。日期：2026-11-10（Asia/Shanghai）。决定人：待 Wisdom。
+状态：已采纳。日期：2026-11-10 18:25（Asia/Shanghai）。决定人：Wisdom。
+
+批准时间：2026-11-10 18:25（Asia/Shanghai）。原话：「按推荐：采纳 0011，#199 不改运行时，视口绘制记作之后的单独候选（先不开工）；不 Ready/合入/发版」。来源：[Issue #174 评论 6764944106](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6764944106)。
 
 本页不改已采纳的 [0006](0006-renderer-oi-asset-csp.md)、[0007](0007-oi-asset-fetch-scheme.md)、[0008](0008-oi-asset-fetch-cors.md)、[0009](0009-pdfjs-worker-src.md)。不改 CSP，不改协议注册，不改主进程，不改 core、contracts、`library/src`。不实现画布清零，不调用 `PDFDocumentProxy.cleanup()`，也不改成只画视口附近的页。
 
@@ -49,7 +51,12 @@ Anvil 复测 PR #199 @ `0b61456`：worker、JS 堆、pageerror 和重画已过�
 
 ## 决定
 
-先不选会改运行时的做法。不实现画布清零，不调用 `cleanup`，也不改成只画视口附近的页。不改 CSP、协议注册、主进程、core、contracts、`library/src`。
+采纳第 3 条。Wisdom 2026-11-10 18:25 已选这项。登记在 [Issue #174 评论 6764944106](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6764944106)。
+
+- #199 不为这个问题改运行时。不实现画布清零，不调用 `cleanup`。
+- 视口绘制（只改 `packages/features/reader/src/ui/page-column.tsx`）记作 #199 之后的单独候选，暂不开工。
+- 不改 CSP、协议注册、主进程、core、contracts、`library/src`。
+- 本决定不是 Ready、合入或发版。
 
 ## 后果
 
@@ -59,4 +66,4 @@ Anvil 复测 PR #199 @ `0b61456`：worker、JS 堆、pageerror 和重画已过�
 
 ## 状态
 
-提议。范围只记录这次 Cloud-local 的归属，以及只画视口附近页的测量。不放行禁区里的修改。
+已采纳。#199 不为这个问题改运行时。视口绘制记作 #199 之后的单独候选，暂不开工。不放行禁区里的修改。
