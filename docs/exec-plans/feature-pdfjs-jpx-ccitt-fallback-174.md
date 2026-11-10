@@ -11,7 +11,7 @@
 ## 现状理解
 
 - 已有行为：阅读屏经 `packages/features/reader/src/ui/pdf-session.ts` 的 `startTask` 调用 `getDocument({ data, isEvalSupported: false })`。`apps/desktop/scripts/copy-pdf-worker.mjs` 把 `pdfjs-dist/legacy/build/pdf.worker.mjs` 字节复制成 `apps/desktop/src/renderer/pdf.worker.js`。`apps/desktop/scripts/bundle-renderer.mjs` 用 `spawnSync` 跑这个脚本。`GlobalWorkerOptions.workerSrc` 是 `oi-app://app/pdf.worker.js`。静态协议只按扩展名提供 `.html` / `.js` / `.css`，`.mjs` 是 404。CSP 没有 `wasm-unsafe-eval`，也没有 `blob:`。
-- 相关的节：[docs/adr/0009-pdf-worker-same-origin.md](../adr/0009-pdf-worker-same-origin.md)、[docs/adr/0010-pdf-image-wasm.md](../adr/0010-pdf-image-wasm.md)、[docs/approvals.md](../approvals.md) 2026-11-10 13:59 行。
+- 相关的节：[docs/adr/0009-pdfjs-worker-src.md](../adr/0009-pdfjs-worker-src.md)、[docs/adr/0010-pdf-image-wasm.md](../adr/0010-pdf-image-wasm.md)、[docs/approvals.md](../approvals.md) 2026-11-10 13:59 行。
 - 还没做的部分：两个 nowasm 后备 `.js` 没有进渲染目录；`getDocument` 没有 `wasmUrl`，也没有关掉 wasm。窗口里 liushang 第 1 页的 CCITT 和第 31 页的 JPX 因此缺图。
 
 ## 两个后备文件
