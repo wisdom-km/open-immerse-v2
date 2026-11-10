@@ -4,7 +4,7 @@
 
 批准时间：2026-11-10 10:50（Asia/Shanghai）。原话：「按推荐：只把 connect-src 增加 oi-asset:，单独开小 Draft 改草案和 csp.ts，再窗口核对；仍缺再停。不改 Range，不走整份 PDF IPC，不 Ready/合入/发版」。来源：[Issue #174 评论 6757588782](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6757588782)。
 
-窗口证据在 Draft PR #197，tip `84bc80216972c786bb846a2b3c4cdb2ceb5e6af8`。那次核对的 ADR 提交是 `60df4bbdef8fca31ca3f9da45d2cb32c55631bb4`。记录在该 PR 的 `docs/evidence/197/commands.md`。
+窗口证据在 Draft PR #197，tip `84bc80216972c786bb846a2b3c4cdb2ceb5e6af8`。那次核对的 ADR 提交是 `60df4bbdef8fca31ca3f9da45d2cb32c55631bb4`。记录在 [../evidence/197/commands.md](../evidence/197/commands.md)。
 
 ## 背景
 
