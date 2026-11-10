@@ -2,8 +2,8 @@ import { LibraryApp } from "@oi/feature-library/app";
 import { ReaderScreen } from "@oi/feature-reader/ui";
 import { useEffect, useRef, useState, type ReactElement } from "react";
 
-import { openFileEvent, returnLibraryEvent } from "../main/library-menu.js";
 import { desktopReaderClient } from "./reader-client.js";
+import { openFileEvent, returnLibraryEvent } from "./shell-events.js";
 
 const client = desktopReaderClient();
 

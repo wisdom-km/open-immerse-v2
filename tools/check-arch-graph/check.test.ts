@@ -167,7 +167,8 @@ it("exits 0 against the repository graph and prints the four counts", () => {
   expect(text).toContain("arch-graph: undocumented 0\n");
   // library realizes APP→DOM, APP→C, APP→K, ADP→APP, ADP→DOM, ADP→PN.
   // desktop wiring realizes MAIN→ADP and MAIN→APP.
-  expect(text).toContain("arch-graph: planned 14\n");
+  // reader UI realizes UI→DOM through src/pure.ts.
+  expect(text).toContain("arch-graph: planned 13\n");
   expect(text).toContain("arch-graph: unmapped 0\n");
   expect(text).toContain("arch-graph: index 0\n");
 });

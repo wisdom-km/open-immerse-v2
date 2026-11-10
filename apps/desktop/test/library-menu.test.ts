@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { expect, it } from "vitest";
 
 import {
@@ -17,6 +19,16 @@ it("describes open and return when the file menu is built", () => {
   ]);
   expect(openFileEvent).toBe("oi-open-file");
   expect(returnLibraryEvent).toBe("oi-return-library");
+  const rendererEvents = readFileSync(
+    new URL("../src/renderer/shell-events.ts", import.meta.url),
+    "utf8",
+  );
+  expect(rendererEvents).toContain(
+    `export const openFileEvent = ${JSON.stringify(openFileEvent)};`,
+  );
+  expect(rendererEvents).toContain(
+    `export const returnLibraryEvent = ${JSON.stringify(returnLibraryEvent)};`,
+  );
   expect(openFileScript()).toBe(
     'window.dispatchEvent(new Event("oi-open-file"))',
   );
