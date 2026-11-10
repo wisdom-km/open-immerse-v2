@@ -1,7 +1,7 @@
 import { copyFileSync, mkdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const desktop = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -38,4 +38,9 @@ export function copyPdfWorker(dest = pdfWorkerDest) {
   mkdirSync(path.dirname(dest), { recursive: true });
   copyFileSync(source, dest);
   return { source, dest };
+}
+
+const invoked = process.argv[1];
+if (invoked && import.meta.url === pathToFileURL(invoked).href) {
+  copyPdfWorker();
 }

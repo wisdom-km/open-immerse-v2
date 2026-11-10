@@ -1,10 +1,9 @@
+import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import * as esbuild from "esbuild";
-
-import { copyPdfWorker } from "./copy-pdf-worker.mjs";
 
 const desktop = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -32,6 +31,16 @@ await esbuild.build({
 });
 
 copyPdfWorker();
+
+function copyPdfWorker() {
+  const script = fileURLToPath(
+    new URL("./copy-pdf-worker.mjs", import.meta.url),
+  );
+  const result = spawnSync(process.execPath, [script], { encoding: "utf8" });
+  if (result.status !== 0) {
+    throw new Error(result.stderr || "copy pdf.worker.js failed");
+  }
+}
 
 function resolveTypeScript(args) {
   if (!args.path.endsWith(".js")) {
