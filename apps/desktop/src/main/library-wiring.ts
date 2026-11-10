@@ -23,9 +23,7 @@ import {
 import {
   applicationMenuTemplate,
   fileMenu,
-  openFileEvent,
-  openFileScript,
-  returnLibraryScript,
+  scriptForMenuEvent,
   type ShellMenuEntry,
 } from "./library-menu.js";
 import {
@@ -118,8 +116,10 @@ function dispatchMenu(eventName: string): Promise<void> {
   if (win === undefined) {
     return Promise.resolve();
   }
-  const script =
-    eventName === openFileEvent ? openFileScript() : returnLibraryScript();
+  const script = scriptForMenuEvent(eventName);
+  if (script === undefined) {
+    return Promise.resolve();
+  }
   return win.webContents.executeJavaScript(script).then(() => {
     return undefined;
   });

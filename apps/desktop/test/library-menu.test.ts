@@ -7,6 +7,7 @@ import {
   openFileScript,
   returnLibraryEvent,
   returnLibraryScript,
+  scriptForMenuEvent,
 } from "../src/main/library-menu.js";
 
 it("describes open and return when the file menu is built", () => {
@@ -23,6 +24,9 @@ it("describes open and return when the file menu is built", () => {
   expect(returnLibraryScript()).toBe(
     'window.dispatchEvent(new Event("oi-return-library"))',
   );
+  expect(scriptForMenuEvent(openFileEvent)).toBe(openFileScript());
+  expect(scriptForMenuEvent(returnLibraryEvent)).toBe(returnLibraryScript());
+  expect(scriptForMenuEvent("oi-unknown")).toBeUndefined();
   expect(JSON.stringify(fileMenu)).not.toMatch(
     /打开文件夹|删除|访达|资源管理器/,
   );

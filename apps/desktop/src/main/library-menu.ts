@@ -38,6 +38,16 @@ export function returnLibraryScript(): string {
   return menuScript(returnLibraryEvent);
 }
 
+export function scriptForMenuEvent(eventName: string): string | undefined {
+  if (eventName === openFileEvent) {
+    return openFileScript();
+  }
+  if (eventName === returnLibraryEvent) {
+    return returnLibraryScript();
+  }
+  return undefined;
+}
+
 function menuScript(eventName: string): string {
   return `window.dispatchEvent(new Event(${JSON.stringify(eventName)}))`;
 }
