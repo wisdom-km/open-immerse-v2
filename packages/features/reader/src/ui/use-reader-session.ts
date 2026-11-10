@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { ReaderClient } from "./reader-client.js";
 import { openReading, type ReadingView } from "./open-reading.js";
@@ -28,6 +28,8 @@ export function useReaderSession(
   const columnRef = useRef<HTMLDivElement | null>(null);
   const shownRef = useRef<number | undefined>(undefined);
   const [phase, setPhase] = useState<ReaderPhase>({ kind: "loading" });
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
   const [lostPlace, setLostPlace] = useState(false);
   const [shownPage, setShownPage] = useState<number | undefined>(undefined);
   useEffect(() => {
@@ -40,14 +42,14 @@ export function useReaderSession(
       shownRef,
     );
   }, [id]);
-  const leave = () => {
+  const leave = useCallback(() => {
     finishReading(
       clientRef.current,
-      phase,
+      phaseRef.current,
       readVisible(columnRef.current),
       onLeaveRef.current,
     );
-  };
+  }, []);
   return {
     phase,
     lostPlace,
