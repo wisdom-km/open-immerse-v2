@@ -95,3 +95,35 @@ worker、`wasm-unsafe-eval`、`blob:`、`.mjs` 没有被请求到。这次没有
 Vitest 174 个文件，747 通过，3 跳过，类型错误 0。3 个跳过仍是 `GITLEAKS_BIN` 未设置时的 detect，不是具名 G9 通过。
 
 `workers/parser`：ruff check 退出码 0，ruff format 退出码 0，pyright 0 errors，lint-imports 7 kept / 0 broken，pytest 181 通过。
+
+## corsEnabled 之后的窗口复核
+
+上面两节保留。这一节不改那两次失败记录。
+
+全量的对象是 `478b082f929f11827cdfcd57c0e4515d3d9c9d73`（tree `499b6b7cce205144a509b19dc4f92f89369b8acc`）。阅读屏没有写。证据提交不重跑全量。
+
+Electron 45.2.1。`xvfb-run -a`。`webPreferences` 仍是 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`。文档是 `oi-app://app/index.html`。PDF.js 6.5.438。初始化准备是 `{ data, isEvalSupported: false }`。没有设置 `disableRange`。
+
+实际注册只有一次。`oi-app` 是 `standard: true`、`secure: true`。`oi-asset` 是 `standard: true`、`secure: true`、`supportFetchAPI: true`、`corsEnabled: true`。没有 `bypassCSP`、`allowServiceWorkers`、`stream`。
+
+进程退出码 0。第一页画出。截图是 [page-cors.png](page-cors.png)。前面的空白页仍是 [page.png](page.png) 与 [page-support-fetch.png](page-support-fetch.png)。
+
+CSP 头与 `csp.ts` 逐字相同：
+
+```text
+default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' oi-asset:; font-src 'self'; connect-src 'self' oi-asset:; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'
+```
+
+没有 `connect-src` 违规，也没有 CORS 报错。`oi-asset://asset/probe` 在网络记录里是 xhr、状态 200、`content-type` 是 `application/pdf`。协议处理器收到的次数是 1。
+
+探针读回：`fetchStatus` 200，`byteLength` 442，`startsPdf` 为真，`numPages` 1，`inkPixels` 10000，`width` 200，`height` 200，`drawn` 为真，`violations` 是空数组。画完之后探针自己调用 `doc.destroy()`，这个对象没有该方法，所以 `stage` 记成 `error`，消息是 `doc.destroy is not a function`。这不是协议或 CSP 缺口，进程仍按 `drawn` 退出码 0。
+
+网络记录里没有 worker、`blob:`、`wasm` 或 `.mjs` 请求。这次没有改 `.mjs` 静态放行，也没有加 `wasm-unsafe-eval` 或 `blob:`。没有新的未批特权缺口，所以不另写 ADR。
+
+## 478b082 上的全量
+
+`GATE_BASE=origin/main`。`corepack pnpm run check` 退出码 0。format、lint、typecheck、typecheck:core 退出码 0。`check-file-size: 431 source files within hard limits`。dependency-cruiser：`no dependency violations found (336 modules, 983 dependencies cruised)`。`check-one-slice: 0 feature slice(s)`。`check-pr-size: 327 non-generated lines`。codegen 之后 `git diff --exit-code` 退出码 0。
+
+Vitest 174 个文件，747 通过，3 跳过，类型错误 0。3 个跳过仍是 `GITLEAKS_BIN` 未设置时的 detect，不是具名 G9 通过。
+
+`workers/parser`：ruff check 退出码 0，ruff format 退出码 0，pyright 0 errors，lint-imports 7 kept / 0 broken，pytest 181 通过。
