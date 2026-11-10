@@ -72,7 +72,7 @@ default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' oi-asset
 
 ## 含图页
 
-PDF 本体不入库。页码用 poppler 24.02.0 的 `pdfimages -list`。它把 Flate 印成 `image`。前五份的计数与 Forge 给出的一致：Attention 6 张 Flate，DPO 4 张 Flate，DDPM 3 张 Flate 加 19 张 JPEG，Transformer-XL 30 张 Flate，liushang 181 张 Flate 加 343 张 JPEG 加 39 张 JPX 加 2 张 CCITT。后三份也一致：PLOS ONE 11 张 JPEG，BMC 2 张 Flate 加 8 张 JPEG，Elsevier 没有位图。清单里的七份也一致：pcbi-1005421 21 张 JPEG，s41467-018-07210-0 1 张 Flate 加 10 张 JPEG，s41598-023-31124-7 1 张 Flate 加 33 张 JPEG，s41467-026-69035-6 2 张 Flate，pone-0215032 20 张 JPEG，fms-2021-7 2 张 Flate，qe533 没有位图。Producer 也与给出的一致。来源按文件本身归类：四篇 pdfTeX 是 arXiv；liushang 是 Acrobat 排出的教科书版面，算出版社版，不是扫描页；期刊与 Cambridge、Quantitative Economics 都是出版社版。
+PDF 本体不入库。页码用 poppler 24.02.0 的 `pdfimages -list`。它把 Flate 印成 `image`。前五份的计数与 Forge 给出的一致：Attention 6 张 Flate，DPO 4 张 Flate，DDPM 3 张 Flate 加 19 张 JPEG，Transformer-XL 30 张 Flate，liushang 181 张 Flate 加 343 张 JPEG 加 39 张 JPX 加 2 张 CCITT。后三份也一致：PLOS ONE 11 张 JPEG，BMC 2 张 Flate 加 8 张 JPEG，Elsevier 没有位图。清单里的七份也一致：pcbi-1005421 21 张 JPEG，s41467-018-07210-0 1 张 Flate 加 10 张 JPEG，s41598-023-31124-7 1 张 Flate 加 33 张 JPEG，s41467-026-69035-6 2 张 Flate，pone-0215032 20 张 JPEG，fms-2021-7 2 张 Flate，qe533 没有位图。Producer 也与给出的一致。来源按文件本身归类：四篇 pdfTeX 是 arXiv；liushang 是教科书（Acrobat Pro 11 生成，非期刊），正文是嵌入字体的文字层，不是扫描页；期刊与 Cambridge、Quantitative Economics 都是出版社版。
 
 每份经文献库导入，从「全部论文」双击打开。Electron 45.2.1，`xvfb-run -a`，生产壳。`contextIsolation` 与 `sandbox` 为 true，`nodeIntegration` 为 false。文档是 `oi-app://app/index.html`。每份的 `oi-asset://asset/1` 与 `oi-app://app/pdf.worker.js` 都是 200。资源类型只有 document、stylesheet、script、fetch。没有 `.wasm`、`blob:`、`.mjs`，也没有别的文件请求。没有 `securitypolicyviolation`。
 
@@ -82,8 +82,8 @@ PDF 本体不入库。页码用 poppler 24.02.0 的 `pdfimages -list`。它把 F
 | DPO | arXiv | 2 | Flate | 画出。Figure 1 的色带在。控制台没有警告。截图 [img-dpo-p2.png](img-dpo-p2.png) |
 | DDPM | arXiv | 6 | JPEG | 画出。Figure 3 与 Figure 4 的照片在。控制台没有警告。截图 [img-ddpm-p6.png](img-ddpm-p6.png) |
 | Transformer-XL | arXiv | 3 | Flate | 画出。Figure 1 的两张网络图和正文都在。控制台只有探针的 `getImageData` 警告。截图 [img-xl-p3.png](img-xl-p3.png) |
-| liushang | 出版社版 | 1 | JPEG，另有 CCITT | 页画出。JPEG 封面在。CCITT 条码不在。截图 [img-liushang-p1.png](img-liushang-p1.png) |
-| liushang | 出版社版 | 31 | JPEG，另有 JPX | 页画出。JPEG 插图在。`img_p30_3` 报 `JpxError: OpenJPEG failed to initialize`。截图 [img-liushang-p31.png](img-liushang-p31.png) |
+| liushang | 教科书（Acrobat Pro 11 生成，非期刊） | 1 | JPEG，另有 CCITT | 页画出。JPEG 封面在。CCITT 条码不在。截图 [img-liushang-p1.png](img-liushang-p1.png) |
+| liushang | 教科书（Acrobat Pro 11 生成，非期刊） | 31 | JPEG，另有 JPX | 页画出。JPEG 插图在。`img_p30_3` 报 `JpxError: OpenJPEG failed to initialize`。截图 [img-liushang-p31.png](img-liushang-p31.png) |
 | PLOS ONE | 出版社版 | 4 | JPEG | 画出。Fig 1 的发病率曲线在。页脚是 4/25。控制台没有应用警告。截图 [img-plos-p4.png](img-plos-p4.png) |
 | BMC Public Health | 出版社版 | 3 | JPEG | 画出。Fig 1 的彩色地图在。控制台没有应用警告。截图 [img-bmc-p3.png](img-bmc-p3.png) |
 | Elsevier | 出版社版 | 9 | 无位图，矢量图 | 画出。Figure 1 与 Figure 2 的折线和误差棒在。控制台没有应用警告。截图 [img-elsevier-p9.png](img-elsevier-p9.png) |
@@ -103,4 +103,8 @@ PLOS 第 4 页与 BMC 第 3 页的 JPEG 在 `pdfimages` 里带 `icc`。这两页
 
 清单七份同样没有新的解码缺口。s41467-026-69035-6 的两张 Flate 都在第 1 页，是刊名条和 46×40 的图标。fms-2021-7 的两张 Flate 都在第 1 页，其中一张是软掩膜；刊名条画出。它的控制台有一条 `Failed to compile PostScript function to wasm, falling back to JS`，正文和公式仍在，没有 `.wasm` 请求。qe533 第 22 页没有位图，矢量折线画出。
 
-ADR 0010 仍是提议，范围仍是 JPX 与 CCITT。不改 CSP，不提供 `.wasm`，不把缺图改成占位。不 Ready，不合入，不发版。
+ADR 0010 仍是提议，范围仍是 JPX 与 CCITT。文件里没有「扫描」这个词。不改 CSP，不提供 `.wasm`，不把缺图改成占位。不 Ready，不合入，不发版。
+
+## Windows 阅读 IPC 超时
+
+`reading-ipc-wiring.test.ts` 的「routes the current generation and rejects the others」在 run 42763194855 的 desktop-e2e-windows 上 5000ms 超时。750eab3→091f7d1 没有改这个文件，也没有改它调用的 library 与 desktop 实现。上一笔 750eab3 的 run 42762754361 里，这个文件 948ms 通过，其中这条用例 450ms。同一失败轮里别的 SQLite 用例也变慢：`open-document-wiring.test.ts` 从 362ms 到 4721ms，`reading-asset-protocol.test.ts` 从 1687ms 到 11198ms。三条都是各自的临时库，没有共用文件。超时和这次文档提交无关，是那台 Windows runner 上 SQLite 变慢。没有加超时，没有 skip。
