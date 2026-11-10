@@ -1,6 +1,6 @@
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
-import { openPdfSession } from "./pdf-session.js";
+import { openPdfSession, type PdfLoadingTask } from "./pdf-session.js";
 import type { OpenedPdf } from "./reader-client.js";
 import { assignWorkerSrc } from "./worker-src.js";
 
@@ -22,7 +22,11 @@ export async function loadAssetPdf(
     }
     const bytes = new Uint8Array(await response.arrayBuffer());
     assignWorkerSrc(pdfjs);
-    const session = await openPdfSession(bytes, pdfjs);
+    const session = await openPdfSession(bytes, {
+      getDocument(params) {
+        return pdfjs.getDocument(params) as unknown as PdfLoadingTask;
+      },
+    });
     if (session === undefined) {
       return undefined;
     }
