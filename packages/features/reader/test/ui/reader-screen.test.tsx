@@ -224,6 +224,105 @@ it("revokes when the back button is clicked", async () => {
   expect(left).toBe(1);
 });
 
+it("writes, revokes, then closes the pdf when leaving", async () => {
+  const order: string[] = [];
+  render(
+    screenFor(
+      fakeClient({
+        writePage() {
+          order.push("write");
+          return Promise.resolve();
+        },
+        revoke() {
+          order.push("revoke");
+          return Promise.resolve();
+        },
+        openPdf() {
+          return Promise.resolve({
+            pageCount: 3,
+            paint,
+            cancel,
+            close() {
+              order.push("close");
+              return Promise.resolve();
+            },
+          });
+        },
+      }),
+    ),
+  );
+  expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
+  layOut(1);
+  fireEvent.click(screen.getByRole("button", { name: BACK_LABEL }));
+  expect(order).toEqual(["write", "revoke", "close"]);
+});
+
+it("closes the pdf once per open across repeated visits", async () => {
+  let opens = 0;
+  const closes: number[] = [];
+  const client = fakeClient({
+    openPdf() {
+      opens += 1;
+      return Promise.resolve({
+        pageCount: 3,
+        paint,
+        cancel,
+        close() {
+          closes.push(opens);
+          return Promise.resolve();
+        },
+      });
+    },
+  });
+  const view = render(screenFor(client, () => undefined, "paper-0", "Title 0"));
+  for (let round = 0; round < 4; round += 1) {
+    if (round > 0) {
+      view.rerender(
+        screenFor(
+          client,
+          () => undefined,
+          `paper-${String(round)}`,
+          `Title ${String(round)}`,
+        ),
+      );
+    }
+    expect(
+      await screen.findByRole("heading", { name: `Title ${String(round)}` }),
+    ).toBeTruthy();
+    expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: BACK_LABEL }));
+    await waitFor(() => {
+      expect(closes).toHaveLength(round + 1);
+    });
+  }
+  expect(opens).toBe(4);
+  expect(closes).toEqual([1, 2, 3, 4]);
+});
+
+it("closes the pdf when the screen unmounts", async () => {
+  let closes = 0;
+  const view = render(
+    screenFor(
+      fakeClient({
+        openPdf() {
+          return Promise.resolve({
+            pageCount: 3,
+            paint,
+            cancel,
+            close() {
+              closes += 1;
+              return Promise.resolve();
+            },
+          });
+        },
+      }),
+    ),
+  );
+  expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
+  view.unmount();
+  expect(closes).toBe(1);
+});
+
 it("keeps the new title when an older open resolves later", async () => {
   let releaseFirst: ((value: number) => void) | undefined;
   const first = new Promise<number>((resolve) => {
@@ -311,6 +410,14 @@ function paint(): Promise<void> {
   return Promise.resolve();
 }
 
+function cancel(): void {
+  return undefined;
+}
+
+function close(): Promise<void> {
+  return Promise.resolve();
+}
+
 function fakeClient(over: Partial<ReaderClient>): ReaderClient {
   return {
     openDocument() {
@@ -339,7 +446,7 @@ function fakeClient(over: Partial<ReaderClient>): ReaderClient {
       return Promise.resolve();
     },
     openPdf() {
-      return Promise.resolve({ pageCount: 3, paint });
+      return Promise.resolve({ pageCount: 3, paint, cancel, close });
     },
     ...over,
   };

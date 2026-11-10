@@ -8,6 +8,16 @@ export type ReaderPhase =
   | { readonly kind: "loading" }
   | { readonly kind: "view"; readonly reading: ReadingView };
 
+type ReleaseState = {
+  clientRef: { current: ReaderClient };
+  pairRef: { current: Pair | undefined };
+  columnRef: { current: HTMLDivElement | null };
+  releaseRef: { current: () => Promise<void> };
+  finishedRef: { current: boolean };
+  shownRef: { current: number | undefined };
+  visibleRef: { current: number | undefined };
+};
+
 export function useReaderSession(
   client: ReaderClient,
   id: string,
@@ -27,93 +37,168 @@ export function useReaderSession(
   onLeaveRef.current = onLeave;
   const columnRef = useRef<HTMLDivElement | null>(null);
   const shownRef = useRef<number | undefined>(undefined);
-  const [phase, setPhase] = useState<ReaderPhase>({ kind: "loading" });
+  const visibleRef = useRef<number | undefined>(undefined);
   const pairRef = useRef<Pair | undefined>(undefined);
+  const releaseRef = useRef<() => Promise<void>>(noopClose);
+  const finishedRef = useRef(false);
+  const [phase, setPhase] = useState<ReaderPhase>({ kind: "loading" });
   pairRef.current = phase.kind === "view" ? phase.reading.pair : undefined;
   const [lostPlace, setLostPlace] = useState(false);
   const [shownPage, setShownPage] = useState<number | undefined>(undefined);
+  const holder = useRef<ReleaseState | undefined>(undefined);
+  holder.current = {
+    clientRef,
+    pairRef,
+    columnRef,
+    releaseRef,
+    finishedRef,
+    shownRef,
+    visibleRef,
+  };
   useEffect(() => {
-    return watchReading(
-      id,
-      clientRef,
-      setPhase,
-      setLostPlace,
-      setShownPage,
-      shownRef,
-    );
+    return startWatch(id, holder, { setPhase, setLostPlace, setShownPage });
   }, [id]);
   const leave = useCallback(() => {
-    finishReading(
-      clientRef.current,
-      pairRef.current,
-      readVisible(columnRef.current),
-      onLeaveRef.current,
-    );
+    const state = holder.current;
+    if (state !== undefined) {
+      settleLeave(state, onLeaveRef.current);
+    }
   }, []);
+  const scrolling = scrollControls(holder, setLostPlace, setShownPage);
   return {
     phase,
     lostPlace,
     shownPage,
     columnRef,
     leave,
+    onScroll: scrolling.onScroll,
+    onScrollEnd: scrolling.onScrollEnd,
+  };
+}
+
+function scrollControls(
+  holder: { readonly current: ReleaseState | undefined },
+  setLostPlace: (lost: boolean) => void,
+  setShownPage: (page: number | undefined) => void,
+): { readonly onScroll: () => void; readonly onScrollEnd: () => void } {
+  return {
     onScroll() {
-      setLostPlace(false);
-    },
-    onScrollEnd() {
-      const page = readVisible(columnRef.current);
-      if (page === undefined || page === shownRef.current) {
+      const state = holder.current;
+      if (state === undefined) {
         return;
       }
-      shownRef.current = page;
+      setLostPlace(false);
+      const page = readVisible(state.columnRef.current);
+      if (page !== undefined) {
+        state.visibleRef.current = page;
+      }
+    },
+    onScrollEnd() {
+      const state = holder.current;
+      if (state === undefined) {
+        return;
+      }
+      const page = readVisible(state.columnRef.current);
+      if (page === undefined || page === state.shownRef.current) {
+        return;
+      }
+      state.shownRef.current = page;
+      state.visibleRef.current = page;
       setShownPage(page);
-      const pair = pairRef.current;
+      const pair = state.pairRef.current;
       if (pair !== undefined) {
-        void clientRef.current.writePage(pair.id, pair.generation, page);
+        void state.clientRef.current.writePage(pair.id, pair.generation, page);
       }
     },
   };
 }
 
-function watchReading(
+function startWatch(
   id: string,
-  clientRef: { current: ReaderClient },
-  setPhase: (phase: ReaderPhase) => void,
-  setLostPlace: (lost: boolean) => void,
-  setShownPage: (page: number | undefined) => void,
-  shownRef: { current: number | undefined },
+  holder: { readonly current: ReleaseState | undefined },
+  setters: Pick<WatchInput, "setPhase" | "setLostPlace" | "setShownPage">,
 ): () => void {
+  const state = holder.current;
+  if (state === undefined) {
+    return () => undefined;
+  }
+  state.finishedRef.current = false;
+  state.releaseRef.current = noopClose;
+  return watchReading({ id, ...state, ...setters });
+}
+
+type WatchInput = ReleaseState & {
+  readonly id: string;
+  readonly setPhase: (phase: ReaderPhase) => void;
+  readonly setLostPlace: (lost: boolean) => void;
+  readonly setShownPage: (page: number | undefined) => void;
+};
+
+function watchReading(input: WatchInput): () => void {
   let alive = true;
-  setPhase({ kind: "loading" });
-  setLostPlace(false);
-  setShownPage(undefined);
-  shownRef.current = undefined;
-  void openReading(clientRef.current, id).then((reading) => {
-    if (!alive) {
-      revokeQuiet(clientRef.current, reading.pair);
+  input.setPhase({ kind: "loading" });
+  input.setLostPlace(false);
+  input.setShownPage(undefined);
+  input.shownRef.current = undefined;
+  input.visibleRef.current = undefined;
+  void openReading(input.clientRef.current, input.id).then((reading) => {
+    if (!alive || input.finishedRef.current) {
+      abandon(input.clientRef.current, reading);
       return;
     }
-    shownRef.current = reading.page;
-    setShownPage(reading.page);
-    setLostPlace(reading.lostPlace);
-    setPhase({ kind: "view", reading });
+    input.releaseRef.current = reading.close;
+    input.shownRef.current = reading.page;
+    input.visibleRef.current = reading.page;
+    input.setShownPage(reading.page);
+    input.setLostPlace(reading.lostPlace);
+    input.setPhase({ kind: "view", reading });
   });
   return () => {
     alive = false;
+    settleLeave(input, undefined);
   };
+}
+
+function settleLeave(
+  release: ReleaseState,
+  onLeave: (() => void) | undefined,
+): void {
+  if (release.finishedRef.current) {
+    return;
+  }
+  release.finishedRef.current = true;
+  const page =
+    readVisible(release.columnRef.current) ??
+    release.visibleRef.current ??
+    release.shownRef.current;
+  finishReading(
+    release.clientRef.current,
+    release.pairRef.current,
+    page,
+    onLeave,
+    release.releaseRef.current,
+  );
+}
+
+function abandon(client: ReaderClient, reading: ReadingView): void {
+  revokeQuiet(client, reading.pair);
+  void reading.close();
 }
 
 function finishReading(
   client: ReaderClient,
   pair: Pair | undefined,
   page: number | undefined,
-  onLeave: () => void,
+  onLeave: (() => void) | undefined,
+  close: () => Promise<void>,
 ): void {
-  // 写页先于 revoke，依赖 main 的 setProgressPage 同步处理。
+  // 写页先于 revoke，依赖 main 的 setProgressPage 同步处理。销毁在这两者之后。
   if (pair !== undefined && page !== undefined) {
     void client.writePage(pair.id, pair.generation, page);
   }
   revokeQuiet(client, pair);
-  onLeave();
+  void close();
+  onLeave?.();
 }
 
 function revokeQuiet(
@@ -123,6 +208,10 @@ function revokeQuiet(
   if (pair !== undefined) {
     void client.revoke(pair.id, pair.generation);
   }
+}
+
+function noopClose(): Promise<void> {
+  return Promise.resolve();
 }
 
 export function readVisible(column: HTMLDivElement | null): number | undefined {

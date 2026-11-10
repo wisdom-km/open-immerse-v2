@@ -63,6 +63,7 @@ export function ReaderScreen(props: {
         onScroll={session.onScroll}
         onScrollEnd={session.onScrollEnd}
         paint={reading?.paint}
+        cancel={reading?.cancel}
         onLeave={session.leave}
       />
     </section>
@@ -80,6 +81,7 @@ function ReaderBody(props: {
   readonly paint:
     | ((page: number, canvas: HTMLCanvasElement) => Promise<void>)
     | undefined;
+  readonly cancel: ((canvas: HTMLCanvasElement) => void) | undefined;
   readonly onLeave: () => void;
 }): ReactElement {
   if (props.loading) {
@@ -100,6 +102,7 @@ function ReaderBody(props: {
       onScroll={props.onScroll}
       onScrollEnd={props.onScrollEnd}
       paint={props.paint}
+      cancel={props.cancel}
     />
   );
 }

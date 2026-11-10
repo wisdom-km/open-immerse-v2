@@ -1,7 +1,14 @@
 import { clampPage } from "../pure.js";
 
 import { MISSING_DOCUMENT, UNREADABLE_PDF } from "./copy.js";
-import { assetUrl, type Pair, type ReaderClient } from "./reader-client.js";
+import {
+  assetUrl,
+  type OpenedPdf,
+  type Pair,
+  type PdfCancel,
+  type PdfPaint,
+  type ReaderClient,
+} from "./reader-client.js";
 
 export type ReadingView = {
   readonly sentence: string | undefined;
@@ -9,9 +16,9 @@ export type ReadingView = {
   readonly pageCount: number | undefined;
   readonly page: number | undefined;
   readonly lostPlace: boolean;
-  readonly paint:
-    | ((page: number, canvas: HTMLCanvasElement) => Promise<void>)
-    | undefined;
+  readonly paint: PdfPaint | undefined;
+  readonly cancel: PdfCancel | undefined;
+  readonly close: () => Promise<void>;
 };
 
 export async function openReading(
@@ -32,7 +39,7 @@ export async function openReading(
     client.openPdf(assetUrl(bound.assetId)),
   ]);
   if (pdf === undefined) {
-    return { ...blocked("other"), pair };
+    return blocked("other", pair);
   }
   return placed(progress, pdf, pair);
 }
@@ -50,7 +57,7 @@ function placed(
   }
   const page = clampPage(progress.progressPage, pdf.pageCount);
   if (page === undefined) {
-    return { ...blocked("other"), pair };
+    return blocked("other", pair, pdf);
   }
   return ready(pair, pdf, page, false);
 }
@@ -62,14 +69,14 @@ function firstPage(
 ): ReadingView {
   const page = clampPage(1, pdf.pageCount);
   if (page === undefined) {
-    return { ...blocked("other"), pair };
+    return blocked("other", pair, pdf);
   }
   return ready(pair, pdf, page, lostPlace);
 }
 
 function ready(
   pair: Pair,
-  pdf: NonNullable<Awaited<ReturnType<ReaderClient["openPdf"]>>>,
+  pdf: OpenedPdf,
   page: number,
   lostPlace: boolean,
 ): ReadingView {
@@ -80,17 +87,23 @@ function ready(
     page,
     lostPlace,
     paint: (pageNumber, canvas) => pdf.paint(pageNumber, canvas),
+    cancel(canvas) {
+      pdf.cancel(canvas);
+    },
+    close: () => pdf.close(),
   };
 }
 
-function blocked(code: string): ReadingView {
+function blocked(code: string, pair?: Pair, pdf?: OpenedPdf): ReadingView {
   return {
     sentence: code === "not_found" ? MISSING_DOCUMENT : UNREADABLE_PDF,
-    pair: undefined,
+    pair,
     pageCount: undefined,
     page: undefined,
     lostPlace: false,
     paint: undefined,
+    cancel: undefined,
+    close: () => pdf?.close() ?? Promise.resolve(),
   };
 }
 

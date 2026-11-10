@@ -1,14 +1,15 @@
 import { useEffect, useRef, type ReactElement, type Ref } from "react";
 
+import type { PdfCancel, PdfPaint } from "./reader-client.js";
+
 export function PageColumn(props: {
   readonly page: number;
   readonly pageCount: number;
   readonly columnRef: Ref<HTMLDivElement>;
   readonly onScroll: () => void;
   readonly onScrollEnd: () => void;
-  readonly paint:
-    | ((page: number, canvas: HTMLCanvasElement) => Promise<void>)
-    | undefined;
+  readonly paint: PdfPaint | undefined;
+  readonly cancel: PdfCancel | undefined;
 }): ReactElement {
   const pages = pageNumbers(props.pageCount);
   return (
@@ -21,7 +22,12 @@ export function PageColumn(props: {
         onScrollEnd={props.onScrollEnd}
       >
         {pages.map((page) => (
-          <PageSheet key={page} page={page} paint={props.paint} />
+          <PageSheet
+            key={page}
+            page={page}
+            paint={props.paint}
+            cancel={props.cancel}
+          />
         ))}
       </div>
     </section>
@@ -30,19 +36,26 @@ export function PageColumn(props: {
 
 function PageSheet(props: {
   readonly page: number;
-  readonly paint:
-    | ((page: number, canvas: HTMLCanvasElement) => Promise<void>)
-    | undefined;
+  readonly paint: PdfPaint | undefined;
+  readonly cancel: PdfCancel | undefined;
 }): ReactElement {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const cancelRef = useRef(props.cancel);
+  cancelRef.current = props.cancel;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const paint = props.paint;
+    if (canvas === null || paint === undefined) {
+      return;
+    }
+    void paint(props.page, canvas).catch(() => undefined);
+    return () => {
+      cancelRef.current?.(canvas);
+    };
+  }, [props.page, props.paint]);
   return (
     <article data-page={props.page}>
-      <canvas
-        ref={(node) => {
-          if (node !== null && props.paint !== undefined) {
-            void props.paint(props.page, node);
-          }
-        }}
-      />
+      <canvas ref={canvasRef} />
     </article>
   );
 }

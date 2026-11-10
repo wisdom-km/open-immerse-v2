@@ -3,9 +3,18 @@ export type Pair = {
   readonly generation: number;
 };
 
+export type PdfPaint = (
+  page: number,
+  canvas: HTMLCanvasElement,
+) => Promise<void>;
+
+export type PdfCancel = (canvas: HTMLCanvasElement) => void;
+
 export type OpenedPdf = {
   readonly pageCount: number;
-  paint: (page: number, canvas: HTMLCanvasElement) => Promise<void>;
+  paint: PdfPaint;
+  cancel: PdfCancel;
+  close(): Promise<void>;
 };
 
 export type ReaderClient = {

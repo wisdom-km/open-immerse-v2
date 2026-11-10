@@ -97,7 +97,7 @@ it("shows the clamped page and does not write before settle", async () => {
         });
       },
       openPdf() {
-        return Promise.resolve({ pageCount: 2, paint });
+        return Promise.resolve({ pageCount: 2, paint, cancel, close });
       },
       writePage(_id, _generation, page) {
         writes.push(page);
@@ -180,6 +180,14 @@ function paint(): Promise<void> {
   return Promise.resolve();
 }
 
+function cancel(): void {
+  return undefined;
+}
+
+function close(): Promise<void> {
+  return Promise.resolve();
+}
+
 function fakeClient(over: Partial<ReaderClient>): ReaderClient {
   return {
     openDocument() {
@@ -208,7 +216,7 @@ function fakeClient(over: Partial<ReaderClient>): ReaderClient {
       return Promise.resolve();
     },
     openPdf() {
-      return Promise.resolve({ pageCount: 3, paint });
+      return Promise.resolve({ pageCount: 3, paint, cancel, close });
     },
     ...over,
   };
