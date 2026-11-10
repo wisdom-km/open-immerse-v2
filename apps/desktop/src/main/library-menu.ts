@@ -1,6 +1,12 @@
+export const openFileEvent = "oi-open-file";
+export const returnLibraryEvent = "oi-return-library";
+
 export const fileMenu = {
   label: "文件",
-  items: [{ label: "打开…", accelerator: "CmdOrCtrl+O" }],
+  items: [
+    { label: "打开…", accelerator: "CmdOrCtrl+O", event: openFileEvent },
+    { label: "返回文献库", event: returnLibraryEvent },
+  ],
 } as const;
 
 export type ShellMenuRole = "appMenu" | "editMenu" | "windowMenu";
@@ -24,8 +30,14 @@ export function applicationMenuTemplate(
   return [file, edit, windowMenu];
 }
 
-export const openFileEvent = "oi-open-file";
-
 export function openFileScript(): string {
-  return `window.dispatchEvent(new Event(${JSON.stringify(openFileEvent)}))`;
+  return menuScript(openFileEvent);
+}
+
+export function returnLibraryScript(): string {
+  return menuScript(returnLibraryEvent);
+}
+
+function menuScript(eventName: string): string {
+  return `window.dispatchEvent(new Event(${JSON.stringify(eventName)}))`;
 }

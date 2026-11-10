@@ -3,9 +3,22 @@
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.js",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./ui": {
+      "types": "./src/ui/index.js",
+      "default": "./src/ui/index.ts"
+    }
+  },
   "dependencies": {
     "@oi/contracts": "workspace:*",
     "@oi/kernel": "workspace:*",
-    "pdfjs-dist": "6.5.438"
+    "pdfjs-dist": "6.5.438",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   }
 }

@@ -10,6 +10,11 @@
         "packages/features/library/src/adapters/library-main.ts"
       ],
       "@oi/feature-library/ui": ["packages/features/library/src/ui/index.ts"],
+      "@oi/feature-library/app": [
+        "packages/features/library/src/ui/library-app.tsx"
+      ],
+      "@oi/feature-reader/ui": ["packages/features/reader/src/ui/index.ts"],
+      "@oi/feature-reader": ["packages/features/reader/src/index.ts"],
       "@oi/feature-library": ["packages/features/library/src/index.ts"],
       "@oi/feature-ingest": ["packages/features/ingest/src/index.ts"],
       "@oi/feature-ingest/open-document": [
@@ -27,6 +32,9 @@
     "../../packages/providers/src/index.ts",
     "../../packages/features/library/src/adapters/library-main.ts",
     "../../packages/features/library/src/ui/index.ts",
+    "../../packages/features/library/src/ui/library-app.tsx",
+    "../../packages/features/reader/src/index.ts",
+    "../../packages/features/reader/src/ui/index.ts",
     "../../packages/features/library/src/index.ts",
     "../../packages/features/ingest/src/index.ts",
     "../../packages/features/ingest/src/application/use-cases/open-document.ts",
