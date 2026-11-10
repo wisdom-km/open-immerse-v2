@@ -124,3 +124,48 @@ Anvil 的 worker 与内存数字来自真机和 Box。下面是这台 Cloud Agen
 修复前回到文献库时 8 个 worker 都还在。修复后同一时刻还剩 1 个，因为 `close()` 在写页和 revoke 之后异步销毁，采样时最后一轮的 `loadingTask.destroy()` 还没结束。等它结束后 8 个都已 terminate。两次 pageerror 都是 0。修复后 Tab working set 仍高于进入前（154432 KB，相对基线 125028 KB 多 29404 KB），但不再随着未关闭的 worker 累加。
 
 3517fad 的提交说明写了「destroy 文档」。pdf.js 6.5.438 的 `PDFDocumentProxy` 没有 `destroy`。释放只调用 `loadingTask.destroy()`，它会拆掉 transport 和 worker。已推送的提交说明不改写。
+
+## 标签页工作集（Cloud-local，20 轮）
+
+这一节是 ADR 0011 的测量。环境与上面的 8 轮不同：Linux，`DISPLAY=:1`，Electron 45.2.1，Chrome 156.0.8078.75，Playwright 启动 `apps/desktop/dist/main/index.js`。样本是 PLOS ONE 的 25 页 letter PDF（612×792，2730627 字节）。一次打开画出 25 个 canvas，像素 48470400 字节。这不是 Anvil 的真机，也不是 Box。产品代码离开时只调用 `loadingTask.destroy()`。
+
+Tab working set 来自 `app.getAppMetrics()`，单位 KB。`RssAnon` 与 `RssShmem` 来自该 Tab 的 `/proc/<pid>/status`。JS 堆是 `performance.memory.usedJSHeapSize`，单位字节。worker 数是页面里包住 `window.Worker` 后数 `terminate`。`after` 在 `HeapProfiler.collectGarbage` 之后。`pressure` 是 `Memory.simulatePressureNotification` 的 critical。
+
+| 点 | Tab working set | RssAnon | RssShmem | worker 创建 / 存活 / terminate |
+| --- | --- | --- | --- | --- |
+| 进入前 | 123204 | 29260 | 2448 | 0 / 0 / 0 |
+| 第 1 轮 | 200092 | 85688 | 6848 | 1 / 1 / 0 |
+| 第 2 轮 | 225340 | 108888 | 10640 | 2 / 1 / 1 |
+| 第 3 轮 | 292616 | 163516 | 20120 | 3 / 1 / 2 |
+| 第 4 轮 | 364716 | 207604 | 50712 | 4 / 1 / 3 |
+| 第 5 轮 | 477324 | 214080 | 146200 | 5 / 1 / 4 |
+| 第 6 轮 | 518604 | 259420 | 151888 | 6 / 1 / 5 |
+| 第 7 轮 | 522716 | 269032 | 146200 | 7 / 1 / 6 |
+| 第 8 轮 | 536556 | 279192 | 149992 | 8 / 1 / 7 |
+| 第 9 轮 | 547604 | 280568 | 149992 | 9 / 1 / 8 |
+| 第 10 轮 | 626252 | 334628 | 184120 | 10 / 1 / 9 |
+| 第 11 轮 | 708528 | 390296 | 210724 | 11 / 1 / 10 |
+| 第 12 轮 | 567884 | 264472 | 195904 | 12 / 0 / 12 |
+| 第 13 轮 | 611936 | 301312 | 201592 | 13 / 1 / 12 |
+| 第 14 轮 | 577468 | 272160 | 197800 | 14 / 0 / 14 |
+| 第 15 轮 | 614652 | 305956 | 201336 | 15 / 1 / 14 |
+| 第 16 轮 | 617548 | 308828 | 201336 | 16 / 1 / 15 |
+| 第 17 轮 | 586444 | 279496 | 199440 | 17 / 0 / 17 |
+| 第 18 轮 | 626752 | 319500 | 201336 | 18 / 1 / 17 |
+| 第 19 轮 | 631584 | 329252 | 195648 | 19 / 1 / 18 |
+| 第 20 轮 | 626396 | 324596 | 195648 | 20 / 1 / 19 |
+| 回收后 | 509428 | 206272 | 195648 | 20 / 0 / 20 |
+| 静置 60 秒 | 403404 | 130556 | 165276 | 20 / 0 / 20 |
+| critical 压力 | 239688 | 130332 | 1784 | 20 / 0 / 20 |
+
+压力之后 JS 堆 8872512 字节，DOM canvas 0，pageerror 0。堆快照：`HTMLCanvasElement` 11 个节点、`self_size` 合计 248 字节；`ArrayBuffer` 12 个节点、`self_size` 合计 396 字节。最大节点是脚本文本，单节点 328728 字节。主进程 `process.getProcessMemoryInfo()` 的 `private`：进入前 48584 KB，回收后 55996 KB，压力后 38252 KB。`residentSet` 压力后 178968 KB，低于进入前的 184344 KB。
+
+`smaps` 把可清掉的一块记在 `/memfd:shared-memory-region (deleted)`，把留住的一块记在 `[anon]` 的 private dirty。四轮对照（同一 PDF，只在测量脚本里做，没有进产品代码）：
+
+| 离开方式 | `[anon]` private dirty，进入前 | 四轮后 | 压力后 |
+| --- | --- | --- | --- |
+| 当前路径，只 `loadingTask.destroy()` | 22536 | 86472 | 86256 |
+| 离开前把每个 canvas 的宽高设为 0 | 22660 | 84148 | 84072 |
+| `destroy` 前再调用 `PDFDocumentProxy.cleanup()` | 22636 | 92464 | 88292 |
+
+两组改法都没有把匿名页降下来。`cleanup` 那次的 memfd 从四轮后的 121600 KB 降到压力后的 3332 KB。画布清零那次 memfd 一直停在大约 3 MB。没有「修复后」的二十轮曲线，因为产品代码没有改。ADR 0011 提议停下。

@@ -14,6 +14,7 @@ Q1–Q12 已由 Wisdom 于 2026-10-30 全部决定；v0.2 加入许可证政策�
 
 | 日期 | PR | 文件 | 摘要 |
 | --- | --- | --- | --- |
+| 2026-11-10 | [#199](https://github.com/wisdom-km/open-immerse-v2/pull/199) | `docs/adr/0011-tab-working-set.md`、`docs/adr/README.md`、`docs/spec-changelog.md`、`docs/evidence/199/commands.md` | Refs #174。Cloud-local 上用 Electron 45.2.1 测阅读屏进出。二十轮后压力仍留下的是标签页 `[anon]` 私有脏页（比进入前高 101072 KB）。memfd 共享内存能被 critical 压力清掉。JS 堆、worker、DOM canvas 和 PDF 字节都不是这块。画布清零和 `cleanup` 的四轮对照没有把匿名页降下来，这两步没有进产品代码。ADR 0011 提议停下。不改 CSP、协议注册、主进程、core、contracts、`library/src`。规格正文未改。规格版本仍是 v0.6 |
 | 2026-11-10 | [#199](https://github.com/wisdom-km/open-immerse-v2/pull/199) | `docs/adr/0010-pdf-image-wasm.md`、`docs/spec-changelog.md` | Refs #174。同一张含图页表追加清单里的七份出版社版。JPEG、Flate 与 qe533 的矢量图画出。没有新的解码缺口。ADR 0010 仍是提议，范围仍是 JPX 与 CCITT。不改 CSP，不提供 `.wasm`。规格正文未改。规格版本仍是 v0.6 |
 | 2026-11-10 | [#199](https://github.com/wisdom-km/open-immerse-v2/pull/199) | `docs/adr/0010-pdf-image-wasm.md`、`docs/spec-changelog.md` | Refs #174。同一张含图页表追加三份出版社期刊。PLOS 与 BMC 的 JPEG（含 `icc`）画出，Elsevier 的矢量图画出。没有新的解码缺口。ADR 0010 仍是提议，范围仍是 JPX 与 CCITT。不改 CSP，不提供 `.wasm`。规格正文未改。规格版本仍是 v0.6 |
 | 2026-11-10 | [#199](https://github.com/wisdom-km/open-immerse-v2/pull/199) | `docs/adr/0010-pdf-image-wasm.md`、`docs/adr/README.md`、`docs/spec-changelog.md` | Refs #174。五份真实 PDF 的含图页窗口测量。Flate 与 JPEG 画出。JPX 与 CCITT 因没有 `wasmUrl` 解不开，纯 JS 后备文件未被加载。ADR 0010 提议停下。不改 CSP，不提供 `.wasm`，不把缺图改成占位。不改 0006、0007、0008、0009，不改 `csp.ts`、方案注册、Range、core。规格正文未改。规格版本仍是 v0.6 |
