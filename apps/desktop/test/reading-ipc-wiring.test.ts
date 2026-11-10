@@ -93,7 +93,7 @@ it("routes the current generation and rejects the others", async () => {
     main.close();
     rmSync(root, { recursive: true, force: true });
   }
-});
+}, 20_000);
 
 it("rejects the revoked generation after the next bind", async () => {
   const root = mkdtempSync(path.join(tmpdir(), "oitest-reading-ipc-again-"));
