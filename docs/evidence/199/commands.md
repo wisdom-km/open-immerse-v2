@@ -107,4 +107,18 @@ ADR 0010 仍是提议，范围仍是 JPX 与 CCITT。文件里没有「扫描」
 
 ## Windows 阅读 IPC 超时
 
-`reading-ipc-wiring.test.ts` 的「routes the current generation and rejects the others」在 run 42763194855 的 desktop-e2e-windows 上 5000ms 超时。750eab3→091f7d1 没有改这个文件，也没有改它调用的 library 与 desktop 实现。上一笔 750eab3 的 run 42762754361 里，这个文件 948ms 通过，其中这条用例 450ms。同一失败轮里别的 SQLite 用例也变慢：`open-document-wiring.test.ts` 从 362ms 到 4721ms，`reading-asset-protocol.test.ts` 从 1687ms 到 11198ms。三条都是各自的临时库，没有共用文件。超时和这次文档提交无关，是那台 Windows runner 上 SQLite 变慢。没有加超时，没有 skip。
+`reading-ipc-wiring.test.ts` 的「routes the current generation and rejects the others」在 run 42763194855 的 desktop-e2e-windows 上 5000ms 超时。750eab3→091f7d1 没有改这个文件，也没有改它调用的 library 与 desktop 实现。上一笔 750eab3 的 run 42762754361 里，这个文件 948ms 通过，其中这条用例 450ms。同一失败轮里别的 SQLite 用例也变慢：`open-document-wiring.test.ts` 从 362ms 到 4721ms，`reading-asset-protocol.test.ts` 从 1687ms 到 11198ms。三条都是各自的临时库，没有共用文件。超时和这次文档提交无关，原因是 runner I/O 变慢。没有加超时，没有 skip。
+
+## PDF 释放（Cloud-local）
+
+Anvil 的 worker 与内存数字来自真机和 Box。下面是这台 Cloud Agent 上的对照，不是那两处。
+
+环境：Linux，Electron 45.2.1，Playwright 启动 `apps/desktop/dist/main/index.js`。样本是单页 `sample-note.pdf`。8 轮：文献库双击进入，等到「第 1 / 1 页」，再点「返回文献库」。worker 数是页面里包住 `window.Worker` 后数 `terminate`。内存是 `app.getAppMetrics()` 里 Tab 的 `workingSetSize`，单位 KB。修复前用当时已构建的阅读屏。修复后重新 bundle 再测。这轮没有在绘制中途滚动，所以没有复现「同一 canvas 多次 render」的 pageerror；那个路径在 `pdf-session.test.ts` 和 `page-column.test.tsx`。
+
+|  | worker 创建 | 仍存活 | 已 terminate | Tab working set |
+| --- | --- | --- | --- | --- |
+| 修复前，回到文献库时 | 8 | 8 | 0 | 124940 → 282960 KB |
+| 修复后，回到文献库时 | 8 | 1 | 7 | 125028 → 166648 KB |
+| 修复后，destroy 结束后 | 8 | 0 | 8 | 154432 KB |
+
+修复前回到文献库时 8 个 worker 都还在。修复后同一时刻还剩 1 个，因为 `close()` 在写页和 revoke 之后异步销毁，采样时最后一轮的 `loadingTask.destroy()` 还没结束。等它结束后 8 个都已 terminate。两次 pageerror 都是 0。修复后 Tab working set 仍高于进入前（154432 KB，相对基线 125028 KB 多 29404 KB），但不再随着未关闭的 worker 累加。
