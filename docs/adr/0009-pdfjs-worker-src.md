@@ -29,6 +29,7 @@ pdfjs-dist 自带的 worker 只有 `pdf.worker.mjs`。静态协议只放行 `.ht
 - 阅读屏的打开、回页、离开和文案可以评审。真实小 PDF 的第一页这一次没有画出来。
 - worker、`wasm-unsafe-eval`、`blob:`、`.mjs` 仍未获批。
 - 本决定不是 Ready、合入或发版。
+- 这次比对同时含已分开审查的 #196 与 #198，再加上阅读屏。不为此再拆一笔。
 
 ## 状态
 
