@@ -10,6 +10,8 @@
 
 `pdfimages -list` 把 Flate 印成 `image`。Attention 第 3 页、DPO 第 2 页、Transformer-XL 第 3 页的 Flate 图都画出。DDPM 第 6 页的 JPEG 照片画出。
 
+同一窗口后来又打开三份出版社期刊。PLOS ONE 第 4 页与 BMC 第 3 页的 JPEG 在 `pdfimages` 里带 `icc`，图仍然画出，没有 `wasmUrl` 或 `qcms` 警告。Elsevier 第 9 页没有位图，矢量图画出。这三份没有新的解码缺口。记录在 `docs/evidence/199/commands.md` 的同一张表。
+
 liushang 的 JPX 与 CCITT 没有画出：
 
 - 控制台：`#getWasmInstance: UnknownErrorException: Ensure that the wasmUrl API parameter is provided.`
