@@ -53,3 +53,45 @@ worker、`wasm-unsafe-eval`、`blob:`、`.mjs` 没有被请求到。这次没有
 | `uv run pyright` | 0 | 0 errors, 0 warnings, 0 informations |
 | `uv run lint-imports` | 0 | 7 kept, 0 broken |
 | `uv run pytest` | 0 | 181 passed |
+
+## supportFetchAPI 之后的窗口复核
+
+上一节保留。这一节不改那次失败记录。
+
+全量的对象是 `2cde5938caa84dde8d1d5ae36227288dabb5dcc1`（tree `6644a8634e80231e13e4a5b01b88f9cb3f95ebf2`）。阅读屏没有写。证据提交不重跑全量。仓库里没有断言方案注册特权的单测或 e2e，所以这一项没有可改的期望值。
+
+Electron 45.2.1。`xvfb-run -a`。`webPreferences` 仍是 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`。文档是 `oi-app://app/index.html`。PDF.js 6.5.438。初始化准备是 `{ data, isEvalSupported: false }`。没有设置 `disableRange`。
+
+实际注册只有一次。`oi-app` 是 `standard: true`、`secure: true`。`oi-asset` 是 `standard: true`、`secure: true`、`supportFetchAPI: true`。没有 `bypassCSP`、`corsEnabled`、`allowServiceWorkers`、`stream`。
+
+进程退出码 2。第一页没有画出来。截图是 [page-support-fetch.png](page-support-fetch.png)。上一张空白页仍是 [page.png](page.png)。
+
+CSP 头与 `csp.ts` 逐字相同：
+
+```text
+default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' oi-asset:; font-src 'self'; connect-src 'self' oi-asset:; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'
+```
+
+没有 `connect-src` 违规。也没有再报 `URL scheme "oi-asset" is not supported`。`oi-app://app/pdf.js` 是 200。网络记录里没有 `oi-asset://`。协议处理器收到的次数是 0。
+
+探针读回：
+
+```json
+{"stage":"error","init":{"data":true,"isEvalSupported":false},"disableRangeSet":false,"message":"Failed to fetch","violations":[]}
+```
+
+控制台：
+
+```text
+Access to fetch at 'oi-asset://asset/probe' from origin 'oi-app://app' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-extension, chrome-untrusted, data, http, https.
+```
+
+worker、`wasm-unsafe-eval`、`blob:`、`.mjs` 没有被请求到。这次没有改 `.mjs` 静态放行，也没有加 `corsEnabled`。新缺口写在提议 ADR 0008，没有写进已采纳的 0006 或 0007。
+
+## 2cde593 上的全量
+
+`GATE_BASE=origin/main`。`corepack pnpm run check` 退出码 0。format、lint、typecheck、typecheck:core 退出码 0。`check-file-size: 431 source files within hard limits`。dependency-cruiser：`no dependency violations found (336 modules, 983 dependencies cruised)`。`check-one-slice: 0 feature slice(s)`。`check-pr-size: 224 non-generated lines`。codegen 之后 `git diff --exit-code` 退出码 0。
+
+Vitest 174 个文件，747 通过，3 跳过，类型错误 0。3 个跳过仍是 `GITLEAKS_BIN` 未设置时的 detect，不是具名 G9 通过。
+
+`workers/parser`：ruff check 退出码 0，ruff format 退出码 0，pyright 0 errors，lint-imports 7 kept / 0 broken，pytest 181 通过。
