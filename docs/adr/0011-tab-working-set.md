@@ -2,7 +2,7 @@
 
 状态：提议。日期：2026-11-10（Asia/Shanghai）。决定人：待 Wisdom。
 
-本页不改已采纳的 [0006](0006-renderer-oi-asset-csp.md)、[0007](0007-oi-asset-fetch-scheme.md)、[0008](0008-oi-asset-fetch-cors.md)、[0009](0009-pdfjs-worker-src.md)。不改 CSP，不改协议注册，不改主进程，不改 core、contracts、`library/src`。不实现画布清零，不调用 `PDFDocumentProxy.cleanup()`。
+本页不改已采纳的 [0006](0006-renderer-oi-asset-csp.md)、[0007](0007-oi-asset-fetch-scheme.md)、[0008](0008-oi-asset-fetch-cors.md)、[0009](0009-pdfjs-worker-src.md)。不改 CSP，不改协议注册，不改主进程，不改 core、contracts、`library/src`。不实现画布清零，不调用 `PDFDocumentProxy.cleanup()`，也不改成只画视口附近的页。
 
 ## 背景
 
@@ -17,7 +17,7 @@ Anvil 复测 PR #199 @ `0b61456`：worker、JS 堆、pageerror 和重画已过�
 - 标签页 working set：进入前 123204 KB，第 20 轮 626396 KB，`HeapProfiler.collectGarbage` 之后 509428 KB，静置 60 秒 403404 KB，critical 压力之后 239688 KB。
 - 同一进程的 `RssAnon`：29260 → 第 20 轮 324596 → 回收后 206272 → 静置 130556 → 压力 130332 KB。压力之后仍比进入前高 101072 KB。静置和压力都不把这块还回去。
 - `RssShmem`：2448 → 回收后 195648 → 静置 165276 → 压力 1784 KB。压力通知把共享内存清掉。`smaps` 里对应的名字是 `/memfd:shared-memory-region (deleted)`。
-- 文件映射的 RSS 停在大约 107572 KB，比进入前的 91496 KB 多大约 16 MB，不再随轮数涨。
+- 文件映射的 RSS：进入前 91496 KB，回收后 107508 KB，压力后 107572 KB。多出来的大约 16 MB 不再随轮数涨。
 - JS 堆 `usedJSHeapSize`：进入前 7290634 字节，回收后 9630688，压力后 8872512。DOM canvas 数为 0。堆快照里 `HTMLCanvasElement` 11 个节点，`self_size` 合计 248 字节，`detachedness` 为 0。`ArrayBuffer` 12 个节点，`self_size` 合计 396 字节。快照里最大的节点是脚本文本（单节点 328728 字节）。没有留下一份 PDF 那么大的 `ArrayBuffer`。
 - worker：创建 20，回收后存活 0、已 terminate 20。pageerror 为 0。
 - 主进程 `getProcessMemoryInfo`：`private` 进入前 48584 KB，回收后 55996 KB，压力后 38252 KB。`residentSet` 压力后 178968 KB，低于进入前的 184344 KB。单调上涨的不是主进程。`getBlinkMemoryInfo` 的 `allocated` 始终低于 1 MB。
@@ -34,17 +34,29 @@ Anvil 复测 PR #199 @ `0b61456`：worker、JS 堆、pageerror 和重画已过�
 1. 在阅读屏离开时把 canvas 宽高设为 0，并在销毁前调用 `cleanup`。上面两次四轮对照里，匿名私有脏页仍大约多 60 MB。不采用。
 2. 改主进程、协议缓存或 CSP，去清 Chromium 的共享图像和分配器保留。这要动本批已经停住的范围。不实现。
 3. 先记录，不改运行时。压力通知能清掉的是 memfd 共享内存。静置和压力都留着的是标签页的 `[anon]` 私有脏页。
+4. 只画视口附近的页，离屏页释放 canvas。Wisdom 2026-11-10 17:51 让先在测量里补这一条，不改产品代码。同机、同一份 PLOS ONE 25 页、同一套 Tab working set / `RssAnon` / `RssShmem` / `smaps` 测了当前路径和这条路径。模拟放在测量脚本里：当前页前后 2 页保留 canvas，其余页把宽高设为 0 并移出 DOM。打开后停在第 1 页，留下的是第 1–3 页，3 个 canvas、5816448 字节；当前路径是 25 个 canvas、48470400 字节。`packages/` 没有改动。
+
+压力之后的 `[anon]` private dirty（KB）：
+
+| 路径 | 四轮，进入前 | 四轮，压力后 | 二十轮，进入前 | 二十轮，压力后 |
+| --- | --- | --- | --- | --- |
+| 当前路径，25 页都画 | 19424 | 57248 | 19056 | 115600 |
+| 只留当前页 ±2 | 19396 | 60512 | 19504 | 173912 |
+
+四轮压力后，只留附近页的匿名脏页比当前路径高 3264 KB。二十轮压力后高 58312 KB。Tab working set 在二十轮压力后是 287440 KB，当前路径是 231584 KB。进出过程中的 `RssShmem` 低了：第二十轮当前路径 392872 KB，只留附近页是 14336 KB；两边在 critical 压力后都回到大约 1.5 MB。降下来的是压力本来就会清掉的共享内存，留下的匿名页没有降。
+
+若以后真做，改动停在 `packages/features/reader/src/ui/page-column.tsx`：现在按页数把每一页都挂上并绘制。只挂当前页前后的页时，卸下的页会走这个文件里已有的 cancel。不需要改 CSP、协议注册、主进程、core、contracts、`library/src`。这次不实现。
 
 ## 决定
 
-先不选会改运行时的做法。不实现画布清零，不调用 `cleanup`。不改 CSP、协议注册、主进程、core、contracts、`library/src`。
+先不选会改运行时的做法。不实现画布清零，不调用 `cleanup`，也不改成只画视口附近的页。不改 CSP、协议注册、主进程、core、contracts、`library/src`。
 
 ## 后果
 
-- 进出阅读屏之后，标签页工作集里有一块匿名页不还给系统。这台机器上，二十轮再加 critical 压力，匿名页仍比进入前高 101072 KB。真机和 Box 的曲线仍以 Anvil 报告为准。
-- memfd 共享内存在 critical 压力下会降。
+- 进出阅读屏之后，标签页工作集里有一块匿名页不还给系统。这台机器上，二十轮再加 critical 压力，匿名页仍比进入前高 101072 KB。同日再跑的当前路径是 96544 KB。真机和 Box 的曲线仍以 Anvil 报告为准。
+- memfd 共享内存在 critical 压力下会降。只画附近页能少占进出过程中的共享内存，不把压力后的匿名页降下来。
 - worker、JS 堆和 DOM canvas 的释放保持现状。
 
 ## 状态
 
-提议。范围只记录这次 Cloud-local 的归属。不放行禁区里的修改。
+提议。范围只记录这次 Cloud-local 的归属，以及只画视口附近页的测量。不放行禁区里的修改。
