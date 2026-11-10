@@ -6,8 +6,6 @@ export type PdfLoadingTask = {
 export type PdfDocument = {
   readonly numPages: number;
   getPage(pageNumber: number): Promise<PdfPage>;
-  destroy?: () => Promise<void> | void;
-  cleanup?: () => Promise<void> | void;
 };
 
 export type PdfPage = {
@@ -34,12 +32,19 @@ export type PdfSource = {
   }): PdfLoadingTask;
 };
 
+export const PDF_SESSION_CLOSED = "PdfSessionClosed";
+
 export type PdfSession = {
   readonly pageCount: number;
   paint(page: number, canvas: HTMLCanvasElement): Promise<void>;
   cancel(canvas: HTMLCanvasElement): void;
   close(): Promise<void>;
 };
+
+export function paintErrorIsQuiet(error: unknown): boolean {
+  const name = errorName(error);
+  return name === "RenderingCancelledException" || name === PDF_SESSION_CLOSED;
+}
 
 type Renders = Map<HTMLCanvasElement, PdfRenderTask>;
 
@@ -78,7 +83,14 @@ export function createPdfSession(
       if (closed) {
         return Promise.resolve();
       }
-      return paintCanvas(doc, page, canvas, renders, tokens);
+      return paintCanvas({
+        doc,
+        pageNumber: page,
+        canvas,
+        renders,
+        tokens,
+        isClosed: () => closed,
+      });
     },
     cancel(canvas) {
       cancelRender(renders, canvas);
@@ -89,45 +101,89 @@ export function createPdfSession(
       }
       closed = true;
       cancelAll(renders);
-      return releaseDocument(doc, task);
+      return releaseDocument(task);
     },
   };
 }
 
-async function paintCanvas(
-  doc: PdfDocument,
-  pageNumber: number,
-  canvas: HTMLCanvasElement,
-  renders: Renders,
-  tokens: Map<HTMLCanvasElement, number>,
+type PaintRequest = {
+  readonly doc: PdfDocument;
+  readonly pageNumber: number;
+  readonly canvas: HTMLCanvasElement;
+  readonly renders: Renders;
+  readonly tokens: Map<HTMLCanvasElement, number>;
+  readonly isClosed: () => boolean;
+};
+
+async function paintCanvas(request: PaintRequest): Promise<void> {
+  const token = (request.tokens.get(request.canvas) ?? 0) + 1;
+  request.tokens.set(request.canvas, token);
+  cancelRender(request.renders, request.canvas);
+  try {
+    const page = await request.doc.getPage(request.pageNumber);
+    if (paintStopped(request, token)) {
+      return;
+    }
+    await drawPage(request, page, token);
+  } catch (error) {
+    if (request.isClosed() || isCancelled(error)) {
+      return;
+    }
+    throw error;
+  }
+}
+
+async function drawPage(
+  request: PaintRequest,
+  page: PdfPage,
+  token: number,
 ): Promise<void> {
-  const token = (tokens.get(canvas) ?? 0) + 1;
-  tokens.set(canvas, token);
-  cancelRender(renders, canvas);
-  const page = await doc.getPage(pageNumber);
-  if (tokens.get(canvas) !== token) {
-    return;
-  }
   const viewport = page.getViewport({ scale: 1 });
-  canvas.width = Math.ceil(viewport.width);
-  canvas.height = Math.ceil(viewport.height);
-  const context = canvas.getContext("2d");
-  if (context === null || tokens.get(canvas) !== token) {
+  request.canvas.width = Math.ceil(viewport.width);
+  request.canvas.height = Math.ceil(viewport.height);
+  const context = request.canvas.getContext("2d");
+  if (context === null || paintStopped(request, token)) {
     return;
   }
-  const render = page.render({ canvasContext: context, canvas, viewport });
-  renders.set(canvas, render);
+  const render = page.render({
+    canvasContext: context,
+    canvas: request.canvas,
+    viewport,
+  });
+  if (request.isClosed()) {
+    render.cancel();
+    await quietRender(render.promise, request.isClosed);
+    return;
+  }
+  request.renders.set(request.canvas, render);
   try {
     await render.promise;
-  } catch (error) {
-    if (!isCancelled(error)) {
-      throw error;
-    }
   } finally {
-    if (renders.get(canvas) === render) {
-      renders.delete(canvas);
+    if (request.renders.get(request.canvas) === render) {
+      request.renders.delete(request.canvas);
     }
   }
+  if (request.isClosed()) {
+    return;
+  }
+}
+
+async function quietRender(
+  promise: Promise<void>,
+  isClosed: () => boolean,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    if (isClosed() || isCancelled(error)) {
+      return;
+    }
+    throw error;
+  }
+}
+
+function paintStopped(request: PaintRequest, token: number): boolean {
+  return request.isClosed() || request.tokens.get(request.canvas) !== token;
 }
 
 function cancelRender(renders: Renders, canvas: HTMLCanvasElement): void {
@@ -145,27 +201,10 @@ function cancelAll(renders: Renders): void {
   }
 }
 
-async function releaseDocument(
-  doc: PdfDocument,
-  task: PdfLoadingTask,
-): Promise<void> {
-  await destroyDocument(doc);
-  // 6.5 的 loadingTask.destroy 会拆掉文档 transport 和 worker。
-  await destroyTask(task);
-}
-
-async function destroyDocument(doc: PdfDocument): Promise<void> {
-  try {
-    if (typeof doc.destroy === "function") {
-      await doc.destroy();
-      return;
-    }
-    if (typeof doc.cleanup === "function") {
-      await doc.cleanup();
-    }
-  } catch {
-    return undefined;
-  }
+function releaseDocument(task: PdfLoadingTask): Promise<void> {
+  // pdf.js 6.5.438 的 PDFDocumentProxy 没有 destroy。
+  // loadingTask.destroy 会拆掉 transport 和 worker。
+  return destroyTask(task);
 }
 
 async function destroyTask(task: PdfLoadingTask): Promise<void> {
@@ -188,10 +227,12 @@ function startTask(
 }
 
 function isCancelled(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "name" in error &&
-    error.name === "RenderingCancelledException"
-  );
+  return errorName(error) === "RenderingCancelledException";
+}
+
+function errorName(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null || !("name" in error)) {
+    return undefined;
+  }
+  return typeof error.name === "string" ? error.name : undefined;
 }

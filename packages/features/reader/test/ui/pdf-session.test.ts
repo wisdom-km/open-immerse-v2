@@ -9,13 +9,13 @@ import {
   type PdfRenderTask,
 } from "../../src/ui/pdf-session.js";
 
-it("destroys the document and the loading task once per open", async () => {
+it("destroys the loading task once per open", async () => {
   const rounds = 5;
   let documents = 0;
   let tasks = 0;
   for (let index = 0; index < rounds; index += 1) {
     const session = createPdfSession(
-      countingDoc(() => {
+      documentWithDestroy(() => {
         documents += 1;
       }),
       countingTask(() => {
@@ -25,29 +25,43 @@ it("destroys the document and the loading task once per open", async () => {
     await session.close();
     await session.close();
   }
-  expect(documents).toBe(rounds);
+  expect(documents).toBe(0);
   expect(tasks).toBe(rounds);
 });
 
-it("cleans the document and then destroys the loading task when the document has no destroy", async () => {
-  const calls: string[] = [];
+it("does not start a render after the session has closed", async () => {
+  let renders = 0;
+  const waiters: Array<(page: PdfPage) => void> = [];
+  const session = createPdfSession(
+    waitingDocument(waiters),
+    countingTask(() => undefined),
+  );
+  const pending = session.paint(1, fakeCanvas());
+  await session.close();
+  releaseClosed(waiters, () => {
+    renders += 1;
+  });
+  await expect(pending).resolves.toBeUndefined();
+  expect(renders).toBe(0);
+});
+
+it("returns quietly when the page request fails after close", async () => {
+  let rejectPage: (error: unknown) => void = () => undefined;
   const session = createPdfSession(
     {
       numPages: 1,
       getPage() {
-        return Promise.reject(new Error("unused"));
-      },
-      cleanup() {
-        calls.push("cleanup");
-        return Promise.resolve();
+        return new Promise((_resolve, reject) => {
+          rejectPage = reject;
+        });
       },
     },
-    countingTask(() => {
-      calls.push("task");
-    }),
+    countingTask(() => undefined),
   );
+  const pending = session.paint(1, fakeCanvas());
   await session.close();
-  expect(calls).toEqual(["cleanup", "task"]);
+  rejectPage(new Error("Transport destroyed"));
+  await expect(pending).resolves.toBeUndefined();
 });
 
 it("destroys the loading task when the document fails to open", async () => {
@@ -142,10 +156,10 @@ type Slot = {
   resolve: () => void;
 };
 
-function countingDoc(onDestroy: () => void): PdfDocument {
-  return {
+function documentWithDestroy(onDestroy: () => void): PdfDocument {
+  const doc = {
     numPages: 1,
-    getPage() {
+    getPage(): Promise<PdfPage> {
       return Promise.reject(new Error("unused"));
     },
     destroy() {
@@ -153,6 +167,42 @@ function countingDoc(onDestroy: () => void): PdfDocument {
       return Promise.resolve();
     },
   };
+  return doc;
+}
+
+function waitingDocument(waiters: Array<(page: PdfPage) => void>): PdfDocument {
+  return {
+    numPages: 1,
+    getPage() {
+      return new Promise((resolve) => {
+        waiters.push(resolve);
+      });
+    },
+  };
+}
+
+function releaseClosed(
+  waiters: Array<(page: PdfPage) => void>,
+  onRender: () => void,
+): void {
+  const resolve = waiters.shift();
+  if (resolve === undefined) {
+    throw new Error("no page");
+  }
+  resolve({
+    getViewport() {
+      return { width: 4, height: 4 };
+    },
+    render() {
+      onRender();
+      return {
+        promise: Promise.resolve(),
+        cancel() {
+          return undefined;
+        },
+      };
+    },
+  });
 }
 
 function countingTask(onDestroy: () => void): PdfLoadingTask {

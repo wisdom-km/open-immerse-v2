@@ -122,3 +122,5 @@ Anvil 的 worker 与内存数字来自真机和 Box。下面是这台 Cloud Agen
 | 修复后，destroy 结束后 | 8 | 0 | 8 | 154432 KB |
 
 修复前回到文献库时 8 个 worker 都还在。修复后同一时刻还剩 1 个，因为 `close()` 在写页和 revoke 之后异步销毁，采样时最后一轮的 `loadingTask.destroy()` 还没结束。等它结束后 8 个都已 terminate。两次 pageerror 都是 0。修复后 Tab working set 仍高于进入前（154432 KB，相对基线 125028 KB 多 29404 KB），但不再随着未关闭的 worker 累加。
+
+3517fad 的提交说明写了「destroy 文档」。pdf.js 6.5.438 的 `PDFDocumentProxy` 没有 `destroy`。释放只调用 `loadingTask.destroy()`，它会拆掉 transport 和 worker。已推送的提交说明不改写。

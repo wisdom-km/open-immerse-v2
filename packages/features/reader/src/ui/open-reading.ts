@@ -34,14 +34,43 @@ export async function openReading(
     return blocked(bound.code);
   }
   const pair = { id: bound.id, generation: bound.generation };
-  const [progress, pdf] = await Promise.all([
+  return loadPair(client, pair, bound.assetId);
+}
+
+export function unreadableReading(): ReadingView {
+  return blocked("other");
+}
+
+async function loadPair(
+  client: ReaderClient,
+  pair: Pair,
+  assetId: string,
+): Promise<ReadingView> {
+  const [progressResult, pdfResult] = await Promise.allSettled([
     client.readPage(pair.id, pair.generation),
-    client.openPdf(assetUrl(bound.assetId)),
+    client.openPdf(assetUrl(assetId)),
   ]);
+  const pdf = pdfResult.status === "fulfilled" ? pdfResult.value : undefined;
+  if (progressResult.status === "rejected" || pdfResult.status === "rejected") {
+    await releaseFailedOpen(client, pair, pdf);
+    return unreadableReading();
+  }
   if (pdf === undefined) {
     return blocked("other", pair);
   }
-  return placed(progress, pdf, pair);
+  return placed(progressResult.value, pdf, pair);
+}
+
+async function releaseFailedOpen(
+  client: ReaderClient,
+  pair: Pair,
+  pdf: OpenedPdf | undefined,
+): Promise<void> {
+  try {
+    await pdf?.close();
+  } finally {
+    await client.revoke(pair.id, pair.generation);
+  }
 }
 
 function placed(

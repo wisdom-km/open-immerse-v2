@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Pair, ReaderClient } from "./reader-client.js";
-import { openReading, type ReadingView } from "./open-reading.js";
+import {
+  openReading,
+  unreadableReading,
+  type ReadingView,
+} from "./open-reading.js";
 import { overlapHeight, visiblePage } from "./visible-page.js";
 
 export type ReaderPhase =
@@ -141,18 +145,28 @@ function watchReading(input: WatchInput): () => void {
   input.setShownPage(undefined);
   input.shownRef.current = undefined;
   input.visibleRef.current = undefined;
-  void openReading(input.clientRef.current, input.id).then((reading) => {
-    if (!alive || input.finishedRef.current) {
-      abandon(input.clientRef.current, reading);
-      return;
-    }
-    input.releaseRef.current = reading.close;
-    input.shownRef.current = reading.page;
-    input.visibleRef.current = reading.page;
-    input.setShownPage(reading.page);
-    input.setLostPlace(reading.lostPlace);
-    input.setPhase({ kind: "view", reading });
-  });
+  void openReading(input.clientRef.current, input.id).then(
+    (reading) => {
+      if (!alive || input.finishedRef.current) {
+        abandon(input.clientRef.current, reading);
+        return;
+      }
+      input.releaseRef.current = reading.close;
+      input.shownRef.current = reading.page;
+      input.visibleRef.current = reading.page;
+      input.setShownPage(reading.page);
+      input.setLostPlace(reading.lostPlace);
+      input.setPhase({ kind: "view", reading });
+    },
+    () => {
+      if (!alive || input.finishedRef.current) {
+        return;
+      }
+      input.setShownPage(undefined);
+      input.setLostPlace(false);
+      input.setPhase({ kind: "view", reading: unreadableReading() });
+    },
+  );
   return () => {
     alive = false;
     settleLeave(input, undefined);

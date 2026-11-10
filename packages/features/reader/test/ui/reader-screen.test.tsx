@@ -6,6 +6,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, expect, it } from "vitest";
 
 import {
@@ -224,6 +225,95 @@ it("revokes when the back button is clicked", async () => {
   expect(left).toBe(1);
 });
 
+it("revokes and closes a pdf that finishes opening after leave", async () => {
+  let release: ((pdf: ReturnType<typeof openedPdf>) => void) | undefined;
+  const calls: string[] = [];
+  render(
+    screenFor(
+      fakeClient({
+        openPdf() {
+          calls.push("open");
+          return new Promise((resolve) => {
+            release = resolve;
+          });
+        },
+        revoke() {
+          calls.push("revoke");
+          return Promise.resolve();
+        },
+      }),
+    ),
+  );
+  await waitFor(() => {
+    expect(calls).toEqual(["open"]);
+  });
+  fireEvent.click(screen.getByRole("button", { name: BACK_LABEL }));
+  release?.(
+    openedPdf(() => {
+      calls.push("close");
+    }),
+  );
+  await waitFor(() => {
+    expect(calls).toEqual(["open", "revoke", "close"]);
+  });
+  expect(screen.queryByText("第 1 / 3 页")).toBeNull();
+});
+
+it("shows the unreadable sentence when opening throws", async () => {
+  render(
+    screenFor(
+      fakeClient({
+        openDocument() {
+          return Promise.reject(new Error("ipc"));
+        },
+      }),
+    ),
+  );
+  expect(await screen.findByText(UNREADABLE_PDF)).toBeTruthy();
+});
+
+it("closes the first pdf when the screen effect runs twice", async () => {
+  const opened: number[] = [];
+  const closed: number[] = [];
+  const revoked: string[] = [];
+  render(
+    <StrictMode>
+      <ReaderScreen
+        id="paper"
+        title="Paper"
+        client={fakeClient({
+          openPdf() {
+            const generation = opened.length + 1;
+            opened.push(generation);
+            return Promise.resolve(
+              openedPdf(() => {
+                closed.push(generation);
+              }),
+            );
+          },
+          revoke(id) {
+            revoked.push(id);
+            return Promise.resolve();
+          },
+        })}
+        onLeave={() => undefined}
+      />
+    </StrictMode>,
+  );
+  expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
+  await waitFor(() => {
+    expect(closed).toEqual([1]);
+  });
+  expect(opened).toEqual([1, 2]);
+  expect(revoked).toEqual(["paper"]);
+  layOut(1);
+  fireEvent.click(screen.getByRole("button", { name: BACK_LABEL }));
+  await waitFor(() => {
+    expect(closed).toEqual([1, 2]);
+  });
+  expect(revoked).toEqual(["paper", "paper"]);
+});
+
 it("writes, revokes, then closes the pdf when leaving", async () => {
   const order: string[] = [];
   render(
@@ -402,6 +492,23 @@ function box(top: number, bottom: number): DOMRect {
     y: top,
     toJSON() {
       return {};
+    },
+  };
+}
+
+function openedPdf(onClose: () => void): {
+  pageCount: number;
+  paint: () => Promise<void>;
+  cancel: () => void;
+  close: () => Promise<void>;
+} {
+  return {
+    pageCount: 3,
+    paint,
+    cancel,
+    close() {
+      onClose();
+      return Promise.resolve();
     },
   };
 }

@@ -111,6 +111,36 @@ it("shows the clamped page and does not write before settle", async () => {
   expect(writes).toEqual([]);
 });
 
+it("closes the pdf and revokes when reading the page rejects", async () => {
+  const calls: string[] = [];
+  const view = await openReading(
+    fakeClient({
+      readPage() {
+        return Promise.reject(new Error("ipc"));
+      },
+      openPdf() {
+        return Promise.resolve({
+          pageCount: 3,
+          paint,
+          cancel,
+          close() {
+            calls.push("close");
+            return Promise.resolve();
+          },
+        });
+      },
+      revoke() {
+        calls.push("revoke");
+        return Promise.resolve();
+      },
+    }),
+    "paper",
+  );
+  expect(calls).toEqual(["close", "revoke"]);
+  expect(view.sentence).toBe(UNREADABLE_PDF);
+  expect(view.pair).toBeUndefined();
+});
+
 it("starts at page 1 with the lost-place flag when the read fails", async () => {
   const view = await openReading(
     fakeClient({

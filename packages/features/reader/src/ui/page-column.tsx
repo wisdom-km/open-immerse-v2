@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactElement, type Ref } from "react";
 
+import { paintErrorIsQuiet } from "./pdf-session.js";
 import type { PdfCancel, PdfPaint } from "./reader-client.js";
 
 export function PageColumn(props: {
@@ -48,7 +49,9 @@ function PageSheet(props: {
     if (canvas === null || paint === undefined) {
       return;
     }
-    void paint(props.page, canvas).catch(() => undefined);
+    void paint(props.page, canvas).catch((error: unknown) => {
+      reportPaintError(error);
+    });
     return () => {
       cancelRef.current?.(canvas);
     };
@@ -58,6 +61,13 @@ function PageSheet(props: {
       <canvas ref={canvasRef} />
     </article>
   );
+}
+
+function reportPaintError(error: unknown): void {
+  if (paintErrorIsQuiet(error)) {
+    return;
+  }
+  console.error(error);
 }
 
 function pageNumbers(pageCount: number): number[] {
