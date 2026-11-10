@@ -21,7 +21,7 @@ export function LibraryTable(props: {
   readonly selectedId: string;
   readonly onSort: (field: SortField) => void;
   readonly onSelect: (id: string) => void;
-  readonly onOpen?: (id: string) => void;
+  readonly onOpen?: ((id: string) => void) | undefined;
 }): ReactElement {
   return (
     <table>
@@ -60,7 +60,7 @@ function LibraryTableRow(props: {
   readonly row: LibraryRow;
   readonly selected: boolean;
   readonly onSelect: (id: string) => void;
-  readonly onOpen?: (id: string) => void;
+  readonly onOpen?: ((id: string) => void) | undefined;
 }): ReactElement {
   return (
     <tr
@@ -94,7 +94,7 @@ function openSelected(
   target: {
     readonly selected: boolean;
     readonly row: LibraryRow;
-    readonly onOpen?: (id: string) => void;
+    readonly onOpen?: ((id: string) => void) | undefined;
   },
 ): void {
   if (event.key !== "Enter" || !target.selected) {

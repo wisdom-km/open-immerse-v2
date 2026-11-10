@@ -10,7 +10,7 @@ import { useFileDrop } from "./use-drop.js";
 import { useLibraryScreen, type LibraryScreen } from "./use-library-screen.js";
 
 export function LibraryApp(props: {
-  readonly onOpen?: (id: string) => void;
+  readonly onOpen?: ((id: string) => void) | undefined;
 }): ReactElement {
   const screen = useLibraryScreen();
   const dragging = useFileDrop(screen.dropFile);
@@ -34,7 +34,7 @@ export function LibraryApp(props: {
 
 function LibraryBody(props: {
   readonly screen: LibraryScreen;
-  readonly onOpen?: (id: string) => void;
+  readonly onOpen?: ((id: string) => void) | undefined;
 }): ReactElement | null {
   if (props.screen.busy) {
     return <LibrarySkeleton />;
