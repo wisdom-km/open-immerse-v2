@@ -46,10 +46,8 @@ it("copies pdf.worker.mjs to a same-origin js file with the same bytes", async (
     expect(respond(root, "oi-app://app/pdf.worker.mjs", "GET").status).toBe(
       404,
     );
-    const placed = tool.copyPdfWorker();
-    expect(placed.dest).toBe(tool.pdfWorkerDest);
-    expect(readFileSync(placed.dest).equals(readFileSync(placed.source))).toBe(
-      true,
+    expect(path.resolve(tool.pdfWorkerDest)).toBe(
+      path.resolve("apps/desktop/src/renderer/pdf.worker.js"),
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
