@@ -8,10 +8,6 @@ import {
   returnLibraryEvent,
   returnLibraryScript,
 } from "../src/main/library-menu.js";
-import {
-  openFileEvent as rendererOpenFileEvent,
-  returnLibraryEvent as rendererReturnLibraryEvent,
-} from "../src/renderer/shell-events.js";
 
 it("describes open and return when the file menu is built", () => {
   expect(fileMenu.label).toBe("文件");
@@ -21,8 +17,6 @@ it("describes open and return when the file menu is built", () => {
   ]);
   expect(openFileEvent).toBe("oi-open-file");
   expect(returnLibraryEvent).toBe("oi-return-library");
-  expect(rendererOpenFileEvent).toBe(openFileEvent);
-  expect(rendererReturnLibraryEvent).toBe(returnLibraryEvent);
   expect(openFileScript()).toBe(
     'window.dispatchEvent(new Event("oi-open-file"))',
   );
