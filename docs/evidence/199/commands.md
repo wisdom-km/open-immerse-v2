@@ -69,3 +69,24 @@ default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' oi-asset
 滚到第 2 页，页码变成「第 2 / 2 页」，非白像素仍是 3375。点「返回文献库」之后，`lib_entries.progress_page` 是 2，`opened_at` 是 `2026-11-10T04:52:11.745Z`。同一屏的文献库表格仍把打开时间画成「—」。再双击，打开的是 `oi-asset://asset/2`，状态 200，925 字节；`pdf.worker.js` 再次 200。页码是「第 2 / 2 页」。截图是 [reader-page-restored.png](reader-page-restored.png)。
 
 没有 `securitypolicyviolation`。控制台只有探针读取像素时的 `Canvas2D: Multiple readback operations...`。记下的网络里没有 `.mjs`、`wasm`、`blob:`。ADR 0009 记为采纳。不改 0006、0007、0008。不 Ready，不合入，不发版。
+
+## 五份真实 PDF 的含图页
+
+PDF 本体不入库。页码用 poppler 24.02.0 的 `pdfimages -list`。它把 Flate 印成 `image`。计数与 Forge 给出的一致：Attention 6 张 Flate，DPO 4 张 Flate，DDPM 3 张 Flate 加 19 张 JPEG，Transformer-XL 30 张 Flate，liushang 181 张 Flate 加 343 张 JPEG 加 39 张 JPX 加 2 张 CCITT。Producer 也与给出的一致。
+
+每份经文献库导入，从「全部论文」双击打开。Electron 45.2.1，`xvfb-run -a`，生产壳。`contextIsolation` 与 `sandbox` 为 true，`nodeIntegration` 为 false。文档是 `oi-app://app/index.html`。每份的 `oi-asset://asset/1` 与 `oi-app://app/pdf.worker.js` 都是 200。资源类型只有 document、stylesheet、script、fetch。没有 `.wasm`、`blob:`、`.mjs`，也没有别的文件请求。没有 `securitypolicyviolation`。
+
+| 文件 | 页 | 编码 | 结果 |
+| --- | --- | --- | --- |
+| Attention | 3 | Flate | 画出。Figure 1 的彩色框图在。控制台没有警告。截图 [img-attention-p3.png](img-attention-p3.png) |
+| DPO | 2 | Flate | 画出。Figure 1 的色带在。控制台没有警告。截图 [img-dpo-p2.png](img-dpo-p2.png) |
+| DDPM | 6 | JPEG | 画出。Figure 3 与 Figure 4 的照片在。控制台没有警告。截图 [img-ddpm-p6.png](img-ddpm-p6.png) |
+| Transformer-XL | 3 | Flate | 画出。Figure 1 的两张网络图和正文都在。控制台只有探针的 `getImageData` 警告。截图 [img-xl-p3.png](img-xl-p3.png) |
+| liushang | 1 | JPEG，另有 CCITT | 页画出。JPEG 封面在。CCITT 条码不在。截图 [img-liushang-p1.png](img-liushang-p1.png) |
+| liushang | 31 | JPEG，另有 JPX | 页画出。JPEG 插图在。`img_p30_3` 报 `JpxError: OpenJPEG failed to initialize`。截图 [img-liushang-p31.png](img-liushang-p31.png) |
+
+liushang 的控制台还有：`Ensure that the wasmUrl API parameter is provided.`，`Failed to resolve module specifier 'nullopenjpeg_nowasm_fallback.js'`，`nulljbig2_nowasm_fallback.js`，35 条 `JpxError`，一条 `Jbig2Error: JBig2 failed to initialize` 并忽略 XObject。另有 `Failed to compile PostScript function to wasm, falling back to JS`，以及一条 `cMapUrl` 未提供。中文正文仍然画出。这些警告不是 CSP 违规。
+
+Transformer-XL 第一次在绘制未完成时滚动，第二次 `render` 把画布清掉，截图是空白。等该页像素稳定后再导出，图和正文都在。表里用的是这一张。
+
+ADR 0010 提议停下。不改 CSP，不提供 `.wasm`，不把缺图改成占位。不 Ready，不合入，不发版。
