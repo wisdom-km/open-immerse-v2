@@ -1,3 +1,5 @@
+import { PDF_WASM_URL } from "./worker-src.js";
+
 export type PdfLoadingTask = {
   readonly promise: Promise<PdfDocument>;
   destroy(): Promise<void>;
@@ -25,11 +27,15 @@ export type PdfRenderTask = {
   cancel(): void;
 };
 
+export type PdfOpenParams = {
+  readonly data: Uint8Array;
+  readonly isEvalSupported: false;
+  readonly wasmUrl: string;
+  readonly useWasm: false;
+};
+
 export type PdfSource = {
-  getDocument(params: {
-    readonly data: Uint8Array;
-    readonly isEvalSupported: false;
-  }): PdfLoadingTask;
+  getDocument(params: PdfOpenParams): PdfLoadingTask;
 };
 
 export type PdfSession = {
@@ -199,7 +205,12 @@ function startTask(
   bytes: Uint8Array,
 ): PdfLoadingTask | undefined {
   try {
-    return source.getDocument({ data: bytes, isEvalSupported: false });
+    return source.getDocument({
+      data: bytes,
+      isEvalSupported: false,
+      wasmUrl: PDF_WASM_URL,
+      useWasm: false,
+    });
   } catch {
     return undefined;
   }

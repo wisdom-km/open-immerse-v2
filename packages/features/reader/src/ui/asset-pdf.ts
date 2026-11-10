@@ -1,15 +1,19 @@
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
-import { openPdfSession, type PdfLoadingTask } from "./pdf-session.js";
+import {
+  openPdfSession,
+  type PdfLoadingTask,
+  type PdfOpenParams,
+} from "./pdf-session.js";
 import type { OpenedPdf } from "./reader-client.js";
 import { assignWorkerSrc } from "./worker-src.js";
 
 type PdfModule = {
   readonly GlobalWorkerOptions: { workerSrc: string };
-  getDocument(params: {
-    readonly data: Uint8Array;
-    readonly isEvalSupported: false;
-  }): { readonly promise: Promise<unknown>; destroy(): Promise<void> };
+  getDocument(params: PdfOpenParams): {
+    readonly promise: Promise<unknown>;
+    destroy(): Promise<void>;
+  };
 };
 
 export async function loadAssetPdf(

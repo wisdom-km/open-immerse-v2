@@ -8,6 +8,7 @@ import {
   type PdfPage,
   type PdfRenderTask,
 } from "../../src/ui/pdf-session.js";
+import { PDF_WASM_URL } from "../../src/ui/worker-src.js";
 
 it("destroys the loading task once per open", async () => {
   const rounds = 5;
@@ -82,7 +83,12 @@ it("destroys the loading task when the document fails to open", async () => {
   });
   expect(opened).toBeUndefined();
   expect(destroyed).toBe(1);
-  expect(params).toEqual({ data: bytes, isEvalSupported: false });
+  expect(params).toEqual({
+    data: bytes,
+    isEvalSupported: false,
+    wasmUrl: PDF_WASM_URL,
+    useWasm: false,
+  });
 });
 
 it("cancels the in-flight render when the same canvas is painted again", async () => {
