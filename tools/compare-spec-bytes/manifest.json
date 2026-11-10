@@ -479,6 +479,21 @@
       "source": "ARCHITECTURE.md",
       "old": "草案：`default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' oi-asset:; font-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'`。不允许 `unsafe-eval`，PDF.js 以 `isEvalSupported: false` 运行。下列三项**待 M2 实测**：KaTeX 的行内样式是否需要 `style-src 'unsafe-inline'`；PDF.js 是否需要 `wasm-unsafe-eval` 与 `blob:` 的 worker；PDF 数据经 `oi-asset://` 加载是否需要 `supportFetchAPI` 与 `connect-src oi-asset:`。任何放宽都要 ADR，并写到期里程碑。",
       "new": "草案：`default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' oi-asset:; font-src 'self'; connect-src 'self' oi-asset:; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'`。不允许 `unsafe-eval`，PDF.js 以 `isEvalSupported: false` 运行。下列仍**待 M2 实测**：KaTeX 的行内样式是否需要 `style-src 'unsafe-inline'`；PDF.js 是否需要 `wasm-unsafe-eval` 与 `blob:` 的 worker；PDF 数据经 `oi-asset://` 加载是否需要 `supportFetchAPI`。`connect-src oi-asset:` 已按 ADR 0006 采纳。任何进一步放宽都要 ADR，并写到期里程碑。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "  - 注册：`protocol.registerSchemesAsPrivileged` 只给 `standard: true`、`secure: true`（`standard` 是否必要待 M2 实测）；不给 `bypassCSP`、`supportFetchAPI`、`corsEnabled`、`allowServiceWorkers`、`stream`。M7 的 TTS 播放若需要 `stream`，经 ADR 再加。",
+      "new": "  - 注册：`protocol.registerSchemesAsPrivileged` 对 `oi-app` 只给 `standard: true`、`secure: true`。对 `oi-asset` 在这两项之外按 ADR 0007 增加 `supportFetchAPI: true`（Wisdom 2026-11-10 11:05）。`standard` 是否必要仍待 M2 实测。两边都不给 `bypassCSP`、`corsEnabled`、`allowServiceWorkers`、`stream`。M7 的 TTS 播放若需要 `stream`，经 ADR 再加。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "- 上面几条不授予 `bypassCSP`、`supportFetchAPI`、`wasm-unsafe-eval` 或 `blob:`。`connect-src` 按 ADR 0006 增加 `oi-asset:`（Wisdom 2026-11-10 10:50）。其余 CSP 指令不放宽。PDF.js 仍以 `isEvalSupported: false` 运行。不写 Range，不设置 `disableRange`。",
+      "new": "- 上面几条不授予 `bypassCSP`、`wasm-unsafe-eval` 或 `blob:`。`oi-asset` 的方案注册按 ADR 0007 增加 `supportFetchAPI: true`；`oi-app` 不加。`connect-src` 按 ADR 0006 增加 `oi-asset:`（Wisdom 2026-11-10 10:50）。其余 CSP 指令不放宽。PDF.js 仍以 `isEvalSupported: false` 运行。不写 Range，不设置 `disableRange`。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "下列仍**待 M2 实测**：KaTeX 的行内样式是否需要 `style-src 'unsafe-inline'`；PDF.js 是否需要 `wasm-unsafe-eval` 与 `blob:` 的 worker；PDF 数据经 `oi-asset://` 加载是否需要 `supportFetchAPI`。`connect-src oi-asset:` 已按 ADR 0006 采纳。任何进一步放宽都要 ADR，并写到期里程碑。",
+      "new": "下列仍**待 M2 实测**：KaTeX 的行内样式是否需要 `style-src 'unsafe-inline'`；PDF.js 是否需要 `wasm-unsafe-eval` 与 `blob:` 的 worker。`connect-src oi-asset:` 已按 ADR 0006 采纳。`oi-asset` 的 `supportFetchAPI: true` 已按 ADR 0007 采纳，`oi-app` 不加。任何进一步放宽都要 ADR，并写到期里程碑。"
     }
   ]
 }
