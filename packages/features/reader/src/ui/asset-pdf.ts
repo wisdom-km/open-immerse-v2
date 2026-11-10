@@ -1,6 +1,7 @@
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
 import type { OpenedPdf } from "./reader-client.js";
+import { assignWorkerSrc } from "./worker-src.js";
 
 type PdfPage = {
   getViewport(params: { readonly scale: number }): {
@@ -20,6 +21,7 @@ type PdfDocument = {
 };
 
 type PdfModule = {
+  readonly GlobalWorkerOptions: { workerSrc: string };
   getDocument(params: {
     readonly data: Uint8Array;
     readonly isEvalSupported: false;
@@ -54,6 +56,7 @@ async function openDocument(
   if (!isPdfModule(pdfjs)) {
     return undefined;
   }
+  assignWorkerSrc(pdfjs);
   const doc = await pdfjs.getDocument({ data: bytes, isEvalSupported: false })
     .promise;
   if (!Number.isInteger(doc.numPages) || doc.numPages < 1) {
@@ -82,9 +85,16 @@ function isPdfModule(value: unknown): value is PdfModule {
   if (
     typeof value !== "object" ||
     value === null ||
-    !("getDocument" in value)
+    !("getDocument" in value) ||
+    typeof value.getDocument !== "function" ||
+    !("GlobalWorkerOptions" in value)
   ) {
     return false;
   }
-  return typeof value.getDocument === "function";
+  const options = value.GlobalWorkerOptions;
+  return (
+    (typeof options === "function" ||
+      (typeof options === "object" && options !== null)) &&
+    "workerSrc" in options
+  );
 }

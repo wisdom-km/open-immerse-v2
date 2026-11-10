@@ -1,36 +1,41 @@
-# 0009 PDF.js 打开文档需要 workerSrc，本批不放行
+# 0009 PDF.js worker 使用同源 pdf.worker.js
 
-状态：提议。日期：2026-11-10（Asia/Shanghai）。决定人：尚未批准。
+状态：采纳。日期：2026-11-10（Asia/Shanghai）。决定人：Wisdom。
 
-本页记录阅读屏实现后的窗口停点。不改已采纳的 [0006](0006-renderer-oi-asset-csp.md)、[0007](0007-oi-asset-fetch-scheme.md)、[0008](0008-oi-asset-fetch-cors.md)。
+批准时间：2026-11-10 12:29（Asia/Shanghai）。原话：「按推荐：只把 pdf.worker.mjs 复制成同源 pdf.worker.js 并设 workerSrc，再窗口核对；仍缺再停。不改 CSP，不放行 .mjs，不用 blob:，不 Ready/合入/发版」。来源：[Issue #174 评论 6759014930](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6759014930)。
+
+本页不改已采纳的 [0006](0006-renderer-oi-asset-csp.md)、[0007](0007-oi-asset-fetch-scheme.md)、[0008](0008-oi-asset-fetch-cors.md)。
 
 ## 背景
 
-阅读屏按已批的最小主路径打开文献。调用顺序是 `ingest.openDocument` 完成，然后 `library.bindReadingAsset`，然后 `library.getProgressPage` 与 `fetch(oi-asset://asset/<assetId>)`。PDF.js 6.5.438 legacy 的初始化参数只有 `{ data, isEvalSupported: false }`。没有设置 `GlobalWorkerOptions.workerSrc`，没有 `disableRange`，没有把整份 PDF 经 IPC 送进渲染进程。
+阅读屏在 tip `26c3d0557952a6ad4daebe993a603802ccaff38e` 之前没有设置 `GlobalWorkerOptions.workerSrc`。同等窗口里 `oi-asset` 已返回 PDF 字节，PDF.js 6.5.438 legacy 抛出 `No "GlobalWorkerOptions.workerSrc" specified.`，第一页没有画出来。记录在 `docs/evidence/199/commands.md` 的上一节。
 
-窗口是 Electron 45.2.1，`xvfb`，`contextIsolation: true`，`sandbox: true`，`nodeIntegration: false`。地址是 `oi-app://app/index.html`。CSP 响应头与 `apps/desktop/src/main/security/csp.ts` 的 `CONTENT_SECURITY_POLICY` 逐字相同。用的是一页带 Helvetica 文字和矩形的小 PDF，经文献库双击进入阅读屏，不是探针红方块。
-
-`oi-asset://asset/1` 返回 200。响应体 624 字节，开头是 `%P`。阅读屏标题是文件名。随后 PDF.js 抛出 `No "GlobalWorkerOptions.workerSrc" specified.` 画布没有出现。界面是「无法打开此文件」和「现在读不到这份 PDF。」这次抛出发生在创建 `Worker` 之前，所以网络记录里没有 worker、`.mjs`、`wasm` 或 `blob:`。控制台没有 `securitypolicyviolation`。
-
-pdfjs-dist 自带的 worker 只有 `pdf.worker.mjs`。静态协议只放行 `.html`、`.js`、`.css`，不放行 `.mjs`。0006 已写明：窗口若因缺少 `.mjs` 失败，另写提议 ADR，不在已采纳页放行。把 `workerSrc` 指到那个 `.mjs` 就会发出未批请求，所以这次没有设置它。
+pdfjs-dist 自带的 worker 只有 `pdf.worker.mjs`。静态协议只放行 `.html`、`.js`、`.css`。0006 写明缺 `.mjs` 时另写提议，不在已采纳页放行。
 
 ## 选项
 
-1. 停在这里。不设置 `workerSrc`，不放行 `.mjs`，不加 `wasm-unsafe-eval`，不加 `blob:`，不把 worker 复制成 `.js`。阅读屏继续显示打不开的那句。
-2. 另批一种不新增 CSP 指令、不请求 `.mjs`、不用 `blob:` 的接法，例如把 worker 打进现有渲染脚本并在主线程运行。这条还没测，不知道会不会再要 `wasm-unsafe-eval`。本页不选。
-3. 放行 `.mjs`，或把 `pdf.worker.mjs` 复制成 `.js` 再请求。0006 不授权这条。本页不选。
+1. 继续不设置 `workerSrc`。阅读屏保持打不开。
+2. 构建时把 `pdfjs-dist` 6.5.438 legacy 的 `pdf.worker.mjs` 按字节复制成渲染目录里的 `pdf.worker.js`，由现有 `oi-app://app/` 静态协议按 `.js` 提供。`GlobalWorkerOptions.workerSrc` 设为 `oi-app://app/pdf.worker.js`。不改 CSP，不放行 `.mjs`，不用 `blob:`。再做窗口核对。仍缺就再停。
+3. 放行 `.mjs`，或加 `wasm-unsafe-eval`、`blob:`，或改静态协议的后缀表。
 
 ## 决定
 
-取第 1 条，作为提议。等 Wisdom 选择之前，不改 CSP、方案注册、协议头、Range，也不改 0006、0007、0008。
+取第 2 条。Wisdom 2026-11-10 12:29 已选这项。
+
+- 复制的是 legacy `pdf.worker.mjs`，与阅读屏加载的 `pdfjs-dist/legacy/build/pdf.mjs` 同一包、同一版本 6.5.438。产物字节与源文件一致。
+- `workerSrc` 是 `oi-app://app/pdf.worker.js`。PDF.js 发现它与页面同源后，用自带的 `new Worker(url, { type: "module" })`。不手造 `blob:`。
+- 初始化参数仍只有 `{ data, isEvalSupported: false }`。不设置 `disableRange`。不经 IPC 送整份 PDF。
+- 不改 `csp.ts`。不改方案注册。静态协议允许的后缀表不改。`.mjs` 请求仍是 404。
+- 响应仍是已有的 `text/javascript; charset=utf-8` 与 `X-Content-Type-Options: nosniff`。
+
+窗口核对在本 PR 的 `docs/evidence/199/`。`pdf.worker.js` 返回 200。两页小 PDF 的第一页画出文字和矩形。滚到第 2 页后离开，`progress_page` 写成 2，再打开仍是第 2 页。没有 `securitypolicyviolation`。这次没有请求 `.mjs`、`wasm` 或 `blob:`。
 
 ## 后果
 
-- 阅读屏的打开、回页、离开和文案可以评审。真实小 PDF 的第一页这一次没有画出来。
-- worker、`wasm-unsafe-eval`、`blob:`、`.mjs` 仍未获批。
+- 这一份小 PDF 可以在当前 CSP 下画出页面。
+- `.mjs` 仍然不放行。`wasm-unsafe-eval` 与 `blob:` 仍然不授予。以后的 PDF 若再要它们，另写提议 ADR，不在本页放行。
 - 本决定不是 Ready、合入或发版。
-- 这次比对同时含已分开审查的 #196 与 #198，再加上阅读屏。不为此再拆一笔。
 
 ## 状态
 
-提议。尚未取代任何已采纳的决定。
+采纳。范围只有把 legacy `pdf.worker.mjs` 复制成同源 `pdf.worker.js` 并设置 `workerSrc`。

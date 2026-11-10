@@ -20,6 +20,7 @@ export default tseslint.config(
       "coverage/**",
       "tools/gate-fixtures/**",
       "apps/desktop/src/renderer/main.js",
+      "apps/desktop/src/renderer/pdf.worker.js",
       "apps/desktop/src/preload/oi.generated.ts",
       "apps/desktop/src/renderer/oi-api.d.ts",
       "apps/desktop/src/main/ipc/registry.generated.ts",

@@ -514,6 +514,11 @@
       "source": "ARCHITECTURE.md",
       "old": "`oi-asset` 的 `supportFetchAPI: true` 已按 ADR 0007 采纳，`oi-app` 不加。任何进一步放宽都要 ADR，并写到期里程碑。",
       "new": "`oi-asset` 的 `supportFetchAPI: true` 已按 ADR 0007 采纳。`oi-asset` 的 `corsEnabled: true` 与响应头 `Access-Control-Allow-Origin: oi-app://app` 已按 ADR 0008 采纳。`oi-app` 不加这两项。任何进一步放宽都要 ADR，并写到期里程碑。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "`oi-app` 不加这两项。任何进一步放宽都要 ADR，并写到期里程碑。PRD AC-67 ① 在 M1 用 e2e 读出窗口实际生效的 CSP，与常量逐字一致。",
+      "new": "`oi-app` 不加这两项。PDF.js 的 worker 按 ADR 0009 使用构建时从 `pdf.worker.mjs` 复制的同源 `pdf.worker.js`，由 `oi-app://app/pdf.worker.js` 按已有 `.js` 静态响应提供（Wisdom 2026-11-10 12:29）。不放行 `.mjs`，不加 `wasm-unsafe-eval`，不用 `blob:`，CSP 字面量不改。任何进一步放宽都要 ADR，并写到期里程碑。PRD AC-67 ① 在 M1 用 e2e 读出窗口实际生效的 CSP，与常量逐字一致。"
     }
   ]
 }

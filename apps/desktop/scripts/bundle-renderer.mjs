@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import * as esbuild from "esbuild";
 
+import { copyPdfWorker } from "./copy-pdf-worker.mjs";
+
 const desktop = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
@@ -28,6 +30,8 @@ await esbuild.build({
   plugins: [tsExtension],
   logLevel: "info",
 });
+
+copyPdfWorker();
 
 function resolveTypeScript(args) {
   if (!args.path.endsWith(".js")) {
