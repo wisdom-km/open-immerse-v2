@@ -62,3 +62,7 @@ worker 里的拼接名与上面两个文件名一致：`JpxImage` 的 `_noWasmFi
 文件是环境里的 `/home/ubuntu/.cursor/projects/agent-repos-open-immerse-v2/uploads/liushang_61a9.pdf`。`pdfinfo`：Adobe Acrobat Pro 11.0.0，126 页，PDF 1.7。`pdfimages -list`：181 张 Flate（印成 `image`）、343 张 JPEG、39 张 JPX、2 张 CCITT。第 1 页有 CCITT（`stencil`，116×87）。第 31 页有 JPX（`index`，56×55）。计数与 [docs/evidence/199/commands.md](../evidence/199/commands.md) 里的 liushang 一致。PDF 本体不入库。
 
 核对生产壳第 1 页和第 31 页，截图，并记下控制台有没有缺图或报错。仍缺图就停，另写一份状态为「提议」的 ADR，不再加宽。
+
+## 实际
+
+窗口记录在 [docs/evidence/200/commands.md](../evidence/200/commands.md)。两个后备 `.js` 都是 200。控制台没有 `JpxError`、`Jbig2Error`，也没有 `securitypolicyviolation`。第 31 页的小图（含那张 JPX）画出。第 1 页的 CropBox 是封面正面，JPEG 封面画出。CCITT 条码在 MediaBox 的封底，不在 CropBox 里，阅读视口不显示它。没有因此再写 ADR。ADR 0010 仍是提议。
