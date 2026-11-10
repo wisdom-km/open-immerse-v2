@@ -213,6 +213,7 @@ it("returns 404 when dotdot or percent-encoded dotdot is in the url", () => {
     const response = respondToReadingAsset(url, "GET", trap());
     expect(response.status).toBe(404);
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    expectAllowOrigin(response);
   }
 });
 
@@ -235,9 +236,9 @@ it("returns 404 when the url has userinfo, a port, a query, a fragment, or anoth
 });
 
 it("returns 405 when the method is not GET or HEAD", () => {
-  expect(
-    respondToReadingAsset("oi-asset://asset/1", "POST", trap()).status,
-  ).toBe(405);
+  const rejected = respondToReadingAsset("oi-asset://asset/1", "POST", trap());
+  expect(rejected.status).toBe(405);
+  expectAllowOrigin(rejected);
   expect(
     respondToReadingAsset("oi-asset://asset/1", "PUT", trap()).status,
   ).toBe(405);
@@ -431,6 +432,7 @@ async function expectPdf(
   expect(response.headers.get("x-content-type-options")).toBe("nosniff");
   expect(response.headers.get("content-security-policy")).toBeNull();
   expect(response.headers.get("accept-ranges")).toBeNull();
+  expectAllowOrigin(response);
   expect(leaks(headerText(response), secrets)).toEqual([]);
   expect(new Uint8Array(await response.arrayBuffer())).toEqual(
     new Uint8Array(readFileSync(filePath)),
@@ -444,6 +446,7 @@ async function expectHead(
   expect(response.status).toBe(200);
   expect(response.headers.get("content-type")).toBe("application/pdf");
   expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+  expectAllowOrigin(response);
   expect(new Uint8Array(await response.arrayBuffer()).byteLength).toBe(0);
   expect(leaks(headerText(response), secrets)).toEqual([]);
 }
@@ -460,6 +463,7 @@ async function expectEmpty(
   expect(response.headers.get("x-content-type-options")).toBe("nosniff");
   expect(response.headers.get("content-security-policy")).toBeNull();
   expect(response.headers.get("accept-ranges")).toBeNull();
+  expectAllowOrigin(response);
   const body = new Uint8Array(await response.arrayBuffer());
   expect(body.byteLength).toBe(0);
   expect(
@@ -468,6 +472,12 @@ async function expectEmpty(
       secrets,
     ),
   ).toEqual([]);
+}
+
+function expectAllowOrigin(response: Response): void {
+  const origin = response.headers.get("access-control-allow-origin");
+  expect(origin).toBe("oi-app://app");
+  expect(origin?.includes("*")).toBe(false);
 }
 
 function headerText(response: Response): string {
