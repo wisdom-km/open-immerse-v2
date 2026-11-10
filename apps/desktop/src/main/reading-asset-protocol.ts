@@ -18,6 +18,7 @@ const SCHEME = "oi-asset";
 const PDF_TYPE = "application/pdf";
 const PLAIN_TYPE = "text/plain; charset=utf-8";
 const NOSNIFF = "nosniff";
+const ALLOW_ORIGIN = "oi-app://app";
 
 export function handleReadingAssetProtocol(
   port: ReadingAssetPort,
@@ -161,22 +162,24 @@ function hasPdfHeader(bytes: Uint8Array): boolean {
   );
 }
 
+function assetHeaders(contentType: string): Record<string, string> {
+  return {
+    "Content-Type": contentType,
+    "X-Content-Type-Options": NOSNIFF,
+    "Access-Control-Allow-Origin": ALLOW_ORIGIN,
+  };
+}
+
 function pdfResponse(method: string, bytes: Uint8Array): Response {
   return schemeResponse(bodyForMethod(method, bytes), {
     status: 200,
-    headers: {
-      "Content-Type": PDF_TYPE,
-      "X-Content-Type-Options": NOSNIFF,
-    },
+    headers: assetHeaders(PDF_TYPE),
   }) as Response;
 }
 
 function emptyResponse(status: 404 | 405): Response {
   return schemeResponse(null, {
     status,
-    headers: {
-      "Content-Type": PLAIN_TYPE,
-      "X-Content-Type-Options": NOSNIFF,
-    },
+    headers: assetHeaders(PLAIN_TYPE),
   }) as Response;
 }

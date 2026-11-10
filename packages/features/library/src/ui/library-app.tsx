@@ -9,7 +9,9 @@ import { LibraryTable } from "./library-table.js";
 import { useFileDrop } from "./use-drop.js";
 import { useLibraryScreen, type LibraryScreen } from "./use-library-screen.js";
 
-export function LibraryApp(): ReactElement {
+export function LibraryApp(props: {
+  readonly onOpen?: ((id: string) => void) | undefined;
+}): ReactElement {
   const screen = useLibraryScreen();
   const dragging = useFileDrop(screen.dropFile);
   return (
@@ -23,7 +25,7 @@ export function LibraryApp(): ReactElement {
           </button>
         </header>
         <LibraryStatus text={screen.status} />
-        <LibraryBody screen={screen} />
+        <LibraryBody screen={screen} onOpen={props.onOpen} />
         {dragging ? <DropOverlay /> : null}
       </main>
     </div>
@@ -32,6 +34,7 @@ export function LibraryApp(): ReactElement {
 
 function LibraryBody(props: {
   readonly screen: LibraryScreen;
+  readonly onOpen?: ((id: string) => void) | undefined;
 }): ReactElement | null {
   if (props.screen.busy) {
     return <LibrarySkeleton />;
@@ -56,6 +59,7 @@ function LibraryBody(props: {
       selectedId={props.screen.selectedId}
       onSort={props.screen.chooseSort}
       onSelect={props.screen.selectRow}
+      onOpen={props.onOpen}
     />
   );
 }

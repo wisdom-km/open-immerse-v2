@@ -17,6 +17,10 @@
     "./ui": {
       "types": "./src/ui/index.js",
       "default": "./src/ui/index.ts"
+    },
+    "./app": {
+      "types": "./src/ui/library-app.js",
+      "default": "./src/ui/library-app.tsx"
     }
   },
   "dependencies": {

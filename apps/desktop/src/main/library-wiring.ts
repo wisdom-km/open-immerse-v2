@@ -22,7 +22,8 @@ import {
 } from "./ipc/library-command-channels.js";
 import {
   applicationMenuTemplate,
-  openFileScript,
+  fileMenu,
+  scriptForMenuEvent,
   type ShellMenuEntry,
 } from "./library-menu.js";
 import {
@@ -92,27 +93,34 @@ function toMenuItem(entry: ShellMenuEntry): MenuItemConstructorOptions {
   if ("role" in entry) {
     return { role: entry.role };
   }
-  const item = entry.items[0];
   return {
     label: entry.label,
-    submenu: [
-      {
-        label: item.label,
-        accelerator: item.accelerator,
-        click() {
-          void dispatchOpenFile();
-        },
-      },
-    ],
+    submenu: entry.items.map((item) => menuEntry(item)),
   };
 }
 
-function dispatchOpenFile(): Promise<void> {
+function menuEntry(
+  item: (typeof fileMenu.items)[number],
+): MenuItemConstructorOptions {
+  const click = () => {
+    void dispatchMenu(item.event);
+  };
+  if ("accelerator" in item) {
+    return { label: item.label, accelerator: item.accelerator, click };
+  }
+  return { label: item.label, click };
+}
+
+function dispatchMenu(eventName: string): Promise<void> {
   const win = BrowserWindow.getAllWindows()[0];
   if (win === undefined) {
     return Promise.resolve();
   }
-  return win.webContents.executeJavaScript(openFileScript()).then(() => {
+  const script = scriptForMenuEvent(eventName);
+  if (script === undefined) {
+    return Promise.resolve();
+  }
+  return win.webContents.executeJavaScript(script).then(() => {
     return undefined;
   });
 }

@@ -12,6 +12,7 @@
   "dependencies": {
     "@oi/feature-ingest": "workspace:*",
     "@oi/feature-library": "workspace:*",
+    "@oi/feature-reader": "workspace:*",
     "@oi/platform-node": "workspace:*",
     "electron": "45.2.1",
     "react": "19.3.1",

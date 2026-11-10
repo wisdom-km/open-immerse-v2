@@ -42,5 +42,11 @@ M1 要登记的第一批独立 ADR 仍未建页：`formula-source`、Markdown �
 | 0003 | 删除 `repair → quality`。补救只产出候选，重新评分由 `ingest` 调 `quality` | [0003-repair-quality-removed.md](0003-repair-quality-removed.md) |
 | 0004 | 存储版本与协议版本合为一页。`app_schema`、迁移备份、更高版本只读、JSON `schemaVersion`，以及 `OI-Protocol` 的兼容规则。驱动用 `node:sqlite` | [0004-storage-and-protocol-versions.md](0004-storage-and-protocol-versions.md) |
 | 0005 | 只暂缓 `allows a synthetic key that uses the oitest_ prefix (G9)` 的隔离，到 PR-C 合入前。不改 §4 的通用规则 | [0005-g9-oitest-quarantine-exception.md](0005-g9-oitest-quarantine-exception.md) |
+| 0006 | 渲染进程读取 `oi-asset` 时，只把 `connect-src` 增加 `oi-asset:`。状态是采纳 | [0006-renderer-oi-asset-csp.md](0006-renderer-oi-asset-csp.md) |
+| 0007 | 渲染进程 `fetch` `oi-asset` 时，只给该方案注册加上 `supportFetchAPI: true`。状态是采纳 | [0007-oi-asset-fetch-scheme.md](0007-oi-asset-fetch-scheme.md) |
+| 0008 | 只给 `oi-asset` 加 `corsEnabled: true`，响应头只回 `oi-app://app`。状态是采纳 | [0008-oi-asset-fetch-cors.md](0008-oi-asset-fetch-cors.md) |
+| 0009 | PDF.js worker 使用构建时复制的同源 `pdf.worker.js`。状态是采纳。不改 CSP，不放行 `.mjs`，不用 `blob:` | [0009-pdfjs-worker-src.md](0009-pdfjs-worker-src.md) |
+| 0010 | JPX 与 CCITT 的图片解码。状态是提议。不改 CSP，不提供 `.wasm`，不把缺图改成占位 | [0010-pdf-image-wasm.md](0010-pdf-image-wasm.md) |
+| 0011 | 阅读屏进出后标签页工作集不回落。状态是已采纳。#199 不改运行时。视口绘制记作之后的单独候选，暂不开工 | [0011-tab-working-set.md](0011-tab-working-set.md) |
 
-Q1–Q12 之后的其余决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，2026-10-31 的 D-D、D-E、W-4，以及 2026-11-02 的面壁 API 主路线、同日 Jev 契约与 Jev API 客户端里程碑）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.15。本索引不抄那些段落。0001、0002、0003、0004、0005 的正文在各自的页上，这里不重抄。
+Q1–Q12 之后的其余决定（处理路线、API 优先、外发同意、Markdown、架构评审修复、PR C，2026-10-31 的 D-D、D-E、W-4，以及 2026-11-02 的面壁 API 主路线、同日 Jev 契约与 Jev API 客户端里程碑）仍只记在 ARCHITECTURE §16 与差异清单 §6.1–§6.15。本索引不抄那些段落。0001、0002、0003、0004、0005、0006、0007 的正文在各自的页上，这里不重抄。0006 已采纳，范围只有 `connect-src` 增加 `oi-asset:`。0007 已采纳，范围只有 `oi-asset` 的 `supportFetchAPI: true`。`oi-app` 不加。0008 已采纳，范围只有 `oi-asset` 的 `corsEnabled: true`，响应头只回 `oi-app://app`。0009 已采纳，范围只有把 `pdfjs-dist` 6.5.438 legacy 的 `pdf.worker.mjs` 复制成同源 `pdf.worker.js` 并设置 `workerSrc`。不改 CSP，不放行 `.mjs`，不用 `blob:`，不加 `wasm-unsafe-eval`。不改 0006、0007、0008。0010 是提议：JPX 与 CCITT 因没有 `wasmUrl` 解不开。不改 CSP，不提供 `.wasm`，不把缺图改成占位。0011 已采纳（Wisdom 2026-11-10 18:25）：进出阅读屏后留下的是标签页 `[anon]` 私有脏页；memfd 共享内存能被压力通知清掉。#199 不为这个问题改运行时。视口绘制（只改 `page-column.tsx`）记作 #199 之后的单独候选，暂不开工。不实现画布清零，不调用 `cleanup`。不改 CSP、协议注册、主进程、core、contracts、`library/src`。
