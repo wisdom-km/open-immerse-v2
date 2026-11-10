@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 
 import {
   createPdfSession,
@@ -113,6 +113,32 @@ it("cancels the in-flight render when the same canvas is painted again", async (
     await expect(first).resolves.toBeUndefined();
     await expect(second).resolves.toBeUndefined();
   } finally {
+    await session.close();
+  }
+});
+
+it("reports a missing 2d context and does not render", async () => {
+  const reported: unknown[] = [];
+  const spy = vi
+    .spyOn(console, "error")
+    .mockImplementation((error: unknown) => {
+      reported.push(error);
+    });
+  let renders = 0;
+  const session = createPdfSession(
+    blankPage(() => {
+      renders += 1;
+    }),
+    countingTask(() => undefined),
+  );
+  try {
+    await expect(
+      session.paint(1, contextlessCanvas()),
+    ).resolves.toBeUndefined();
+    expect(renders).toBe(0);
+    expect(reported.map(errorText)).toEqual(["2d context missing"]);
+  } finally {
+    spy.mockRestore();
     await session.close();
   }
 });
@@ -267,6 +293,42 @@ function renderDouble(
       rejectTask(error);
     },
   };
+}
+
+function blankPage(onRender: () => void): PdfDocument {
+  return {
+    numPages: 1,
+    getPage() {
+      return Promise.resolve({
+        getViewport() {
+          return { width: 4, height: 4 };
+        },
+        render() {
+          onRender();
+          return {
+            promise: Promise.resolve(),
+            cancel() {
+              return undefined;
+            },
+          };
+        },
+      });
+    },
+  };
+}
+
+function contextlessCanvas(): HTMLCanvasElement {
+  return {
+    width: 0,
+    height: 0,
+    getContext() {
+      return null;
+    },
+  } as unknown as HTMLCanvasElement;
+}
+
+function errorText(error: unknown): string {
+  return error instanceof Error ? error.message : "";
 }
 
 function fakeCanvas(): HTMLCanvasElement {

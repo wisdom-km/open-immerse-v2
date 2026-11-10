@@ -32,8 +32,6 @@ export type PdfSource = {
   }): PdfLoadingTask;
 };
 
-export const PDF_SESSION_CLOSED = "PdfSessionClosed";
-
 export type PdfSession = {
   readonly pageCount: number;
   paint(page: number, canvas: HTMLCanvasElement): Promise<void>;
@@ -42,8 +40,7 @@ export type PdfSession = {
 };
 
 export function paintErrorIsQuiet(error: unknown): boolean {
-  const name = errorName(error);
-  return name === "RenderingCancelledException" || name === PDF_SESSION_CLOSED;
+  return errorName(error) === "RenderingCancelledException";
 }
 
 type Renders = Map<HTMLCanvasElement, PdfRenderTask>;
@@ -141,8 +138,12 @@ async function drawPage(
   const viewport = page.getViewport({ scale: 1 });
   request.canvas.width = Math.ceil(viewport.width);
   request.canvas.height = Math.ceil(viewport.height);
+  if (paintStopped(request, token)) {
+    return;
+  }
   const context = request.canvas.getContext("2d");
-  if (context === null || paintStopped(request, token)) {
+  if (context === null) {
+    console.error(new Error("2d context missing"));
     return;
   }
   const render = page.render({
@@ -150,11 +151,6 @@ async function drawPage(
     canvas: request.canvas,
     viewport,
   });
-  if (request.isClosed()) {
-    render.cancel();
-    await quietRender(render.promise, request.isClosed);
-    return;
-  }
   request.renders.set(request.canvas, render);
   try {
     await render.promise;
@@ -162,23 +158,6 @@ async function drawPage(
     if (request.renders.get(request.canvas) === render) {
       request.renders.delete(request.canvas);
     }
-  }
-  if (request.isClosed()) {
-    return;
-  }
-}
-
-async function quietRender(
-  promise: Promise<void>,
-  isClosed: () => boolean,
-): Promise<void> {
-  try {
-    await promise;
-  } catch (error) {
-    if (isClosed() || isCancelled(error)) {
-      return;
-    }
-    throw error;
   }
 }
 

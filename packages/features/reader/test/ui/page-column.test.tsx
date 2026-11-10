@@ -4,7 +4,6 @@ import { createRef, type ReactElement } from "react";
 import { expect, it, vi } from "vitest";
 
 import { PageColumn } from "../../src/ui/page-column.js";
-import { PDF_SESSION_CLOSED } from "../../src/ui/pdf-session.js";
 import type { PdfCancel, PdfPaint } from "../../src/ui/reader-client.js";
 
 it("does not paint the same page again when the shown page changes", async () => {
@@ -77,28 +76,15 @@ it("reports a paint error that is not cancellation or a closed session", async (
   }
 });
 
-it("stays quiet for cancellation and a closed session", async () => {
+it("stays quiet for a cancelled paint", async () => {
   const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-  const closed = new Error("closed");
-  closed.name = PDF_SESSION_CLOSED;
   const cancelled = new Error("cancelled");
   cancelled.name = "RenderingCancelledException";
   try {
-    const view = render(
+    render(
       column(
         1,
         () => Promise.reject(cancelled),
-        () => undefined,
-        1,
-      ),
-    );
-    await act(async () => {
-      await Promise.resolve();
-    });
-    view.rerender(
-      column(
-        1,
-        () => Promise.reject(closed),
         () => undefined,
         1,
       ),
