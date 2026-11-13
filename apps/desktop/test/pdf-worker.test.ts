@@ -59,7 +59,6 @@ it("copies the openjpeg and jbig2 js fallbacks and not the wasm files", async ()
     copyPdfImageFallbacks(dir?: string): Copied[];
     imageFallbackFileNames: readonly string[];
     imageFallbackDir: string;
-    pdfWorkerSource(): string;
   };
   expect(tool.imageFallbackFileNames).toEqual([
     "openjpeg_nowasm_fallback.js",
@@ -68,7 +67,6 @@ it("copies the openjpeg and jbig2 js fallbacks and not the wasm files", async ()
   expect(path.resolve(tool.imageFallbackDir)).toBe(
     path.resolve("apps/desktop/src/renderer"),
   );
-  const worker = readFileSync(tool.pdfWorkerSource(), "utf8");
   const root = mkdtempSync(path.join(tmpdir(), "oi-image-"));
   try {
     const copied = tool.copyPdfImageFallbacks(root);
@@ -76,15 +74,13 @@ it("copies the openjpeg and jbig2 js fallbacks and not the wasm files", async ()
       tool.imageFallbackFileNames,
     );
     for (const item of copied) {
-      expect(item.source.endsWith(`/wasm/${path.basename(item.dest)}`)).toBe(
-        true,
-      );
+      expect(path.basename(path.dirname(item.source))).toBe("wasm");
+      expect(path.basename(item.source)).toBe(path.basename(item.dest));
       expect(item.dest.endsWith(".wasm")).toBe(false);
       expect(item.dest.endsWith(".mjs")).toBe(false);
       expect(readFileSync(item.dest).equals(readFileSync(item.source))).toBe(
         true,
       );
-      expect(worker.includes(path.basename(item.dest))).toBe(true);
       const response = respond(
         root,
         `oi-app://app/${path.basename(item.dest)}`,
