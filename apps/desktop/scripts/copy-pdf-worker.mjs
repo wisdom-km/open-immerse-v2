@@ -50,7 +50,7 @@ export const imageFallbackDir = path.join(desktop, "src/renderer");
 
 export function imageFallbackSource(fileName) {
   if (!imageFallbackFileNames.includes(fileName)) {
-    throw new Error(`pdf image fallback is not a js file: ${fileName}`);
+    throw new Error(`not an allowed pdf image fallback: ${fileName}`);
   }
   const require = createRequire(path.join(reader, "package.json"));
   return require.resolve(`pdfjs-dist/wasm/${fileName}`);
