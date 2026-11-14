@@ -1,16 +1,11 @@
 import { expect, it } from "vitest";
 
 import {
+  applicationMenuTemplate,
+  fileMenu,
   goToPageEvent,
   historyBackEvent,
   historyForwardEvent,
-} from "../src/renderer/shell-events.js";
-import {
-  applicationMenuTemplate,
-  fileMenu,
-  goToPageEvent as menuGoTo,
-  historyBackEvent as menuBack,
-  historyForwardEvent as menuForward,
   openFileEvent,
   openFileScript,
   returnLibraryEvent,
@@ -59,9 +54,9 @@ it("keeps the system roles and adds the file menu", () => {
   expect(applicationMenuTemplate("linux")).toEqual(
     applicationMenuTemplate("win32"),
   );
-  expect(menuBack).toBe(historyBackEvent);
-  expect(menuForward).toBe(historyForwardEvent);
-  expect(menuGoTo).toBe(goToPageEvent);
+  expect(historyBackEvent).toBe("oi-history-back");
+  expect(historyForwardEvent).toBe("oi-history-forward");
+  expect(goToPageEvent).toBe("oi-go-to-page");
   for (const entry of applicationMenuTemplate("darwin")) {
     if ("items" in entry) {
       for (const item of entry.items)
