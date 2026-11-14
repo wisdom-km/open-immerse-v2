@@ -49,11 +49,11 @@ export function startLibrary(
   return wiredLibraryCommands(main);
 }
 
-export function openWiredLibrary(dataRoot: string): LibraryMain {
-  const settings = readSliceMigrations(
-    "settings",
-    settingsMigrationsDirectory(),
-  );
+export function openWiredLibrary(
+  dataRoot: string,
+  settingsDirectory = settingsMigrationsDirectory(),
+): LibraryMain {
+  const settings = readSliceMigrations("settings", settingsDirectory);
   return createLibraryMain({
     dataRoot,
     clock: { nowMs: () => Date.now() },

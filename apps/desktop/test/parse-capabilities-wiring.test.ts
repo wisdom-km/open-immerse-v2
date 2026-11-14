@@ -101,6 +101,27 @@ it("returns handler_threw through the router when set_providers is absent", asyn
   }
 });
 
+it("leaves the library unopened when the settings migration cannot be read", async () => {
+  const root = mkdtempSync(path.join(tmpdir(), "oitest-parse-unread-"));
+  const closed = {
+    ok: false,
+    error: { code: "handler_threw", retryable: true },
+  };
+  const main = openWiredLibrary(
+    path.join(root, "data"),
+    path.join(root, "missing-settings"),
+  );
+  try {
+    expect(main.storage).toBeNull();
+    expect(await main.handlers.list({ view: "all" })).toEqual(closed);
+    expect(await main.handlers.import({})).toEqual(closed);
+    expect(await ask(main)).toEqual(closed);
+  } finally {
+    main.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 it("returns handler_threw when the library cannot be opened", async () => {
   const main = openWiredLibrary("secret-root\u0000");
   try {

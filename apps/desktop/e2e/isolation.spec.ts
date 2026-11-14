@@ -7,6 +7,7 @@ test("exposes the library seam when window.oi is read", async ({ desktop }) => {
     desktop.page,
     `JSON.stringify({
       keys: Object.keys(window.oi),
+      parsingKeys: Object.keys(window.oi.parsing),
       library:
         window.oi.library !== null && typeof window.oi.library === "object",
       import: typeof window.oi.library.import,
@@ -14,7 +15,7 @@ test("exposes the library seam when window.oi is read", async ({ desktop }) => {
     })`,
   );
   expect(raw).toBe(
-    '{"keys":["ingest","library","parsing"],"library":true,"import":"function","getParseCapabilities":"function"}',
+    '{"keys":["ingest","library","parsing"],"parsingKeys":["getParseCapabilities"],"library":true,"import":"function","getParseCapabilities":"function"}',
   );
 });
 
