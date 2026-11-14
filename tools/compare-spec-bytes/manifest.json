@@ -519,6 +519,16 @@
       "source": "ARCHITECTURE.md",
       "old": "`oi-app` 不加这两项。任何进一步放宽都要 ADR，并写到期里程碑。PRD AC-67 ① 在 M1 用 e2e 读出窗口实际生效的 CSP，与常量逐字一致。",
       "new": "`oi-app` 不加这两项。PDF.js 的 worker 按 ADR 0009 使用构建时从 `pdf.worker.mjs` 复制的同源 `pdf.worker.js`，由 `oi-app://app/pdf.worker.js` 按已有 `.js` 静态响应提供（Wisdom 2026-11-10 12:29）。不放行 `.mjs`，不加 `wasm-unsafe-eval`，不用 `blob:`，CSP 字面量不改。任何进一步放宽都要 ADR，并写到期里程碑。PRD AC-67 ① 在 M1 用 e2e 读出窗口实际生效的 CSP，与常量逐字一致。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│     ├─ src/renderer/                # 当前有 index.html、oi-api.d.ts、main.tsx、slots.ts、library.css；路由、全局 Provider 为计划中。slots.ts 现为文献库贡献数组（非正式布局系统）\n",
+      "new": "│     ├─ src/renderer/                # 当前有 index.html、oi-api.d.ts、main.tsx、slots.ts、library.css、reader-client.ts、reader.css、shell-events.ts、shell.tsx；路由、全局 Provider 为计划中。slots.ts 现为文献库贡献数组（非正式布局系统）\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "│     ├─ reader/                      # 已建。核心与 PDF.js 适配；没有阅读界面\n",
+      "new": "│     ├─ reader/                      # 已建。核心与 PDF.js 适配；src/ui/ 已有阅读界面（ReaderScreen 显示原文页与页码，返回文献库）\n"
     }
   ]
 }
