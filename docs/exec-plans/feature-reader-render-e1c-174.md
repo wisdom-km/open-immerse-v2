@@ -6,7 +6,7 @@ E1c。从 main `d5d5ea2` 开工。依据是已批准的 [批次 E 计划](featur
 
 | 笔 | PR | 做什么 | 估计 |
 | --- | --- | --- | --- |
-| E1c-1 | 本 PR #212 | 视图菜单只派发。缩放四项和三种视图没有监听者。tooltip、删 `useLeaveKeys`、菜单后退、迷路和页码各播一次、n2–n5、`reader-screen.tsx` 低于 250、25 页 canvas e2e、Ctrl+G / Alt+← / 历史用尽回库 | 见下表 |
+| E1c-1 | 本 PR #212 | 视图菜单只派发。缩放四项和三种视图没有监听者。tooltip、删 `useLeaveKeys`、菜单后退、迷路和页码各播一次、n2–n5、`reader-screen.tsx` 低于 250、25 页 canvas e2e、Ctrl+G / Alt+← / 历史用尽回库 | 本 PR |
 | E1c-2 | 另开 | 全部缩放。估计 504。百分比菜单底行是「只缩放 PDF 原文栏；界面跟随系统缩放」（#206 第 94 行）。适合页面只在这个菜单里，算进 `zoom-controls.tsx` 的 120 行 | 504 |
 
 两笔都不申请 G12。E1c-1 合入后，缩放四项和三种视图点了也什么都不做，直到 E1c-2 和 E2。#206 第 104 行的 6-3 A 已接受。两笔之间不发版。PR 正文要写明。E1c-2 只调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent`、`clampZoomPercent`。E1c-1 不调用。不改 core、domain、`pure.ts`、contracts、`library/src`。不发整份 PDF，不用 Range，不改 CSP，不注册协议。`PROVISIONAL_PAGE_PIXEL_CAP` 保持 Infinity。
@@ -31,17 +31,6 @@ shell 监听后退、前进、转到页码和返回文献库，用 `flushSync` �
 
 e2e 不改生产代码。测试里 `dialog.showOpenDialogSync` 换成返回临时 PDF 路径的函数。`--user-data-dir` 指向临时目录，用完删掉。导入之前断言 `app.getPath("userData")` 等于该绝对路径，不相等就失败，不写 `test.skip`。PDF 手写，不加依赖。Playwright 合成按键打不开输入框或没有后退时，`app.evaluate` 从 `Menu.getApplicationMenu()` 按标签 `click()`。accelerator 锁在 `library-menu.test.ts`。真机按键另核。CI 的 `desktop-e2e-windows` 跑 `pnpm --filter desktop e2e`，`testDir` 是 `./e2e`，没有 `grep` 或 `testIgnore`。
 
-| 文件 | 动哪里 |
-| --- | --- |
-| `library-menu.ts` | 视图菜单；放宽 `fileMenu.items` |
-| `library-menu.test.ts` | 各平台一个 accelerator 和字面值 |
-| `shell-events.ts`、`shell.tsx` | 事件名；`flushSync` |
-| `go-to-page.tsx`、`use-bound-nav.ts`、`reader-screen.tsx` | `editing` 仍在内部；`onBindNav`；低于 250 行 |
-| `history-controls.tsx`、`copy.ts` | tooltip |
-| `pdf-session.ts` 与测试 | 删重复的 `paintStopped`；`try/finally` |
-| `reader-screen.test.tsx` | 菜单后退、播报各一次、微任务、离开不清零 |
-| `e2e/` | 临时 userData、对话框替身、手写 PDF、25 页、Ctrl+G、Alt+←、历史用尽 |
-
 ## E1c-2
 
 E1c-1 合入后另开。不改 `library-menu.ts`。占位乘缩放（`page-column.tsx` 第 109–118 行）。当前页锚点（G-5）。停下后用已有 live 区播一次百分比。25% 和 400% 置灰。加载前和出错时不渲染控件。滚轮用 `addEventListener("wheel", …, { passive: false })` 再 `preventDefault`。捏合在松手时 `clampZoomPercent`。e2e：Ctrl+滚轮后 `getZoomFactor()` 仍是 1，画布 CSS 变大。不用 `zoomIn` role，不调用 `webFrame.setZoomFactor`。
@@ -59,8 +48,3 @@ N2：`loadBoxes` 第 189–197 行逐页 `getPage`。N3：会话中途改显示�
 | 拆成 E1c-1 和 E1c-2 | 缩放项放不进 600 | 2026-11-15 | Forge 6880898801。6881018587 确认 |
 | B2 用 (a) | #206 第 106 行每项一个 accelerator。linux 用 Windows 列 | 2026-11-15 | Forge 6881018587 |
 | 8 GB 改到 E1c-2 之后 | 400% 依赖缩放 | 2026-11-15 | Forge 6880898801 |
-
-## 自检
-
-- [x] 不改 PRD、ARCHITECTURE、DESIGN。
-- [x] E1c-1 不调用缩放函数。E1c-2 只调用 `pure.ts` 已导出的三个函数。

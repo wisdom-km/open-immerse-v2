@@ -26,14 +26,12 @@ afterEach(() => {
 });
 
 const navBinder: {
-  current:
+  current?:
     | ((
-        nav:
-          | { readonly back: () => void; readonly openGoTo: () => void }
-          | undefined,
+        nav: { back: () => void; openGoTo: () => void } | undefined,
       ) => void)
     | undefined;
-} = { current: undefined };
+} = {};
 
 it("shows the lost-place line once and hides it after scrolling", async () => {
   render(

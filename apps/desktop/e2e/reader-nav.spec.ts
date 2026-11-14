@@ -112,24 +112,16 @@ async function canvasReport(page: Page): Promise<CanvasReport> {
 }
 
 function isReport(value: unknown): value is CanvasReport {
-  if (typeof value !== "object" || value === null) return false;
-  const report = value as {
-    pageCount?: unknown;
-    visible?: unknown;
-    kept?: unknown;
-  };
   return (
-    typeof report.pageCount === "number" &&
-    Array.isArray(report.visible) &&
-    Array.isArray(report.kept)
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as CanvasReport).pageCount === "number" &&
+    Array.isArray((value as CanvasReport).visible) &&
+    Array.isArray((value as CanvasReport).kept)
   );
 }
 
-type CanvasReport = {
-  pageCount: number;
-  visible: number[];
-  kept: number[];
-};
+type CanvasReport = { pageCount: number; visible: number[]; kept: number[] };
 
 function expectWindow(report: CanvasReport, pageCount: number): void {
   expect(report.pageCount).toBe(pageCount);
