@@ -549,6 +549,11 @@
       "source": "PRD.md",
       "old": "本批 `parsing.getParseCapabilities` 的 `expose` 为 false，codegen 不写入调用面或 registry；`expose` 为 true 只在真实配置来源与 handler 同一次合入时打开。没有配置记录是 `unconfigured`；孤儿密文不参与判断；密钥缺失、解密失败或损坏是明确错误。存储和 handler 尚未实现。未实现之前，不得把该状态标成验收通过。",
       "new": "2026-11-14 第 2 笔把 `parsing.getParseCapabilities` 的 `expose` 改为 true，codegen 写入调用面和 registry，并与存储、handler 同一次合入。`settings.*` 仍是 `expose` 为 false。没有配置记录是 `unconfigured`；孤儿密文不参与判断；密钥缺失、解密失败或损坏是明确错误。存储和这条 handler 已接上。生产不读密钥文件，不返回 `configured`。界面降级句还没有接上，不得把该状态标成验收通过。"
+    },
+    {
+      "source": "PRD.md",
+      "old": "8 GB Windows 与 M1 真机打开 / 滚动 / 重开录屏（PDF 与 `.md` 各一）",
+      "new": "8 GB Windows 与 M1 真机打开 / 滚动 / 重开录屏（PDF 与 `.md` 各一）。另挂一项，不替换上面的证据：主进程知道当前界面（文献库或阅读屏）的小 PR，用来置灰不可用菜单项。批次 E 不做这项（Wisdom 2026-11-14 14:13，6-3 A）。阅读屏菜单「后退」不置灰"
     }
   ]
 }
