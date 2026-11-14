@@ -14,4 +14,4 @@ Node v22.23.4。工作目录是仓库根。没有改台账、CSP、协议注册�
 
 退出码 0。`check-one-slice: 1 feature slice(s)`。codegen 之后工作区无 diff。
 
-check-pr-size: 0000 non-generated lines
+check-pr-size: 375 non-generated lines
