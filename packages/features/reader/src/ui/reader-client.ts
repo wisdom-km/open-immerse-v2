@@ -1,3 +1,5 @@
+import type { PageBox } from "./render-scale.js";
+
 export type Pair = {
   readonly id: string;
   readonly generation: number;
@@ -12,6 +14,7 @@ export type PdfCancel = (canvas: HTMLCanvasElement) => void;
 
 export type OpenedPdf = {
   readonly pageCount: number;
+  readonly boxes?: readonly PageBox[];
   paint: PdfPaint;
   cancel: PdfCancel;
   close(): Promise<void>;

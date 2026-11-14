@@ -149,6 +149,27 @@ it("reports a missing 2d context and does not render", async () => {
   }
 });
 
+it("sizes the backing store from devicePixelRatio and keeps the CSS size", async () => {
+  const host = globalThis as { devicePixelRatio?: number };
+  const previous = host.devicePixelRatio;
+  host.devicePixelRatio = 2;
+  const session = createPdfSession(
+    blankPage(() => undefined),
+    countingTask(() => undefined),
+  );
+  try {
+    const canvas = fakeCanvas();
+    await session.paint(1, canvas);
+    expect(canvas.width).toBe(8);
+    expect(canvas.height).toBe(8);
+    expect(canvas.style.width).toBe("4px");
+    expect(canvas.style.height).toBe("4px");
+  } finally {
+    host.devicePixelRatio = previous;
+    await session.close();
+  }
+});
+
 it("rejects a paint that fails for a reason other than cancellation", async () => {
   const waiters: Array<(page: PdfPage) => void> = [];
   const session = createPdfSession(
@@ -327,6 +348,7 @@ function contextlessCanvas(): HTMLCanvasElement {
   return {
     width: 0,
     height: 0,
+    style: { width: "", height: "" },
     getContext() {
       return null;
     },
@@ -341,6 +363,7 @@ function fakeCanvas(): HTMLCanvasElement {
   return {
     width: 0,
     height: 0,
+    style: { width: "", height: "" },
     getContext() {
       return {};
     },

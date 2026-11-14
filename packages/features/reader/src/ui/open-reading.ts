@@ -1,6 +1,7 @@
 import { clampPage } from "../pure.js";
 
 import { MISSING_DOCUMENT, UNREADABLE_PDF } from "./copy.js";
+import type { PageBox } from "./render-scale.js";
 import {
   assetUrl,
   type OpenedPdf,
@@ -20,6 +21,7 @@ export type ReadingView = {
   readonly paint: PdfPaint | undefined;
   readonly cancel: PdfCancel | undefined;
   readonly close: () => Promise<void>;
+  readonly boxes: readonly PageBox[];
 };
 
 export async function openReading(
@@ -122,6 +124,7 @@ function ready(
       pdf.cancel(canvas);
     },
     close: () => pdf.close(),
+    boxes: pdf.boxes ?? [],
   };
 }
 
@@ -136,6 +139,7 @@ function blocked(code: string, pair?: Pair, pdf?: OpenedPdf): ReadingView {
     paint: undefined,
     cancel: undefined,
     close: () => pdf?.close() ?? Promise.resolve(),
+    boxes: [],
   };
 }
 
