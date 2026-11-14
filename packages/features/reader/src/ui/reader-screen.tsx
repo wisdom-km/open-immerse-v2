@@ -53,6 +53,9 @@ export function ReaderScreen(props: {
     reading?.pageCount,
   );
   const openGoTo = useRef<(() => void) | undefined>(undefined);
+  const bindOpen = useCallback((open: (() => void) | undefined) => {
+    openGoTo.current = open;
+  }, []);
   useBoundNav(props.onBindNav, navCommands(nav, leave, openGoTo));
   useLayoutEffect(() => {
     props.onBindLeave?.(leave);
@@ -70,9 +73,7 @@ export function ReaderScreen(props: {
         lostPlace={session.lostPlace}
         fallbackPage={session.shownPage}
         nav={nav}
-        onBindOpen={(open) => {
-          openGoTo.current = open;
-        }}
+        onBindOpen={bindOpen}
       />
       <ReaderBody
         loading={session.phase.kind === "loading"}

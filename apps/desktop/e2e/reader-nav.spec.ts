@@ -63,9 +63,9 @@ async function openSample(
 
 async function openGoTo(app: ElectronApplication, page: Page): Promise<void> {
   await page.keyboard.press("Control+g");
-  if ((await page.getByRole("textbox").count()) === 0) {
-    await clickMenu(app, "转到页码…");
-  }
+  const opened = await textboxAppeared(page);
+  notePath("转到页码", opened ? "accelerator" : "menu click");
+  if (!opened) await clickMenu(app, "转到页码…");
   await expect(page.getByRole("textbox")).toBeFocused();
 }
 
@@ -73,9 +73,48 @@ async function menuBack(app: ElectronApplication, page: Page): Promise<void> {
   const label = page.getByRole("button", { name: /转到页码/ });
   const before = await label.innerText();
   await page.keyboard.press("Alt+ArrowLeft");
-  await page.waitForTimeout(300);
-  if ((await label.count()) > 0 && (await label.innerText()) === before) {
-    await clickMenu(app, "后退");
+  const moved = await labelMoved(label, before);
+  notePath("后退", moved ? "accelerator" : "menu click");
+  if (!moved) await clickMenu(app, "后退");
+}
+
+function notePath(
+  action: string,
+  pathName: "accelerator" | "menu click",
+): void {
+  const message = `${action}: ${pathName}`;
+  console.log(message);
+  test.info().annotations.push({ type: "menu-path", description: message });
+}
+
+async function textboxAppeared(page: Page): Promise<boolean> {
+  try {
+    await expect
+      .poll(async () => page.getByRole("textbox").count(), { timeout: 1_000 })
+      .toBeGreaterThan(0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function labelMoved(
+  label: ReturnType<Page["getByRole"]>,
+  before: string,
+): Promise<boolean> {
+  try {
+    await expect
+      .poll(
+        async () => {
+          if ((await label.count()) === 0) return "gone";
+          return (await label.innerText()) === before ? "same" : "changed";
+        },
+        { timeout: 1_000 },
+      )
+      .not.toBe("same");
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -126,24 +165,30 @@ type CanvasReport = { pageCount: number; visible: number[]; kept: number[] };
 
 function expectWindow(report: CanvasReport, pageCount: number): void {
   expect(report.pageCount).toBe(pageCount);
+  expect(report.visible.length).toBeGreaterThan(0);
+  expect(report.kept.length).toBeGreaterThan(0);
   const first = Math.min(...report.visible);
   const last = Math.max(...report.visible);
-  expect(report.kept.length).toBeLessThanOrEqual(report.visible.length + 4);
-  for (const page of report.kept) {
-    expect(page).toBeGreaterThanOrEqual(Math.max(1, first - 2));
-    expect(page).toBeLessThanOrEqual(last + 2);
-  }
+  expect(report.kept).toEqual(keptRange(first, last, pageCount));
 }
 
 function pastFirst(report: CanvasReport): boolean {
-  if (report.visible.length === 0) return false;
+  if (report.visible.length === 0 || report.kept.length === 0) return false;
   const first = Math.min(...report.visible);
   const last = Math.max(...report.visible);
-  const low = Math.max(1, first - 2);
+  const expected = keptRange(first, last, report.pageCount);
   return (
     report.pageCount === 25 &&
     first > 1 &&
-    report.kept.length <= report.visible.length + 4 &&
-    report.kept.every((page) => page >= low && page <= last + 2)
+    report.kept.length === expected.length &&
+    report.kept.every((page, index) => page === expected[index])
   );
+}
+
+function keptRange(first: number, last: number, pageCount: number): number[] {
+  const low = Math.max(1, first - 2);
+  const high = Math.min(pageCount, last + 2);
+  const pages: number[] = [];
+  for (let page = low; page <= high; page += 1) pages.push(page);
+  return pages;
 }
