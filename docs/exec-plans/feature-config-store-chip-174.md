@@ -2,7 +2,7 @@
 
 分支 `feature/config-store-chip-174`。基线是 `main` `d8e5afb2aff5d9b151050e07aa3a11b4a0a41290`，tree `7c60f428c10db03e23052ad93956c823905597b6`（提交说明 `docs: 改正 ADR 0010 的 CCITT 描述与 arch/09 wasm 现状 (#204)`）。本文件按 [docs/exec-plans/TEMPLATE.md](TEMPLATE.md) 编写。它必须自包含。
 
-停点：本分支不改台账。13:57 那一行已由 PR #204 写在 main 上。14:37 与 14:49 的批准行由 PR #206 补。第 1 笔的「实际」列已回填，第 2、3 笔不回填。`tools/compare-spec-bytes/manifest.json` 不动：比对的规格字节没有变，不追加空修订。第 1 笔已按 2026-11-14 14:49 的批准写在本分支。第 2、3 笔仍等上一笔合入后再从 main 开新分支。
+停点：本分支不改台账。13:57 那一行已由 PR #204 写在 main 上。14:37 与 14:49 的批准行由 PR #206 补。第 1 笔的「实际」列已回填，第 2、3 笔不回填。`tools/compare-spec-bytes/manifest.json` 不动：比对的规格字节没有变，不追加空修订。第 1 笔已按 2026-11-14 14:49 的批准写在本分支。第 2 笔等第 1 笔合入后再从 main 开新分支。第 3 笔等第 2 笔合入，并且 #206 的 E2 合入之后，再从 main 开新分支。`view-mode-empty.tsx` 要在 E2 合入后才存在。依据是 2026-11-14 15:13 的批准，Issue #174 评论 [6873638323](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6873638323) 和 PR #205 评论 [6873639800](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873639800)。15:13 的台账行不由本分支写。
 
 第 1 笔只加 `packages/features/settings`，以及 `pnpm install` 为这个包写下的 lockfile 记录。不改 CI、CSP、协议注册、codegen 生成物、契约、主进程、`packages/features/library/src/`、reader、[DESIGN.md](../../DESIGN.md)、[docs/design-principles.md](../design-principles.md)、`docs/design/**`（N-10）。不标 Ready，不合入，不发版。为接上已合入的 PR #204，本分支 rebase 到 main `d8e5afb` 后用 `--force-with-lease` 推送。依据是 2026-11-14 14:20 的批准，Issue #174 评论 [6873024142](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6873024142)。这个依据只适用于本 feature 分支上的 rebase。不对别的分支 force-push。14:20 的台账行由 PR #206 补，本分支不写。
 
@@ -21,7 +21,7 @@
 - AC-11 在 [docs/prd/06-01.md](../prd/06-01.md) 第 18 行：未配置任何解析服务时，可打开 PDF、浏览原文、读取文字层通读、记笔记；界面显示明确降级状态。US-16 在 [docs/prd/05.md](../prd/05.md) 第 25 行，提示的原词是「未解析 / 去配置」。③ 只覆盖「打开 PDF、浏览原文」和这句降级状态。文字层通读和记笔记仍不在本批。
 - PRC-10 在仓库里没有定义。批次 D 计划的 D-20 写明：这个编号未入库，只沿用设计稿编号，不把编号写进 PRD。本文件沿用这个边界。
 - DESIGN 里任务摘要 chip 的位置在 [DESIGN.md](../../DESIGN.md) §4.5.1 第 468 行：弹性空白（拖拽区）之后、栏位分段之前。§3.8.1 第 341 行的 chip 文案是进度、「解析失败 · 查看」、「✓ 解析完成」，那是任务状态，不是未配置句。§4.1 第 367 行把「解析与翻译状态摘要」放在标题栏。§4.1 第 394 行的空态是「这篇论文还没有译文。可以先读原文文字层 · 去设置翻译服务」。3A 要求切到对照或译文时把降级句再说一次，不用阅读区横幅。本批不改 DESIGN 正文。
-- 另一条分支是 Draft [PR #206](https://github.com/wisdom-km/open-immerse-v2/pull/206)，tip 以合入时为准。范围来自 Issue #174 评论 [6872732174](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872732174)：只交计划和台账，做缩放、转到页码、位置历史和栏位；不含配置存储和 AC-11 chip。本分支不改台账。14:13、14:17、14:20、14:37、14:49 的批准行和 PR #204 的合入同步行都由 #206 补。对照和译文的空态容器是它计划里的 `view-mode-empty.tsx`。6-1 A 已在 14:13 批过，接缝见 chip 一节。
+- 另一条分支是 Draft [PR #206](https://github.com/wisdom-km/open-immerse-v2/pull/206)，tip 以合入时为准。范围来自 Issue #174 评论 [6872732174](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872732174)：只交计划和台账，做缩放、转到页码、位置历史和栏位；不含配置存储和 AC-11 chip。本分支不改台账。14:13、14:17、14:20、14:37、14:49 的批准行和 PR #204 的合入同步行都由 #206 补。对照和译文的空态容器是它计划里的 `view-mode-empty.tsx`，要在 E2 合入后才存在。6-1 A 已在 14:13 批过，接缝见 chip 一节。
 
 ## 来源核对
 
@@ -147,11 +147,11 @@ chip 是 `role=status` 的文本。没有 `href`，没有按钮，不导航。�
 
 `configured`（只有测试替身能造出来）：chip 保持空，不显示降级句。`storage_corrupt`、`secret_unavailable` 与 `handler_threw`：不显示「未解析 / 去配置」，也不借用「解析失败 · 查看」。chip 留空，原文仍可浏览。本批不给这两种错误新句子，见 W7。
 
-对照 / 译文的空态只有 PR #206 的 `view-mode-empty.tsx`。本批不新建 `parse-empty-note.tsx`，也不在 `reader-screen` 上再挂一个兄弟节点。
+对照 / 译文的空态只有 PR #206 的 `view-mode-empty.tsx`。这个文件要在 #206 的 E2 合入后才存在。本批不新建 `parse-empty-note.tsx`，也不在 `reader-screen` 上再挂一个兄弟节点。
 
 接缝：#206 拥有这个组件，并先放进 2026-11-14 14:13 已批的 6-1 A（Issue #174 评论 [6872935563](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872935563)）：「本阶段暂不提供译文，请先阅读原文。」加上「切到原文（Ctrl+1）」链接，mac 显示 ⌘1。本批只导出 `parse-degrade-copy.ts` 里的一句「未解析 / 去配置」，以及一个函数：读口结果是 `unconfigured` 时返回这句，否则返回空。`view-mode-empty.tsx` 在 6-1 A 那句之后调用这个函数，`role=status`。不是 `unconfigured` 时，空态只有 6-1 A，没有降级句。
 
-合入顺序：PR #206 先合入 `view-mode-empty.tsx`，里面只有 6-1 A。本批的 reader PR 以那一版为基线，只在该文件里、6-1 A 文案之后插入上面的函数调用。本批不创建这个文件，也不改 #206 的计划。若 reader PR 不得不先合，它只做标题栏 chip，不碰还不存在的空态文件；插入留到 #206 合入之后的一小笔，那一小笔仍然只改 reader。真机上的空态截图等这个顺序完成，见测试计划。
+合入顺序：第 2 笔合入，并且 PR #206 的 E2 合入之后，再从 main 开第 3 笔的新分支。`view-mode-empty.tsx` 要在 E2 合入后才存在，里面先有 6-1 A。本批的 reader PR 以那一版为基线，只在该文件里、6-1 A 文案之后插入上面的函数调用。本批不创建这个文件，也不改 #206 的计划。第 3 笔不在 E2 之前插入空态。真机上的空态截图等这个顺序完成，见测试计划。
 
 界面不自己判断「有没有配置」。`use-parse-status` 只调用读口，组件只按返回的 `state` 或错误码选句子（P7）。空态函数同样只看读结果。
 
@@ -170,15 +170,15 @@ PRC-10 不写入 PRD，也不改批次 D 计划里的 D-19 / D-20（N-14，那�
 
 ## 实现顺序
 
-Forge 排序，非业主决定。G18 只数 `packages/features/<name>/src`（`tools/check-one-slice/check.mjs` 的 `slicesIn`）。W1–W4 已于 2026-11-14 14:37 批过。第 1 笔已写在本分支。第 2、3 笔仍等上一笔合入后再从 main 开新分支。
+Forge 排序，非业主决定。G18 只数 `packages/features/<name>/src`（`tools/check-one-slice/check.mjs` 的 `slicesIn`）。W1–W4 已于 2026-11-14 14:37 批过。第 1 笔已写在本分支。第 2 笔等第 1 笔合入后再从 main 开新分支。第 3 笔等第 2 笔合入，并且 #206 的 E2 合入之后，再从 main 开新分支。
 
 | 顺序 | 内容 | 先要有的决定 | 切片 |
 | --- | --- | --- | --- |
 | 1 | `settings` 切片：`set_providers` 的 `0001` 用 `purpose` 和 `credential_slot`，不再改列名。分类、用例、SQLite、固定不可用的密钥端口、`parsing.getParseCapabilities` 的 handler 工厂、临时库测试。不注册进生产 map，不改 `expose`，不建 `settings.getParseServiceStatus` 的 handler | 2026-11-14 14:49 已批。本分支已实现 | 只有 `settings` |
 | 2 | `library-main` 接受额外迁移，默认空，并把已打开的存储交回调用方。`library-wiring.ts` 只把 parsing 这一条 handler 并进现有 map。库打不开时这条仍在 map 里，返回 `handler_threw`。`expose` 只打开 `parsing.getParseCapabilities`，重新 codegen，同一笔改表面测试，并按 W4 只改 02-05 第 32 行与 prd 08 第 25 行、同步 manifest。`settings.*` 仍是 false。`composition-root.ts` 不改 | W1–W4 已于 14:37 批。还要第 1 笔已合入，并且本轮计划复审 PASS | 只有 `library`。契约和主进程在同一笔，见「不拆」 |
-| 3 | reader chip、`readParseStatus`、桌面 client 的生产调用、降级句函数、e2e。不新建空态组件。#206 已合入后，才在 `view-mode-empty.tsx` 的 6-1 A 之后插入降级句 | W1 已随第 2 笔合入。W5、W6、W7、W9 本批不做 | 只有 `reader` |
+| 3 | reader chip、`readParseStatus`、桌面 client 的生产调用、降级句函数、e2e。不新建空态组件。#206 的 E2 合入后，`view-mode-empty.tsx` 才存在，才在 6-1 A 之后插入降级句 | 第 2 笔已合入，并且 #206 的 E2 已合入。2026-11-14 15:13 已批。W5、W6、W7、W9 本批不做 | 只有 `reader` |
 
-第 1 笔单独合入还不满足 AC-11。第 3 笔的 e2e 要跑在第 2 笔已经合入的 main 上。第 2 笔和第 3 笔不能合成一笔：RULES §8 第 2 条把 `contracts/src/ipc/**` 算作 core，UI 改动的 PR 不能带 core。
+第 1 笔单独合入还不满足 AC-11。第 3 笔的 e2e 要跑在第 2 笔与 #206 的 E2 都已合入的 main 上。第 2 笔和第 3 笔不能合成一笔：RULES §8 第 2 条把 `contracts/src/ipc/**` 算作 core，UI 改动的 PR 不能带 core。
 
 ## 不拆
 
@@ -209,7 +209,7 @@ Windows 真机：
 
 - 机器按已有口径：8 GB 的 Windows。没有这台机器就写「未验证」，不用更大内存的机器顶上（台账 2026-11-05 22:13 与 2026-11-08 23:45）。
 - 项 1：空配置打开一篇 PDF，原文可见，chip 可见。截图放进 `docs/evidence/<实现 PR 号>/`。没有这张图，AC-11 的这一截仍是未验收。
-- 项 2：切到对照或译文，空态里有「未解析 / 去配置」，并且 #206 自己的句子若已存在，只能在旁边。栏位切换在 PR #206。那条还没合入时，这一项写「未验证」，不在本批里做临时切换控件。
+- 项 2：切到对照或译文，空态里有「未解析 / 去配置」，并且 #206 自己的句子若已存在，只能在旁边。栏位切换在 PR #206。E2 还没合入时，`view-mode-empty.tsx` 还不存在，这一项写「未验证」，不在本批里做临时切换控件。
 - 本计划 PR 不跑真机，不附截图。
 
 ## 风险
@@ -218,12 +218,12 @@ Windows 真机：
 - `library-main` 今天独占这次 `openAppStorage`。settings 再开一次连接会变成第二个写者，违反一份 `oi.sqlite`。W3 已批：同一次打开收额外迁移，并把已打开的库交回。PASS 之前不写这行代码，生产库不会有这张表。
 - 01:56 要求 `expose: true` 与真实来源、handler 同一次合入。14:37 已批 W1：只开 `parsing.getParseCapabilities`，`settings.*` 不开，并且这一次不单独先合契约。代码要等本轮计划复审 PASS 后才做第 2 笔。
 - chip 与栏位、缩放、页码跳转、位置历史都落在 `reader-screen.tsx` 的标题栏。两条分支同时改这个文件时，后合入的一方要重放自己的那一处，不能整文件覆盖。
-- 空态复读在产品里要等 PR #206 的 `view-mode-empty.tsx`。项 1 只截原文和 chip。空态那张截图等 #206 先合入、本批再插入降级句之后再拍。6-1 A 的句子不换成降级句，降级句只加在它后面。
+- 空态复读在产品里要等 PR #206 的 E2。`view-mode-empty.tsx` 要在 E2 合入后才存在。项 1 只截原文和 chip。空态那张截图等第 2 笔合入并且 E2 合入、本批再插入降级句之后再拍。6-1 A 的句子不换成降级句，降级句只加在它后面。
 - 批次 D 的 D-04 写过「不调用 `getParseCapabilities`」。那是 D 当时没有查询实现时的验收。本批之后，阅读屏会调用这一条只读查询。D-04 的那句不改写（N-14）。本批的 e2e 改为：调用这一条，不调用解析作业。
 
 ## 和 `feature/reader-nav-zoom-174` 可能冲突的文件
 
-对方是 Draft PR #206，tip 以合入时为准。实现文件以合入时为准。下表后半是它计划里点名、本批也会碰到的文件。合入顺序不确定。本 PR 不 rebase 到它上面，也不改它的文件。14:13、14:17、14:20、14:37 和 PR #204 合入同步的台账行由它补。
+对方是 Draft PR #206，tip 以合入时为准。实现文件以合入时为准。下表后半是它计划里点名、本批也会碰到的文件。第 3 笔等第 2 笔合入并且 #206 的 E2 合入后再从 main 开新分支。本 PR 不 rebase 到它上面，也不改它的文件。14:13、14:17、14:20、14:37 和 PR #204 合入同步的台账行由它补。
 
 | 文件 | 为什么会撞 | 本批怎么减少重叠 |
 | --- | --- | --- |
@@ -232,7 +232,7 @@ Windows 真机：
 | `docs/prd/08.md` | #206 已改。本批的事实更新在 W4，还没做 | 本 PR 不改 |
 | `tools/compare-spec-bytes/manifest.json` | #206 已改。W4 的事实更新才需要同步 | 本 PR 不改 |
 | `packages/features/reader/src/ui/reader-screen.tsx` | 对方计划要加缩放、页码、栏位；本批要换第 55 行的 chip | 只换 chip。不挂空态 |
-| `packages/features/reader/src/ui/view-mode-empty.tsx` | #206 先建，只放 6-1 A | 本批不创建。#206 合入后，本批只在 6-1 A 之后插入降级句 |
+| `packages/features/reader/src/ui/view-mode-empty.tsx` | #206 的 E2 先建，只放 6-1 A。这个文件要在 E2 合入后才存在 | 本批不创建。E2 合入后，本批只在 6-1 A 之后插入降级句 |
 | `packages/features/reader/src/ui/reader-client.ts` | 对方要加缩放、跳页、历史方法 | 只加 `readParseStatus` |
 | `apps/desktop/src/renderer/reader-client.ts` | 同上，生产实现 | 只加这一条 invoke |
 | `packages/features/reader/test/ui/reader-screen.test.tsx` | 对方会改标题栏断言；本批的假客户端要补默认读口 | 新用例放新文件。默认返回 `configured` |
@@ -298,7 +298,8 @@ W5、W6、W7、W9 不再请批。登记成缺口，实现时不补。
 | 重复的 13:57 行删掉，合计不改 | PR #204 已把同一条批准写入 main。本分支 rebase 到 `d8e5afb` 后只留那一行，合计仍是 152。14:13、14:17、14:20、14:37 和 #204 合入同步行由 PR #206 补 | 2026-11-14 | 本任务的范围。不是新的产品决定 |
 | `purpose` 表示用途，`credential_slot` 只存 slot 引用 | 回应 PR #205 评论 [6873205344](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873205344)。§7.9.3 的能力标记不是这一列。第 1 笔写 `0001` 时就用这两列。这不是新的 Wisdom 批准，台账不追加 | 2026-11-14 | Forge 排序，非业主决定 |
 | W1–W4 全批。仅计划，不 Ready、不合入、不发版 | 原话见 Issue #174 评论 [6873227945](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6873227945) 与 PR #205 评论 [6873228513](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873228513)。范围只到这四项。代码要等本轮计划复审 PASS 后才开工。14:37 台账行由 #206 补 | 2026-11-14 14:37 | Wisdom。来源是 Forge 卡片点选 |
-| 三笔实现按顺序做。第 1 笔接在本分支、本 PR | 原话：「按推荐：PR205 实现三笔都批，按顺序做。第 1 笔 settings 存储 core 接在 PR205 同一分支、同一 PR；第 2 笔主进程接线加 W1–W4、第 3 笔 reader chip 加空态降级句，各等上一笔合入后从 main 开新分支，第 3 笔还要等 #206 合入；每笔过 Forge 审查、CI、Box，真机项真机跑；不 Ready/合入/发版，每次合入单独问我」。见 Issue #174 评论 [6873363453](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6873363453) 与 PR #205 评论 [6873364010](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873364010)。14:49 台账行由 #206 补。本行只授权第 1 笔写进本分支 | 2026-11-14 14:49 | Wisdom。来源是 Forge 卡片点选 |
+| 三笔实现按顺序做。第 1 笔接在本分支、本 PR | 原话：「按推荐：PR205 实现三笔都批，按顺序做。第 1 笔 settings 存储 core 接在 PR205 同一分支、同一 PR；第 2 笔主进程接线加 W1–W4、第 3 笔 reader chip 加空态降级句，各等上一笔合入后从 main 开新分支，第 3 笔还要等 #206 合入；每笔过 Forge 审查、CI、Box，真机项真机跑；不 Ready/合入/发版，每次合入单独问我」。见 Issue #174 评论 [6873363453](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6873363453) 与 PR #205 评论 [6873364010](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873364010)。14:49 台账行由 #206 补。本行只授权第 1 笔写进本分支。第 3 笔「等 #206 合入」已由下一行收窄为等 E2 | 2026-11-14 14:49 | Wisdom。来源是 Forge 卡片点选 |
+| 第 3 笔等第 2 笔合入，并且 #206 的 E2 合入 | 原话第 5 条：「按推荐：PR205 第 3 笔改为等 #206 的 E2 合入」。见 Issue #174 评论 [6873638323](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6873638323) 与 PR #205 评论 [6873639800](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873639800)。`view-mode-empty.tsx` 要在 E2 合入后才存在。第 3 笔从那时的 main 开新分支。本分支不写台账。不含写代码、Ready、合入、发版 | 2026-11-14 15:13 | Wisdom。来源是 Forge 卡片点选 |
 
 ## 不改
 
