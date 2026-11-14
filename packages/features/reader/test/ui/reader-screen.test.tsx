@@ -11,6 +11,9 @@ import { afterEach, expect, it } from "vitest";
 
 import {
   BACK_LABEL,
+  GO_TO_PAGE_EVENT,
+  HISTORY_BACK_EVENT,
+  HISTORY_FORWARD_EVENT,
   LOST_PLACE,
   MISSING_DOCUMENT,
   UNREADABLE_PDF,
@@ -61,7 +64,7 @@ it("shows the missing and unreadable sentences without a diagnostic button", asy
   expect(screen.queryByRole("button", { name: "Aa" })).toBeNull();
 });
 
-it("revokes on Alt+ArrowLeft and writes the visible page", async () => {
+it("revokes on the history-back event and writes the visible page", async () => {
   const writes: number[] = [];
   const revokes: string[] = [];
   let left = 0;
@@ -87,11 +90,53 @@ it("revokes on Alt+ArrowLeft and writes the visible page", async () => {
   layOut(1);
   fireEvent.keyDown(window, { key: "Escape" });
   expect(revokes).toEqual([]);
-  fireEvent.keyDown(window, { key: "ArrowLeft", altKey: true });
+  fireEvent(window, new Event(HISTORY_BACK_EVENT));
   await waitFor(() => {
     expect(revokes).toEqual(["paper"]);
   });
   expect(writes).toEqual([1]);
+  expect(left).toBe(1);
+});
+
+it("jumps from go-to and keeps an out-of-range page in the field", async () => {
+  let left = 0;
+  render(
+    screenFor(fakeClient({}), () => {
+      left += 1;
+    }),
+  );
+  const page = await screen.findByRole("button", { name: /转到页码/ });
+  expect(page.textContent).toBe("第 1 / 3 页");
+  expect(arrow("后退")).toBe("true");
+  expect(arrow("前进")).toBe("true");
+  fireEvent.click(screen.getByRole("button", { name: "后退" }));
+  fireEvent(window, new Event(HISTORY_FORWARD_EVENT));
+  expect(left).toBe(0);
+  fireEvent.click(page);
+  enterPage("2");
+  expect(screen.getByRole("button", { name: /转到页码/ }).textContent).toBe(
+    "第 2 / 3 页",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "后退" }));
+  expect(screen.getByRole("button", { name: /转到页码/ }).textContent).toBe(
+    "第 1 / 3 页",
+  );
+  expect(left).toBe(0);
+  expect(arrow("后退")).toBe("true");
+  for (const value of ["9", "1.5", "１"]) {
+    fireEvent(window, new Event(GO_TO_PAGE_EVENT));
+    enterPage(value);
+    expect(screen.getByRole("status").textContent).toBe("共 3 页");
+    expect(screen.getByRole("textbox")).toBeTruthy();
+  }
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "" } });
+  fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+  expect(screen.queryByRole("textbox")).toBeNull();
+  fireEvent(window, new Event(GO_TO_PAGE_EVENT));
+  fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
+  expect(screen.queryByRole("textbox")).toBeNull();
+  expect(left).toBe(0);
+  fireEvent(window, new Event(HISTORY_BACK_EVENT));
   expect(left).toBe(1);
 });
 
@@ -443,6 +488,16 @@ it("keeps the new title when an older open resolves later", async () => {
   expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
   expect(screen.queryByText("第 4 / 3 页")).toBeNull();
 });
+
+function arrow(name: string): string | null {
+  return screen.getByRole("button", { name }).getAttribute("aria-disabled");
+}
+
+function enterPage(value: string): void {
+  const field = screen.getByRole("textbox");
+  fireEvent.change(field, { target: { value } });
+  fireEvent.keyDown(field, { key: "Enter" });
+}
 
 function screenFor(
   client: ReaderClient,

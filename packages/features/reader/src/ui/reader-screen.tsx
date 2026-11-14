@@ -7,9 +7,12 @@ import {
   LOST_PLACE,
   pageLabel,
 } from "./copy.js";
+import { GoToPage, useNavCommands } from "./go-to-page.js";
+import { HistoryControls } from "./history-controls.js";
 import { PageColumn } from "./page-column.js";
 import type { ReaderClient } from "./reader-client.js";
-import { useReaderSession } from "./use-reader-session.js";
+import { usePositionHistory } from "./use-position-history.js";
+import { readVisible, useReaderSession } from "./use-reader-session.js";
 
 const SKELETON_MS = 200;
 
@@ -23,15 +26,24 @@ export function ReaderScreen(props: {
     | undefined;
 }): ReactElement {
   const session = useReaderSession(props.client, props.id, props.onLeave);
-  useLeaveKeys(session.leave);
+  const reading =
+    session.phase.kind === "view" ? session.phase.reading : undefined;
+  const viewing =
+    reading?.paint !== undefined && session.shownPage !== undefined;
+  const nav = useReaderNav(
+    props.id,
+    viewing,
+    session.shownPage,
+    reading?.pageCount,
+    session.columnRef,
+    session.leave,
+  );
   useLayoutEffect(() => {
     props.onBindLeave?.(session.leave);
     return () => {
       props.onBindLeave?.(undefined);
     };
   }, [props.onBindLeave, session.leave]);
-  const reading =
-    session.phase.kind === "view" ? session.phase.reading : undefined;
   return (
     <section className="oi-reader" aria-label={props.title}>
       <header className="oi-reader-bar">
@@ -44,8 +56,11 @@ export function ReaderScreen(props: {
         >
           ‹
         </button>
+        {nav.controls}
         <h1>{props.title}</h1>
-        <PageMark page={session.shownPage} pageCount={reading?.pageCount} />
+        {nav.page ?? (
+          <PageMark page={session.shownPage} pageCount={reading?.pageCount} />
+        )}
         {session.lostPlace ? (
           <p className="oi-reader-status" role="status">
             {LOST_PLACE}
@@ -61,13 +76,75 @@ export function ReaderScreen(props: {
         pageCount={reading?.pageCount}
         columnRef={session.columnRef}
         onScroll={session.onScroll}
-        onScrollEnd={session.onScrollEnd}
+        onScrollEnd={() => {
+          nav.clearPending();
+          session.onScrollEnd();
+        }}
         paint={reading?.paint}
         cancel={reading?.cancel}
         onLeave={session.leave}
       />
     </section>
   );
+}
+
+function useReaderNav(
+  id: string,
+  viewing: boolean,
+  shownPage: number | undefined,
+  pageCount: number | undefined,
+  columnRef: { readonly current: HTMLDivElement | null },
+  leave: () => void,
+) {
+  const history = usePositionHistory(id, viewing ? shownPage : undefined);
+  const [pending, setPending] = useState<number | undefined>(undefined);
+  const shown = pending ?? shownPage;
+  const show = (page: number): void => {
+    setPending(page);
+    columnRef.current
+      ?.querySelector(`[data-page="${String(page)}"]`)
+      ?.scrollIntoView();
+  };
+  const follow = (page: number | undefined, emptyLeaves: boolean): void => {
+    if (page === undefined) {
+      if (emptyLeaves) leave();
+      return;
+    }
+    show(page);
+  };
+  useNavCommands(viewing, {
+    back() {
+      follow(history.back(), true);
+    },
+    forward() {
+      follow(history.forward(), false);
+    },
+  });
+  const jump = (target: number): void => {
+    const visible = readVisible(columnRef.current);
+    if (history.jump(visible ?? shown, target)) show(target);
+  };
+  return {
+    clearPending: () => {
+      setPending(undefined);
+    },
+    controls: viewing ? (
+      <HistoryControls
+        canBack={history.canBack}
+        canForward={history.canForward}
+        onBack={() => {
+          follow(history.back(), false);
+        }}
+        onForward={() => {
+          follow(history.forward(), false);
+        }}
+      />
+    ) : null,
+    page:
+      viewing && shown !== undefined && pageCount !== undefined ? (
+        <GoToPage page={shown} pageCount={pageCount} onJump={jump} />
+      ) : null,
+  };
 }
 
 function ReaderBody(props: {
@@ -150,19 +227,4 @@ function ErrorPane(props: {
       </button>
     </div>
   );
-}
-
-function useLeaveKeys(leave: () => void): void {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.altKey && event.key === "ArrowLeft") {
-        event.preventDefault();
-        leave();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [leave]);
 }
