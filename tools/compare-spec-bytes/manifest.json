@@ -529,6 +529,11 @@
       "source": "ARCHITECTURE.md",
       "old": "│     ├─ reader/                      # 已建。核心与 PDF.js 适配；没有阅读界面\n",
       "new": "│     ├─ reader/                      # 已建。核心与 PDF.js 适配；src/ui/ 已有阅读界面（ReaderScreen 显示原文页与页码，返回文献库）\n"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "下列仍**待 M2 实测**：KaTeX 的行内样式是否需要 `style-src 'unsafe-inline'`；PDF.js 是否需要 `wasm-unsafe-eval` 与 `blob:` 的 worker。",
+      "new": "下列仍**待 M2 实测**：KaTeX 的行内样式是否需要 `style-src 'unsafe-inline'`。PDF.js 不开 wasm，用同源 nowasm 后备（ADR 0010 已采纳）；不开 `wasm-unsafe-eval`，不用 `blob:`。"
     }
   ]
 }

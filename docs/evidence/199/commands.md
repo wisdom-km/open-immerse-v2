@@ -95,6 +95,8 @@ PDF 本体不入库。页码用 poppler 24.02.0 的 `pdfimages -list`。它把 F
 | fms-2021-7 | 出版社版 | 1 | Flate | 画出。刊名条、Cambridge 标和 CrossMark 在。另有 PostScript 退回 JS 的警告。截图 [img-fms-p1.png](img-fms-p1.png) |
 | qe533 | 出版社版 | 22 | 无位图，矢量图 | 画出。Figure 1 的两条折线在。控制台没有应用警告。截图 [img-qe533-p22.png](img-qe533-p22.png) |
 
+更正（2026-11-14，#201）：上表 liushang 第 1 页写「CCITT 条码不在」，是当时的窗口记录，本段不改写。liushang.pdf 第 1 页的 CropBox 本来就不含条码。两张 CCITT 是同一个对象（object 4359），另一处在第 126 页。PR #200 已用 nowasm 后备在第 126 页把它显示出来，证据见 [ADR 0010](../../adr/0010-pdf-image-wasm.md)「结果」。
+
 liushang 的控制台还有：`Ensure that the wasmUrl API parameter is provided.`，`Failed to resolve module specifier 'nullopenjpeg_nowasm_fallback.js'`，`nulljbig2_nowasm_fallback.js`，35 条 `JpxError`，一条 `Jbig2Error: JBig2 failed to initialize` 并忽略 XObject。另有 `Failed to compile PostScript function to wasm, falling back to JS`，以及一条 `cMapUrl` 未提供。中文正文仍然画出。这些警告不是 CSP 违规。
 
 Transformer-XL 第一次在绘制未完成时滚动，第二次 `render` 把画布清掉，截图是空白。等该页像素稳定后再导出，图和正文都在。表里用的是这一张。

@@ -21,7 +21,7 @@
 - 控制台：`#getWasmInstance: UnknownErrorException: Ensure that the wasmUrl API parameter is provided.`
 - 接着：`#getJsInstance: TypeError: Failed to resolve module specifier 'nullopenjpeg_nowasm_fallback.js'`，以及同样形式的 `nulljbig2_nowasm_fallback.js`。
 - 然后：`JpxError: OpenJPEG failed to initialize`（35 条），`Jbig2Error: JBig2 failed to initialize`，并忽略对应 XObject。
-- 第 1 页的 JPEG 封面在，左下角 CCITT 条码不在。第 31 页的 JPEG 插图在，该页的 JPX 对象 `img_p30_3` 解码失败。
+- 第 1 页的 JPEG 封面在。liushang.pdf 第 1 页的 CropBox 本来就不含条码。两张 CCITT 是同一个对象（object 4359），另一处在第 126 页。PR #200 已用 nowasm 后备在第 126 页把它显示出来，证据见本页「结果」。第 31 页的 JPEG 插图在，该页的 JPX 对象 `img_p30_3` 解码失败。
 
 阅读屏的 `getDocument` 只传 `{ data, isEvalSupported: false }`，没有 `wasmUrl`。`pdfjs-dist` 6.5.438 legacy 的 `pdf.mjs` 里，`getFactoryUrlProp` 在参数不是字符串时返回 `null`（约第 13364 行）。`wasmUrl` 因此是 `null`（约第 22615 行）。`useWasm` 在调用方未写 `false` 时为 true（约第 22637 行）。`BaseBinaryDataFactory.fetch` 在地址为空时抛出 `Ensure that the wasmUrl API parameter is provided.`（约第 14122 行）。这次抛出发生在发出 `.wasm` 请求之前，所以窗口里看不到 CSP 违规。
 
