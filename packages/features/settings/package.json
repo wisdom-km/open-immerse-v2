@@ -1,0 +1,23 @@
+{
+  "name": "@oi/feature-settings",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.js",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./main": {
+      "types": "./src/adapters/settings-main.js",
+      "development": "./src/adapters/settings-main.ts",
+      "default": "./dist/adapters/settings-main.js"
+    }
+  },
+  "dependencies": {
+    "@oi/contracts": "workspace:*",
+    "@oi/kernel": "workspace:*",
+    "@oi/platform-node": "workspace:*"
+  }
+}
