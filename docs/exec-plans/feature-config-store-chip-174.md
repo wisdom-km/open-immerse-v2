@@ -111,14 +111,14 @@ createGetParseServiceStatus(deps: {
 | `migrations/0001_set_providers.sql` | `set_providers` 这一张表 | 30 |
 | `test/core/classify-parse-record.test.ts` | 分类四支，以及无行时不调用密钥端口 | 120 |
 | `test/core/get-parse-service-status.test.ts` | 用例把端口结果收成契约成功体或错误 | 160 |
-| `test/adapters/sqlite-parse-service-store.test.ts` | 空表、坏 JSON、空串、一行合法元数据；不读密钥文件 | 180 |
+| `test/adapters/sqlite-parse-service-store.test.ts` | 空表、坏 JSON、空串、非文本列、缺表抛出、一行合法元数据；不读密钥文件 | 200 |
 | `packages/features/reader/src/ui/parse-degrade-copy.ts` | 常量，以及「给定读结果，要不要复读这句」 | 40 |
 | `packages/features/reader/src/ui/parse-status-chip.tsx` | 按给定状态渲染 chip | 50 |
 | `packages/features/reader/src/ui/use-parse-status.ts` | 只调用一次读口 | 50 |
 | `packages/features/reader/test/ui/parse-status-chip.test.tsx` | chip 的四种结果 | 150 |
 | `packages/features/reader/test/ui/parse-degrade-copy.test.ts` | 只有 `unconfigured` 返回这句 | 60 |
 | `apps/desktop/package.json` | 第 2 笔加上 `@oi/feature-settings`，并在 `build` 里加上 `tsc -p` 这一包的 `tsconfig.build.json`，紧挨 library 那一行 | 只加依赖和这一条编译命令 |
-| `pnpm-lock.yaml` | 第 2 笔由 `pnpm install` 写入，不手改 | 锁文件 |
+| `pnpm-lock.yaml` | 第 1 笔已写入这个包的 workspace 依赖。第 2 笔再由 `pnpm install` 写入 desktop 对它的依赖，不手改 | 锁文件 |
 | `tools/check-deps/tsconfig.paths.json` | 第 2 笔加上 `@oi/feature-settings` 与 `@oi/feature-settings/main` 两条路径 | 只加这两条 |
 
 已有文件只做点名的那一处，不顺手改别的：
@@ -195,8 +195,8 @@ Forge 排序，非业主决定。G18 只数 `packages/features/<name>/src`（`to
 - 合法行且密钥端口不可用 → `secret_unavailable`。
 - 合法行且测试替身报告密钥可用 → `configured`。生产适配器的测试锁住它从不返回可用，并且不读 `secrets.bin`。
 - 结果和错误里没有 `secret`、`secretRef`、路径。
-- 升级：先有一份只含 library 迁移的库，再打开并带上 `set_providers` 迁移。`lib_*` 行还在。`app_schema` 仍是打开前那个受支持的数（现在是 1，`applyMigrations` 把它写成 `supportedAppSchema`，不另加一）。没有 parse 行时查询是 `unconfigured`。做不到就按「还没核实」停，不改 `STORAGE_APP_SCHEMA`，也不改 [docs/arch/08-04.md](../arch/08-04.md)。
-- 库打不开：`createLibraryMain` 走 `unavailableHandlers()`（`library-main.ts` 第 82 行与第 183 行）。parsing 这条仍在 map 里，返回与文献库失败路径相同的 `handler_threw`，不返回 `unconfigured`。chip 不显示降级句。
+- 升级：先有一份只含 library 迁移的库，再打开并带上 `set_providers` 迁移。`lib_*` 行还在。`app_schema` 仍是打开前那个受支持的数（现在是 1，`applyMigrations` 把它写成 `supportedAppSchema`，不另加一）。没有 parse 行时查询是 `unconfigured`。做不到就按「还没核实」停，不改 `STORAGE_APP_SCHEMA`，也不改 [docs/arch/08-04.md](../arch/08-04.md)。归第 2 笔。
+- 库打不开：`createLibraryMain` 走 `unavailableHandlers()`（`library-main.ts` 第 82 行与第 183 行）。parsing 这条仍在 map 里，返回与文献库失败路径相同的 `handler_threw`，不返回 `unconfigured`。chip 不显示降级句。归第 2 笔。
 - 只读打开：`appSchema` 高于本应用时走 `openReadonly`（`open-storage.ts` 第 105–107 行），不跑迁移。表在就按分类规则 SELECT。表不在就是 `handler_threw`，不当成 `unconfigured`，也不当成 `storage_corrupt`。`storage_corrupt` 只留给已经读到、但内容坏了的记录。不写库。chip 对这个错误留空。
 - chip：`unconfigured` 显示这句且 `role=status`，节点在标题栏，不在 `.oi-reader-column` 里。`configured` 的假客户端留下空 chip。`handler_threw` 和两种读错误不显示这句。
 - `parse-degrade-copy` 只在 `unconfigured` 时返回这句。
@@ -284,7 +284,7 @@ W5、W6、W7、W9 不再请批。登记成缺口，实现时不补。
 | 1 | 本文件 |  |  |
 | 2 | 台账 13:57。#204 已写入 main，本分支不重复，合计仍是 152。manifest 不改 |  |  |
 | 3 | 按审查 6873016564 与 6873205344 修订本文件。不改台账，不改规格正文 |  |  |
-| 4 | settings 切片，见「实现顺序」第 1 笔 | 已写入 `packages/features/settings`。`0001_set_providers.sql` 含 `purpose`、`credential_slot` 和 `WHERE purpose = 'parse'` 的部分唯一索引。分类、用例、SQLite 只读、固定不可用密钥端口、handler 工厂。`credential_slot` 空串有单独用例。未注册生产 map，未改 expose。适配器不直接 import kernel 或 contracts，所以没有 05-01 未画出的边。domain 对 kernel 的类型导入实现了图上已有的 DOM→K，`tools/check-arch-graph/check.test.ts` 的 planned 计数从 13 改为 12。`pnpm-lock.yaml` 只加了这个包的 workspace 依赖，desktop 仍不依赖它。R3-N1 已去掉 #206 的行号。settings 单测 3 个文件、15 通过。`app_schema` 仍是 1 | `docs/evidence/205/commands.md` |
+| 4 | settings 切片，见「实现顺序」第 1 笔 | 已写入 `packages/features/settings`。`0001_set_providers.sql` 含 `purpose`、`credential_slot` 和 `WHERE purpose = 'parse'` 的部分唯一索引。分类、用例、SQLite 只读、固定不可用密钥端口、handler 工厂。`credential_slot` 空串有单独用例。未注册生产 map，未改 expose。适配器不直接 import kernel 或 contracts，所以没有 05-01 未画出的边。domain 对 kernel 的类型导入实现了图上已有的 DOM→K，`tools/check-arch-graph/check.test.ts` 的 planned 计数从 13 改为 12。`pnpm-lock.yaml` 只加了这个包的 workspace 依赖，desktop 仍不依赖它。R3-N1 已去掉 #206 的行号。缺表时存储层抛出，不收成 `storage_corrupt`。非文本列是 `storage_corrupt`。settings 单测 3 个文件、17 通过。`app_schema` 仍是 1 | `docs/evidence/205/commands.md` |
 | 5 | library 迁移、主进程只接 parsing、expose。W1–W4 已批。代码等本轮计划复审 PASS |  |  |
 | 6 | chip、降级句函数、e2e、Windows 截图 |  |  |
 

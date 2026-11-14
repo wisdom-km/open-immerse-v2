@@ -16,19 +16,15 @@ export function createSqliteParseServiceStore(
 }
 
 function readMetadata(storage: AppStorage): ReadMetadata {
-  try {
-    const rows = storage.queryAll(SELECT_PARSE);
-    if (rows.length === 0) {
-      return { ok: true, value: null };
-    }
-    const parsed = rows.length === 1 ? parseRow(rows[0]) : undefined;
-    if (parsed === undefined) {
-      return { ok: false, error: parseRecordFailure("storage_corrupt") };
-    }
-    return { ok: true, value: parsed };
-  } catch {
+  const rows = storage.queryAll(SELECT_PARSE);
+  if (rows.length === 0) {
+    return { ok: true, value: null };
+  }
+  const parsed = rows.length === 1 ? parseRow(rows[0]) : undefined;
+  if (parsed === undefined) {
     return { ok: false, error: parseRecordFailure("storage_corrupt") };
   }
+  return { ok: true, value: parsed };
 }
 
 function parseRow(

@@ -29,12 +29,14 @@ arch-edge-planned	WC	C
 
 ## corepack pnpm exec vitest run packages/features/settings
 
-退出码 0。3 个文件，15 通过，类型错误 0。其中 `credential_slot` 为空串的用例有两条：分类一条，SQLite 一条。
+审查 6873620773 之后重跑。退出码 0。3 个文件，17 通过，类型错误 0。`credential_slot` 为空串仍是两条：分类一条，SQLite 一条。缺表时存储层抛出。非文本列（BLOB）是 `storage_corrupt`。测试不再读取源码文本。
 
 ## corepack pnpm test
 
-退出码 0。184 个文件，810 通过，3 跳过，类型错误 0。3 个跳过是 `GITLEAKS_BIN` 未设置时的 detect。
+退出码 0。184 个文件，812 通过，3 跳过，类型错误 0。3 个跳过是 `GITLEAKS_BIN` 未设置时的 detect。
 
 ## GATE_BASE=origin/main corepack pnpm run check
 
-退出码 0。`check-one-slice: 1 feature slice(s)`。`check-pr-size: 1042 non-generated lines`，提交说明里有 `G12:`。codegen 之后工作区无 diff。这一次 check 在 planned 计数改成 12 之前。全量 `pnpm test` 在那次提交之后重跑，退出码 0。
+`check-pr-size` 的非生成行数在最终 tip 上重跑后填在下一行。
+
+check-pr-size: 0000 non-generated lines
