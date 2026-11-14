@@ -2,7 +2,7 @@
 
 分支 `feature/reader-nav-zoom-174`。基线 main `5db585df3c460a1d6a8ac2d33583cde16e48970e`，tree `b56d0d364b9dea92a04c4c7da98a8575034d9716`。本文件自洽。Forge 审查通过之前没有实现提交。本 PR 只改文档，不写产品代码，不改测试，不改 CI，不改 CSP，不改 DESIGN。不开 Ready，不合入，不发版。
 
-开工依据是台账里已有的 2026-11-05 21:01 ③ 批准，[评论 6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956)。2026-11-14 14:13 的三件决定见 [评论 6872935563](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872935563)。2026-11-14 14:17 的内存方案 A 见 [评论 6872986479](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872986479) 与 [Issue #202 评论 6872987059](https://github.com/wisdom-km/open-immerse-v2/issues/202#issuecomment-6872987059)。#202 并入本批，不另开实现 PR。提议中的 ADR 是 [0012](../adr/0012-viewport-canvas-cap.md)。Loom 的对照稿是 `/cursor/stores/bot/oi-v2/BATCH-E-DESIGN.md`（下称 Loom）。本计划逐条满足 Loom §9，并写入 §7、§8、§10。
+开工依据是台账里已有的 2026-11-05 21:01 ③ 批准，[评论 6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956)。2026-11-14 14:13 的三件决定见 [评论 6872935563](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872935563)。2026-11-14 14:17 的内存方案 A 见 [评论 6872986479](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872986479) 与 [Issue #202 评论 6872987059](https://github.com/wisdom-km/open-immerse-v2/issues/202#issuecomment-6872987059)。#202 并入本批，不另开实现 PR。提议中的 ADR 是 [0012](../adr/0012-viewport-canvas-cap.md)。Loom 的对照稿是 `/cursor/stores/bot/oi-v2/BATCH-E-DESIGN.md`（下称 Loom）。2026-11-14 14:20 的稿是 439 行，§4.6、验收 E-M1–E-M5、真机 R-E12 / R-E13 和 §9 的内存行都已按 14:17 写上。本计划按这一稿逐条满足 §9，并写入 §7、§8、§10。
 
 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败。seam 不够用时先停。
 
@@ -49,7 +49,7 @@
 | 历史 | 只有转到页码入栈。打开时 `recordJump` 写 current。最多 50，用 `POSITION_HISTORY_LIMIT`。离开清空。不持久化。可见页写入见决定 2 | 滚动、缩放、切栏位不入栈。历史不写存储。后退不绕过 `canWrite` |
 | 转到页码 | 就地输入。越界留在编辑态并提示「共 M 页」。Esc 取消。输入框里的 PageUp/Down、Home/End、Space、←→ 按文本处理 | 不用对话框。越界不夹取。Esc 不离开阅读屏 |
 | 缩放 | 只缩放 PDF 栏。无 Ctrl 的 wheel 只滚动。绘制用缩放乘 dpr。边界置灰。拦住整页缩放的手段等 §10 的实测，预定在 PDF 栏上 `preventDefault`（`passive: false`） | 不加 `zoomIn` / `zoomOut` / `resetZoom` / `viewMenu` role。不调 `webFrame.setZoomFactor`。不做滑块 |
-| 内存 | 实现 PR 在 8 GB Windows 上实测 100% / 200% / 400%。超限就停，不放宽。#202 并入本批：只画当前页 ±2，并加单页像素上限 | 不测不交付。不调用 `cleanup()`。不做分块渲染 |
+| 内存 | 按 Loom §4.6：当前页 ±2 保留 canvas，单页像素上限。占位按各页自己的 PDF 尺寸乘缩放，页间距与已画页相同。挂上或卸下 canvas 时不改总高度、不改 `scrollTop`。提议 ADR 0012 已在本 PR。8 GB Windows 实测 400%，超限停下再问 | 不测不交付。不用统一估算高度。占位不放转圈或「加载中」。不加内存开关、提示或横幅。不做分块渲染。不改 CSP、协议、主进程、core、contracts。不调用 `cleanup()` |
 | 栏位 | `radiogroup`，名称「栏位」。Ctrl+1/2/3，mac ⌘1/2/3。默认原文。不记住 | 不默认对照。没有「开始翻译」「去设置」。主按钮仍是 0 |
 | 空态 | 用 6-1 A 的原句。链接是文字链接 | 不写解析服务或配置 |
 | 菜单 | Win「视图(V)」，mac「显示」。顺序按 Loom §2.2。文献库里不置灰 | 不放「显示侧栏」。不声称已经置灰 |
@@ -204,23 +204,54 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 
 ## 视口附近的页和单页像素上限
 
-14:17 的方案 A。#202 从「之后的候选」改为并入 E1。提议 ADR 是 `docs/adr/0012-viewport-canvas-cap.md`。0011 仍是已采纳。0012 只修订「暂不开工」这一条。压力后保留的 `[anon]` 不下降，这一实测写进 0012，不假装被这次画法消掉。
+按 Loom §4.6，对应 §9 的内存行。#202 并入 E1，不另开实现 PR。提议 ADR 是 `docs/adr/0012-viewport-canvas-cap.md`，已经在本 PR，不另等一份 ADR。0011 仍是已采纳。0012 只修订「暂不开工」这一条。压力后保留的 `[anon]` 不下降，这一实测写进 0012。不对用户提示这一局限。
 
-当前页用已有的 `readVisible`：与栏的视口相交最高的那一页，相交相同取较小页码。`visible-page.ts` 写明这是显示几何，不是夹页。占位页也带 `data-page` 和高度，所以「第 N / M 页」继续走这一函数。
+100% 时 25 页画布 48,470,400 字节是 0011 的实测。Loom 里「400% 约 775 MB、±2 页约 155 MB、再乘 dpr 约 620 MB」是 Forge 的推算，本计划不把它写成已测到的数。
 
-保留 canvas 的页是 `canvas-window.ts` 算出来的闭区间，当前页减 2 到加 2，再夹到 1..总页数。最多 5 页。其余页不挂 canvas。卸下时调用现有的 `cancel`。占位高度和宽度按该页在当前缩放下的 CSS 尺寸，也就是实际页宽高乘缩放，不乘 `devicePixelRatio`。这样滚动条不跳。
+当前页用已有的 `readVisible`：与栏的视口相交最高的那一页，相交相同取较小页码。`visible-page.ts` 写明这是显示几何，不是夹页。每一页的 `article` 一直在，带 `data-page`。已画和未画都参加这个计算。
+
+保留 canvas 的页是 `canvas-window.ts` 算出来的闭区间，当前页减 2 到加 2，再夹到 1..总页数。最多 5 页。其余页不挂 canvas。卸下时调用现有的 `cancel`。
+
+占位尺寸：
+
+- 每一页用自己的 PDF 页宽高乘当前缩放，得到 CSS 宽高。不乘 `devicePixelRatio`。横版页和竖版页各算各的。页与页之间的间距和已画页相同。
+- 不允许用一个统一的估算高度套所有页。
+- 尺寸来自该页 `getViewport` 在 CSS scale 下的宽高，算在 `pdf-session.ts`。只为占位取尺寸，不为占位画 canvas。
+- 外框在挂上 canvas 之前就有这个高度。canvas 画在框里，卸下时框还在。所以文档总高度不变。
+
+占位外观：阅读区底色加页面边框，只用 `reader.css` 里已有的 `--oi-reader-*`，不新造 token。不放转圈，不放骨架，不写「加载中」。快速滚动时短暂看见空白页框可以接受。`forced-colors` 下页框要看得见，写进 E1 已有的强制色块。
+
+滚动不跳：挂上或卸下 canvas 时不改 `scrollTop`，不再调用 `scrollIntoView`。现有 `Restore` 只在打开时滚一次，换窗口时不再滚。视线所在的那一行因此不动。缩放仍以当前页为锚点：先改每一页的占位尺寸，再把滚动位置调到同一页仍在视口里的位置。指针锚点仍是 G-5，规格没写，本批不做。
+
+页码和跳转都按占位，不按「有没有 canvas」：
+
+- 「第 N / M 页」继续走 `readVisible`。未画页因为有高度，一样能被读出来。
+- Ctrl+G 和历史后退滚的是那一页的 `article`，即使当时还没有 canvas。滚进视口后再画。这次滚动不另记入历史。
+- 播报仍只在跳转或缩放手势停下后各一次。释放和重画不播。
+
+和批次 D 的页码写回：
+
+- `writePage` 仍只在用户滚动或跳页停下后，走现有的 `onScrollEnd`。`canWrite` 为 false 时不写。
+- 释放和重画不调用 `writePage`，不改 `scrollTop`，不改文档总高度。因此不会自己再触发一次 `onScrollEnd`。
+- 若实现时发现挂上 canvas 改变了高度，或浏览器因此发出 scroll，就停。不在 E1 里改写回的 seam。
+
+读屏、焦点、Tab 顺序：
+
+- canvas 不加 `tabindex`，设 `aria-hidden`。占位里没有可访问名称，也没有 live 区域。
+- 释放和重画不移动焦点，不改变 Tab 顺序。标题栏的按钮、页码、栏位仍按原来的顺序。
+- 卸下之前若焦点在即将去掉的节点上，先把焦点交回阅读栏，再卸。栏本身能不能被键盘聚焦，按 §10 第 10 条测；不能，再给栏加 `tabindex="0"`。
 
 重算：
 
-- 滚动：`onScroll` 再读 `readVisible`。当前页变了就换窗口。离开窗口的页 cancel 并去掉 canvas，进入窗口的页再 paint。
-- 缩放：先按新缩放改每一页的占位尺寸和已画页的 CSS 尺寸，再读一次可见页。窗口仍是这一页的 ±2。画布按新的 scale 重画。锚点仍是当前可见页。
-- 转到页码和历史后退：先把目标页滚进视口（目标页即使还是占位也在 DOM 里），再读可见页，窗口改到这一页的 ±2。这次滚动不另记入历史。历史只在转到页码时入栈，和上一节相同。
+- 滚动：`onScroll` 再读 `readVisible`。当前页变了就换窗口。离开窗口的页 cancel 并去掉 canvas，进入窗口的页再 paint。`scrollTop` 不动。
+- 缩放：先按新缩放改每一页的占位尺寸，再按当前页锚点修正滚动，然后重画窗口内的 canvas。窗口仍是这一页的 ±2。
+- 转到页码和历史后退：先把目标页的占位滚进视口，再读可见页，窗口改到这一页的 ±2，然后画。
 
-单页上限在 `pdf-session.ts`。渲染 scale = min(缩放 × `devicePixelRatio`, 上限对应的 scale)。超过上限时 canvas 的像素少一些，CSS 把它拉到缩放后的尺寸。上限是这个文件里的可调常量。具体数值等 8 GB 实测，本计划不写死。
+单页上限在 `pdf-session.ts`。渲染 scale = min(缩放 × `devicePixelRatio`, 上限对应的 scale)。超过上限时只用 CSS 把较小的 canvas 拉到缩放后的尺寸。400% 时略虚可以接受。不写 `role=status`，不弹提示。上限是这个文件里的可调常量。具体数值等 8 GB 实测，本计划不写死，也不在别的文件里猜一个数。
 
 已核实的参考，不是产品初值：本机安装的 `pdfjs-dist@6.5.438` 里，`legacy/web/pdf_viewer.mjs` 的 `maxCanvasPixels` 选项默认是 `2 ** 25`。同一文件只在 iOS 或 Android 上把 compat 覆盖写成 5242880。`legacy/build/pdf.mjs` 没有这个名字。阅读屏走 `page.render`，不经过 PDFViewer，所以这个默认值现在不会自动套上。实现不把 `2 ** 25` 抄成常量，除非实测选定它。
 
-不做分块渲染，不调用 `PDFDocumentProxy.cleanup()`。若占位尺寸或窗口计算必须改 core、contracts、主进程、CSP 或协议，就停，不在 E1 里改。半径 2 放在 UI 的具名常量。把它挪进 domain 就是 core，本批不允许。
+不做分块渲染。不加任何内存开关、提示或降级横幅。不调用 `PDFDocumentProxy.cleanup()`。若占位尺寸或窗口计算必须改 core、contracts、主进程、CSP 或协议，就停，不在 E1 里改。半径 2 放在 UI 的具名常量。把它挪进 domain 就是 core，本批不允许。
 
 ## 需 Wisdom 决定
 
@@ -231,7 +262,7 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 
 ## 不做
 
-配置存储，AC-11 chip，解析服务说明。侧栏、Aa、大纲、⋯、Range、`disableRange`。CSP、wasm、`blob:`、`.mjs`、协议、主进程里除已列菜单文件以外的改动、core、contracts、`library/src`。分块渲染。`PDFDocumentProxy.cleanup()`。侧键、触控板横滑、长按历史列表。查找。改 DESIGN。把 `expose` 改成 true。按文档记住缩放。菜单置灰通道。Win ☰。用放宽像素上限来通过 8 GB 实测。
+配置存储，AC-11 chip，解析服务说明。侧栏、Aa、大纲、⋯、Range、`disableRange`。CSP、wasm、`blob:`、`.mjs`、协议、主进程里除已列菜单文件以外的改动、core、contracts、`library/src`。分块渲染。`PDFDocumentProxy.cleanup()`。统一的估算页高。占位上的转圈、骨架或「加载中」。内存开关、内存提示、降级横幅。因释放或重画去写回页码。侧键、触控板横滑、长按历史列表。查找。改 DESIGN。把 `expose` 改成 true。按文档记住缩放。菜单置灰通道。Win ☰。用放宽像素上限来通过 8 GB 实测。
 
 ## 测试计划
 
@@ -241,9 +272,16 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 
 Electron e2e：打开小 PDF。窗口缩放因子在 Ctrl+滚轮后仍是 1，画布变大。Ctrl+G 跳页，Alt+← 回去，历史用尽后回库。‹ 在有历史时直接回库。Ctrl+2 出现空态，没有翻译请求。25 页样本上，DOM 里的 canvas 不超过 5。滚过一页之后，保留 canvas 的页码集合换成新的当前页 ±2。
 
-视口和上限的单测只断言行为：窗口在首页、末页和中页的页码集合；scale 不超过上限对应的值，CSS 尺寸仍是缩放后的尺寸。不读源码做文本断言（F-08）。
+视口和上限的单测只断言行为，不读源码做文本断言（F-08）：
 
-内存在 100%、200%、400% 各记一次：当时 canvas 的像素字节合计，以及 Tab working set。8 GB Windows 真机要有录屏和截图。超限就停，不把常量调大再交。没有确认是 8 GB 的机器就标未验证。
+- 窗口在首页、末页和中页的页码集合。任意时刻 canvas 数不超过 5（E-M2）。
+- 两页 PDF 尺寸不同时，占位高度不同。不允许两页得到同一个估算高度。
+- scale 不超过上限对应的值，CSS 尺寸仍是缩放后的尺寸。超过上限时没有新增的提示节点。
+- 占位里没有「加载中」这段文字，也没有进度条角色。
+- 卸下 canvas 不调用 `writePage`。卸下前后外框高度相同，`scrollTop` 相同。
+- canvas 不在 Tab 顺序里。卸下时焦点不留在被去掉的节点上。
+
+内存在 100%、200%、400% 各记一次：当时 canvas 的像素字节合计，以及 Tab working set。8 GB Windows 真机要有录屏和截图。超限就停，不把常量调大再交。没有确认是 8 GB 的机器就标未验证。E-M5 有横版混排夹具才测；没有夹具就标可延后，不挡 E1。
 
 §10 的十项实测按上面的测法做，和功能测试分开记。
 
@@ -261,6 +299,8 @@ Windows 真机要有录屏和对应截图，Box 不能代替：
 | R-E8 | 高对比主题 |
 | R-E9 | Narrator：按钮名称，页码和百分比各播一次 |
 | R-E10 | 8 GB 机器上 400% 的内存。机器未核实就标未验证并停 |
+| R-E12 | 25 页以上的 PDF，快速滚到底再回顶，100% 和 400% 各一次。看滚动条长度和页框（E-M1、E-M3） |
+| R-E13 | 8 GB 机器上 400% 再加显示缩放 200% 的内存峰值，含 ±2 页和像素上限。超限就停。机器未核实就标未验证，和 R-E10 同一台 |
 | R-E11 | mac 的 ⌘[ ⌘] ⌥⌘G ⌘1/2/3 和捏合。没有设备就标未验证 |
 
 ## 风险

@@ -24,8 +24,10 @@
 选第 4 条，作为提议。Wisdom 2026-11-14 14:17 已点选方案 A。实现范围写在 `docs/exec-plans/feature-reader-nav-zoom-174.md`。本页还不是「采纳」：计划审查通过、实现合入之前，0011 那一条「暂不开工」仍然是已采纳的原文。
 
 - 主改 `packages/features/reader/src/ui/page-column.tsx`。卸下的页走这个文件里已有的 cancel。
-- 像素上限写在 `packages/features/reader/src/ui/pdf-session.ts`。上限是可调常量，数值等实测，不在本页写死。
-- 不做分块渲染。不调用 `PDFDocumentProxy.cleanup()`。
+- 占位按每一页自己的 PDF 尺寸乘缩放。不用统一的估算高度。横版页各算各的。
+- 占位不放转圈，不写「加载中」。挂上或卸下 canvas 时不改文档总高度，不改滚动位置，不因此调用页码写回。释放和重画不进入读屏、焦点和 Tab 顺序。
+- 像素上限写在 `packages/features/reader/src/ui/pdf-session.ts`。上限是可调常量，数值等实测，不在本页写死。超过上限只用 CSS 拉伸，不提示。
+- 不加内存开关、提示或降级横幅。不做分块渲染。不调用 `PDFDocumentProxy.cleanup()`。
 - 8 GB 真机超限就停，不放宽上限来过这一关。
 - 不含 Ready、合入、发版。
 
