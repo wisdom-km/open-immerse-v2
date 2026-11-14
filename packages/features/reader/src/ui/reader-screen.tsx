@@ -1,4 +1,11 @@
-import { useEffect, useLayoutEffect, useState, type ReactElement } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+} from "react";
 
 import {
   BACK_LABEL,
@@ -15,7 +22,6 @@ import { usePositionHistory } from "./use-position-history.js";
 import { useReaderSession } from "./use-reader-session.js";
 
 const SKELETON_MS = 200;
-
 export function ReaderScreen(props: {
   readonly id: string;
   readonly title: string;
@@ -26,6 +32,14 @@ export function ReaderScreen(props: {
     | undefined;
 }): ReactElement {
   const session = useReaderSession(props.client, props.id, props.onLeave);
+  const releasePixels = useRef(true);
+  const leave = useCallback(() => {
+    releasePixels.current = false;
+    session.leave();
+    queueMicrotask(() => {
+      releasePixels.current = true;
+    });
+  }, [session.leave]);
   const reading =
     session.phase.kind === "view" ? session.phase.reading : undefined;
   const viewing =
@@ -36,18 +50,18 @@ export function ReaderScreen(props: {
     session.columnRef,
     reading?.pageCount,
   );
-  useLeaveKeys(session.leave);
+  useLeaveKeys(leave);
   useLayoutEffect(() => {
-    props.onBindLeave?.(session.leave);
+    props.onBindLeave?.(leave);
     return () => {
       props.onBindLeave?.(undefined);
     };
-  }, [props.onBindLeave, session.leave]);
+  }, [props.onBindLeave, leave]);
   return (
     <section className="oi-reader" aria-label={props.title}>
       <ReaderBar
         title={props.title}
-        leave={session.leave}
+        leave={leave}
         viewing={viewing}
         pageCount={reading?.pageCount}
         lostPlace={session.lostPlace}
@@ -67,7 +81,9 @@ export function ReaderScreen(props: {
         }}
         paint={reading?.paint}
         cancel={reading?.cancel}
-        onLeave={session.leave}
+        boxes={reading?.boxes}
+        releasePixels={releasePixels}
+        onLeave={leave}
       />
     </section>
   );
@@ -147,6 +163,8 @@ function ReaderBody(props: {
     | ((page: number, canvas: HTMLCanvasElement) => Promise<void>)
     | undefined;
   readonly cancel: ((canvas: HTMLCanvasElement) => void) | undefined;
+  readonly boxes: readonly { width: number; height: number }[] | undefined;
+  readonly releasePixels: { current: boolean };
   readonly onLeave: () => void;
 }): ReactElement {
   if (props.loading) {
@@ -168,6 +186,8 @@ function ReaderBody(props: {
       onScrollEnd={props.onScrollEnd}
       paint={props.paint}
       cancel={props.cancel}
+      boxes={props.boxes}
+      releasePixels={props.releasePixels}
     />
   );
 }

@@ -1,3 +1,8 @@
+import {
+  PROVISIONAL_PAGE_PIXEL_CAP,
+  renderSize,
+  type PageBox,
+} from "./render-scale.js";
 import { PDF_WASM_URL } from "./worker-src.js";
 
 export type PdfLoadingTask = {
@@ -40,6 +45,7 @@ export type PdfSource = {
 
 export type PdfSession = {
   readonly pageCount: number;
+  readonly boxes: readonly PageBox[];
   paint(page: number, canvas: HTMLCanvasElement): Promise<void>;
   cancel(canvas: HTMLCanvasElement): void;
   close(): Promise<void>;
@@ -66,7 +72,7 @@ export async function openPdfSession(
       await destroyTask(task);
       return undefined;
     }
-    return createPdfSession(doc, task);
+    return createPdfSession(doc, task, await loadBoxes(doc));
   } catch {
     await destroyTask(task);
     return undefined;
@@ -76,12 +82,14 @@ export async function openPdfSession(
 export function createPdfSession(
   doc: PdfDocument,
   task: PdfLoadingTask,
+  boxes: readonly PageBox[] = [],
 ): PdfSession {
   const renders: Renders = new Map();
-  const tokens = new Map<HTMLCanvasElement, number>();
+  const tokens = new WeakMap<HTMLCanvasElement, number>();
   let closed = false;
   return {
     pageCount: doc.numPages,
+    boxes,
     paint(page, canvas) {
       if (closed) {
         return Promise.resolve();
@@ -96,6 +104,7 @@ export function createPdfSession(
       });
     },
     cancel(canvas) {
+      tokens.set(canvas, (tokens.get(canvas) ?? 0) + 1);
       cancelRender(renders, canvas);
     },
     close() {
@@ -114,7 +123,7 @@ type PaintRequest = {
   readonly pageNumber: number;
   readonly canvas: HTMLCanvasElement;
   readonly renders: Renders;
-  readonly tokens: Map<HTMLCanvasElement, number>;
+  readonly tokens: WeakMap<HTMLCanvasElement, number>;
   readonly isClosed: () => boolean;
 };
 
@@ -141,12 +150,22 @@ async function drawPage(
   page: PdfPage,
   token: number,
 ): Promise<void> {
-  const viewport = page.getViewport({ scale: 1 });
-  request.canvas.width = Math.ceil(viewport.width);
-  request.canvas.height = Math.ceil(viewport.height);
   if (paintStopped(request, token)) {
     return;
   }
+  const logical = page.getViewport({ scale: 1 });
+  const size = renderSize({
+    pageWidth: logical.width,
+    pageHeight: logical.height,
+    zoom: 1,
+    dpr: deviceRatio(),
+    pixelCap: PROVISIONAL_PAGE_PIXEL_CAP,
+  });
+  request.canvas.width = size.backingWidth;
+  request.canvas.height = size.backingHeight;
+  request.canvas.style.width = `${String(size.cssWidth)}px`;
+  request.canvas.style.height = `${String(size.cssHeight)}px`;
+  const viewport = page.getViewport({ scale: size.scale });
   const context = request.canvas.getContext("2d");
   if (context === null) {
     console.error(new Error("2d context missing"));
@@ -165,6 +184,24 @@ async function drawPage(
       request.renders.delete(request.canvas);
     }
   }
+}
+
+async function loadBoxes(doc: PdfDocument): Promise<PageBox[]> {
+  const boxes: PageBox[] = [];
+  for (let page = 1; page <= doc.numPages; page += 1) {
+    const item = await doc.getPage(page);
+    const view = item.getViewport({ scale: 1 });
+    boxes.push({ width: view.width, height: view.height });
+  }
+  return boxes;
+}
+
+function deviceRatio(): number {
+  const ratio = globalThis.devicePixelRatio;
+  if (typeof ratio !== "number" || !Number.isFinite(ratio) || ratio <= 0) {
+    return 1;
+  }
+  return ratio;
 }
 
 function paintStopped(request: PaintRequest, token: number): boolean {

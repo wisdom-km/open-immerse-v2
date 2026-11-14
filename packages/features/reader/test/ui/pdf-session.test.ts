@@ -149,6 +149,48 @@ it("reports a missing 2d context and does not render", async () => {
   }
 });
 
+it("sizes the backing store from devicePixelRatio and keeps the CSS size", async () => {
+  const host = globalThis as { devicePixelRatio: number | undefined };
+  const previous = host.devicePixelRatio;
+  host.devicePixelRatio = 2;
+  const page = blankPage(() => undefined);
+  const session = createPdfSession(page, quietTask);
+  const canvas = fakeCanvas();
+  await session.paint(1, canvas);
+  expect([canvas.width, canvas.height]).toEqual([8, 8]);
+  expect([canvas.style.width, canvas.style.height]).toEqual(["4px", "4px"]);
+  host.devicePixelRatio = previous;
+  await session.close();
+});
+
+it("does not resize a canvas cancelled while getPage is pending", async () => {
+  const renders = { count: 0 };
+  const waiters: Array<(page: PdfPage) => void> = [];
+  const session = createPdfSession(waitingDocument(waiters), quietTask);
+  const canvas = fakeCanvas();
+  const pending = session.paint(1, canvas);
+  session.cancel(canvas);
+  releaseClosed(waiters, () => mark(renders));
+  await pending;
+  expect([canvas.width, canvas.height, renders.count]).toEqual([0, 0, 0]);
+  await session.close();
+});
+
+it("renders once when cancel is followed by another draw", async () => {
+  const renders = { count: 0 };
+  const waiters: Array<(page: PdfPage) => void> = [];
+  const session = createPdfSession(waitingDocument(waiters), quietTask);
+  const canvas = fakeCanvas();
+  const first = session.paint(1, canvas);
+  session.cancel(canvas);
+  const second = session.paint(1, canvas);
+  releaseClosed(waiters, () => mark(renders));
+  releaseClosed(waiters, () => mark(renders));
+  await Promise.all([first, second]);
+  expect(renders.count).toBe(1);
+  await session.close();
+});
+
 it("rejects a paint that fails for a reason other than cancellation", async () => {
   const waiters: Array<(page: PdfPage) => void> = [];
   const session = createPdfSession(
@@ -252,6 +294,9 @@ function countingTask(onDestroy: () => void): PdfLoadingTask {
   };
 }
 
+const quietTask = countingTask(() => undefined);
+const mark = (renders: { count: number }): number => (renders.count += 1);
+
 function release(
   waiters: Array<(page: PdfPage) => void>,
   slots: Slot[],
@@ -327,6 +372,7 @@ function contextlessCanvas(): HTMLCanvasElement {
   return {
     width: 0,
     height: 0,
+    style: { width: "", height: "" },
     getContext() {
       return null;
     },
@@ -341,6 +387,7 @@ function fakeCanvas(): HTMLCanvasElement {
   return {
     width: 0,
     height: 0,
+    style: { width: "", height: "" },
     getContext() {
       return {};
     },

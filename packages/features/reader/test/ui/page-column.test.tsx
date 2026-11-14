@@ -128,11 +128,101 @@ it("cancels an unfinished paint on unmount without an unhandled rejection", asyn
   expect(cancelled).toEqual([1]);
 });
 
+it("paints the shown page window, then releases canvases outside the scrolled window", async () => {
+  const painted: number[] = [];
+  const atCancel: number[] = [];
+  const columnRef = createRef<HTMLDivElement>();
+  const view = render(
+    <PageColumn
+      page={1}
+      pageCount={8}
+      columnRef={columnRef}
+      onScroll={() => undefined}
+      onScrollEnd={() => undefined}
+      paint={(page) => {
+        painted.push(page);
+        return Promise.resolve();
+      }}
+      cancel={(canvas) => {
+        atCancel.push(canvas.width);
+      }}
+    />,
+  );
+  await act(async () => {
+    await Promise.resolve();
+  });
+  const before = [...view.container.querySelectorAll("canvas")];
+  expect(before).toHaveLength(3);
+  const node = columnRef.current;
+  if (node === null) {
+    throw new Error("column");
+  }
+  place(node, 6);
+  act(() => {
+    node.dispatchEvent(new Event("scroll"));
+  });
+  expect(before.map((canvas) => canvas.width)).toEqual([0, 0, 0]);
+  expect(atCancel).toEqual([0, 0, 0]);
+  expect(canvasPages(view.container)).toEqual([4, 5, 6, 7, 8]);
+  expect(painted).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+});
+
+it("keeps pixels on leave and zeros after the flag is restored", async () => {
+  const flag = { current: false };
+  expect((await dropped(flag)).width).toBe(12);
+  flag.current = true;
+  expect((await dropped(flag)).width).toBe(0);
+});
+
+function place(column: HTMLDivElement, winner: number): void {
+  column.getBoundingClientRect = () => rect(0, 100);
+  for (const article of column.querySelectorAll("article")) {
+    const page = Number(article.getAttribute("data-page"));
+    const inside = page === winner;
+    article.getBoundingClientRect = () =>
+      rect(inside ? 10 : 200, inside ? 90 : 220);
+  }
+}
+
+function canvasPages(container: HTMLElement): number[] {
+  return [...container.querySelectorAll("canvas")].map((canvas) =>
+    Number(canvas.parentElement?.getAttribute("data-page")),
+  );
+}
+
+function rect(top: number, bottom: number): DOMRect {
+  return { top, bottom, height: bottom - top } as DOMRect;
+}
+
+async function dropped(flag: { current: boolean }): Promise<HTMLCanvasElement> {
+  const view = render(
+    column(
+      1,
+      () => Promise.resolve(),
+      () => undefined,
+      1,
+      flag,
+    ),
+  );
+  await act(async () => {
+    await Promise.resolve();
+  });
+  const canvas = view.container.querySelector("canvas");
+  if (canvas === null) {
+    throw new Error("canvas");
+  }
+  canvas.width = 12;
+  canvas.height = 8;
+  view.unmount();
+  return canvas;
+}
+
 function column(
   page: number,
   paint: PdfPaint,
   cancel: PdfCancel,
   pageCount = 3,
+  releasePixels: { current: boolean } = { current: true },
 ): ReactElement {
   return (
     <PageColumn
@@ -143,6 +233,7 @@ function column(
       onScrollEnd={() => undefined}
       paint={paint}
       cancel={cancel}
+      releasePixels={releasePixels}
     />
   );
 }

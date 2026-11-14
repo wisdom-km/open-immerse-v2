@@ -36,6 +36,7 @@ export async function loadAssetPdf(
     }
     return {
       pageCount: session.pageCount,
+      boxes: session.boxes,
       paint: (page, canvas) => session.paint(page, canvas),
       cancel(canvas) {
         session.cancel(canvas);

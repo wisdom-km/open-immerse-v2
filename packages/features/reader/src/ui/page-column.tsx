@@ -1,7 +1,9 @@
 import { useEffect, useRef, type ReactElement, type Ref } from "react";
 
+import type { PageBox } from "./render-scale.js";
 import { paintErrorIsQuiet } from "./pdf-session.js";
 import type { PdfCancel, PdfPaint } from "./reader-client.js";
+import { useCanvasWindow } from "./use-canvas-window.js";
 
 export function PageColumn(props: {
   readonly page: number;
@@ -11,23 +13,33 @@ export function PageColumn(props: {
   readonly onScrollEnd: () => void;
   readonly paint: PdfPaint | undefined;
   readonly cancel: PdfCancel | undefined;
+  readonly boxes?: readonly PageBox[] | undefined;
+  readonly releasePixels?: { current: boolean };
 }): ReactElement {
   const pages = pageNumbers(props.pageCount);
+  const canvas = useCanvasWindow(props.columnRef, props.page, props.pageCount);
+  const releasePixels = props.releasePixels ?? alwaysRelease;
   return (
     <section className="oi-reader-main">
       <Restore columnRef={props.columnRef} page={props.page} />
       <div
         className="oi-reader-column"
         ref={props.columnRef}
-        onScroll={props.onScroll}
+        onScroll={() => {
+          canvas.onScroll();
+          props.onScroll();
+        }}
         onScrollEnd={props.onScrollEnd}
       >
         {pages.map((page) => (
-          <PageSheet
+          <PageFrame
             key={page}
             page={page}
+            box={props.boxes?.[page - 1]}
+            kept={page >= canvas.span.first && page <= canvas.span.last}
             paint={props.paint}
             cancel={props.cancel}
+            releasePixels={releasePixels}
           />
         ))}
       </div>
@@ -35,14 +47,45 @@ export function PageColumn(props: {
   );
 }
 
-function PageSheet(props: {
+const alwaysRelease = { current: true };
+
+function PageFrame(props: {
+  readonly page: number;
+  readonly box: PageBox | undefined;
+  readonly kept: boolean;
+  readonly paint: PdfPaint | undefined;
+  readonly cancel: PdfCancel | undefined;
+  readonly releasePixels: { current: boolean };
+}): ReactElement {
+  return (
+    <article
+      data-page={props.page}
+      className={props.box === undefined ? undefined : "oi-reader-sheet"}
+      style={frameStyle(props.box)}
+    >
+      {props.kept ? (
+        <PaintedPage
+          page={props.page}
+          paint={props.paint}
+          cancel={props.cancel}
+          releasePixels={props.releasePixels}
+        />
+      ) : null}
+    </article>
+  );
+}
+
+function PaintedPage(props: {
   readonly page: number;
   readonly paint: PdfPaint | undefined;
   readonly cancel: PdfCancel | undefined;
+  readonly releasePixels: { current: boolean };
 }): ReactElement {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const cancelRef = useRef(props.cancel);
   cancelRef.current = props.cancel;
+  const releaseRef = useRef(props.releasePixels);
+  releaseRef.current = props.releasePixels;
   useEffect(() => {
     const canvas = canvasRef.current;
     const paint = props.paint;
@@ -53,14 +96,25 @@ function PageSheet(props: {
       reportPaintError(error);
     });
     return () => {
+      if (releaseRef.current.current) {
+        canvas.width = 0;
+        canvas.height = 0;
+      }
       cancelRef.current?.(canvas);
     };
   }, [props.page, props.paint]);
-  return (
-    <article data-page={props.page}>
-      <canvas ref={canvasRef} />
-    </article>
-  );
+  return <canvas ref={canvasRef} aria-hidden="true" />;
+}
+
+function frameStyle(box: PageBox | undefined) {
+  if (box === undefined) {
+    return undefined;
+  }
+  return {
+    width: `${String(box.width)}px`,
+    height: `${String(box.height)}px`,
+    marginInline: "auto" as const,
+  };
 }
 
 function reportPaintError(error: unknown): void {
@@ -80,14 +134,14 @@ function Restore(props: {
 }): null {
   const pageRef = useRef(props.page);
   useEffect(() => {
-    const column = currentColumn(props.columnRef);
+    const column = columnElement(props.columnRef);
     const selector = `[data-page="${String(pageRef.current)}"]`;
     column?.querySelector<HTMLElement>(selector)?.scrollIntoView();
   }, [props.columnRef]);
   return null;
 }
 
-function currentColumn(ref: Ref<HTMLDivElement>): HTMLDivElement | null {
+function columnElement(ref: Ref<HTMLDivElement>): HTMLDivElement | null {
   if (ref !== null && typeof ref !== "function") {
     return ref.current;
   }
