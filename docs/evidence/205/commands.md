@@ -4,7 +4,7 @@ Node v22.23.4。工作目录是仓库根。没有改 `docs/arch/05-01.md`。没�
 
 ## node tools/check-arch-graph/check.mjs
 
-退出码 0。`undocumented` 是 0，`unmapped` 是 0，`index` 是 0。`planned` 12 条是图上已有、代码里还没有的边，不是这次新增。
+退出码 0。`undocumented` 是 0，`unmapped` 是 0，`index` 是 0。`planned` 从 13 变成 12：`DOM → K` 已由 settings 的 domain 对 `@oi/kernel` 的类型导入实现，05-01 本来就画了这条边。其余 12 条仍是图上已有、代码里还没有的边。
 
 ```
 arch-graph: undocumented 0

@@ -284,7 +284,7 @@ W5、W6、W7、W9 不再请批。登记成缺口，实现时不补。
 | 1 | 本文件 |  |  |
 | 2 | 台账 13:57。#204 已写入 main，本分支不重复，合计仍是 152。manifest 不改 |  |  |
 | 3 | 按审查 6873016564 与 6873205344 修订本文件。不改台账，不改规格正文 |  |  |
-| 4 | settings 切片，见「实现顺序」第 1 笔 | 已写入 `packages/features/settings`。`0001_set_providers.sql` 含 `purpose`、`credential_slot` 和 `WHERE purpose = 'parse'` 的部分唯一索引。分类、用例、SQLite 只读、固定不可用密钥端口、handler 工厂。`credential_slot` 空串有单独用例。未注册生产 map，未改 expose。适配器不直接 import kernel 或 contracts，所以没有 05-01 未画出的边。`pnpm-lock.yaml` 只加了这个包的 workspace 依赖，desktop 仍不依赖它。R3-N1 已去掉 #206 的行号。settings 单测 3 个文件、15 通过。`app_schema` 仍是 1 | `docs/evidence/205/commands.md` |
+| 4 | settings 切片，见「实现顺序」第 1 笔 | 已写入 `packages/features/settings`。`0001_set_providers.sql` 含 `purpose`、`credential_slot` 和 `WHERE purpose = 'parse'` 的部分唯一索引。分类、用例、SQLite 只读、固定不可用密钥端口、handler 工厂。`credential_slot` 空串有单独用例。未注册生产 map，未改 expose。适配器不直接 import kernel 或 contracts，所以没有 05-01 未画出的边。domain 对 kernel 的类型导入实现了图上已有的 DOM→K，`tools/check-arch-graph/check.test.ts` 的 planned 计数从 13 改为 12。`pnpm-lock.yaml` 只加了这个包的 workspace 依赖，desktop 仍不依赖它。R3-N1 已去掉 #206 的行号。settings 单测 3 个文件、15 通过。`app_schema` 仍是 1 | `docs/evidence/205/commands.md` |
 | 5 | library 迁移、主进程只接 parsing、expose。W1–W4 已批。代码等本轮计划复审 PASS |  |  |
 | 6 | chip、降级句函数、e2e、Windows 截图 |  |  |
 
