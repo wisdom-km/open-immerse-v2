@@ -121,7 +121,7 @@ function ReaderBar(props: {
       ) : null}
       <h1>{props.title}</h1>
       {page}
-      <p className="oi-reader-status" role="status">
+      <p className="oi-reader-live" role="status">
         {props.nav.spoken}
       </p>
       {props.lostPlace ? (

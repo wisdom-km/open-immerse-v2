@@ -130,7 +130,7 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 | `packages/features/reader/src/ui/page-column.tsx` | E1b，改 | 现 95 行。主改文件。栏宽、wheel、按窗口挂 canvas 或占位。尺寸齐了才挂 `Restore`。释放时先把 canvas 宽高设为 0，再移出 DOM，并走已有 cancel | 250 | 否。离开阅读屏时不清零 |
 | `packages/features/reader/src/ui/pdf-session.ts` | E1b，改 | 现 228 行。绘制 scale 是 `min(缩放 × devicePixelRatio, 上限对应的 scale)`。CSS 尺寸仍按缩放。超过上限就拉伸 | 400 | 否。这是 UI 文件 |
 | `packages/features/reader/src/ui/use-reader-session.ts` | E1b，改 | 现 258 行。打开、离开、滚动、`readVisible`。把第一张和最后一张可见页交给 `page-column`。不持有历史栈，不持有缩放百分比 | 400 | 否。改完不超过 400 |
-| `packages/features/reader/src/ui/use-position-history.ts` | E1a，新建 | 持有历史栈、跳转后的待显示页和播报文字，并 `scrollIntoView`。只调用 `position-history.ts` 的纯函数。打开时写入恢复页。滚动结束只清待显示页，不清播报。同一句再跳时先清空再写入 | 120 | 替换当前位置的纯函数不在这个文件里写 |
+| `packages/features/reader/src/ui/use-position-history.ts` | E1a，新建 | 持有历史栈、跳转后的待显示页和播报文字，并 `scrollIntoView`。只调用 `position-history.ts` 的纯函数。打开时写入恢复页。滚动结束只清待显示页，不清播报。同一句再跳时先清空，下一帧再写入 | 120 | 替换当前位置的纯函数不在这个文件里写 |
 | `packages/features/reader/src/ui/use-zoom.ts` | E1c，新建 | 持有本次打开的缩放百分比，初值 100。适合宽度、适合页面调用已有纯函数 | 120 | +/− 调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent` |
 | `packages/features/reader/src/ui/reader-screen.tsx` | E1a、E1c、E2 | E1a 只拼装。`useLeaveKeys` 和 ‹ 的 tooltip 留到 E1c，和菜单一起改。不持有历史栈和缩放百分比 | 250 | 否 |
 | `packages/features/reader/src/ui/copy.ts` | E1a、E1c、E2 | 现 10 行。越界句、按钮名、6-1 A 的原句。菜单事件名不放这里，E1c 再定 | 80 | 否 |

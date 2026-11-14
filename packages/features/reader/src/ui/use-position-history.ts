@@ -21,27 +21,27 @@ export function usePositionHistory(
   const historyRef = useRef(history);
   historyRef.current = history;
   const recorded = useRef<string | undefined>(undefined);
-  const queued = useRef("");
+  const frame = useRef(0);
   const [pending, setPending] = useState<number | undefined>(undefined);
   const [spoken, setSpoken] = useState("");
-  const [pulse, setPulse] = useState(0);
   const shown = pending ?? page;
   useEffect(() => {
-    if (pulse === 0) return;
-    setSpoken(queued.current);
-  }, [pulse]);
+    return () => {
+      cancelAnimationFrame(frame.current);
+    };
+  }, []);
   useEffect(() => {
     if (page === undefined) {
       recorded.current = undefined;
       setPending(undefined);
-      setSpoken("");
+      queueSpeech(undefined, frame, setSpoken);
       publish(emptyPositionHistory(), historyRef, setHistory);
       return;
     }
     if (recorded.current === documentId) return;
     recorded.current = documentId;
     setPending(undefined);
-    setSpoken("");
+    queueSpeech(undefined, frame, setSpoken);
     publish(
       recordJump(emptyPositionHistory(), { page }),
       historyRef,
@@ -51,9 +51,7 @@ export function usePositionHistory(
   const reveal = (next: number): void => {
     setPending(next);
     if (pageCount !== undefined) {
-      queued.current = pageLabel(next, pageCount);
-      setSpoken("");
-      setPulse((value) => value + 1);
+      queueSpeech(pageLabel(next, pageCount), frame, setSpoken);
     }
     columnRef.current
       ?.querySelector(`[data-page="${String(next)}"]`)
@@ -89,6 +87,18 @@ export function usePositionHistory(
   };
 }
 
+function queueSpeech(
+  text: string | undefined,
+  frame: { current: number },
+  setSpoken: (value: string) => void,
+): void {
+  cancelAnimationFrame(frame.current);
+  setSpoken("");
+  if (text === undefined) return;
+  frame.current = requestAnimationFrame(() => {
+    setSpoken(text);
+  });
+}
 function move(
   step: (history: PositionHistory) => PositionHistory,
   historyRef: { current: PositionHistory },
@@ -99,7 +109,6 @@ function move(
   publish(next, historyRef, setHistory);
   return next.current?.page;
 }
-
 function publish(
   next: PositionHistory,
   historyRef: { current: PositionHistory },

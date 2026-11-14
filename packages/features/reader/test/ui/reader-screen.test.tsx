@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -7,7 +8,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { StrictMode } from "react";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 
 import {
   BACK_LABEL,
@@ -19,6 +20,7 @@ import type { ReaderClient } from "../../src/ui/reader-client.js";
 import { ReaderScreen } from "../../src/ui/reader-screen.js";
 
 afterEach(() => {
+  vi.useRealTimers();
   cleanup();
 });
 
@@ -100,32 +102,39 @@ it("revokes on Alt+ArrowLeft and writes the visible page", async () => {
 
 it("replaces the visible page before a jump, then forward returns", async () => {
   let left = 0;
-  render(
+  const view = render(
     screenFor(fakeClient({}), () => {
       left += 1;
     }),
   );
-  const page = await screen.findByRole("button", { name: /转到页码/ });
-  expect(screen.getByRole("status").textContent).toBe("");
+  await screen.findByRole("button", { name: /转到页码/ });
+  vi.useFakeTimers();
+  const live = screen.getByRole("status");
+  expect(live.className).toBe("oi-reader-live");
+  expect(live.textContent).toBe("");
   layOut(2);
-  fireEvent.click(page);
-  enterPage("3");
+  jump("3");
   expect(pageText()).toBe("第 3 / 3 页");
-  expect(screen.getByRole("status").textContent).toBe("第 3 / 3 页");
-  fireEvent.click(screen.getByRole("button", { name: "后退" }));
+  expect(live.textContent).toBe("第 3 / 3 页");
+  press("后退");
   expect(pageText()).toBe("第 2 / 3 页");
-  expect(screen.getByRole("status").textContent).toBe("第 2 / 3 页");
+  expect(live.textContent).toBe("第 2 / 3 页");
   expect(arrow("前进")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: /转到页码/ }));
-  enterPage("2");
-  expect(screen.getByRole("status").textContent).toBe("第 2 / 3 页");
-  fireEvent.click(screen.getByRole("button", { name: "前进" }));
+  jump("2");
+  expect(live.textContent).toBe("第 2 / 3 页");
+  press("前进");
   expect(pageText()).toBe("第 3 / 3 页");
   column().dispatchEvent(new Event("scrollend", { bubbles: true }));
-  expect(screen.getByRole("status").textContent).toBe("第 3 / 3 页");
+  expect(live.textContent).toBe("第 3 / 3 页");
   expect(left).toBe(0);
   fireEvent.click(screen.getByRole("button", { name: BACK_LABEL }));
   expect(left).toBe(1);
+  fireEvent.click(screen.getByRole("button", { name: /转到页码/ }));
+  enterPage("1");
+  expect(live.textContent).toBe("");
+  expect(vi.getTimerCount()).toBe(1);
+  view.unmount();
+  expect(vi.getTimerCount()).toBe(0);
 });
 
 it("writes a changed page only after scrollend", async () => {
@@ -480,15 +489,25 @@ it("keeps the new title when an older open resolves later", async () => {
 function pageText(): string | null {
   return screen.getByRole("button", { name: /转到页码/ }).textContent;
 }
-
 function arrow(name: string): string | null {
   return screen.getByRole("button", { name }).getAttribute("aria-disabled");
 }
-
+function paintFrame(): void {
+  void act(() => vi.advanceTimersToNextFrame());
+}
 function enterPage(value: string): void {
   const field = screen.getByRole("textbox");
   fireEvent.change(field, { target: { value } });
   fireEvent.keyDown(field, { key: "Enter" });
+}
+function jump(value: string): void {
+  fireEvent.click(screen.getByRole("button", { name: /转到页码/ }));
+  enterPage(value);
+  paintFrame();
+}
+function press(name: string): void {
+  fireEvent.click(screen.getByRole("button", { name }));
+  paintFrame();
 }
 
 function screenFor(

@@ -33,6 +33,14 @@
   opacity: 0.45;
 }
 
+.oi-reader-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
 button.oi-reader-pages {
   border: 0;
   background: transparent;
