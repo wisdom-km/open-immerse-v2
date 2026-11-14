@@ -62,6 +62,9 @@ importers:
       '@oi/feature-reader':
         specifier: workspace:*
         version: link:../../packages/features/reader
+      '@oi/feature-settings':
+        specifier: workspace:*
+        version: link:../../packages/features/settings
       '@oi/platform-node':
         specifier: workspace:*
         version: link:../../packages/platform-node

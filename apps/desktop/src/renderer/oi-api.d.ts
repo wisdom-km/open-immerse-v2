@@ -60,7 +60,14 @@ export type OiError<Channel extends string> =
                         | "sender_rejected"
                         | "invalid_payload"
                         | "handler_threw"
-                    : never;
+                    : Channel extends "parsing.getParseCapabilities"
+                      ?
+                          | "storage_corrupt"
+                          | "secret_unavailable"
+                          | "sender_rejected"
+                          | "invalid_payload"
+                          | "handler_threw"
+                      : never;
 
 declare global {
   interface Window {
@@ -231,6 +238,21 @@ declare global {
                 readonly code: "rejected";
                 readonly retryable: false;
               } & Readonly<{ generation: number; id: string }>)
+            | { readonly code: "sender_rejected"; readonly retryable: false }
+            | { readonly code: "invalid_payload"; readonly retryable: false }
+            | { readonly code: "handler_threw"; readonly retryable: true }
+          >
+        >;
+      };
+      readonly parsing: {
+        /** idempotent: true */
+        getParseCapabilities(
+          input: Readonly<{}>,
+        ): Promise<
+          Result<
+            Readonly<{ state: "configured" | "unconfigured" }>,
+            | { readonly code: "storage_corrupt"; readonly retryable: false }
+            | { readonly code: "secret_unavailable"; readonly retryable: false }
             | { readonly code: "sender_rejected"; readonly retryable: false }
             | { readonly code: "invalid_payload"; readonly retryable: false }
             | { readonly code: "handler_threw"; readonly retryable: true }

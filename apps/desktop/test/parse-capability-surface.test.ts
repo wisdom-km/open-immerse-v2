@@ -7,17 +7,14 @@ import type {
 } from "../src/main/ipc/registry.generated.js";
 import { createOi } from "../src/preload/oi.generated.js";
 
-// `parsing` and `settings` stay forbidden. A later approval that exposes
-// either namespace must update this test in that same change. Do not delete
-// these names to make the failure go away.
+// `settings` and secret names stay off the surface. `parsing.getParseCapabilities`
+// is the one exposed parse command. Do not delete the remaining names to make
+// a failure go away.
 const forbidden = [
-  "parsing.getParseCapabilities",
   "settings.saveParseService",
   "settings.getParseServiceStatus",
-  "getParseCapabilities",
   "saveParseService",
   "getParseServiceStatus",
-  "parsing",
   "settings",
   "secret",
   "secretRef",

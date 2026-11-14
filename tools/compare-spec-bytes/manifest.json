@@ -534,6 +534,21 @@
       "source": "ARCHITECTURE.md",
       "old": "下列仍**待 M2 实测**：KaTeX 的行内样式是否需要 `style-src 'unsafe-inline'`；PDF.js 是否需要 `wasm-unsafe-eval` 与 `blob:` 的 worker。",
       "new": "下列仍**待 M2 实测**：KaTeX 的行内样式是否需要 `style-src 'unsafe-inline'`。PDF.js 不开 wasm，用同源 nowasm 后备（ADR 0010 已采纳）；不开 `wasm-unsafe-eval`，不用 `blob:`。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "2026-11-09 01:56 把开放时机改到后面：本批这条也是 `expose` 为 false，正式 codegen 不写入 preload、公开声明或 registry。`expose` 为 true 只在真实配置来源与 handler 同一次合入时打开，本句不表示那次已经实现。",
+      "new": "2026-11-09 01:56 把开放时机改到后面。2026-11-14 第 2 笔把 `parsing.getParseCapabilities` 的 `expose` 改为 true，与 `set_providers` 存储和 handler 同一次合入。正式 codegen 写入 preload、公开声明和 registry。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "存储、密钥读写、handler 与 core 都还没有实现。未接到那次合入之前，不得把 AC-11 或这条降级状态标成验收通过。",
+      "new": "存储和这条只读 handler 已接上。生产密钥端口固定不可用，不读密钥文件，所以不返回 `configured`。界面降级句还没有接上。不得把 AC-11 或这条降级状态标成验收通过。"
+    },
+    {
+      "source": "PRD.md",
+      "old": "本批 `parsing.getParseCapabilities` 的 `expose` 为 false，codegen 不写入调用面或 registry；`expose` 为 true 只在真实配置来源与 handler 同一次合入时打开。没有配置记录是 `unconfigured`；孤儿密文不参与判断；密钥缺失、解密失败或损坏是明确错误。存储和 handler 尚未实现。未实现之前，不得把该状态标成验收通过。",
+      "new": "2026-11-14 第 2 笔把 `parsing.getParseCapabilities` 的 `expose` 改为 true，codegen 写入调用面和 registry，并与存储、handler 同一次合入。`settings.*` 仍是 `expose` 为 false。没有配置记录是 `unconfigured`；孤儿密文不参与判断；密钥缺失、解密失败或损坏是明确错误。存储和这条 handler 已接上。生产不读密钥文件，不返回 `configured`。界面降级句还没有接上，不得把该状态标成验收通过。"
     }
   ]
 }

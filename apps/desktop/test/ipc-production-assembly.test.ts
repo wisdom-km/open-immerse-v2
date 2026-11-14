@@ -16,6 +16,7 @@ it("covers the generated registry with the production command list", () => {
     libraryCommandChannels.map((channel) => [channel, unusedHandler]),
   );
   handlers.set(openDocumentChannel, unusedHandler);
+  handlers.set("parsing.getParseCapabilities", unusedHandler);
   const count = registerIpcRouter({
     registry: ipcRegistry,
     handlers,
@@ -37,7 +38,7 @@ it("covers the generated registry with the production command list", () => {
   });
   expect(commands.every((channel) => handlers.has(channel))).toBe(true);
   expect(count).toBe(commands.length);
-  expect(commands).not.toContain("parsing.getParseCapabilities");
+  expect(commands).toContain("parsing.getParseCapabilities");
 });
 
 function unusedHandler(): Promise<unknown> {

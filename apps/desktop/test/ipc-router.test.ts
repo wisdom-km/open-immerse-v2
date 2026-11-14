@@ -29,6 +29,7 @@ it("registers one handle for each exposed library command", () => {
     "library.relocate",
     "library.revokeReadingAsset",
     "library.setProgressPage",
+    "parsing.getParseCapabilities",
   ]);
   const handlers = new Map<string, IpcCommandHandler>(
     channels.map((channel) => [

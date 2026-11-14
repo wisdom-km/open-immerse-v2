@@ -15,6 +15,10 @@
       ],
       "@oi/feature-reader/ui": ["packages/features/reader/src/ui/index.ts"],
       "@oi/feature-reader": ["packages/features/reader/src/index.ts"],
+      "@oi/feature-settings/main": [
+        "packages/features/settings/src/adapters/settings-main.ts"
+      ],
+      "@oi/feature-settings": ["packages/features/settings/src/index.ts"],
       "@oi/feature-library": ["packages/features/library/src/index.ts"],
       "@oi/feature-ingest": ["packages/features/ingest/src/index.ts"],
       "@oi/feature-ingest/open-document": [
@@ -35,6 +39,8 @@
     "../../packages/features/library/src/ui/library-app.tsx",
     "../../packages/features/reader/src/index.ts",
     "../../packages/features/reader/src/ui/index.ts",
+    "../../packages/features/settings/src/adapters/settings-main.ts",
+    "../../packages/features/settings/src/index.ts",
     "../../packages/features/library/src/index.ts",
     "../../packages/features/ingest/src/index.ts",
     "../../packages/features/ingest/src/application/use-cases/open-document.ts",

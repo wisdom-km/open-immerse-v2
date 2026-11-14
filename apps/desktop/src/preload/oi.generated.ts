@@ -223,5 +223,22 @@ export function createOi(bridge: IpcBridge) {
         return call(bridge, "library.setProgressPage", input);
       },
     },
+    parsing: {
+      /** idempotent: true */
+      getParseCapabilities(
+        input: Readonly<{}>,
+      ): Promise<
+        Result<
+          Readonly<{ state: "configured" | "unconfigured" }>,
+          | { readonly code: "storage_corrupt"; readonly retryable: false }
+          | { readonly code: "secret_unavailable"; readonly retryable: false }
+          | { readonly code: "sender_rejected"; readonly retryable: false }
+          | { readonly code: "invalid_payload"; readonly retryable: false }
+          | { readonly code: "handler_threw"; readonly retryable: true }
+        >
+      > {
+        return call(bridge, "parsing.getParseCapabilities", input);
+      },
+    },
   };
 }
