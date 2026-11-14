@@ -43,6 +43,32 @@ export function clampZoomPercent(value: number): number {
   return rounded;
 }
 
+/**
+ * 浏览器预设档，已按 6-2 A 截到 25–400。实测里的 500 不在此列。
+ * 不记住缩放，打开时仍用 DEFAULT_ZOOM_PERCENT。
+ */
+const ZOOM_PERCENT_STEPS: readonly number[] = [
+  25, 33, 50, 67, 75, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300, 400,
+];
+
+/**
+ * 下一档：严格大于当前值的最小档。没有更大的档就保持当前值。
+ * 不在档上的值不就近取整。结果再经 clampZoomPercent。
+ */
+export function nextZoomPercent(current: number): number {
+  const higher = ZOOM_PERCENT_STEPS.find((step) => step > current);
+  return clampZoomPercent(higher ?? current);
+}
+
+/**
+ * 上一档：严格小于当前值的最大档。没有更小的档就保持当前值。
+ * 不在档上的值不就近取整。结果再经 clampZoomPercent。
+ */
+export function previousZoomPercent(current: number): number {
+  const lower = ZOOM_PERCENT_STEPS.findLast((step) => step < current);
+  return clampZoomPercent(lower ?? current);
+}
+
 export function rememberedFromLevel(
   level: ZoomLevel,
 ): RememberedZoom | undefined {
