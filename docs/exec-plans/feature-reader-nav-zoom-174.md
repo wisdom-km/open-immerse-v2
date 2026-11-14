@@ -317,7 +317,7 @@ E1 不提前。依据是第 87 行：E1 不能和这两笔 core PR 同时开着�
 来源是 [Issue #174 评论 6873638323](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6873638323)。同一原话在 [PR #206 评论 6873639011](https://github.com/wisdom-km/open-immerse-v2/pull/206#issuecomment-6873639011) 和 [PR #205 评论 6873639800](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873639800)。计入批准。
 
 1. **释放画布时清零。** 视口里卸下一页时，先把 canvas 的宽高设为 0，再移出 DOM，并调用现有的 cancel。外框留着。0011「不实现画布清零」收窄为只管离开阅读屏。离开阅读屏时仍不清零，不调用 `PDFDocumentProxy.cleanup()`。
-2. **缩放档位放 core，单开 core PR。** 排在替换当前位置之后。位置是 `zoom-bounds.ts`，上一档和下一档，经 `pure.ts` 导出。输入是当前百分比，输出再经已有的 `clampZoomPercent`。不改 `packages/contracts`，不改 `expose`，不注册 `createSetZoom`。E1 的 +/−、捏合和 Ctrl+滚轮等这个 PR 合入。档位列表仍等 §10 第 6 条的实测，不照抄 Loom。捏合的连续变化在松手时用 `clampZoomPercent` 取整，取整后的档位用这两个函数，不在 UI 里另写一张表。
+2. **缩放档位放 core，单开 core PR。** 排在替换当前位置之后。位置是 `zoom-bounds.ts`，上一档和下一档，经 `pure.ts` 导出。输入是当前百分比，输出再经已有的 `clampZoomPercent`。不改 `packages/contracts`，不改 `expose`，不注册 `createSetZoom`。E1 的 +/−、捏合和 Ctrl+滚轮等这个 PR 合入。档位列表仍等 §10 第 6 条的实测，不照抄 Loom。捏合的连续变化在松手时用 `clampZoomPercent` 取整，取整后的档位用这两个函数，不在 UI 里另写一张表。档位列表已按真机实测由 PR #209 实现。
 3. **替换当前位置的纯函数，先于档位单独做。** `recordJump` 在页不同时会把旧 current 推进 back。`position-history.ts` 加一个只替换 current、不清 forward、不压栈的纯函数，经 `pure.ts` 导出。不改 contracts。E1 的「原位置是可见页」等这个 PR 合入。没有它，后退回到的是上一次跳转或打开时的页，不是滚动后看见的页。
 4. **8 GB 超限线先不定数。** E1 在确认是 8 GB 的机器上实测后停下，带数据请 Wisdom 判断。不自定 MB 数。停点是 §10 第 12 条。
 5. **PR #205 第 3 笔改为等 #206 的 E2 合入。** 见上面的串行。14:49 里「等 #206 合入」按这条改。
