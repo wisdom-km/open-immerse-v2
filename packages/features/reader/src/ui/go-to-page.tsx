@@ -1,13 +1,7 @@
 import { useEffect, useRef, useState, type ReactElement } from "react";
 
 import { clampPage } from "../pure.js";
-import {
-  GO_TO_PAGE_EVENT,
-  HISTORY_BACK_EVENT,
-  HISTORY_FORWARD_EVENT,
-  pageCountNote,
-  pageLabel,
-} from "./copy.js";
+import { pageCountNote, pageLabel } from "./copy.js";
 
 export function GoToPage(props: {
   readonly page: number;
@@ -18,52 +12,39 @@ export function GoToPage(props: {
   const [draft, setDraft] = useState("");
   const [note, setNote] = useState<string | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  useEffect(() => {
-    const open = () => {
-      setDraft(String(props.page));
-      setNote(undefined);
-      setEditing(true);
-    };
-    window.addEventListener(GO_TO_PAGE_EVENT, open);
-    return () => {
-      window.removeEventListener(GO_TO_PAGE_EVENT, open);
-    };
-  }, [props.page]);
-  useEffect(() => {
-    if (editing) inputRef.current?.focus();
-  }, [editing]);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const restore = useRef(false);
   const name = `转到页码，${pageLabel(props.page, props.pageCount)}`;
+  useEffect(() => {
+    if (!editing) {
+      if (restore.current) buttonRef.current?.focus();
+      restore.current = false;
+      return;
+    }
+    restore.current = true;
+    inputRef.current?.focus();
+  }, [editing]);
+  const close = (): void => {
+    setEditing(false);
+    setNote(undefined);
+  };
   if (!editing) {
     return (
       <button
+        ref={buttonRef}
         type="button"
         className="oi-reader-pages"
         aria-label={name}
         onClick={() => {
-          window.dispatchEvent(new Event(GO_TO_PAGE_EVENT));
+          setDraft(String(props.page));
+          setNote(undefined);
+          setEditing(true);
         }}
       >
         {pageLabel(props.page, props.pageCount)}
       </button>
     );
   }
-  const close = (): void => {
-    setEditing(false);
-    setNote(undefined);
-  };
-  const commit = (): void => {
-    const trimmed = draft.trim();
-    const parsed = /^[0-9]+$/.test(trimmed) ? Number(trimmed) : undefined;
-    if (
-      trimmed === "" ||
-      (parsed !== undefined && clampPage(parsed, props.pageCount) === parsed)
-    ) {
-      close();
-      if (parsed !== undefined) props.onJump(parsed);
-      return;
-    }
-    setNote(pageCountNote(props.pageCount));
-  };
   return (
     <span className="oi-reader-goto">
       <input
@@ -76,10 +57,14 @@ export function GoToPage(props: {
           setNote(undefined);
         }}
         onKeyDown={(event) => {
-          if (event.key !== "Escape" && event.key !== "Enter") return;
-          event.preventDefault();
-          if (event.key === "Enter") commit();
-          else close();
+          onFieldKey(
+            event,
+            draft,
+            props.pageCount,
+            props.onJump,
+            close,
+            setNote,
+          );
         }}
         onBlur={close}
       />
@@ -88,28 +73,28 @@ export function GoToPage(props: {
   );
 }
 
-export function useNavCommands(
-  viewing: boolean,
-  commands: { readonly back: () => void; readonly forward: () => void },
+function onFieldKey(
+  event: { key: string; preventDefault: () => void },
+  draft: string,
+  pageCount: number,
+  onJump: (page: number) => void,
+  close: () => void,
+  setNote: (note: string) => void,
 ): void {
-  const ref = useRef({ viewing, commands });
-  ref.current = { viewing, commands };
-  useEffect(() => {
-    const rows = [
-      [HISTORY_BACK_EVENT, false, "back"],
-      [HISTORY_FORWARD_EVENT, true, "forward"],
-    ] as const;
-    const offs = rows.map(([name, onlyView, key]) => {
-      const handler = () => {
-        if (!onlyView || ref.current.viewing) ref.current.commands[key]();
-      };
-      window.addEventListener(name, handler);
-      return () => {
-        window.removeEventListener(name, handler);
-      };
-    });
-    return () => {
-      for (const off of offs) off();
-    };
-  }, []);
+  if (event.key !== "Escape" && event.key !== "Enter") return;
+  event.preventDefault();
+  if (event.key === "Escape") {
+    close();
+    return;
+  }
+  const trimmed = draft.trim();
+  const parsed = /^[0-9]+$/.test(trimmed) ? Number(trimmed) : undefined;
+  const accepted =
+    parsed !== undefined && clampPage(parsed, pageCount) === parsed;
+  if (trimmed !== "" && !accepted) {
+    setNote(pageCountNote(pageCount));
+    return;
+  }
+  close();
+  if (parsed !== undefined && accepted) onJump(parsed);
 }

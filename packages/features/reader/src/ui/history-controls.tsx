@@ -18,6 +18,7 @@ export function HistoryControls(props: {
           type="button"
           className="oi-reader-back"
           aria-label={label}
+          title={historyTitle(label)}
           aria-disabled={enabled ? undefined : true}
           onClick={() => {
             if (enabled) onClick();
@@ -28,4 +29,10 @@ export function HistoryControls(props: {
       ))}
     </>
   );
+}
+
+function historyTitle(label: "后退" | "前进"): string {
+  const mac = /Mac|iPhone|iPad/.test(navigator.platform);
+  if (label === "后退") return mac ? "后退（⌘[）" : "后退（Alt+←）";
+  return mac ? "前进（⌘]）" : "前进（Alt+→）";
 }

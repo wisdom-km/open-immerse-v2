@@ -9,11 +9,7 @@ import {
 } from "react";
 
 import { desktopReaderClient } from "./reader-client.js";
-import {
-  openFileEvent,
-  readerMenuEvents,
-  returnLibraryEvent,
-} from "./shell-events.js";
+import { openFileEvent, returnLibraryEvent } from "./shell-events.js";
 
 const client = desktopReaderClient();
 
@@ -34,18 +30,6 @@ export function Shell(): ReactElement {
       window.removeEventListener(returnLibraryEvent, onReturn);
     };
   }, []);
-  useEffect(() => {
-    if (openId !== undefined) return;
-    const drop = (event: Event) => {
-      event.stopImmediatePropagation();
-    };
-    for (const name of readerMenuEvents) window.addEventListener(name, drop);
-    return () => {
-      for (const name of readerMenuEvents) {
-        window.removeEventListener(name, drop);
-      }
-    };
-  }, [openId]);
   return (
     <>
       <div inert={openId !== undefined ? true : undefined}>

@@ -8,48 +8,73 @@ import {
   replaceCurrent,
   type PositionHistory,
 } from "../pure.js";
+import { readVisible } from "./use-reader-session.js";
 
 export function usePositionHistory(
   documentId: string,
   page: number | undefined,
+  columnRef: { readonly current: HTMLDivElement | null },
 ) {
   const [history, setHistory] = useState<PositionHistory>(emptyPositionHistory);
   const historyRef = useRef(history);
   historyRef.current = history;
   const recorded = useRef<string | undefined>(undefined);
+  const [pending, setPending] = useState<number | undefined>(undefined);
+  const [announced, setAnnounced] = useState<number | undefined>(undefined);
+  const shown = pending ?? page;
   useEffect(() => {
     if (page === undefined) {
       recorded.current = undefined;
+      setPending(undefined);
+      setAnnounced(undefined);
       publish(emptyPositionHistory(), historyRef, setHistory);
       return;
     }
     if (recorded.current === documentId) return;
     recorded.current = documentId;
+    setPending(undefined);
+    setAnnounced(undefined);
     publish(
       recordJump(emptyPositionHistory(), { page }),
       historyRef,
       setHistory,
     );
   }, [documentId, page]);
+  const reveal = (next: number): void => {
+    setPending(next);
+    setAnnounced(next);
+    columnRef.current
+      ?.querySelector(`[data-page="${String(next)}"]`)
+      ?.scrollIntoView();
+  };
   return {
     canBack: history.back.length > 0,
     canForward: history.forward.length > 0,
+    shown,
+    announced,
+    clearPending() {
+      setPending(undefined);
+      setAnnounced(undefined);
+    },
     back() {
-      return move(goBack, historyRef, setHistory);
+      const next = move(goBack, historyRef, setHistory);
+      if (next !== undefined) reveal(next);
     },
     forward() {
-      return move(goForward, historyRef, setHistory);
+      const next = move(goForward, historyRef, setHistory);
+      if (next !== undefined) reveal(next);
     },
-    jump(visible: number | undefined, target: number) {
+    jump(target: number) {
+      const place = readVisible(columnRef.current) ?? shown;
       const current = historyRef.current;
       const base =
-        visible === undefined
+        place === undefined
           ? current
-          : replaceCurrent(current, { page: visible });
+          : replaceCurrent(current, { page: place });
       const next = recordJump(base, { page: target });
-      if (next === current) return false;
+      if (next === current) return;
       publish(next, historyRef, setHistory);
-      return true;
+      reveal(target);
     },
   };
 }

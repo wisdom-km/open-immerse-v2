@@ -1,16 +1,8 @@
 import { expect, it } from "vitest";
 
 import { createOi } from "../src/preload/oi.generated.js";
-import {
-  goToPageEvent,
-  historyBackEvent,
-  historyForwardEvent,
-} from "../src/renderer/shell-events.js";
 
 it("lists the exposed library commands", () => {
-  expect(historyBackEvent).toBe("oi-history-back");
-  expect(historyForwardEvent).toBe("oi-history-forward");
-  expect(goToPageEvent).toBe("oi-go-to-page");
   const oi = createOi({
     invoke: () => Promise.resolve(undefined),
     invokeDropped: () => Promise.resolve(undefined),

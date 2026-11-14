@@ -8,12 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 
-import {
-  BACK_LABEL,
-  HISTORY_BACK_EVENT,
-  LOST_PLACE,
-  UNREADABLE_PDF,
-} from "../../src/ui/copy.js";
+import { BACK_LABEL, LOST_PLACE, UNREADABLE_PDF } from "../../src/ui/copy.js";
 import type { ReaderClient } from "../../src/ui/reader-client.js";
 import { ReaderScreen } from "../../src/ui/reader-screen.js";
 
@@ -36,9 +31,9 @@ it("does not write on scrollend or the back button after a failed page read", as
   });
 });
 
-it("does not write when the history-back event leaves after a failed page read", async () => {
+it("does not write when Alt+ArrowLeft leaves after a failed page read", async () => {
   await leaveWithoutWrite(() => {
-    fireEvent(window, new Event(HISTORY_BACK_EVENT));
+    fireEvent.keyDown(window, { key: "ArrowLeft", altKey: true });
   });
 });
 
