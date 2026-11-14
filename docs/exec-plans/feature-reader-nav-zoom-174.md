@@ -51,7 +51,7 @@
 | 缩放 | 只缩放 PDF 栏。无 Ctrl 的 wheel 只滚动。绘制用缩放乘 dpr。边界置灰。拦住整页缩放的手段等 §10 的实测，预定在 PDF 栏上 `preventDefault`（`passive: false`） | 不加 `zoomIn` / `zoomOut` / `resetZoom` / `viewMenu` role。不调 `webFrame.setZoomFactor`。不做滑块 |
 | 内存 | 按 Loom §4.6：当前页 ±2 保留 canvas，单页像素上限。占位按各页自己的 PDF 尺寸乘缩放，页间距与已画页相同。挂上或卸下 canvas 时不改总高度、不改 `scrollTop`。提议 ADR 0012 已在本 PR。8 GB Windows 实测 400%，超限停下再问 | 不测不交付。不用统一估算高度。占位不放转圈或「加载中」。不加内存开关、提示或横幅。不做分块渲染。不改 CSP、协议、主进程、core、contracts。不调用 `cleanup()` |
 | 栏位 | `radiogroup`，名称「栏位」。Ctrl+1/2/3，mac ⌘1/2/3。默认原文。不记住 | 不默认对照。没有「开始翻译」「去设置」。主按钮仍是 0 |
-| 空态 | `view-mode-empty.tsx` 归 E2。6-1 A 的原句和文字链接。可选降级句位留着，本批不填 | 本批不写降级句，不造未配置状态，不写解析服务或配置 |
+| 空态 | `view-mode-empty.tsx` 归 E2。6-1 A 的原句和文字链接。`view-mode-empty-degrade` 留着，本批不填字 | 本批不写降级句，不造未配置状态，不写解析服务或配置。测试不用 `/解析/` 匹配整段 |
 | 菜单 | Win「视图(V)」，mac「显示」。顺序按 Loom §2.2。文献库里不置灰 | 不放「显示侧栏」。不声称已经置灰 |
 | 播报 | 跳页或手势结束后各一次 | 不每帧、不随滚动播 |
 | 无障碍 | Tab 顺序与视觉一致。2px 焦点环。目标不小于 24×24。`reader.css` 加 `forced-colors`。200% 界面缩放下按 dpr 绘制 | 不只靠颜色表示置灰或选中 |
@@ -127,7 +127,7 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 | `packages/features/reader/src/ui/reader-screen.tsx` | E1、E2 | 撤掉 `useLeaveKeys`。‹ 的 tooltip 改为「返回文献库」 | 250 | 否 |
 | `packages/features/reader/src/ui/copy.ts` | E1、E2 | 现 10 行。越界句、按钮名、6-1 A 的原句 | 80 | 否 |
 | `packages/features/reader/src/ui/view-mode-switch.tsx` | E2，新建 | `radiogroup`。默认原文 | 120 | 否 |
-| `packages/features/reader/src/ui/view-mode-empty.tsx` | E2，新建 | 6-1 A 的句子和文字链接。可选降级句位，本批不填。0 个主按钮 | 100 | 否。不写降级句，不造未配置状态 |
+| `packages/features/reader/src/ui/view-mode-empty.tsx` | E2，新建 | 6-1 A 的句子和文字链接。6-1 A 之后留稳定插入点 `data-testid="view-mode-empty-degrade"`，本批不填字。0 个主按钮 | 100 | 否。不写降级句，不造未配置状态 |
 | `apps/desktop/src/renderer/reader.css` | E1、E2 | 排列、焦点环、`forced-colors`。不新造颜色定稿 | 220 | 否 |
 | `apps/desktop/src/renderer/shell.tsx` | E1 | 现 81 行。听返回和视图菜单事件。不在阅读屏时丢掉 | 160 | 否 |
 | `apps/desktop/src/renderer/shell-events.ts` | E1 | 事件名常量，与菜单用同一字符串 | 40 | 否。不新建 `ui-events.ts` |
@@ -257,11 +257,21 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 
 `view-mode-empty.tsx` 归本批 E2。依据是 [评论 6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956) 的 3A：「切到对照/译文时空态再说一次」。chip 和配置存储仍归 PR #205，本批不建 chip，不接 `parsing.getParseCapabilities`。
 
-组件里先放 6-1 A：「本阶段暂不提供译文，请先阅读原文。」加上文字链接，Windows「切到原文（Ctrl+1）」，mac「切到原文（⌘1）」。这句后面留一个可选的降级句位。调用时传入一个可选字符串。不传，或是空字符串，这个位不渲染。本批的调用点不传。
+组件里先放 6-1 A：「本阶段暂不提供译文，请先阅读原文。」加上文字链接，Windows「切到原文（Ctrl+1）」，mac「切到原文（⌘1）」。这句放在 `data-testid="view-mode-empty-copy"` 里。紧挨着它的后面留一个稳定插入点，`data-testid="view-mode-empty-degrade"`。本批这个插入点里没有文字。调用方可以传入一个可选字符串；本批的调用点不传。
 
-PR #205 只在真实读口结果是未配置时，把降级句填进这个位，接在 6-1 A 后面。句子的文字和「是不是未配置」都由 #205 决定。本批不写这句，也不在阅读屏里造一个未配置状态。
+PR #205 第 3 笔只在真实读口结果是未配置时，把「未解析 / 去配置」填进 `view-mode-empty-degrade`，接在 6-1 A 后面。句子的文字和「是不是未配置」都由 #205 决定。本批不写这句，也不在阅读屏里造一个未配置状态。
+
+`view-mode-empty` 的测试只断言精确文案，或只读上面两个 testid。6-1 A 用整句相等，链接用「切到原文（Ctrl+1）」和「切到原文（⌘1）」的整句相等。插入点单独断言：本批它的文本是空的。不要用 `/解析/` 这类宽正则去匹配空态的整段文字。PR #205 第 3 笔会把「未解析 / 去配置」放进这个插入点；整段上的 `/解析/` 会把这句和 6-1 A 混在一次匹配里。`reader-screen.test.tsx` 第 49 行已有的 `document.body` 负向匹配留在那个文件，本批的空态测试不照搬，也不改那一行。
 
 AC-11 的「空态再说一次」本批未满足，由 PR #205 补。AC-11 整句和 PRC-10 仍未满足。
+
+## 与 PR #205 的规格接缝
+
+约定 #206 先于 PR #205 合入。两边都会改 `docs/prd/08.md` 和 `tools/compare-spec-bytes/manifest.json`。
+
+本批改的是 M2 退出格，在 `docs/prd/08.md` 第 12 行。manifest 里这条唯一替换的 source 是 `PRD.md`，old 是「8 GB Windows 与 M1 真机打开 / 滚动 / 重开录屏（PDF 与 `.md` 各一）」。第 9 行是里程碑表的分隔行 `| --- | --- | --- |`，本批保持原样。
+
+PR #205 改第 25 行「M2 ③ 本批归属」里的事实句：`parsing.getParseCapabilities` 的 `expose` 为 false，以及「存储和 handler 尚未实现」。那一笔另加一条 manifest 替换。两条替换的 old 互不包含。#205 rebase 到本批合入后的 main 时，保留本批这一条，只追加第 25 行那条。
 
 ## 需 Wisdom 决定
 
@@ -278,7 +288,7 @@ AC-11 的「空态再说一次」本批未满足，由 PR #205 补。AC-11 整�
 
 本 PR 不跑 Vitest。实现 PR 才跑。
 
-单测：已有历史和缩放边界测试保持通过。`go-to-page` 断言越界不调用跳转、`clampPage` 的返回值不被当成目标页。`history-controls` 断言空的 ← 不调用离开。`view-mode-empty` 断言 6-1 A 的原句、链接文字，以及没有「开始翻译」「去设置」。不传入降级句时，空态里没有第二句。测试不写降级句的产品文字。键位分 `metaKey` 和 `ctrlKey`。
+单测：已有历史和缩放边界测试保持通过。`go-to-page` 断言越界不调用跳转、`clampPage` 的返回值不被当成目标页。`history-controls` 断言空的 ← 不调用离开。`view-mode-empty` 只按精确文案或稳定 testid 断言：`view-mode-empty-copy` 的文本等于 6-1 A 的原句，链接文字等于「切到原文（Ctrl+1）」或「切到原文（⌘1）」，并且没有「开始翻译」「去设置」。`view-mode-empty-degrade` 的文本是空的。不用 `/解析/` 或同类宽正则去匹配空态整段。测试不写「未解析 / 去配置」。键位分 `metaKey` 和 `ctrlKey`。
 
 Electron e2e：打开小 PDF。窗口缩放因子在 Ctrl+滚轮后仍是 1，画布变大。Ctrl+G 跳页，Alt+← 回去，历史用尽后回库。‹ 在有历史时直接回库。Ctrl+2 出现空态，没有翻译请求。25 页样本上，DOM 里的 canvas 不超过 5。滚过一页之后，保留 canvas 的页码集合换成新的当前页 ±2。
 
@@ -324,5 +334,5 @@ Windows 真机要有录屏和对应截图，Box 不能代替：
 
 - 本 PR 的任务类型是纯文档。UI–core 交接写不适用。
 - 不改 N-10、N-11 的文件，不改 CI。
-- M2 退出格多了一句，manifest 有一条唯一替换。不改基线，不改 `compare.mjs`。
-- 台账只追加，不改旧行。rebase 到 #204 之后，13:57 只留 main 上那一行批准。本分支原来的 13:57 开工引用删掉，避免同一时间两行。合计按整表重算。
+- M2 退出格多了一句，在 `docs/prd/08.md` 第 12 行。manifest 有一条唯一替换。不改基线，不改 `compare.mjs`。第 25 行留给 PR #205。
+- 台账只追加，不改旧行。merge-base 是 main `d8e5afb`。13:57 只留 #204 的批准行。14:13、14:17 保留。另有 14:20 的合入批准和 14:22:10 的合入同步。合计按整表重算。
