@@ -8,6 +8,8 @@ coverage/
 dist/
 apps/desktop/src/renderer/main.js
 apps/desktop/src/renderer/pdf.worker.js
+apps/desktop/src/renderer/openjpeg_nowasm_fallback.js
+apps/desktop/src/renderer/jbig2_nowasm_fallback.js
 test-results/
 playwright-report/
 blob-report/

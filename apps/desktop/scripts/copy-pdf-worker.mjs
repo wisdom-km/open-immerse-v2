@@ -41,7 +41,33 @@ export function copyPdfWorker(dest = pdfWorkerDest) {
   return { source, dest };
 }
 
+export const imageFallbackFileNames = [
+  "openjpeg_nowasm_fallback.js",
+  "jbig2_nowasm_fallback.js",
+];
+
+export const imageFallbackDir = path.join(desktop, "src/renderer");
+
+export function imageFallbackSource(fileName) {
+  if (!imageFallbackFileNames.includes(fileName)) {
+    throw new Error(`not an allowed pdf image fallback: ${fileName}`);
+  }
+  const require = createRequire(path.join(reader, "package.json"));
+  return require.resolve(`pdfjs-dist/wasm/${fileName}`);
+}
+
+export function copyPdfImageFallbacks(dir = imageFallbackDir) {
+  return imageFallbackFileNames.map((fileName) => {
+    const source = imageFallbackSource(fileName);
+    const dest = path.join(dir, fileName);
+    mkdirSync(path.dirname(dest), { recursive: true });
+    copyFileSync(source, dest);
+    return { source, dest };
+  });
+}
+
 const invoked = argv[1];
 if (invoked && import.meta.url === pathToFileURL(invoked).href) {
   copyPdfWorker();
+  copyPdfImageFallbacks();
 }

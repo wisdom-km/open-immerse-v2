@@ -1,6 +1,8 @@
 # 0010 JPX 与 CCITT 的图片解码
 
-状态：提议。日期：2026-11-10（Asia/Shanghai）。决定人：待 Wisdom。
+状态：已采纳。日期：2026-11-14（Asia/Shanghai）。决定人：Wisdom。
+
+采纳依据：2026-11-10 13:59 批准实现。原话：「按推荐：JPX/CCITT 不进 #199，阿读屏收口后单独开小 Draft，只同源提供 openjpeg/jbig2 两个 nowasm 后备 .js、设 wasmUrl、关 wasm，再窗口核对；不改 CSP，不开 wasm-unsafe-eval，仍缺再停；不 Ready/合入/发版」。来源：[Issue #174 评论 6760278689](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6760278689)。2026-11-14 12:55 批准把状态改为已采纳并写结果。原话：「按推荐：PR200 先补一笔只改 docs 的提交（ADR 0010 + 索引改为已采纳并写结果），新 tip 过 CI 和 Box 后再来批合入；不 Ready/合入/发版」。来源：[Issue #174 评论 6872029468](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872029468)。
 
 本页不改已采纳的 [0006](0006-renderer-oi-asset-csp.md)、[0007](0007-oi-asset-fetch-scheme.md)、[0008](0008-oi-asset-fetch-cors.md)、[0009](0009-pdfjs-worker-src.md)。不改 CSP，不提供 `.wasm`，不把缺图改成占位。
 
@@ -14,7 +16,7 @@
 
 同一张表再追加清单里的七份出版社版。pcbi-1005421、s41467-018-07210-0、s41598-023-31124-7、pone-0215032 的 JPEG 画出。s41467-026-69035-6 与 fms-2021-7 的 Flate 画出。qe533 没有位图，矢量图画出。没有新的解码缺口。
 
-liushang 的 JPX 与 CCITT 没有画出：
+下面记的是当时的缺口。采纳之后的核对在「结果」。当时 liushang 的 JPX 与 CCITT 没有画出：
 
 - 控制台：`#getWasmInstance: UnknownErrorException: Ensure that the wasmUrl API parameter is provided.`
 - 接着：`#getJsInstance: TypeError: Failed to resolve module specifier 'nullopenjpeg_nowasm_fallback.js'`，以及同样形式的 `nulljbig2_nowasm_fallback.js`。
@@ -37,18 +39,33 @@ worker 里的 `WasmImage.#instantiateWasm`（`pdf.worker.mjs` 约第 14436 行�
 1. 打开 `wasm-unsafe-eval`，并同源提供 `.wasm`。代价：CSP 要新增特权，0006 与 0009 都没有批。至少要再提供 `openjpeg.wasm` 与 `jbig2.wasm`。`WebAssembly.instantiate` 会在渲染进程的 worker 里编译这两份二进制。这次测量没有走到那一步，不能把「尚未出现的 CSP 违规」写成已经看见。ICC 用的 `qcms_bg.wasm` 不在本页范围内。
 2. 这类图先显示占位。代价：不改 CSP，不增加文件。JPX 与 CCITT 仍然解不出来。占位只是把现在的空洞标出来。条码、JPX 软掩膜和小幅 JPX 图继续不可读。JPEG 与 Flate 保持现状。本轮不实现占位。
 
-纯 JS 后备是包内文件，不是当前配置里已经生效的路径。要启用它，仍要设置 `wasmUrl` 并让 worker 动态导入那两份 `.js`。本页不把这件事当成已经选中的做法。
+纯 JS 后备是包内文件。写提议时它还不是已经选中的做法，要启用仍要设置 `wasmUrl` 并让 worker 动态导入那两份 `.js`。2026-11-10 13:59 选中这件事。
 
 ## 决定
 
-先不选。不改 CSP，不提供 `.wasm`，不改 `wasmUrl`，不把缺图改成占位。
+取纯 JS 后备。Wisdom 2026-11-10 13:59 批准实现。Wisdom 2026-11-14 12:55 批准把本页改为已采纳。
+
+- 同源提供 `openjpeg_nowasm_fallback.js` 与 `jbig2_nowasm_fallback.js`，设置 `wasmUrl`，关闭 wasm。
+- 不改 CSP，不开 `wasm-unsafe-eval`，不提供 `.wasm`，不把缺图改成占位。
+- 本决定不是 Ready、合入或发版。
+
+## 结果
+
+Anvil QA 在 `a7abcff` 上用 liushang.pdf（SHA256 `645d4519…3345`，pdfimages 共 39 JPX + 2 CCITT）核对。第 1、31、126 页在 Box 和真机 DESKTOP-0GI64S8 上都显示。第 126 页的 CCITT 条码可见。
+
+JpxError / Jbig2Error 在本 PR 上是 0/0，main `e5a956b` 对照是 39/2。`.wasm` 请求 0，CSP 违规 0。
+
+已知遗留：10 条「Failed to compile PostScript function to wasm, falling back to JS」warning。main 上同样存在，与本 ADR 无关。推断与现行 CSP 不允许 wasm 编译有关，未实测；无论是否如此，不开 `wasm-unsafe-eval`，不处理。
+
+不覆盖：其他含 JPX/CCITT 的 PDF、8GB 机器。
 
 ## 后果
 
 - Flate 与这次测到的 JPEG 可以继续画。
-- JPX 与 CCITT 继续缺。缺的是解码，不是静态协议的后缀表。
-- 以后若要启用 wasm 或占位，另批。不在本页放行。
+- 这一份 liushang.pdf 上已核对的 JPX 与 CCITT 见「结果」。不把这次结果写成覆盖其他 PDF。
+- 不改 CSP，不开 `wasm-unsafe-eval`，不提供 `.wasm`。以后若要启用 wasm 或占位，另批。不在本页放行。
+- 本决定不是 Ready、合入或发版。
 
 ## 状态
 
-提议。范围只记录这次窗口里 JPX 与 CCITT 的缺口。
+已采纳。范围是同源提供两个 nowasm 后备 `.js`，设置 `wasmUrl`，关闭 wasm。不改 CSP，不开 `wasm-unsafe-eval`，不提供 `.wasm`。

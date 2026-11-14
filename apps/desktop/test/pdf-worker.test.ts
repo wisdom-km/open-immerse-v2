@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -49,6 +49,60 @@ it("copies pdf.worker.mjs to a same-origin js file with the same bytes", async (
     expect(path.resolve(tool.pdfWorkerDest)).toBe(
       path.resolve("apps/desktop/src/renderer/pdf.worker.js"),
     );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+it("copies the openjpeg and jbig2 js fallbacks and not the wasm files", async () => {
+  const tool = (await import(copyScript)) as {
+    copyPdfImageFallbacks(dir?: string): Copied[];
+    imageFallbackFileNames: readonly string[];
+    imageFallbackDir: string;
+  };
+  expect(tool.imageFallbackFileNames).toEqual([
+    "openjpeg_nowasm_fallback.js",
+    "jbig2_nowasm_fallback.js",
+  ]);
+  expect(path.resolve(tool.imageFallbackDir)).toBe(
+    path.resolve("apps/desktop/src/renderer"),
+  );
+  const root = mkdtempSync(path.join(tmpdir(), "oi-image-"));
+  try {
+    const copied = tool.copyPdfImageFallbacks(root);
+    expect(copied.map((item) => path.basename(item.dest))).toEqual(
+      tool.imageFallbackFileNames,
+    );
+    for (const item of copied) {
+      expect(path.basename(path.dirname(item.source))).toBe("wasm");
+      expect(path.basename(item.source)).toBe(path.basename(item.dest));
+      expect(item.dest.endsWith(".wasm")).toBe(false);
+      expect(item.dest.endsWith(".mjs")).toBe(false);
+      expect(readFileSync(item.dest).equals(readFileSync(item.source))).toBe(
+        true,
+      );
+      const response = respond(
+        root,
+        `oi-app://app/${path.basename(item.dest)}`,
+        "GET",
+      );
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe(
+        "text/javascript; charset=utf-8",
+      );
+      expect(response.headers.get("content-security-policy")).toBe(
+        CONTENT_SECURITY_POLICY,
+      );
+    }
+    expect(readdirSync(root).sort()).toEqual([
+      "jbig2_nowasm_fallback.js",
+      "openjpeg_nowasm_fallback.js",
+    ]);
+    expect(respond(root, "oi-app://app/openjpeg.wasm", "GET").status).toBe(404);
+    expect(respond(root, "oi-app://app/jbig2.wasm", "GET").status).toBe(404);
+    expect(
+      respond(root, "oi-app://app/openjpeg_nowasm_fallback.mjs", "GET").status,
+    ).toBe(404);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
