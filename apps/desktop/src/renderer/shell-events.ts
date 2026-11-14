@@ -1,2 +1,12 @@
 export const openFileEvent = "oi-open-file";
 export const returnLibraryEvent = "oi-return-library";
+export const historyBackEvent = "oi-history-back";
+export const historyForwardEvent = "oi-history-forward";
+export const goToPageEvent = "oi-go-to-page";
+export const viewOriginalEvent = "oi-view-original";
+export const viewBilingualEvent = "oi-view-bilingual";
+export const viewTranslationEvent = "oi-view-translation";
+export const zoomInEvent = "oi-zoom-in";
+export const zoomOutEvent = "oi-zoom-out";
+export const zoomActualEvent = "oi-zoom-actual";
+export const zoomFitWidthEvent = "oi-zoom-fit-width";

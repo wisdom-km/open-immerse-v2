@@ -18,6 +18,7 @@ import { GoToPage } from "./go-to-page.js";
 import { HistoryControls } from "./history-controls.js";
 import { PageColumn } from "./page-column.js";
 import type { ReaderClient } from "./reader-client.js";
+import { navCommands, useBoundNav, type ReaderNav } from "./use-bound-nav.js";
 import { usePositionHistory } from "./use-position-history.js";
 import { useReaderSession } from "./use-reader-session.js";
 
@@ -30,6 +31,7 @@ export function ReaderScreen(props: {
   readonly onBindLeave?:
     | ((leave: (() => void) | undefined) => void)
     | undefined;
+  readonly onBindNav?: ((nav: ReaderNav | undefined) => void) | undefined;
 }): ReactElement {
   const session = useReaderSession(props.client, props.id, props.onLeave);
   const releasePixels = useRef(true);
@@ -50,7 +52,8 @@ export function ReaderScreen(props: {
     session.columnRef,
     reading?.pageCount,
   );
-  useLeaveKeys(leave);
+  const openGoTo = useRef<(() => void) | undefined>(undefined);
+  useBoundNav(props.onBindNav, navCommands(nav, leave, openGoTo));
   useLayoutEffect(() => {
     props.onBindLeave?.(leave);
     return () => {
@@ -67,6 +70,9 @@ export function ReaderScreen(props: {
         lostPlace={session.lostPlace}
         fallbackPage={session.shownPage}
         nav={nav}
+        onBindOpen={(open) => {
+          openGoTo.current = open;
+        }}
       />
       <ReaderBody
         loading={session.phase.kind === "loading"}
@@ -97,6 +103,7 @@ function ReaderBar(props: {
   readonly lostPlace: boolean;
   readonly fallbackPage: number | undefined;
   readonly nav: ReturnType<typeof usePositionHistory>;
+  readonly onBindOpen: (open: (() => void) | undefined) => void;
 }): ReactElement {
   const page =
     props.viewing &&
@@ -108,6 +115,7 @@ function ReaderBar(props: {
         onJump={(target) => {
           props.nav.jump(target);
         }}
+        onBindOpen={props.onBindOpen}
       />
     ) : (
       <PageMark page={props.fallbackPage} pageCount={props.pageCount} />
@@ -235,19 +243,4 @@ function ErrorPane(props: {
       </button>
     </div>
   );
-}
-
-function useLeaveKeys(leave: () => void): void {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.altKey && event.key === "ArrowLeft") {
-        event.preventDefault();
-        leave();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [leave]);
 }

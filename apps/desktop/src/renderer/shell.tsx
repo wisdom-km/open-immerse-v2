@@ -7,27 +7,52 @@ import {
   useState,
   type ReactElement,
 } from "react";
+import { flushSync } from "react-dom";
 
 import { desktopReaderClient } from "./reader-client.js";
-import { openFileEvent, returnLibraryEvent } from "./shell-events.js";
+import {
+  goToPageEvent,
+  historyBackEvent,
+  historyForwardEvent,
+  openFileEvent,
+  returnLibraryEvent,
+} from "./shell-events.js";
 
 const client = desktopReaderClient();
+
+type MenuNav = {
+  readonly back: () => void;
+  readonly forward: () => void;
+  readonly openGoTo: () => void;
+};
 
 export function Shell(): ReactElement {
   const [openId, setOpenId] = useState<string | undefined>(undefined);
   const [title, setTitle] = useState("");
   const leaveRef = useRef<(() => void) | undefined>(undefined);
+  const navRef = useRef<MenuNav | undefined>(undefined);
   const bindLeave = useCallback((leave: (() => void) | undefined) => {
     leaveRef.current = leave;
   }, []);
+  const bindNav = useCallback((nav: MenuNav | undefined) => {
+    navRef.current = nav;
+  }, []);
   useEffect(() => blockLibraryInput(openId !== undefined), [openId]);
   useEffect(() => {
-    const onReturn = () => {
-      leaveRef.current?.();
+    const onEvent = (event: Event): void => {
+      flushSync(() => {
+        menuAction(event.type, leaveRef.current, navRef.current)?.();
+      });
     };
-    window.addEventListener(returnLibraryEvent, onReturn);
+    const names = [
+      returnLibraryEvent,
+      historyBackEvent,
+      historyForwardEvent,
+      goToPageEvent,
+    ];
+    for (const name of names) window.addEventListener(name, onEvent);
     return () => {
-      window.removeEventListener(returnLibraryEvent, onReturn);
+      for (const name of names) window.removeEventListener(name, onEvent);
     };
   }, []);
   return (
@@ -46,14 +71,28 @@ export function Shell(): ReactElement {
           title={title}
           client={client}
           onBindLeave={bindLeave}
+          onBindNav={bindNav}
           onLeave={() => {
             leaveRef.current = undefined;
+            navRef.current = undefined;
             setOpenId(undefined);
           }}
         />
       )}
     </>
   );
+}
+
+function menuAction(
+  type: string,
+  leave: (() => void) | undefined,
+  nav: MenuNav | undefined,
+): (() => void) | undefined {
+  if (type === returnLibraryEvent) return leave;
+  if (type === historyBackEvent) return nav?.back;
+  if (type === historyForwardEvent) return nav?.forward;
+  if (type === goToPageEvent) return nav?.openGoTo;
+  return undefined;
 }
 
 function selectedTitle(): string {

@@ -21,8 +21,19 @@ import { ReaderScreen } from "../../src/ui/reader-screen.js";
 
 afterEach(() => {
   vi.useRealTimers();
+  navBinder.current = undefined;
   cleanup();
 });
+
+const navBinder: {
+  current:
+    | ((
+        nav:
+          | { readonly back: () => void; readonly openGoTo: () => void }
+          | undefined,
+      ) => void)
+    | undefined;
+} = { current: undefined };
 
 it("shows the lost-place line once and hides it after scrolling", async () => {
   render(
@@ -38,9 +49,10 @@ it("shows the lost-place line once and hides it after scrolling", async () => {
     />,
   );
   expect(await screen.findByText(LOST_PLACE)).toBeTruthy();
-  expect(
-    screen.getAllByRole("status").some((node) => node.textContent === ""),
-  ).toBe(true);
+  expect(screen.getAllByText(LOST_PLACE)).toHaveLength(1);
+  expect(screen.getAllByRole("status").map((node) => node.textContent)).toEqual(
+    ["", LOST_PLACE],
+  );
   fireEvent.scroll(column());
   expect(screen.queryByText(LOST_PLACE)).toBeNull();
   expect(screen.getByRole("status").textContent).toBe("");
@@ -66,10 +78,14 @@ it("shows the missing and unreadable sentences without a diagnostic button", asy
   expect(screen.queryByRole("button", { name: "Aa" })).toBeNull();
 });
 
-it("revokes on Alt+ArrowLeft and writes the visible page", async () => {
+it("revokes on menu back without history and writes the visible page", async () => {
   const writes: number[] = [];
   const revokes: string[] = [];
   let left = 0;
+  let back: (() => void) | undefined;
+  navBinder.current = (nav) => {
+    back = nav?.back;
+  };
   render(
     screenFor(
       fakeClient({
@@ -90,9 +106,9 @@ it("revokes on Alt+ArrowLeft and writes the visible page", async () => {
   expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
   expect(writes).toEqual([]);
   layOut(1);
-  fireEvent.keyDown(window, { key: "Escape" });
-  expect(revokes).toEqual([]);
   fireEvent.keyDown(window, { key: "ArrowLeft", altKey: true });
+  expect(revokes).toEqual([]);
+  back?.();
   await waitFor(() => {
     expect(revokes).toEqual(["paper"]);
   });
@@ -195,6 +211,52 @@ it("leaves through the bound menu callback", async () => {
   await waitFor(() => {
     expect(revokes).toEqual(["paper"]);
   });
+});
+
+it("steps back from the menu when history exists and does not leave", async () => {
+  let left = 0;
+  let back: (() => void) | undefined;
+  navBinder.current = (nav) => {
+    back = nav?.back;
+  };
+  render(
+    screenFor(fakeClient({}), () => {
+      left += 1;
+    }),
+  );
+  await screen.findByRole("button", { name: /转到页码/ });
+  vi.useFakeTimers();
+  layOut(2);
+  jump("3");
+  back?.();
+  paintFrame();
+  expect(pageText()).toBe("第 2 / 3 页");
+  expect(left).toBe(0);
+});
+
+it("focuses the page field when the menu opens it", async () => {
+  let openGoTo: (() => void) | undefined;
+  navBinder.current = (nav) => {
+    openGoTo = nav?.openGoTo;
+  };
+  render(screenFor(fakeClient({})));
+  await screen.findByRole("button", { name: /转到页码/ });
+  openGoTo?.();
+  expect(await screen.findByRole("textbox")).toBe(document.activeElement);
+});
+
+it("keeps canvas pixels when leave unmounts before the microtask", async () => {
+  const { canvas } = await leaveCanvas((view) => {
+    view.unmount();
+  });
+  expect(canvas.width).toBe(8);
+});
+
+it("zeros a canvas after the restore microtask when the screen stays up", async () => {
+  const { canvas, view } = await leaveCanvas(() => undefined);
+  await Promise.resolve();
+  view.unmount();
+  expect(canvas.width).toBe(0);
 });
 
 it("revokes when the menu calls the callback captured before the page is shown", async () => {
@@ -486,6 +548,36 @@ it("keeps the new title when an older open resolves later", async () => {
   expect(screen.queryByText("第 4 / 3 页")).toBeNull();
 });
 
+async function leaveCanvas(onLeave: (view: { unmount: () => void }) => void) {
+  let leave: (() => void) | undefined;
+  const view = render(
+    <ReaderScreen
+      id="paper"
+      title="Paper"
+      client={fakeClient({})}
+      onBindLeave={(next) => {
+        leave = next;
+      }}
+      onLeave={() => {
+        onLeave(view);
+      }}
+    />,
+  );
+  expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
+  const canvas = drawnCanvas();
+  leave?.();
+  return { canvas, view };
+}
+
+function drawnCanvas(): HTMLCanvasElement {
+  const canvas = document.querySelector("canvas");
+  if (!(canvas instanceof HTMLCanvasElement)) {
+    throw new Error("canvas");
+  }
+  canvas.width = 8;
+  return canvas;
+}
+
 function pageText(): string | null {
   return screen.getByRole("button", { name: /转到页码/ }).textContent;
 }
@@ -517,7 +609,13 @@ function screenFor(
   title = "Paper",
 ) {
   return (
-    <ReaderScreen id={id} title={title} client={client} onLeave={onLeave} />
+    <ReaderScreen
+      id={id}
+      title={title}
+      client={client}
+      onLeave={onLeave}
+      onBindNav={navBinder.current}
+    />
   );
 }
 

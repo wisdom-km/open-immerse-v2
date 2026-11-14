@@ -136,7 +136,7 @@ async function paintCanvas(request: PaintRequest): Promise<void> {
     if (paintStopped(request, token)) {
       return;
     }
-    await drawPage(request, page, token);
+    await drawPage(request, page);
   } catch (error) {
     if (request.isClosed() || isCancelled(error)) {
       return;
@@ -145,14 +145,7 @@ async function paintCanvas(request: PaintRequest): Promise<void> {
   }
 }
 
-async function drawPage(
-  request: PaintRequest,
-  page: PdfPage,
-  token: number,
-): Promise<void> {
-  if (paintStopped(request, token)) {
-    return;
-  }
+async function drawPage(request: PaintRequest, page: PdfPage): Promise<void> {
   const logical = page.getViewport({ scale: 1 });
   const size = renderSize({
     pageWidth: logical.width,

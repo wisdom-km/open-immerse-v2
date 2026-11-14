@@ -7,18 +7,18 @@ export function HistoryControls(props: {
   readonly onForward: () => void;
 }): ReactElement {
   const steps = [
-    ["后退", "←", props.canBack, props.onBack],
-    ["前进", "→", props.canForward, props.onForward],
+    ["后退", "←", shortcut("后退"), props.canBack, props.onBack],
+    ["前进", "→", shortcut("前进"), props.canForward, props.onForward],
   ] as const;
   return (
     <>
-      {steps.map(([label, glyph, enabled, onClick]) => (
+      {steps.map(([label, glyph, title, enabled, onClick]) => (
         <button
           key={label}
           type="button"
           className="oi-reader-back"
           aria-label={label}
-          title={label}
+          title={title}
           aria-disabled={enabled ? undefined : true}
           onClick={() => {
             if (enabled) onClick();
@@ -29,4 +29,12 @@ export function HistoryControls(props: {
       ))}
     </>
   );
+}
+
+function shortcut(label: "后退" | "前进"): string {
+  const mac = /Mac/.test(navigator.userAgent);
+  if (label === "后退") {
+    return mac ? "后退（⌘[）" : "后退（Alt+←）";
+  }
+  return mac ? "前进（⌘]）" : "前进（Alt+→）";
 }
