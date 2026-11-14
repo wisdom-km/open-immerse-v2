@@ -55,7 +55,7 @@ Anvil QA 在 `a7abcff` 上用 liushang.pdf（SHA256 `645d4519…3345`，pdfimage
 
 JpxError / Jbig2Error 在本 PR 上是 0/0，main `e5a956b` 对照是 39/2。`.wasm` 请求 0，CSP 违规 0。
 
-已知遗留：10 条「Failed to compile PostScript function to wasm, falling back to JS」warning。main 上同样存在，与本 ADR 无关。消掉它需要 `wasm-unsafe-eval`，是禁区，不处理。
+已知遗留：10 条「Failed to compile PostScript function to wasm, falling back to JS」warning。main 上同样存在，与本 ADR 无关。推断与现行 CSP 不允许 wasm 编译有关，未实测；无论是否如此，不开 `wasm-unsafe-eval`，不处理。
 
 不覆盖：其他含 JPX/CCITT 的 PDF、8GB 机器。
 
