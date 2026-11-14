@@ -104,7 +104,7 @@ export function createPdfSession(
       });
     },
     cancel(canvas) {
-      tokens.delete(canvas);
+      tokens.set(canvas, (tokens.get(canvas) ?? 0) + 1);
       cancelRender(renders, canvas);
     },
     close() {
