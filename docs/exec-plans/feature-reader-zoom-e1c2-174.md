@@ -37,7 +37,7 @@ E1c-2，阅读屏缩放。从 main `ba6a71e803d0640f11ab97ef3edc919379173050` �
 
 任一实现 PR 的非生成行超过 600，就停下，不推那个提交。把 `git diff --numstat` 的实际行数，以及建议怎么再拆，报给 Forge。不写放行理由。不把下一份的文件塞进这一份。不把 PR 标成 Ready。
 
-2a 核心，合计 329。审查 r2 的 284 没有算上菜单接线和 `PdfPaint` 的参数。下面补上的测试若是 20 行，合计 324，乘 1.73 是 561；若是 30 行，合计 334，乘 1.73 是 578。本表按 25 行测试计，329 × 1.73 = 569。仍不超过 600，余量是 22 到 39 行。超过 600 就把适合宽度（`resolveZoomPercent` 的接线和对应测试）挪到控件那一份，不写放行理由。
+2a 核心，合计 329。`use-reader-session.ts` 计 0，不改变这个和。审查 r2 的 284 没有算上菜单接线和 `PdfPaint` 的参数。下面补上的测试若是 20 行，合计 324，乘 1.73 是 561；若是 30 行，合计 334，乘 1.73 是 578。本表按 25 行测试计，329 × 1.73 = 569，没有超过 600，适合宽度留在核心。余量是 22 到 39 行。实现时超过 600 就把适合宽度（`resolveZoomPercent` 的接线和对应测试）挪到控件那一份，不写放行理由。
 
 | 文件 | 计入 | 改完大约 | 会不会超 |
 | --- | --- | --- | --- |
@@ -46,6 +46,7 @@ E1c-2，阅读屏缩放。从 main `ba6a71e803d0640f11ab97ef3edc919379173050` �
 | `packages/features/reader/test/ui/use-zoom.test.ts` 新建 | 50 | 50 | 不会 |
 | `packages/features/reader/src/ui/page-column.tsx` | 40 | 189 | 不会。现 149，组件建议 250 |
 | `packages/features/reader/src/ui/pdf-session.ts` | 14 | 270 | 不会。现 258，普通文件建议 400 |
+| `packages/features/reader/src/ui/use-reader-session.ts` | 0 | 258 | 不改。普通文件建议 400，硬上限 600。见下面的路径 |
 | 既有绘制测试改断言 | 40 |  | 不会 |
 | `apps/desktop/e2e/` 里菜单「放大」后看窗口因子 | 30 |  | 不会。用 `clickMenu("放大")`。PR212 已证实 CI 上用 Playwright 按快捷键不会触发菜单 accelerator |
 | `packages/features/reader/src/ui/reader-screen.tsx` | 6 | 253 | 现 247。超过建议上限 250，停在 260。见下面 |
@@ -55,9 +56,11 @@ E1c-2，阅读屏缩放。从 main `ba6a71e803d0640f11ab97ef3edc919379173050` �
 | shell 或阅读屏测试 | 25 |  | 浮动 20 到 30。用到 `paint` 的现有测试跟着改签名 |
 | 本文件「实际」列的回填 | 4 |  | 文档 |
 
-`useZoom` 在 `ReaderScreen` 里调用一次，不监听 window 事件。它只提供百分比、档位和四个命令。`shell.tsx` 把四个 `zoom*Event` 加进现有的 `names`，`menuAction` 调用 `bindNav` 传进来的命令。`ReaderNav` 增加 `zoomIn`、`zoomOut`、`zoomActual`、`zoomFitWidth`，由 `ReaderScreen` 用 `useZoom` 的返回值绑定。事件名仍只写在 `shell-events.ts`。reader 包不写这四个字面值，也不在 `contracts/src/ui-events.ts` 登记。批次 E 计划第 214 行写过：若必须登记，那是 contracts，停下来，不在这里新建。
+`useZoom` 在 `ReaderScreen` 里调用一次，不碰 window 事件。它只提供百分比、档位和四个命令。`shell.tsx` 把 `shell-events.ts` 里已有的 `zoomInEvent`、`zoomOutEvent`、`zoomActualEvent`、`zoomFitWidthEvent` 加进现有的 `names`，`menuAction` 增加四个分支，调用 `bindNav` 传进来的命令。不在 `shell.tsx` 再写一遍字面值。`ReaderNav` 增加 `zoomIn`、`zoomOut`、`zoomActual`、`zoomFitWidth`。事件名仍只写在 `shell-events.ts`。reader 包不出现这四个字面值，也不成为订阅方。
 
-同一个百分比传给 `ReaderBody` 和 `page-column`。绘制走 `PdfPaint`：`reader-client.ts` 第 8 行的签名从 `(page, canvas)` 加上 zoom。`asset-pdf.ts` 和 `open-reading.ts` 只把这个参数传到 `pdf-session.ts` 的 `drawPage`，替换现在写死的 `zoom: 1`。不改 `use-reader-session.ts`。它不创建 `paint`，现 258 行。`page-column` 第 89 行的 effect 依赖加上 zoom，缩放变了就重画。这一条算在它已有的 40 行里。锚点要用的 `session.columnRef` 和当前页已经在 `ReaderScreen`。
+核实过 RULES 第 89 行。给事件新增发布方或订阅方才要登记 `contracts/src/ui-events.ts` 并附 ADR。PR212 没有登记 `oi-zoom-*`：`contracts/src/ui-events.ts` 不存在。同一次合入的 `oi-return-library`、`oi-history-back`、`oi-history-forward`、`oi-go-to-page` 也没有登记，而 `shell.tsx` 已经在听这四项。放大这四项的发布方仍是桌面菜单，订阅方仍是这个 shell，不是新的切片。reader 包不订阅。因此这次不登记，不改 contracts。G5 的 `ui-events-declared` 仍是延后项。
+
+绘制路径是这一条。`use-reader-session.ts` 只持有 `ReadingView`，`paint` 在 `open-reading.ts` 里创建。这个钩子不调用 `paint`，也不接收 zoom，所以保持 258 行，不改。普通源文件建议上限 400，硬上限 600。`ReaderScreen` 从 `session.phase.reading.paint` 取出绘制函数，把百分比另传给 `ReaderBody` 和 `page-column`。`page-column` 第 89 行的 effect 依赖加上 zoom，调用 `paint(page, canvas, zoom)`。`PdfPaint` 定义在 `reader-client.ts` 第 8 行，从 `(page, canvas)` 加上 zoom。`open-reading.ts` 和 `asset-pdf.ts` 把这个参数传到 `pdf-session.ts` 的 `drawPage`，替换写死的 `zoom: 1`。用到 `paint` 的测试跟着改签名。锚点要用的 `session.columnRef` 和当前页已经在 `ReaderScreen`。
 
 加载前或出错时，四个命令直接返回。卸下时 `onLeave` 已经把 `navRef` 清掉，之后菜单事件再到 shell，状态不变。
 
@@ -98,7 +101,7 @@ PR212 r1 的 n2 这一轮不处理。那一条是 shell 层的 `flushSync` 只�
 
 ## 行为
 
-系统菜单和按钮用现成的。不造滑块，不用 `zoomIn` / `zoomOut` / `resetZoom` role，不调用 `webFrame.setZoomFactor`。百分比菜单是批次 E 计划第 94 行已经写明的渲染进程菜单：点百分比打开，底行是「只缩放 PDF 原文栏；界面跟随系统缩放」。字面值以这一行为准。DESIGN 第 718 行只有这个意思，没有这句原文。这一行不是命令。适合页面只出现在这个菜单里。− 和 + 是按钮，`disabled` 表示不可用，不只靠颜色。tooltip 带快捷键：Windows / linux 是 Ctrl+=、Ctrl+−、Ctrl+0、Ctrl+Alt+0；mac 是 ⌘=、⌘−、⌘0、⌥⌘0。名称用「放大」「缩小」「实际大小」「适合宽度」「适合页面」。
+系统菜单和按钮用现成的。不造滑块，不用 `zoomIn` / `zoomOut` / `resetZoom` role，不调用 `webFrame.setZoomFactor`。百分比菜单是批次 E 计划第 94 行已经写明的渲染进程菜单：点百分比打开，底行是「只缩放 PDF 原文栏；界面跟随系统缩放」。字面值以 #206 第 94 行为准，出处是 DESIGN 第 718 行。这一行不是命令。适合页面只出现在这个菜单里。− 和 + 是按钮，`disabled` 表示不可用，不只靠颜色。tooltip 带快捷键：Windows / linux 是 Ctrl+=、Ctrl+−、Ctrl+0、Ctrl+Alt+0；mac 是 ⌘=、⌘−、⌘0、⌥⌘0。名称用「放大」「缩小」「实际大小」「适合宽度」「适合页面」。
 
 档位只调用 `pure.ts` 已导出的函数。+ 用 `nextZoomPercent`，− 用 `previousZoomPercent`。实际大小用 `DEFAULT_ZOOM_PERCENT`。适合宽度、适合页面用 `resolveZoomPercent`，里面已经 `clampZoomPercent`。边界用 `ZOOM_PERCENT_MIN` 和 `ZOOM_PERCENT_MAX`。25% 时 − 置灰，快捷键什么都不做。400% 时 + 置灰，快捷键什么都不做。不在 UI 里再写一张档位表。不改 `zoom-bounds.ts`、`pure.ts`、domain。
 
@@ -125,7 +128,7 @@ PDF 栏缩放不加过渡动画。已核对 DESIGN：§3.5 第 271 行的「缩�
 - 百分比只播一次：写进它自己的 `role="status"` 一次。页码那句和迷路那句还在。
 - 占位尺寸乘以缩放比例：外框宽高等于页盒乘 `zoomPercent / 100`。
 - 适合宽度和适合页面的百分比都来自 `resolveZoomPercent`。
-- 百分比菜单底行的文字等于「只缩放 PDF 原文栏；界面跟随系统缩放」。这句以批次 E 计划第 94 行为准，DESIGN 第 718 行没有这句原文。适合页面只出现在这个菜单里。测试用这个字面值，不从 copy 导入。
+- 百分比菜单底行的文字等于「只缩放 PDF 原文栏；界面跟随系统缩放」。字面值以 #206 第 94 行为准，出处是 DESIGN 第 718 行。适合页面只出现在这个菜单里。测试用这个字面值，不从 copy 导入。
 - `renderSize` 的倍数是缩放乘 dpr。`PROVISIONAL_PAGE_PIXEL_CAP` 仍是 Infinity。只断言行为。
 - tooltip 两个分支都测（PR212 r1 的 n6）：快捷键按 `navigator.userAgent` 分 mac 和 Windows。测试用 `vi.spyOn` 或 `Object.defineProperty` 各设一次。linux 走 Windows 那一支。不只测 Windows。
 
@@ -191,8 +194,8 @@ N2：打开时逐页 `getPage`。N3：阅读中途改系统缩放并重画。N4�
 | --- | --- | --- | --- |
 | 先交台账和计划，审过才实现 | 原话「批准，按照你的建议做吧」。E1c-2 照 Forge 的建议推进。实现范围以这份计划为准 | 2026-11-15 07:05 | Wisdom。台账对应 [评论 6885626184](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6885626184) |
 | #213 只放计划和台账；实现分成核心、控件、滚轮 | 审查 r1 的方案甲，审查 r2 把状态和占位合成核心。审查 r3 补上 shell 接线和 `PdfPaint` 之后，核心 329，控件 300，滚轮 298。上一稿三份相加是 583。核心加控件是 629，乘 1.73 约 1088，不合在一起。超过 600 就把适合宽度挪到控件那一份，不写放行理由 | 2026-11-15 | Forge 计划审查 r3，[评论 6886102293](https://github.com/wisdom-km/open-immerse-v2/pull/213#issuecomment-6886102293) |
-| `useZoom` 在 `ReaderScreen` 调用一次，不听 window 事件 | 菜单沿用 PR212：`shell.tsx` 订阅，经 `bindNav` 调命令。reader 包不写事件名，不登记 `ui-events.ts`。绘制给 `PdfPaint` 加 zoom，不改 `use-reader-session.ts` | 2026-11-15 | Forge 计划审查 r3，[评论 6886102293](https://github.com/wisdom-km/open-immerse-v2/pull/213#issuecomment-6886102293) |
-| 底行字面值以批次 E 计划第 94 行为准 | DESIGN 第 718 行只有这个意思，没有这句原文 | 2026-11-15 | Forge 计划审查 r3 的 n1 |
+| `useZoom` 在 `ReaderScreen` 调用一次，不碰 window 事件 | 菜单沿用 PR212。shell 已是菜单事件的订阅方，`oi-zoom-*` 在 PR212 里没有登记，这次也不登记。`use-reader-session.ts` 保持 258 行，建议上限 400，硬上限 600 | 2026-11-15 | 本计划的核实。审查 r3 的 B1 |
+| 底行字面值以 #206 第 94 行为准 | 出处是 DESIGN 第 718 行 | 2026-11-15 | Forge 计划审查 r3 的 n1 |
 | 滚轮和捏合的停手时长是「暂定 300 毫秒」 | 批次 E 计划第 37 行。按钮没有停手间隔，一点就播 | 2026-11-15 | 批次 E 计划。Forge 可以改这个数 |
 | 2b 接受启动之后才核对 userData | PR212 r1 的 n5。这个顺序证明启动参数已生效。改它会碰到每一条 e2e | 2026-11-15 | 本计划。审查 r1 要求写明是修还是接受 |
 | PDF 栏缩放不加过渡动画 | DESIGN §3.5 第 271 行和 DS-07 说的是动效里的缩放，§11.3 没有要求过渡。两处不相反 | 2026-11-15 | 本计划。已核对 DESIGN |
