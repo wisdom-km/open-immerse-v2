@@ -4,4 +4,4 @@
 
 ## 本环境跑过的命令（Node 22.23.4，仓库根）
 
-- 全量 `corepack pnpm exec vitest run`：退出码 0。189 个文件，842 通过，3 跳过（`leak.test.ts` 的 G9，本地没有 `GITLEAKS_BIN`）。`GATE_BASE=origin/main corepack pnpm run check` 的退出码在这条提交之后补上。
+- 全量 `corepack pnpm exec vitest run`：退出码 0。189 个文件，842 通过，3 跳过（`leak.test.ts` 的 G9，本地没有 `GITLEAKS_BIN`）。`GATE_BASE=origin/main corepack pnpm run check`：退出码 0。pr-size 595。
