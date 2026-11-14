@@ -6,6 +6,7 @@ export {
   goForward,
   POSITION_HISTORY_LIMIT,
   recordJump,
+  replaceCurrent,
 } from "./domain/position-history.js";
 export type { PositionHistory, ReaderJump } from "./domain/position-history.js";
 export {

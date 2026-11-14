@@ -38,6 +38,27 @@ export function recordJump(
   };
 }
 
+/**
+ * 只替换 current。不把旧 current 压进 back，也不清 forward。
+ * 页号不合法，或与 current 相同，则原样返回。
+ */
+export function replaceCurrent(
+  history: PositionHistory,
+  page: ReaderJump,
+): PositionHistory {
+  if (!Number.isInteger(page.page) || page.page < 1) {
+    return history;
+  }
+  if (history.current?.page === page.page) {
+    return history;
+  }
+  return {
+    back: history.back,
+    current: page,
+    forward: history.forward,
+  };
+}
+
 export function goBack(history: PositionHistory): PositionHistory {
   const previous = history.back[history.back.length - 1];
   if (previous === undefined || history.current === undefined) {

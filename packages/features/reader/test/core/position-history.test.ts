@@ -6,6 +6,7 @@ import {
   goForward,
   POSITION_HISTORY_LIMIT,
   recordJump,
+  replaceCurrent,
 } from "../../src/pure.js";
 
 it("keeps the stack when recordJump repeats the current page", () => {
@@ -27,6 +28,61 @@ it("drops the oldest jump when the back stack already holds 50", () => {
   expect(history.back[0]).toEqual({ page: 2 });
   expect(history.current).toEqual({ page: POSITION_HISTORY_LIMIT + 2 });
   expect(history.forward).toEqual([]);
+});
+
+it("replaces current without pushing the old page or clearing forward", () => {
+  const opened = recordJump(emptyPositionHistory(), { page: 3 });
+  const jumped = recordJump(opened, { page: 9 });
+  const backed = goBack(jumped);
+  const replaced = replaceCurrent(backed, { page: 7 });
+  expect(replaced.current).toEqual({ page: 7 });
+  expect(replaced.back).toBe(backed.back);
+  expect(replaced.back).toEqual([]);
+  expect(replaced.forward).toBe(backed.forward);
+  expect(replaced.forward).toEqual([{ page: 9 }]);
+});
+
+it("replaces only current when back already has entries", () => {
+  const history = recordJump(
+    recordJump(recordJump(emptyPositionHistory(), { page: 1 }), { page: 2 }),
+    { page: 3 },
+  );
+  expect(history.current).toEqual({ page: 3 });
+  expect(history.back).toEqual([{ page: 1 }, { page: 2 }]);
+  const replaced = replaceCurrent(history, { page: 5 });
+  expect(replaced.back).toBe(history.back);
+  expect(replaced.back).toEqual([{ page: 1 }, { page: 2 }]);
+  expect(replaced.forward).toBe(history.forward);
+  expect(replaced.forward).toEqual([]);
+  expect(replaced.current).toEqual({ page: 5 });
+});
+
+it("returns the same history when replaceCurrent repeats the current page", () => {
+  const current = recordJump(emptyPositionHistory(), { page: 4 });
+  expect(replaceCurrent(current, { page: 4 })).toBe(current);
+});
+
+it("returns the same history when replaceCurrent is given a page that is not a positive integer", () => {
+  const current = recordJump(emptyPositionHistory(), { page: 4 });
+  expect(replaceCurrent(current, { page: 0 })).toBe(current);
+  expect(replaceCurrent(current, { page: 1.5 })).toBe(current);
+  expect(replaceCurrent(current, { page: -2 })).toBe(current);
+});
+
+it("sets current on an empty history without creating a back entry", () => {
+  const replaced = replaceCurrent(emptyPositionHistory(), { page: 6 });
+  expect(replaced.current).toEqual({ page: 6 });
+  expect(replaced.back).toEqual([]);
+  expect(replaced.forward).toEqual([]);
+});
+
+it("lets the next recordJump push the replaced page", () => {
+  const opened = recordJump(emptyPositionHistory(), { page: 2 });
+  const seen = replaceCurrent(opened, { page: 8 });
+  const jumped = recordJump(seen, { page: 12 });
+  expect(jumped.back).toEqual([{ page: 8 }]);
+  expect(jumped.current).toEqual({ page: 12 });
+  expect(jumped.forward).toEqual([]);
 });
 
 it("moves the current page onto the forward stack when goBack is called", () => {
