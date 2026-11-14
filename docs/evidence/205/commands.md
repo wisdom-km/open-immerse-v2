@@ -39,4 +39,4 @@ arch-edge-planned	WC	C
 
 `check-pr-size` 的非生成行数在最终 tip 上重跑后填在下一行。
 
-check-pr-size: 1067 non-generated lines
+check-pr-size: 1068 non-generated lines
