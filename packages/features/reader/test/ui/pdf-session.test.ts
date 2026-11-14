@@ -150,7 +150,7 @@ it("reports a missing 2d context and does not render", async () => {
 });
 
 it("sizes the backing store from devicePixelRatio and keeps the CSS size", async () => {
-  const host = globalThis as { devicePixelRatio?: number };
+  const host = globalThis as { devicePixelRatio: number | undefined };
   const previous = host.devicePixelRatio;
   host.devicePixelRatio = 2;
   const session = createPdfSession(

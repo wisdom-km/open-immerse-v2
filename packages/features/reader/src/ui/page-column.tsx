@@ -13,7 +13,7 @@ export function PageColumn(props: {
   readonly onScrollEnd: () => void;
   readonly paint: PdfPaint | undefined;
   readonly cancel: PdfCancel | undefined;
-  readonly boxes?: readonly PageBox[];
+  readonly boxes?: readonly PageBox[] | undefined;
   readonly releasePixels?: { current: boolean };
 }): ReactElement {
   const pages = pageNumbers(props.pageCount);
