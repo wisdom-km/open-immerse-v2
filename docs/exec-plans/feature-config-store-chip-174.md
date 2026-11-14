@@ -285,7 +285,7 @@ W5、W6、W7、W9 不再请批。登记成缺口，实现时不补。
 | 2 | 台账 13:57。#204 已写入 main，本分支不重复，合计仍是 152。manifest 不改 |  |  |
 | 3 | 按审查 6873016564 与 6873205344 修订本文件。不改台账，不改规格正文 |  |  |
 | 4 | settings 切片，见「实现顺序」第 1 笔 | 已写入 `packages/features/settings`。`0001_set_providers.sql` 含 `purpose`、`credential_slot` 和 `WHERE purpose = 'parse'` 的部分唯一索引。分类、用例、SQLite 只读、固定不可用密钥端口、handler 工厂。`credential_slot` 空串有单独用例。未注册生产 map，未改 expose。适配器不直接 import kernel 或 contracts，所以没有 05-01 未画出的边。domain 对 kernel 的类型导入实现了图上已有的 DOM→K，`tools/check-arch-graph/check.test.ts` 的 planned 计数从 13 改为 12。`pnpm-lock.yaml` 只加了这个包的 workspace 依赖，desktop 仍不依赖它。R3-N1 已去掉 #206 的行号。缺表时存储层抛出，不收成 `storage_corrupt`。非文本列是 `storage_corrupt`。settings 单测 3 个文件、17 通过。`app_schema` 仍是 1 | `docs/evidence/205/commands.md` |
-| 5 | library 迁移、主进程只接 parsing、expose。W1–W4 已批。代码等本轮计划复审 PASS | 已在 `feature/config-wiring-174` 写。`createLibraryMain` 收额外迁移，默认空，交出 `storage`。`library-wiring.ts` 只把 `parsing.getParseCapabilities` 并进 map。`expose` 只开这一条。02-05 第 32 行与 prd 08 第 25 行已改成事实，manifest 已同步。升级测试：library 行还在，`app_schema` 仍是 1，没有 parse 行是 `unconfigured`。缺 `set_providers` 时经路由得到 `handler_threw`。库打不开时这条也是 `handler_threw`。`composition-root.ts` 未改。`settings.*` 仍是 false | 本 PR 的 `docs/evidence` |
+| 5 | library 迁移、主进程只接 parsing、expose。W1–W4 已批。代码等本轮计划复审 PASS | 已在 `feature/config-wiring-174` 写。`createLibraryMain` 收额外迁移，默认空，交出 `storage`。`library-wiring.ts` 只把 `parsing.getParseCapabilities` 并进 map。`expose` 只开这一条。02-05 第 32 行与 prd 08 第 25 行已改成事实，manifest 已同步。升级测试：library 行还在，`app_schema` 仍是 1，没有 parse 行是 `unconfigured`。缺 `set_providers` 时经路由得到 `handler_threw`。库打不开时这条也是 `handler_threw`。`composition-root.ts` 未改。`settings.*` 仍是 false | `docs/evidence/208/commands.md` |
 | 6 | chip、降级句函数、e2e、Windows 截图 |  |  |
 
 ## 决策记录（Decision Log）
