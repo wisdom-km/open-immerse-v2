@@ -1,6 +1,6 @@
 # 执行计划
 
-E1c-2，阅读屏缩放。从 main `ba6a71e803d0640f11ab97ef3edc919379173050` 开工。parent 是 `d5d5ea2`，tree 是 `85a6fefb`。这一份只写计划。Forge 审查通过之前不写产品代码。不含 Ready、合入、发版。
+E1c-2，阅读屏缩放。从 main `ba6a71e803d0640f11ab97ef3edc919379173050` 开工。parent 是 `d5d5ea2`，tree 是 `85a6fefb`。2026-11-15 07:05 Wisdom 原话是「批准，按照你的建议做吧」，见台账和 [评论 6885626184](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6885626184)。先交台账和计划。Forge 审查计划 PASS 之后才实现，实现范围以这份计划为准。不含 Ready、合入、发版，这三件仍要单独批准。
 
 范围以 [E1c 计划](feature-reader-render-e1c-174.md) 的「E1c-2」为准，并落实 [批次 E 计划](feature-reader-nav-zoom-174.md)。E1c 计划把这一笔估成 504 行。按下面的加删重算，含测试和证据，大约 840 行，超过 600。本计划提出拆分，不写放行理由。
 
@@ -113,7 +113,8 @@ N2：打开时逐页 `getPage`。N3：阅读中途改系统缩放并重画。N4�
 
 | 决定 | 理由 | 日期（Asia/Shanghai） | 谁定的 |
 | --- | --- | --- | --- |
-| 拆成 E1c-2a 和 E1c-2b | 重算约 840 行，超过 600。2a 约 548，2b 约 294。不写放行理由 | 2026-11-15 | 本计划的估算。Forge 排序，非业主决定 |
+| 先交台账和计划，审过才实现 | 原话「批准，按照你的建议做吧」。E1c-2 照 Forge 的建议推进。实现范围以这份计划为准 | 2026-11-15 07:05 | Wisdom。台账对应 [评论 6885626184](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6885626184) |
+| 拆成 E1c-2a 和 E1c-2b | 重算约 840 行，超过 600。2a 约 548，2b 约 294。不写放行理由。07:05 没有单独点名这两笔的行数，拆分仍等 Forge 审计划 | 2026-11-15 | 本计划的估算。Forge 排序，非业主决定 |
 | 不改 `library-menu.ts` | 四项已经派发。适合页面不进应用菜单 | 2026-11-15 | 沿用 E1c 计划。依据是批次 E 计划第 94 行 |
 | 不记住缩放 | 6-2 A。DESIGN §11.3 的记住缩放不改正文 | 2026-11-14 14:13 | Wisdom。台账对应 [评论 6872935563](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872935563) |
 | 锚点用当前可见页 | G-5。规格没写指针锚点 | 2026-11-14 | 批次 E 计划。Loom 建议，不是新的业主决定 |
