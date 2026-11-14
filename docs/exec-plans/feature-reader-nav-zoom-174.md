@@ -1,6 +1,6 @@
 # 批次 E · 阅读屏导航（缩放、转到页码、位置历史、栏位）
 
-分支 `feature/reader-nav-zoom-174`。基线 main `d8e5afb2aff5d9b151050e07aa3a11b4a0a41290`（#204），tree `7c60f428c10db03e23052ad93956c823905597b6`。本文件自洽。Forge 审查通过之前没有实现提交。本 PR 只改文档，不写产品代码，不改测试，不改 CI，不改 CSP，不改 DESIGN。不开 Ready，不合入，不发版。
+分支 `feature/reader-nav-zoom-174`。基线 main `5c6b34ea6559463b8135112b808b741357205268`（#205 第 1 笔），tree `f106576602906c2801c334d0129e3e42862e2041`。本文件自洽。Forge 审查通过之前没有实现提交。本 PR 只改文档，不写产品代码，不改测试，不改 CI，不改 CSP，不改 DESIGN。不开 Ready，不合入，不发版。
 
 开工依据是台账里已有的 2026-11-05 21:01 ③ 批准，[评论 6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956)。2026-11-14 14:13 的三件决定见 [评论 6872935563](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872935563)。2026-11-14 14:17 的内存方案 A 见 [评论 6872986479](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872986479) 与 [Issue #202 评论 6872987059](https://github.com/wisdom-km/open-immerse-v2/issues/202#issuecomment-6872987059)。#202 并入本批，不另开实现 PR。提议中的 ADR 是 [0012](../adr/0012-viewport-canvas-cap.md)。Loom 的对照稿在 Cloud 是 `/cursor/stores/bot/oi-v2/BATCH-E-DESIGN.md`，在 Box 是 `/workspace/oi-qa/v2-batch-e-design/BATCH-E-DESIGN.md`（下称 Loom）。两份都是 439 行，sha256 `034fa650b2ee5cd74c4da3ac54b378512ee250e0313f382691bc531cfb0d40a1`。Cloud 这一份已在本环境核对哈希。Box 那一份的哈希是 Forge 审查 [评论 6873533530](https://github.com/wisdom-km/open-immerse-v2/pull/206#issuecomment-6873533530) 记下的，与这一份相同。§4.6、验收 E-M1–E-M5、真机 R-E12 / R-E13 和 §9 的内存行都已按 14:17 写上。本计划按这一稿逐条满足 §9，并写入 §7、§8、§10。
 
