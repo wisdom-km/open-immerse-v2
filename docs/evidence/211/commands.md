@@ -9,3 +9,4 @@
 ## 本环境跑过的命令（Node 22.23.4，仓库根）
 
 - `corepack pnpm exec vitest run packages/features/reader/test/ui/canvas-window.test.ts packages/features/reader/test/ui/render-scale.test.ts packages/features/reader/test/ui/page-column.test.tsx packages/features/reader/test/ui/pdf-session.test.ts packages/features/reader/test/ui/reader-screen.test.tsx packages/features/reader/test/ui/open-reading.test.ts packages/features/reader/test/ui/failed-read-leave.test.tsx`：退出码 0。7 个文件，52 个通过。
+- `GATE_BASE=origin/main corepack pnpm run check`：退出码 0。含 pr-size、lint、typecheck、typecheck:core。pr-size 是 572。
