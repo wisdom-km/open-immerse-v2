@@ -5,6 +5,7 @@ import {
   openAppStorage,
   readSliceMigrations,
   type AppStorage,
+  type MigrationSource,
 } from "@oi/platform-node";
 
 import {
@@ -51,6 +52,7 @@ export type LibraryMainOptions = {
   readonly dataRoot: string;
   readonly pickPdf: PdfPicker;
   readonly clock: LibraryClock;
+  readonly migrations?: readonly MigrationSource[] | null;
 };
 
 export type ReadingIpcHandlers = {
@@ -67,6 +69,7 @@ export type LibraryMain = {
   readonly reading: ReadingIpcHandlers;
   readonly locate: (assetId: string) => string | undefined;
   readonly openPort: LibraryOpenPort | null;
+  readonly storage: AppStorage | null;
   readonly clock: LibraryClock;
   readonly close: () => void;
 };
@@ -85,6 +88,7 @@ export function createLibraryMain(options: LibraryMainOptions): LibraryMain {
         return undefined;
       },
       openPort: null,
+      storage: null,
       clock: options.clock,
       close() {
         return undefined;
@@ -97,6 +101,7 @@ export function createLibraryMain(options: LibraryMainOptions): LibraryMain {
     reading: built.reading,
     locate: built.locate,
     openPort: built.openPort,
+    storage: opened.storage,
     clock: options.clock,
     close: closeOnce(opened.storage),
   };
@@ -111,6 +116,9 @@ function openLibrary(options: LibraryMainOptions): Opened {
 }
 
 function openLibraryResult(options: LibraryMainOptions): Opened {
+  if (options.migrations === null) {
+    return { ok: false };
+  }
   const migrations = readSliceMigrations("library", migrationsDirectory());
   if (!migrations.ok) {
     return { ok: false };
@@ -118,7 +126,7 @@ function openLibraryResult(options: LibraryMainOptions): Opened {
   const opened = openAppStorage({
     dataRoot: options.dataRoot,
     clock: options.clock,
-    migrations: migrations.value,
+    migrations: [...migrations.value, ...(options.migrations ?? [])],
   });
   if (!opened.ok) {
     return { ok: false };

@@ -45,10 +45,10 @@ const hidden = [
   "credentialSlot",
 ] as const;
 
-it("keeps the parse commands unexposed until a handler exists", () => {
+it("exposes only the parse capability query", () => {
   expect(saveParseService.expose).toBe(false);
   expect(getParseServiceStatus.expose).toBe(false);
-  expect(parsingCapabilities.expose).toBe(false);
+  expect(parsingCapabilities.expose).toBe(true);
   expect(saveParseService).toBe(exportedSave);
   expect(getParseServiceStatus).toBe(exportedStatus);
   expect(parsingCapabilities).toBe(exportedCapabilities);

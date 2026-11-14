@@ -7,9 +7,9 @@ import { parseServiceReadErrors } from "./error-codes.js";
 const closed = { additionalProperties: false } as const;
 
 /**
- * 能力查询的内部契约。成功体与内部读状态相同。没有 save_failed。
- * 2026-11-09 01:56：本批 expose 为 false。正式 codegen 不写入调用面或 registry。
- * expose 为 true 只在真实配置来源与 handler 同一次合入时打开。
+ * 能力查询。成功体与内部读状态相同。没有 save_failed。
+ * 2026-11-09 01:56：expose 为 true 只在真实配置来源与 handler 同一次合入时打开。
+ * 2026-11-14 第 2 笔打开这一条。settings.* 仍是 false。
  * 构建不支持不是 unconfigured。
  */
 export const getParseCapabilities = {
@@ -19,7 +19,7 @@ export const getParseCapabilities = {
   response: parseServiceStatusSchema,
   errors: parseServiceReadErrors,
   idempotent: true as const,
-  expose: false as const,
+  expose: true as const,
   transport: "invoke" as const,
 };
 

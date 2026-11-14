@@ -4,7 +4,6 @@ import { ipcRegistry } from "../src/main/ipc/registry.generated.js";
 import { createOi } from "../src/preload/oi.generated.js";
 
 const hidden = [
-  "parsing.getParseCapabilities",
   "settings.saveParseService",
   "settings.getParseServiceStatus",
 ] as const;
@@ -19,6 +18,7 @@ const exposed = [
   "library.relocate",
   "library.revokeReadingAsset",
   "library.setProgressPage",
+  "parsing.getParseCapabilities",
 ] as const;
 
 it("keeps internal commands off the registry and the preload object", () => {
@@ -32,9 +32,14 @@ it("keeps internal commands off the registry and the preload object", () => {
 });
 
 it("types the window and the preload return as the same exposed commands", () => {
-  expectTypeOf<keyof Window["oi"]>().toEqualTypeOf<"ingest" | "library">();
+  expectTypeOf<keyof Window["oi"]>().toEqualTypeOf<
+    "ingest" | "library" | "parsing"
+  >();
   expectTypeOf<keyof Window["oi"]["library"]>().toEqualTypeOf<ExposedName>();
   expectTypeOf<keyof Window["oi"]["ingest"]>().toEqualTypeOf<"openDocument">();
+  expectTypeOf<
+    keyof Window["oi"]["parsing"]
+  >().toEqualTypeOf<"getParseCapabilities">();
   expectTypeOf<PreloadName>().toEqualTypeOf<ExposedName>();
   expectTypeOf<PreloadIngest>().toEqualTypeOf<"openDocument">();
 });

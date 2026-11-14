@@ -9,6 +9,11 @@ import {
 import { platform } from "node:process";
 
 import { createLibraryMain, type LibraryMain } from "@oi/feature-library/main";
+import {
+  createSettingsParseCapabilities,
+  settingsMigrationsDirectory,
+} from "@oi/feature-settings/main";
+import { readSliceMigrations } from "@oi/platform-node";
 
 import type { IpcCommandHandler } from "./ipc/ipc-router.js";
 import { createReadingAssetPath } from "./reading-asset-path.js";
@@ -35,7 +40,21 @@ export function startLibrary(
   dataRoot: string,
   register: ReadingAssetRegistrar = registerReadingAsset,
 ): ReadonlyMap<string, IpcCommandHandler> {
-  const main = createLibraryMain({
+  const main = openWiredLibrary(dataRoot);
+  handleReadingAssetProtocol(createReadingAssetPath(main, dataRoot), register);
+  app.on("will-quit", () => {
+    main.close();
+  });
+  installFileMenu();
+  return wiredLibraryCommands(main);
+}
+
+export function openWiredLibrary(
+  dataRoot: string,
+  settingsDirectory = settingsMigrationsDirectory(),
+): LibraryMain {
+  const settings = readSliceMigrations("settings", settingsDirectory);
+  return createLibraryMain({
     dataRoot,
     clock: { nowMs: () => Date.now() },
     pickPdf: {
@@ -43,13 +62,36 @@ export function startLibrary(
         return pickPdf();
       },
     },
+    migrations: settings.ok ? settings.value : null,
   });
-  handleReadingAssetProtocol(createReadingAssetPath(main, dataRoot), register);
-  app.on("will-quit", () => {
-    main.close();
-  });
-  installFileMenu();
-  return withOpenDocument(commandMap(main), main);
+}
+
+export function wiredLibraryCommands(
+  main: LibraryMain,
+): ReadonlyMap<string, IpcCommandHandler> {
+  return withParseCapabilities(withOpenDocument(commandMap(main), main), main);
+}
+
+function withParseCapabilities(
+  commands: ReadonlyMap<string, IpcCommandHandler>,
+  main: LibraryMain,
+): ReadonlyMap<string, IpcCommandHandler> {
+  const merged = new Map(commands);
+  merged.set("parsing.getParseCapabilities", parseCapabilitiesHandler(main));
+  return merged;
+}
+
+function parseCapabilitiesHandler(main: LibraryMain): IpcCommandHandler {
+  const storage = main.storage;
+  if (storage === null) {
+    return () =>
+      Promise.resolve({
+        ok: false,
+        error: { code: "handler_threw", retryable: true },
+      });
+  }
+  const handle = createSettingsParseCapabilities(storage);
+  return () => handle({});
 }
 
 function withOpenDocument(

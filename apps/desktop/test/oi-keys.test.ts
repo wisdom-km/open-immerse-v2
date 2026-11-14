@@ -18,6 +18,7 @@ it("lists the exposed library commands", () => {
     "library.relocate",
     "library.revokeReadingAsset",
     "library.setProgressPage",
+    "parsing.getParseCapabilities",
   ]);
   expect("invoke" in oi).toBe(false);
   expect("invokeDropped" in oi).toBe(false);

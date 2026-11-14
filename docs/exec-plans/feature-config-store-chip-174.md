@@ -175,7 +175,7 @@ Forge 排序，非业主决定。G18 只数 `packages/features/<name>/src`（`to
 | 顺序 | 内容 | 先要有的决定 | 切片 |
 | --- | --- | --- | --- |
 | 1 | `settings` 切片：`set_providers` 的 `0001` 用 `purpose` 和 `credential_slot`，不再改列名。分类、用例、SQLite、固定不可用的密钥端口、`parsing.getParseCapabilities` 的 handler 工厂、临时库测试。不注册进生产 map，不改 `expose`，不建 `settings.getParseServiceStatus` 的 handler | 2026-11-14 14:49 已批。本分支已实现 | 只有 `settings` |
-| 2 | `library-main` 接受额外迁移，默认空，并把已打开的存储交回调用方。`library-wiring.ts` 只把 parsing 这一条 handler 并进现有 map。库打不开时这条仍在 map 里，返回 `handler_threw`。`expose` 只打开 `parsing.getParseCapabilities`，重新 codegen，同一笔改表面测试，并按 W4 只改 02-05 第 32 行与 prd 08 第 25 行、同步 manifest。`settings.*` 仍是 false。`composition-root.ts` 不改 | W1–W4 已于 14:37 批。还要第 1 笔已合入，并且本轮计划复审 PASS | 只有 `library`。契约和主进程在同一笔，见「不拆」 |
+| 2 | `library-main` 接受额外迁移，默认空，并把已打开的存储交回调用方。`library-wiring.ts` 只把 parsing 这一条 handler 并进现有 map。库打不开时这条仍在 map 里，返回 `handler_threw`。settings 迁移读不出来时也不打开库，结果与库打不开相同。`expose` 只打开 `parsing.getParseCapabilities`，重新 codegen，同一笔改表面测试，并按 W4 只改 02-05 第 32 行与 prd 08 第 25 行、同步 manifest。`settings.*` 仍是 false。`composition-root.ts` 不改 | W1–W4 已于 14:37 批。还要第 1 笔已合入，并且本轮计划复审 PASS | 只有 `library`。契约和主进程在同一笔，见「不拆」 |
 | 3 | reader chip、`readParseStatus`、桌面 client 的生产调用、降级句函数、e2e。不新建空态组件。#206 的 E2 合入后，`view-mode-empty.tsx` 才存在，才在 6-1 A 之后插入降级句 | 第 2 笔已合入，并且 #206 的 E2 已合入。2026-11-14 15:13 已批。W5、W6、W7、W9 本批不做 | 只有 `reader` |
 
 第 1 笔单独合入还不满足 AC-11。第 3 笔的 e2e 要跑在第 2 笔与 #206 的 E2 都已合入的 main 上。第 2 笔和第 3 笔不能合成一笔：RULES §8 第 2 条把 `contracts/src/ipc/**` 算作 core，UI 改动的 PR 不能带 core。
@@ -196,7 +196,7 @@ Forge 排序，非业主决定。G18 只数 `packages/features/<name>/src`（`to
 - 合法行且测试替身报告密钥可用 → `configured`。生产适配器的测试锁住它从不返回可用，并且不读 `secrets.bin`。
 - 结果和错误里没有 `secret`、`secretRef`、路径。
 - 升级：先有一份只含 library 迁移的库，再打开并带上 `set_providers` 迁移。`lib_*` 行还在。`app_schema` 仍是打开前那个受支持的数（现在是 1，`applyMigrations` 把它写成 `supportedAppSchema`，不另加一）。没有 parse 行时查询是 `unconfigured`。做不到就按「还没核实」停，不改 `STORAGE_APP_SCHEMA`，也不改 [docs/arch/08-04.md](../arch/08-04.md)。归第 2 笔。
-- 库打不开：`createLibraryMain` 走 `unavailableHandlers()`（`library-main.ts` 第 82 行与第 183 行）。parsing 这条仍在 map 里，返回与文献库失败路径相同的 `handler_threw`，不返回 `unconfigured`。chip 不显示降级句。归第 2 笔。
+- 库打不开：`createLibraryMain` 走 `unavailableHandlers()`（`library-main.ts` 第 82 行与第 183 行）。parsing 这条仍在 map 里，返回与文献库失败路径相同的 `handler_threw`，不返回 `unconfigured`。chip 不显示降级句。归第 2 笔。settings 迁移读不出来时同样不打开库，文献库命令和 parsing 都是这个结果。
 - 只读打开：`appSchema` 高于本应用时走 `openReadonly`（`open-storage.ts` 第 105–107 行），不跑迁移。表在就按分类规则 SELECT。表不在就是 `handler_threw`，不当成 `unconfigured`，也不当成 `storage_corrupt`。`storage_corrupt` 只留给已经读到、但内容坏了的记录。不写库。chip 对这个错误留空。
 - chip：`unconfigured` 显示这句且 `role=status`，节点在标题栏，不在 `.oi-reader-column` 里。`configured` 的假客户端留下空 chip。`handler_threw` 和两种读错误不显示这句。
 - `parse-degrade-copy` 只在 `unconfigured` 时返回这句。
@@ -285,7 +285,7 @@ W5、W6、W7、W9 不再请批。登记成缺口，实现时不补。
 | 2 | 台账 13:57。#204 已写入 main，本分支不重复，合计仍是 152。manifest 不改 |  |  |
 | 3 | 按审查 6873016564 与 6873205344 修订本文件。不改台账，不改规格正文 |  |  |
 | 4 | settings 切片，见「实现顺序」第 1 笔 | 已写入 `packages/features/settings`。`0001_set_providers.sql` 含 `purpose`、`credential_slot` 和 `WHERE purpose = 'parse'` 的部分唯一索引。分类、用例、SQLite 只读、固定不可用密钥端口、handler 工厂。`credential_slot` 空串有单独用例。未注册生产 map，未改 expose。适配器不直接 import kernel 或 contracts，所以没有 05-01 未画出的边。domain 对 kernel 的类型导入实现了图上已有的 DOM→K，`tools/check-arch-graph/check.test.ts` 的 planned 计数从 13 改为 12。`pnpm-lock.yaml` 只加了这个包的 workspace 依赖，desktop 仍不依赖它。R3-N1 已去掉 #206 的行号。缺表时存储层抛出，不收成 `storage_corrupt`。非文本列是 `storage_corrupt`。settings 单测 3 个文件、17 通过。`app_schema` 仍是 1 | `docs/evidence/205/commands.md` |
-| 5 | library 迁移、主进程只接 parsing、expose。W1–W4 已批。代码等本轮计划复审 PASS |  |  |
+| 5 | library 迁移、主进程只接 parsing、expose。W1–W4 已批。代码等本轮计划复审 PASS | 已在 `feature/config-wiring-174` 写。`createLibraryMain` 收额外迁移，默认空，交出 `storage`。`library-wiring.ts` 只把 `parsing.getParseCapabilities` 并进 map。`expose` 只开这一条。02-05 第 32 行与 prd 08 第 25 行已改成事实，manifest 已同步。升级测试：library 行还在，`app_schema` 仍是 1，没有 parse 行是 `unconfigured`。缺 `set_providers` 时经路由得到 `handler_threw`。库打不开时这条也是 `handler_threw`。settings 迁移读不出来时同样不打开库。`composition-root.ts` 未改。`settings.*` 仍是 false | `docs/evidence/208/commands.md` |
 | 6 | chip、降级句函数、e2e、Windows 截图 |  |  |
 
 ## 决策记录（Decision Log）
