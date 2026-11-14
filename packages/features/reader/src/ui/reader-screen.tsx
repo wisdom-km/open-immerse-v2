@@ -34,6 +34,7 @@ export function ReaderScreen(props: {
     props.id,
     viewing ? session.shownPage : undefined,
     session.columnRef,
+    reading?.pageCount,
   );
   useLeaveKeys(session.leave);
   useLayoutEffect(() => {
@@ -120,11 +121,9 @@ function ReaderBar(props: {
       ) : null}
       <h1>{props.title}</h1>
       {page}
-      {props.nav.announced !== undefined && props.pageCount !== undefined ? (
-        <p className="oi-reader-status" role="status">
-          {pageLabel(props.nav.announced, props.pageCount)}
-        </p>
-      ) : null}
+      <p className="oi-reader-status" role="status">
+        {props.nav.spoken}
+      </p>
       {props.lostPlace ? (
         <p className="oi-reader-status" role="status">
           {LOST_PLACE}

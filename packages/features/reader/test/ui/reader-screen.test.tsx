@@ -35,10 +35,13 @@ it("shows the lost-place line once and hides it after scrolling", async () => {
       onLeave={() => undefined}
     />,
   );
-  expect(await screen.findAllByRole("status")).toHaveLength(1);
-  expect(screen.getByRole("status").textContent).toBe(LOST_PLACE);
+  expect(await screen.findByText(LOST_PLACE)).toBeTruthy();
+  expect(
+    screen.getAllByRole("status").some((node) => node.textContent === ""),
+  ).toBe(true);
   fireEvent.scroll(column());
-  expect(screen.queryByRole("status")).toBeNull();
+  expect(screen.queryByText(LOST_PLACE)).toBeNull();
+  expect(screen.getByRole("status").textContent).toBe("");
 });
 
 it("does not show the lost-place line after a successful read", async () => {
@@ -103,6 +106,7 @@ it("replaces the visible page before a jump, then forward returns", async () => 
     }),
   );
   const page = await screen.findByRole("button", { name: /转到页码/ });
+  expect(screen.getByRole("status").textContent).toBe("");
   layOut(2);
   fireEvent.click(page);
   enterPage("3");
@@ -110,10 +114,18 @@ it("replaces the visible page before a jump, then forward returns", async () => 
   expect(screen.getByRole("status").textContent).toBe("第 3 / 3 页");
   fireEvent.click(screen.getByRole("button", { name: "后退" }));
   expect(pageText()).toBe("第 2 / 3 页");
+  expect(screen.getByRole("status").textContent).toBe("第 2 / 3 页");
   expect(arrow("前进")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /转到页码/ }));
+  enterPage("2");
+  expect(screen.getByRole("status").textContent).toBe("第 2 / 3 页");
   fireEvent.click(screen.getByRole("button", { name: "前进" }));
   expect(pageText()).toBe("第 3 / 3 页");
+  column().dispatchEvent(new Event("scrollend", { bubbles: true }));
+  expect(screen.getByRole("status").textContent).toBe("第 3 / 3 页");
   expect(left).toBe(0);
+  fireEvent.click(screen.getByRole("button", { name: BACK_LABEL }));
+  expect(left).toBe(1);
 });
 
 it("writes a changed page only after scrollend", async () => {

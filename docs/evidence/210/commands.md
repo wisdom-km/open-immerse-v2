@@ -22,5 +22,5 @@
 
 Node 22.23.4。工作目录是仓库根。退出码是这一轮实际跑出来的。
 
-- `corepack pnpm exec vitest run packages/features/reader/test/ui/reader-screen.test.tsx packages/features/reader/test/ui/failed-read-leave.test.tsx packages/features/reader/test/ui/go-to-page.test.tsx packages/features/reader/test/ui/history-controls.test.tsx`：退出码 0。4 个文件，24 个测试通过。
+- `corepack pnpm exec vitest run packages/features/reader/test/ui/reader-screen.test.tsx packages/features/reader/test/ui/failed-read-leave.test.tsx packages/features/reader/test/ui/go-to-page.test.tsx packages/features/reader/test/ui/history-controls.test.tsx`：退出码 0。4 个文件，23 个测试通过。
 - `GATE_BASE=origin/main corepack pnpm run check`：退出码 0。其中含 pr-size、lint、typecheck、typecheck:core。

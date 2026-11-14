@@ -30,7 +30,6 @@
 }
 
 .oi-reader-back[aria-disabled="true"] {
-  color: var(--oi-reader-muted, GrayText);
   opacity: 0.45;
 }
 

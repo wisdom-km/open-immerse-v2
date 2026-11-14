@@ -20,6 +20,17 @@ it("does not jump on 0 and returns focus after a jump or escape", () => {
   commit("0");
   expect(jumped).toEqual([]);
   expect(screen.getByRole("status").textContent).toBe("共 3 页");
+  for (const value of ["1.5", "１"]) {
+    fireEvent.change(screen.getByRole("textbox"), { target: { value } });
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+    expect(jumped).toEqual([]);
+    expect(screen.getByRole("textbox")).toBeTruthy();
+  }
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "" } });
+  fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+  expect(screen.queryByRole("textbox")).toBeNull();
+  expect(jumped).toEqual([]);
+  fireEvent.click(screen.getByRole("button", { name: /转到页码/ }));
   fireEvent.change(screen.getByRole("textbox"), { target: { value: "9" } });
   fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
   expect(jumped).toEqual([]);

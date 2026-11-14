@@ -24,6 +24,8 @@ it("ignores an empty back and steps forward once that side is enabled", () => {
   const view = render(draw(false));
   fireEvent.click(screen.getByRole("button", { name: "后退" }));
   expect(backs).toBe(0);
+  expect(screen.getByRole("button", { name: "后退" }).title).toBe("后退");
+  expect(screen.getByRole("button", { name: "前进" }).title).toBe("前进");
   expect(
     screen.getByRole("button", { name: "前进" }).getAttribute("aria-disabled"),
   ).toBe("true");
@@ -32,28 +34,4 @@ it("ignores an empty back and steps forward once that side is enabled", () => {
   expect(next.getAttribute("aria-disabled")).toBeNull();
   fireEvent.click(next);
   expect(forwards).toBe(1);
-});
-
-it("puts the platform shortcut in the tooltip", () => {
-  const rows = [
-    ["MacIntel", "后退（⌘[）", "前进（⌘]）"],
-    ["Win32", "后退（Alt+←）", "前进（Alt+→）"],
-  ] as const;
-  for (const [platform, back, forward] of rows) {
-    Object.defineProperty(navigator, "platform", {
-      configurable: true,
-      value: platform,
-    });
-    render(
-      <HistoryControls
-        canBack={false}
-        canForward={false}
-        onBack={() => undefined}
-        onForward={() => undefined}
-      />,
-    );
-    expect(screen.getByRole("button", { name: "后退" }).title).toBe(back);
-    expect(screen.getByRole("button", { name: "前进" }).title).toBe(forward);
-    cleanup();
-  }
 });

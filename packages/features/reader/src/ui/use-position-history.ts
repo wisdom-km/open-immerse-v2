@@ -8,32 +8,40 @@ import {
   replaceCurrent,
   type PositionHistory,
 } from "../pure.js";
+import { pageLabel } from "./copy.js";
 import { readVisible } from "./use-reader-session.js";
 
 export function usePositionHistory(
   documentId: string,
   page: number | undefined,
   columnRef: { readonly current: HTMLDivElement | null },
+  pageCount: number | undefined,
 ) {
   const [history, setHistory] = useState<PositionHistory>(emptyPositionHistory);
   const historyRef = useRef(history);
   historyRef.current = history;
   const recorded = useRef<string | undefined>(undefined);
+  const queued = useRef("");
   const [pending, setPending] = useState<number | undefined>(undefined);
-  const [announced, setAnnounced] = useState<number | undefined>(undefined);
+  const [spoken, setSpoken] = useState("");
+  const [pulse, setPulse] = useState(0);
   const shown = pending ?? page;
+  useEffect(() => {
+    if (pulse === 0) return;
+    setSpoken(queued.current);
+  }, [pulse]);
   useEffect(() => {
     if (page === undefined) {
       recorded.current = undefined;
       setPending(undefined);
-      setAnnounced(undefined);
+      setSpoken("");
       publish(emptyPositionHistory(), historyRef, setHistory);
       return;
     }
     if (recorded.current === documentId) return;
     recorded.current = documentId;
     setPending(undefined);
-    setAnnounced(undefined);
+    setSpoken("");
     publish(
       recordJump(emptyPositionHistory(), { page }),
       historyRef,
@@ -42,7 +50,11 @@ export function usePositionHistory(
   }, [documentId, page]);
   const reveal = (next: number): void => {
     setPending(next);
-    setAnnounced(next);
+    if (pageCount !== undefined) {
+      queued.current = pageLabel(next, pageCount);
+      setSpoken("");
+      setPulse((value) => value + 1);
+    }
     columnRef.current
       ?.querySelector(`[data-page="${String(next)}"]`)
       ?.scrollIntoView();
@@ -51,10 +63,9 @@ export function usePositionHistory(
     canBack: history.back.length > 0,
     canForward: history.forward.length > 0,
     shown,
-    announced,
+    spoken,
     clearPending() {
       setPending(undefined);
-      setAnnounced(undefined);
     },
     back() {
       const next = move(goBack, historyRef, setHistory);
@@ -72,8 +83,7 @@ export function usePositionHistory(
           ? current
           : replaceCurrent(current, { page: place });
       const next = recordJump(base, { page: target });
-      if (next === current) return;
-      publish(next, historyRef, setHistory);
+      if (next !== current) publish(next, historyRef, setHistory);
       reveal(target);
     },
   };
