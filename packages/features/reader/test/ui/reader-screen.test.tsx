@@ -27,9 +27,7 @@ afterEach(() => {
 
 const navBinder: {
   current?:
-    | ((
-        nav: { back: () => void; openGoTo: () => void } | undefined,
-      ) => void)
+    | ((nav: { back: () => void; openGoTo: () => void } | undefined) => void)
     | undefined;
 } = {};
 

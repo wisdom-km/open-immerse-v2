@@ -14,9 +14,10 @@ test("counts canvases within the visible page window", async ({ desktop }) => {
     "(() => { const node = document.querySelector('.oi-reader-column'); node.scrollTop = node.scrollHeight / 2; })()",
   );
   await expect
-    .poll(async () => (await canvasReport(desktop.page)).visible[0])
-    .toBeGreaterThan(1);
-  expectWindow(await canvasReport(desktop.page), 25);
+    .poll(async () => pastFirst(await canvasReport(desktop.page)), {
+      timeout: 10_000,
+    })
+    .toBe(true);
 });
 
 test("jumps with the menu, steps back, then leaves when history is empty", async ({
@@ -132,4 +133,17 @@ function expectWindow(report: CanvasReport, pageCount: number): void {
     expect(page).toBeGreaterThanOrEqual(Math.max(1, first - 2));
     expect(page).toBeLessThanOrEqual(last + 2);
   }
+}
+
+function pastFirst(report: CanvasReport): boolean {
+  if (report.visible.length === 0) return false;
+  const first = Math.min(...report.visible);
+  const last = Math.max(...report.visible);
+  const low = Math.max(1, first - 2);
+  return (
+    report.pageCount === 25 &&
+    first > 1 &&
+    report.kept.length <= report.visible.length + 4 &&
+    report.kept.every((page) => page >= low && page <= last + 2)
+  );
 }
