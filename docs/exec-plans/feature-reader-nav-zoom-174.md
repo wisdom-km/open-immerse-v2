@@ -59,11 +59,13 @@
 
 ## 拆分
 
-本 PR 只写计划。实现按下面「reader 切片的串行」：替换当前位置的 core PR，然后缩放档位的 core PR，然后 E1，然后 E2。15:13 已批。这一轮仍不写实现。复审 PASS 之前不开那几笔。
+本 PR 只写计划。实现按下面「reader 切片的串行」：替换当前位置的 core PR，然后缩放档位的 core PR，然后 E1a、E1b、E1c，然后 E2。15:13 已批。Forge 排期（评论 6876352033）把原来的一笔 E1 拆成三笔，不扩范围。菜单项跟着各自的功能走。先做视口绘制，后开缩放。
 
 | 实现 PR | 内容 | 分开的原因 |
 | --- | --- | --- |
-| E1 | 转到页码、历史按钮、视图菜单、实际大小、适合宽度、适合页面、按 dpr 绘制、可见页 −2 到 +2、单页像素上限 | 转到页码是历史的唯一入栈来源。#202 和画页在同一文件，不另开 PR |
+| E1a | 转到页码（`go-to-page.tsx`）、位置历史 ← →（`history-controls.tsx`、`use-position-history.ts`）、`copy.ts`、`reader-screen.tsx` 里这一截的拼装。`library-menu.ts` 和 shell 只加「后退 / 前进 / 转到页码」，不在阅读屏就丢掉 | 转到页码是历史的唯一入栈来源。不带缩放，不带视口 |
+| E1b | 按 dpr 绘制、可见页 −2 到 +2、单页像素上限（`page-column.tsx`、`pdf-session.ts`、`canvas-window.ts`、`reader.css`） | #202 和画页在同一 PR。释放时先把宽高设为 0。先于缩放 |
+| E1c | `use-zoom.ts`、`zoom-controls.tsx`、实际大小 / 适合宽度 / 适合页面，以及菜单里的缩放项 | 8 GB 真机实测在 E1c 之后做 |
 | E2 | 栏位分段和已批空态 | 不碰画页比例 |
 
 +/−、捏合、Ctrl+滚轮放进 E1，但只在缩放档位的 core PR 已经合入之后。替换当前位置的纯函数先合入，E1 才写「跳转前记下可见页」。这两笔都是 15:13 已批。
@@ -118,27 +120,27 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 
 | 文件 | PR | 职责 | 上限 | 禁区 |
 | --- | --- | --- | --- | --- |
-| `packages/features/reader/src/ui/go-to-page.tsx` | E1，新建 | 就地输入。越界只调用 `clampPage` 做相等判断。可访问名称「转到页码，第 N / M 页」。加载前和出错时不渲染 | 150 | 否 |
-| `packages/features/reader/src/ui/history-controls.tsx` | E1，新建 | ← →。空的一侧 `aria-disabled`。不调用 ‹ | 80 | 否 |
+| `packages/features/reader/src/ui/go-to-page.tsx` | E1a，新建 | 就地输入。越界只调用 `clampPage` 做相等判断。可访问名称「转到页码，第 N / M 页」。加载前和出错时不渲染 | 150 | 否 |
+| `packages/features/reader/src/ui/history-controls.tsx` | E1a，新建 | ← →。空的一侧 `aria-disabled`。不调用 ‹ | 80 | 否 |
 | `packages/features/reader/src/domain/position-history.ts` | 替换当前位置的 core PR，改 | 现 70 行。加一个只替换 current、不清 forward、不压栈的纯函数。先于档位 | 400 | 不改 contracts。不在 E1 里写这个函数 |
 | `packages/features/reader/src/domain/zoom-bounds.ts` | 缩放档位的 core PR，改 | 现 64 行。加上一档和下一档。等上一笔合入 | 400 | 不改 contracts，不改 `expose`。已在 Edge 157 和 Chrome 157 上实测，按批次 E 的 6-2 A（#174 评论 6872935563）截到 400，由 PR #209（`e8095da`）合入 |
 | `packages/features/reader/src/pure.ts` | 上面两笔 core PR | 现 42 行。只加这两笔的导出 | 80 | 不在 E1、E2 里改 |
-| `packages/features/reader/src/ui/zoom-controls.tsx` | E1，新建 | 「− % +」和百分比菜单。+/− 只调用已合入的档位纯函数。加载前和出错时不渲染，快捷键什么都不做 | 160 | +/− 调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent` |
-| `packages/features/reader/src/ui/canvas-window.ts` | E1，新建 | 给定第一张可见页、最后一张可见页和总页数，返回闭区间 [第一张−2, 最后一张+2]，夹在 1..M。只服务 `page-column` | 80 | 否。放 UI，不放 domain。放进 domain 就碰到 core，那要停下来问 |
-| `packages/features/reader/src/ui/page-column.tsx` | E1，改 | 现 95 行。主改文件。栏宽、wheel、按窗口挂 canvas 或占位。尺寸齐了才挂 `Restore`。释放时先把 canvas 宽高设为 0，再移出 DOM，并走已有 cancel | 250 | 否。离开阅读屏时不清零 |
-| `packages/features/reader/src/ui/pdf-session.ts` | E1，改 | 现 228 行。绘制 scale 是 `min(缩放 × devicePixelRatio, 上限对应的 scale)`。CSS 尺寸仍按缩放。超过上限就拉伸 | 400 | 否。这是 UI 文件 |
-| `packages/features/reader/src/ui/use-reader-session.ts` | E1，改 | 现 258 行。打开、离开、滚动、`readVisible`。把第一张和最后一张可见页交给 `page-column`。不持有历史栈，不持有缩放百分比 | 400 | 否。改完不超过 400 |
-| `packages/features/reader/src/ui/use-position-history.ts` | E1，新建 | 持有历史栈。只调用 `position-history.ts` 的纯函数。打开时写入恢复页 | 120 | 替换当前位置的纯函数不在这个文件里写 |
-| `packages/features/reader/src/ui/use-zoom.ts` | E1，新建 | 持有本次打开的缩放百分比，初值 100。适合宽度、适合页面调用已有纯函数 | 120 | +/− 调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent` |
-| `packages/features/reader/src/ui/reader-screen.tsx` | E1、E2 | 撤掉 `useLeaveKeys`。‹ 的 tooltip 改为「返回文献库」。只拼装，不持有历史栈和缩放百分比 | 250 | 否 |
-| `packages/features/reader/src/ui/copy.ts` | E1、E2 | 现 10 行。越界句、按钮名、6-1 A 的原句 | 80 | 否 |
+| `packages/features/reader/src/ui/zoom-controls.tsx` | E1c，新建 | 「− % +」和百分比菜单。+/− 只调用已合入的档位纯函数。加载前和出错时不渲染，快捷键什么都不做 | 160 | +/− 调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent` |
+| `packages/features/reader/src/ui/canvas-window.ts` | E1b，新建 | 给定第一张可见页、最后一张可见页和总页数，返回闭区间 [第一张−2, 最后一张+2]，夹在 1..M。只服务 `page-column` | 80 | 否。放 UI，不放 domain。放进 domain 就碰到 core，那要停下来问 |
+| `packages/features/reader/src/ui/page-column.tsx` | E1b，改 | 现 95 行。主改文件。栏宽、wheel、按窗口挂 canvas 或占位。尺寸齐了才挂 `Restore`。释放时先把 canvas 宽高设为 0，再移出 DOM，并走已有 cancel | 250 | 否。离开阅读屏时不清零 |
+| `packages/features/reader/src/ui/pdf-session.ts` | E1b，改 | 现 228 行。绘制 scale 是 `min(缩放 × devicePixelRatio, 上限对应的 scale)`。CSS 尺寸仍按缩放。超过上限就拉伸 | 400 | 否。这是 UI 文件 |
+| `packages/features/reader/src/ui/use-reader-session.ts` | E1b，改 | 现 258 行。打开、离开、滚动、`readVisible`。把第一张和最后一张可见页交给 `page-column`。不持有历史栈，不持有缩放百分比 | 400 | 否。改完不超过 400 |
+| `packages/features/reader/src/ui/use-position-history.ts` | E1a，新建 | 持有历史栈。只调用 `position-history.ts` 的纯函数。打开时写入恢复页 | 120 | 替换当前位置的纯函数不在这个文件里写 |
+| `packages/features/reader/src/ui/use-zoom.ts` | E1c，新建 | 持有本次打开的缩放百分比，初值 100。适合宽度、适合页面调用已有纯函数 | 120 | +/− 调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent` |
+| `packages/features/reader/src/ui/reader-screen.tsx` | E1a、E1c、E2 | 撤掉 `useLeaveKeys`。‹ 的 tooltip 改为「返回文献库」。只拼装，不持有历史栈和缩放百分比 | 250 | 否 |
+| `packages/features/reader/src/ui/copy.ts` | E1a、E1c、E2 | 现 10 行。越界句、按钮名、6-1 A 的原句 | 80 | 否 |
 | `packages/features/reader/src/ui/view-mode-switch.tsx` | E2，新建 | `radiogroup`。默认原文 | 120 | 否 |
 | `packages/features/reader/src/ui/view-mode-empty.tsx` | E2，新建 | 6-1 A 的句子和文字链接。6-1 A 之后留稳定插入点 `data-testid="view-mode-empty-degrade"`，本批不填字。0 个主按钮 | 100 | 否。不写降级句，不造未配置状态 |
-| `apps/desktop/src/renderer/reader.css` | E1、E2 | 排列、焦点环、`forced-colors`。不新造颜色定稿 | 220 | 否 |
-| `apps/desktop/src/renderer/shell.tsx` | E1 | 现 81 行。听返回和视图菜单事件。不在阅读屏时丢掉 | 160 | 否 |
-| `apps/desktop/src/renderer/shell-events.ts` | E1 | 事件名常量，与菜单用同一字符串 | 40 | 否。不新建 `ui-events.ts` |
-| `apps/desktop/src/main/library-menu.ts` | E1 | 现 53 行。追加视图菜单。点击仍 `dispatchEvent`。不新 IPC，不改 CSP，不改协议。阅读屏「后退」不 `enabled: false` | 160 | 主进程。授权是 2026-11-05 21:01（评论 6658666956）的「菜单 + 已批快捷键」，加上 6-3 A。D 也改过这个文件 |
-| `apps/desktop/test/library-menu.test.ts` | E1 | 标签、访问键 (V)、快捷键、没有置灰 | 140 | 随菜单文件 |
+| `apps/desktop/src/renderer/reader.css` | E1b、E2 | 排列、焦点环、`forced-colors`。不新造颜色定稿 | 220 | 否 |
+| `apps/desktop/src/renderer/shell.tsx` | E1a、E1c | 现 81 行。听返回和视图菜单事件。不在阅读屏时丢掉 | 160 | 否 |
+| `apps/desktop/src/renderer/shell-events.ts` | E1a、E1c | 事件名常量，与菜单用同一字符串 | 40 | 否。不新建 `ui-events.ts` |
+| `apps/desktop/src/main/library-menu.ts` | E1a、E1c | 现 53 行。追加视图菜单。点击仍 `dispatchEvent`。不新 IPC，不改 CSP，不改协议。阅读屏「后退」不 `enabled: false` | 160 | 主进程。授权是 2026-11-05 21:01（评论 6658666956）的「菜单 + 已批快捷键」，加上 6-3 A。D 也改过这个文件 |
+| `apps/desktop/test/library-menu.test.ts` | E1a、E1c | 标签、访问键 (V)、快捷键、没有置灰 | 140 | 随菜单文件 |
 
 测试与被测文件配对，放在 `packages/features/reader/test/ui/` 和 `apps/desktop/test/`。一个测试文件只测一块。
 
