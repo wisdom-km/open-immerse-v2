@@ -57,6 +57,27 @@ it("replaces only current when back already has entries", () => {
   expect(replaced.current).toEqual({ page: 5 });
 });
 
+it("keeps the full back stack when replaceCurrent is called at the history limit", () => {
+  let history = emptyPositionHistory();
+  for (let page = 1; page <= POSITION_HISTORY_LIMIT + 1; page += 1) {
+    history = recordJump(history, { page });
+  }
+  expect(history.back).toHaveLength(POSITION_HISTORY_LIMIT);
+  expect(history.current).toEqual({ page: POSITION_HISTORY_LIMIT + 1 });
+  const replaced = replaceCurrent(history, {
+    page: POSITION_HISTORY_LIMIT + 3,
+  });
+  expect(replaced.back).toBe(history.back);
+  expect(replaced.back).toHaveLength(POSITION_HISTORY_LIMIT);
+  expect(replaced.back[0]).toEqual({ page: 1 });
+  expect(replaced.back[POSITION_HISTORY_LIMIT - 1]).toEqual({
+    page: POSITION_HISTORY_LIMIT,
+  });
+  expect(replaced.forward).toBe(history.forward);
+  expect(replaced.forward).toEqual([]);
+  expect(replaced.current).toEqual({ page: POSITION_HISTORY_LIMIT + 3 });
+});
+
 it("returns the same history when replaceCurrent repeats the current page", () => {
   const current = recordJump(emptyPositionHistory(), { page: 4 });
   expect(replaceCurrent(current, { page: 4 })).toBe(current);
