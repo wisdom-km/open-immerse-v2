@@ -21,8 +21,8 @@ it("ignores an empty back and steps forward once that side is enabled", () => {
   const named = (name: string) => screen.getByRole("button", { name });
   fireEvent.click(named("后退"));
   expect(backs).toBe(0);
-  expect(named("后退").title).toBe("后退");
-  expect(named("前进").title).toBe("前进");
+  expect(named("后退").title).toBe("后退（Alt+←）");
+  expect(named("前进").title).toBe("前进（Alt+→）");
   expect(named("前进").getAttribute("aria-disabled")).toBe("true");
   view.rerender(draw(true));
   expect(named("前进").getAttribute("aria-disabled")).toBeNull();

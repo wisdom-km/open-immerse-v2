@@ -156,11 +156,14 @@ it("sizes the backing store from devicePixelRatio and keeps the CSS size", async
   const page = blankPage(() => undefined);
   const session = createPdfSession(page, quietTask);
   const canvas = fakeCanvas();
-  await session.paint(1, canvas);
-  expect([canvas.width, canvas.height]).toEqual([8, 8]);
-  expect([canvas.style.width, canvas.style.height]).toEqual(["4px", "4px"]);
-  host.devicePixelRatio = previous;
-  await session.close();
+  try {
+    await session.paint(1, canvas);
+    expect([canvas.width, canvas.height]).toEqual([8, 8]);
+    expect([canvas.style.width, canvas.style.height]).toEqual(["4px", "4px"]);
+  } finally {
+    host.devicePixelRatio = previous;
+    await session.close();
+  }
 });
 
 it("does not resize a canvas cancelled while getPage is pending", async () => {

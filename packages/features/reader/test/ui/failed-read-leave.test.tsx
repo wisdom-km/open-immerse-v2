@@ -31,10 +31,16 @@ it("does not write on scrollend or the back button after a failed page read", as
   });
 });
 
-it("does not write when Alt+ArrowLeft leaves after a failed page read", async () => {
-  await leaveWithoutWrite(() => {
-    fireEvent.keyDown(window, { key: "ArrowLeft", altKey: true });
-  });
+it("does not write when menu back leaves after a failed page read", async () => {
+  let back: (() => void) | undefined;
+  await leaveWithoutWrite(
+    () => {
+      back?.();
+    },
+    (nav) => {
+      back = nav?.back;
+    },
+  );
 });
 
 it("does not write when the menu leaves after a failed page read", async () => {
@@ -88,9 +94,12 @@ it("does not write on leave when reading the stored page rejects", async () => {
   expect(calls).toEqual(["close", "revoke"]);
 });
 
-async function leaveWithoutWrite(leave: () => void): Promise<void> {
+async function leaveWithoutWrite(
+  leave: () => void,
+  onBindNav?: (nav: { readonly back: () => void } | undefined) => void,
+): Promise<void> {
   const calls: string[] = [];
-  const view = render(failedScreen(calls));
+  const view = render(failedScreen(calls, onBindNav));
   expect(await screen.findByText(LOST_PLACE)).toBeTruthy();
   layOut(1);
   leave();
@@ -100,12 +109,16 @@ async function leaveWithoutWrite(leave: () => void): Promise<void> {
   view.unmount();
 }
 
-function failedScreen(calls: string[]) {
+function failedScreen(
+  calls: string[],
+  onBindNav?: (nav: { readonly back: () => void } | undefined) => void,
+) {
   return (
     <ReaderScreen
       id="paper"
       title="Paper"
       client={failedClient(calls)}
+      onBindNav={onBindNav}
       onLeave={() => undefined}
     />
   );
