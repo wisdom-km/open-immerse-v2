@@ -42,6 +42,21 @@ it("replaces current without pushing the old page or clearing forward", () => {
   expect(replaced.forward).toEqual([{ page: 9 }]);
 });
 
+it("replaces only current when back already has entries", () => {
+  const history = recordJump(
+    recordJump(recordJump(emptyPositionHistory(), { page: 1 }), { page: 2 }),
+    { page: 3 },
+  );
+  expect(history.current).toEqual({ page: 3 });
+  expect(history.back).toEqual([{ page: 1 }, { page: 2 }]);
+  const replaced = replaceCurrent(history, { page: 5 });
+  expect(replaced.back).toBe(history.back);
+  expect(replaced.back).toEqual([{ page: 1 }, { page: 2 }]);
+  expect(replaced.forward).toBe(history.forward);
+  expect(replaced.forward).toEqual([]);
+  expect(replaced.current).toEqual({ page: 5 });
+});
+
 it("returns the same history when replaceCurrent repeats the current page", () => {
   const current = recordJump(emptyPositionHistory(), { page: 4 });
   expect(replaceCurrent(current, { page: 4 })).toBe(current);
