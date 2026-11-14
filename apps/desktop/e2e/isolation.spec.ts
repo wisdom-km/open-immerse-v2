@@ -9,11 +9,12 @@ test("exposes the library seam when window.oi is read", async ({ desktop }) => {
       keys: Object.keys(window.oi),
       library:
         window.oi.library !== null && typeof window.oi.library === "object",
-      import: typeof window.oi.library.import
+      import: typeof window.oi.library.import,
+      getParseCapabilities: typeof window.oi.parsing.getParseCapabilities
     })`,
   );
   expect(raw).toBe(
-    '{"keys":["ingest","library"],"library":true,"import":"function"}',
+    '{"keys":["ingest","library","parsing"],"library":true,"import":"function","getParseCapabilities":"function"}',
   );
 });
 
