@@ -334,7 +334,7 @@ E1 不提前。依据是第 87 行：E1 不能和这两笔 core PR 同时开着�
 
 单测：已有历史和缩放边界测试保持通过。`go-to-page` 断言越界不调用跳转、`clampPage` 的返回值不被当成目标页。`history-controls` 断言空的 ← 不调用离开。`view-mode-empty` 只按精确文案或稳定 testid 断言：`view-mode-empty-copy` 的文本等于 6-1 A 的原句，链接文字等于「切到原文（Ctrl+1）」或「切到原文（⌘1）」，并且没有「开始翻译」「去设置」。`view-mode-empty-degrade` 的文本是空的。不用 `/解析/` 或同类宽正则去匹配空态整段。测试不写「未解析 / 去配置」。键位分 `metaKey` 和 `ctrlKey`。
 
-Electron e2e 按笔归：E1c 做窗口缩放因子在 Ctrl+滚轮后仍是 1、画布变大，以及 Ctrl+G 跳页、Alt+← 回去、历史用尽后回库（菜单和快捷键不在 E1a）。E1a 用单测覆盖 ‹ 在有历史时直接回库。E2 做 Ctrl+2 出现空态、没有翻译请求。E1b 做 25 页样本上 DOM 里的 canvas 数 ≤ 当时可见页数 + 4，滚过之后保留 canvas 的页码集合换成新的第一张可见页 −2 到最后一张可见页 +2。
+Electron e2e 按笔归：E1c 做窗口缩放因子在 Ctrl+滚轮后仍是 1、画布变大，以及 Ctrl+G 跳页、Alt+← 回去、历史用尽后回库（菜单和快捷键不在 E1a）。E1a 用单测覆盖 ‹ 在有历史时直接回库。E2 做 Ctrl+2 出现空态、没有翻译请求。E1b 的 25 页样本 canvas 计数挪到 E1c（Forge [6879364408](https://github.com/wisdom-km/open-immerse-v2/pull/211#issuecomment-6879364408)）：本笔 pr-size 余量不够放下 Electron 用例，仓库里也没有这份样本的夹具。Anvil 真机清单第 3 项先数 DOM 里的 canvas。单测仍覆盖窗口页码。
 
 视口和上限的单测只断言行为，不读源码做文本断言（F-08）：
 
@@ -395,9 +395,15 @@ Windows 真机要有录屏和对应截图，Box 不能代替：
 | `reader.css` | +6，现 105，上限 220 | m1：`.oi-reader-live` 加 `white-space: nowrap` 和 `margin: 0`。占位只用已有 token |
 | 两个单测 | 各约 60 | 见下。不断言源码文本 |
 | 计划、changelog、`docs/evidence/<PR号>/`、`docs/evidence/210/commands.md` | 约 40 | m4 把 8 GB 的读数写回：Windows 任务管理器里渲染进程的专用工作集 |
+| `ui/reader-screen.tsx` | 离开时先把 `releasePixels` 置 false，微任务里恢复。现 253 行，建议 250，硬上限 400 | 上限 250 |
+| `ui/open-reading.ts` | 页框带进 `ReadingView` | 小改 |
+| `ui/asset-pdf.ts` | `session.boxes` 交给 `OpenedPdf` | 小改 |
+| `ui/reader-client.ts` | `OpenedPdf.boxes` 可选 | 小改 |
 
 `PROVISIONAL_PAGE_PIXEL_CAP` 写在 `render-scale.ts`。值不是实测结果，N-14 不填一个待定标的数，暂用 `Infinity`，夹取函数仍会在传入有限上限时把 scale 压低。E1c 之后的 8 GB 真机测完，才换成那个数。不抄 pdf.js 的 `2 ** 25`。
 
 单测：首页、末页、总页数小于 5、同一视口多页，窗口页码集合正确。dpr 1、1.5、2 时 backing 像素是 CSS 的 dpr 倍，CSS 尺寸不变。有限上限时 backing 像素不超过上限，CSS 尺寸仍是逻辑尺寸。
 
 pr-size 估计约 450，上限 600。超过就停，不写 G12。离开阅读屏仍不清零，不调用 `cleanup()`。
+
+Forge [6879364408](https://github.com/wisdom-km/open-immerse-v2/pull/211#issuecomment-6879364408) 的 N1–N4 留到 E1c：`reader-screen.tsx` 行数顶满；打开时串行 `getPage`；阅读中途改显示缩放不重画；scroll 不对全部页节流。N7 在离开回调里用微任务把标志设回 true。外壳 `onLeave` 会卸下阅读屏，清零发生在这个微任务之前。

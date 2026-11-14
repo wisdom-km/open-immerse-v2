@@ -91,7 +91,7 @@ button.oi-reader-pages {
 }
 
 .oi-reader-sheet {
-  box-sizing: border-box;
+  box-sizing: content-box;
   border: 1px solid var(--oi-reader-line, ButtonText);
   background: var(--oi-reader-surface, Canvas);
 }

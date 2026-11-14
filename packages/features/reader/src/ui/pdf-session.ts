@@ -85,7 +85,7 @@ export function createPdfSession(
   boxes: readonly PageBox[] = [],
 ): PdfSession {
   const renders: Renders = new Map();
-  const tokens = new Map<HTMLCanvasElement, number>();
+  const tokens = new WeakMap<HTMLCanvasElement, number>();
   let closed = false;
   return {
     pageCount: doc.numPages,
@@ -104,6 +104,7 @@ export function createPdfSession(
       });
     },
     cancel(canvas) {
+      tokens.delete(canvas);
       cancelRender(renders, canvas);
     },
     close() {
@@ -122,7 +123,7 @@ type PaintRequest = {
   readonly pageNumber: number;
   readonly canvas: HTMLCanvasElement;
   readonly renders: Renders;
-  readonly tokens: Map<HTMLCanvasElement, number>;
+  readonly tokens: WeakMap<HTMLCanvasElement, number>;
   readonly isClosed: () => boolean;
 };
 
@@ -149,6 +150,9 @@ async function drawPage(
   page: PdfPage,
   token: number,
 ): Promise<void> {
+  if (paintStopped(request, token)) {
+    return;
+  }
   const logical = page.getViewport({ scale: 1 });
   const size = renderSize({
     pageWidth: logical.width,
@@ -162,9 +166,6 @@ async function drawPage(
   request.canvas.style.width = `${String(size.cssWidth)}px`;
   request.canvas.style.height = `${String(size.cssHeight)}px`;
   const viewport = page.getViewport({ scale: size.scale });
-  if (paintStopped(request, token)) {
-    return;
-  }
   const context = request.canvas.getContext("2d");
   if (context === null) {
     console.error(new Error("2d context missing"));

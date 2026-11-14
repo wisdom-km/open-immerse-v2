@@ -36,6 +36,9 @@ export function ReaderScreen(props: {
   const leave = useCallback(() => {
     releasePixels.current = false;
     session.leave();
+    queueMicrotask(() => {
+      releasePixels.current = true;
+    });
   }, [session.leave]);
   const reading =
     session.phase.kind === "view" ? session.phase.reading : undefined;

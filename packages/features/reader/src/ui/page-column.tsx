@@ -106,18 +106,14 @@ function PaintedPage(props: {
   return <canvas ref={canvasRef} aria-hidden="true" />;
 }
 
-function frameStyle(
-  box: PageBox | undefined,
-):
-  | { readonly width: string; readonly height: string; readonly minHeight: 0 }
-  | undefined {
+function frameStyle(box: PageBox | undefined) {
   if (box === undefined) {
     return undefined;
   }
   return {
     width: `${String(box.width)}px`,
     height: `${String(box.height)}px`,
-    minHeight: 0,
+    marginInline: "auto" as const,
   };
 }
 

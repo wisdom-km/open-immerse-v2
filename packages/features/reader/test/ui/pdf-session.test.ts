@@ -170,6 +170,26 @@ it("sizes the backing store from devicePixelRatio and keeps the CSS size", async
   }
 });
 
+it("does not resize a canvas cancelled while getPage is pending", async () => {
+  const renders = { count: 0 };
+  const waiters: Array<(page: PdfPage) => void> = [];
+  const session = createPdfSession(
+    waitingDocument(waiters),
+    countingTask(() => undefined),
+  );
+  const canvas = fakeCanvas();
+  const pending = session.paint(1, canvas);
+  session.cancel(canvas);
+  releaseClosed(waiters, () => {
+    renders.count += 1;
+  });
+  await pending;
+  expect(canvas.width).toBe(0);
+  expect(canvas.height).toBe(0);
+  expect(renders.count).toBe(0);
+  await session.close();
+});
+
 it("rejects a paint that fails for a reason other than cancellation", async () => {
   const waiters: Array<(page: PdfPage) => void> = [];
   const session = createPdfSession(
