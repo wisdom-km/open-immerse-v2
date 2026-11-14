@@ -2,7 +2,7 @@
 
 分支 `feature/reader-nav-zoom-174`。基线 main `5db585df3c460a1d6a8ac2d33583cde16e48970e`，tree `b56d0d364b9dea92a04c4c7da98a8575034d9716`。本文件自洽。Forge 审查通过之前没有实现提交。本 PR 只改文档，不写产品代码，不改测试，不改 CI，不改 CSP，不改 DESIGN。不开 Ready，不合入，不发版。
 
-开工依据是台账里已有的 2026-11-05 21:01 ③ 批准，[评论 6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956)。2026-11-14 14:13 的三件决定见 [评论 6872935563](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872935563)。Loom 的对照稿是 `/cursor/stores/bot/oi-v2/BATCH-E-DESIGN.md`（下称 Loom）。本计划逐条满足 Loom §9，并写入 §7、§8、§10。
+开工依据是台账里已有的 2026-11-05 21:01 ③ 批准，[评论 6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956)。2026-11-14 14:13 的三件决定见 [评论 6872935563](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872935563)。2026-11-14 14:17 的内存方案 A 见 [评论 6872986479](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872986479) 与 [Issue #202 评论 6872987059](https://github.com/wisdom-km/open-immerse-v2/issues/202#issuecomment-6872987059)。#202 并入本批，不另开实现 PR。提议中的 ADR 是 [0012](../adr/0012-viewport-canvas-cap.md)。Loom 的对照稿是 `/cursor/stores/bot/oi-v2/BATCH-E-DESIGN.md`（下称 Loom）。本计划逐条满足 Loom §9，并写入 §7、§8、§10。
 
 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败。seam 不够用时先停。
 
@@ -10,7 +10,7 @@
 
 1. main `5db585d` 上，打开一份 PDF 进入阅读屏，画原文页，标题下有「第 N / M 页」。工具栏 ‹ 和菜单「返回文献库」回文献库。`Alt+←` 一律回库。`Esc` 不回库。没有缩放、页码输入、← →、栏位切换。
 2. 相关的节：DESIGN §4.1、§11.3、§11.4、§12.1、§12.2；原则 §4、§8；PRD §3.6 与 §8 的 M2 退出格；ARCH §6、§9.1；RULES §8 第 4 条。DESIGN 第 156 行仍写默认「对照」。不改 DESIGN 正文（N-10）。
-3. 还没做的是下面四项。侧栏、Aa、大纲、⋯、配置存储、AC-11 chip、只画视口附近的页，都不在本批。
+3. 还没做的是下面四项，加上 14:17 并进来的视口绘制和单页像素上限。侧栏、Aa、大纲、⋯、配置存储、AC-11 chip 仍不在本批。
 
 ## 来源核对
 
@@ -24,7 +24,7 @@
 
 ## 目标
 
-一次打开里可以：只缩放 PDF 栏；就地转到页码并记入历史；最多 50 条，按 2A 后退；在原文、对照、译文之间切换。默认原文，每次打开都是原文和 100%。对照是左原文、右空态。译文是整个主区空态。不请求翻译。
+一次打开里可以：只缩放 PDF 栏；就地转到页码并记入历史；最多 50 条，按 2A 后退；在原文、对照、译文之间切换。默认原文，每次打开都是原文和 100%。对照是左原文、右空态。译文是整个主区空态。不请求翻译。原文栏同时只保留当前页前后各 2 页的 canvas。
 
 ## 验收
 
@@ -49,7 +49,7 @@
 | 历史 | 只有转到页码入栈。打开时 `recordJump` 写 current。最多 50，用 `POSITION_HISTORY_LIMIT`。离开清空。不持久化。可见页写入见决定 2 | 滚动、缩放、切栏位不入栈。历史不写存储。后退不绕过 `canWrite` |
 | 转到页码 | 就地输入。越界留在编辑态并提示「共 M 页」。Esc 取消。输入框里的 PageUp/Down、Home/End、Space、←→ 按文本处理 | 不用对话框。越界不夹取。Esc 不离开阅读屏 |
 | 缩放 | 只缩放 PDF 栏。无 Ctrl 的 wheel 只滚动。绘制用缩放乘 dpr。边界置灰。拦住整页缩放的手段等 §10 的实测，预定在 PDF 栏上 `preventDefault`（`passive: false`） | 不加 `zoomIn` / `zoomOut` / `resetZoom` / `viewMenu` role。不调 `webFrame.setZoomFactor`。不做滑块 |
-| 内存 | 实现 PR 在 8 GB Windows 上实测 400%。超 Forge 写明的线就停。线没写明就测完停下，不自定 MB | 不测不交付。不做视口绘制 |
+| 内存 | 实现 PR 在 8 GB Windows 上实测 100% / 200% / 400%。超限就停，不放宽。#202 并入本批：只画当前页 ±2，并加单页像素上限 | 不测不交付。不调用 `cleanup()`。不做分块渲染 |
 | 栏位 | `radiogroup`，名称「栏位」。Ctrl+1/2/3，mac ⌘1/2/3。默认原文。不记住 | 不默认对照。没有「开始翻译」「去设置」。主按钮仍是 0 |
 | 空态 | 用 6-1 A 的原句。链接是文字链接 | 不写解析服务或配置 |
 | 菜单 | Win「视图(V)」，mac「显示」。顺序按 Loom §2.2。文献库里不置灰 | 不放「显示侧栏」。不声称已经置灰 |
@@ -63,7 +63,7 @@
 
 | 实现 PR | 内容 | 分开的原因 |
 | --- | --- | --- |
-| E1 | 转到页码、历史按钮、视图菜单、实际大小、适合宽度、适合页面、按 dpr 绘制 | 转到页码是历史的唯一入栈来源 |
+| E1 | 转到页码、历史按钮、视图菜单、实际大小、适合宽度、适合页面、按 dpr 绘制、视口 ±2、单页像素上限 | 转到页码是历史的唯一入栈来源。#202 和画页在同一文件，不另开 PR |
 | E2 | 栏位分段和已批空态 | 不碰画页比例 |
 
 +/−、捏合、Ctrl+滚轮放进 E1，但只在决定 1 的纯函数已经合入之后。决定 2 的纯函数同样先合入，E1 才写「跳转前记下可见页」。
@@ -121,8 +121,9 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 | `packages/features/reader/src/ui/go-to-page.tsx` | E1，新建 | 就地输入。越界只调用 `clampPage` 做相等判断 | 150 | 否 |
 | `packages/features/reader/src/ui/history-controls.tsx` | E1，新建 | ← →。空的一侧 `aria-disabled`。不调用 ‹ | 80 | 否 |
 | `packages/features/reader/src/ui/zoom-controls.tsx` | E1，新建 | 「− % +」和百分比菜单。+/− 只调用决定 1 的纯函数 | 160 | 决定 1 未合入前，这个文件不写 +/− |
-| `packages/features/reader/src/ui/page-column.tsx` | E1，改 | 现 95 行。栏宽用 `viewportForZoom`。wheel 区分有没有 Ctrl | 200 | 否 |
-| `packages/features/reader/src/ui/pdf-session.ts` | E1，改 | 现 228 行。canvas 按缩放乘 `devicePixelRatio` 绘制，CSS 尺寸只按缩放 | 400 | 否。这是 UI 文件 |
+| `packages/features/reader/src/ui/canvas-window.ts` | E1，新建 | 给定当前页和总页数，返回保留 canvas 的页。半径 2，夹在 1..M。只服务 `page-column` | 80 | 否。放 UI，不放 domain。放进 domain 就碰到 core，那要停下来问 |
+| `packages/features/reader/src/ui/page-column.tsx` | E1，改 | 现 95 行。主改文件。栏宽、wheel、按窗口挂 canvas 或占位。卸下时走已有 cancel | 250 | 否 |
+| `packages/features/reader/src/ui/pdf-session.ts` | E1，改 | 现 228 行。绘制 scale 是 `min(缩放 × devicePixelRatio, 上限对应的 scale)`。CSS 尺寸仍按缩放。超过上限就拉伸 | 400 | 否。这是 UI 文件 |
 | `packages/features/reader/src/ui/reader-screen.tsx` | E1、E2 | 撤掉 `useLeaveKeys`。‹ 的 tooltip 改为「返回文献库」 | 250 | 否 |
 | `packages/features/reader/src/ui/copy.ts` | E1、E2 | 现 10 行。越界句、按钮名、6-1 A 的原句 | 80 | 否 |
 | `packages/features/reader/src/ui/view-mode-switch.tsx` | E2，新建 | `radiogroup`。默认原文 | 120 | 否 |
@@ -152,7 +153,7 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 | 页码写回 | `client.writePage` | 已有 | 不改 |
 | 菜单事件 | `shell-events.ts` 的 window 事件 | D 的写法 | 沿用。不登记尚未存在的 `contracts/src/ui-events.ts` |
 | 场景通道 | 无 | 不存在 | 6-3 A 不做。挂在 M2 退出格 |
-| 按缩放乘 dpr 绘制 | `pdf-session.ts` | UI 文件 | UI 自己改 |
+| 按缩放乘 dpr 绘制，以及像素上限 | `pdf-session.ts` | UI 文件 | UI 自己改。不进 core |
 
 ## 冲突与缺口（Loom §8，只列，不改 DESIGN）
 
@@ -176,7 +177,7 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 | C16 | 菜单在 main，UI 任务通常不改那里。D 改过 | E1 按 6-3 A 再改这个文件 |
 | C17 | 新 UI 事件要登记 `ui-events.ts`。文件不存在。D 没登记 | 本批不建。见 §10 |
 | C18 | 重开同一篇时栈留不留 | 清空 |
-| C19 | 每页都画。400% 面积约 16 倍。视口绘制不开工 | 先实测内存 |
+| C19 | 每页都画。400% 面积约 16 倍。0011 写暂不开工 | 14:17 把 #202 并入本批。提议 ADR 0012 只改这一条 |
 | C20 | Win ☰ 还没有 | 不在本批 |
 | G-1 | 步长没定 | 6-2 A 定为浏览器档位。列表待实测 |
 | G-2 | 非数字、空、小数、全角、失焦 | 空 Enter 和失焦等于 Esc。其余提示「共 M 页」。全角不转换 |
@@ -198,8 +199,28 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 6. 浏览器档位的精确列表。测法：在 Windows 上打开 Edge，用它自己的缩放从最小走到最大，记下界面上每一个百分比。Chrome 也在就再记一遍。两份相同才交给决定 1 的纯函数。不同就停。不把 Loom 写的「约 25、33、50、67、75、80、90、100、110、125、150、175、200、250、300、400」抄进函数或本计划。
 7. DESKTOP-0GI64S8 的内存还没核实。400% 的内存只在确认是 8 GB 的 Windows 上测。任务管理器看本进程，录屏。25 页 PDF，缩放到 400%。Forge 没在本计划的审查里写下限值，就测完停下，不自定一个 MB 数，也不交付。更高内存的机器不能代替。
 8. RULES 第 89 行的 `ui-events.ts` 登记是否适用于菜单的 window 事件。文件现在不存在。D 的返回事件没有登记。本计划不建这个文件。Forge 若认为必须登记，那是 contracts，停下来，不在 E 里新建。
-9. 评论 6764944106 本计划没有单独再拉取。ADR 0011 的「视口绘制暂不开工」沿用仓库里已合入的正文。
+9. 评论 6764944106 本计划没有单独再拉取。0011 的正文仍是已采纳。14:17 用提议中的 0012 修订其中「暂不开工」这一条，其余不动。
 10. Chromium 是否让滚动容器默认可用键盘聚焦。测法：实现 PR 里用键盘 Tab，看 PDF 栏能不能成为焦点。不能，再给栏加 `tabindex="0"`。这是 UI，不是新 seam。
+
+## 视口附近的页和单页像素上限
+
+14:17 的方案 A。#202 从「之后的候选」改为并入 E1。提议 ADR 是 `docs/adr/0012-viewport-canvas-cap.md`。0011 仍是已采纳。0012 只修订「暂不开工」这一条。压力后保留的 `[anon]` 不下降，这一实测写进 0012，不假装被这次画法消掉。
+
+当前页用已有的 `readVisible`：与栏的视口相交最高的那一页，相交相同取较小页码。`visible-page.ts` 写明这是显示几何，不是夹页。占位页也带 `data-page` 和高度，所以「第 N / M 页」继续走这一函数。
+
+保留 canvas 的页是 `canvas-window.ts` 算出来的闭区间，当前页减 2 到加 2，再夹到 1..总页数。最多 5 页。其余页不挂 canvas。卸下时调用现有的 `cancel`。占位高度和宽度按该页在当前缩放下的 CSS 尺寸，也就是实际页宽高乘缩放，不乘 `devicePixelRatio`。这样滚动条不跳。
+
+重算：
+
+- 滚动：`onScroll` 再读 `readVisible`。当前页变了就换窗口。离开窗口的页 cancel 并去掉 canvas，进入窗口的页再 paint。
+- 缩放：先按新缩放改每一页的占位尺寸和已画页的 CSS 尺寸，再读一次可见页。窗口仍是这一页的 ±2。画布按新的 scale 重画。锚点仍是当前可见页。
+- 转到页码和历史后退：先把目标页滚进视口（目标页即使还是占位也在 DOM 里），再读可见页，窗口改到这一页的 ±2。这次滚动不另记入历史。历史只在转到页码时入栈，和上一节相同。
+
+单页上限在 `pdf-session.ts`。渲染 scale = min(缩放 × `devicePixelRatio`, 上限对应的 scale)。超过上限时 canvas 的像素少一些，CSS 把它拉到缩放后的尺寸。上限是这个文件里的可调常量。具体数值等 8 GB 实测，本计划不写死。
+
+已核实的参考，不是产品初值：本机安装的 `pdfjs-dist@6.5.438` 里，`legacy/web/pdf_viewer.mjs` 的 `maxCanvasPixels` 选项默认是 `2 ** 25`。同一文件只在 iOS 或 Android 上把 compat 覆盖写成 5242880。`legacy/build/pdf.mjs` 没有这个名字。阅读屏走 `page.render`，不经过 PDFViewer，所以这个默认值现在不会自动套上。实现不把 `2 ** 25` 抄成常量，除非实测选定它。
+
+不做分块渲染，不调用 `PDFDocumentProxy.cleanup()`。若占位尺寸或窗口计算必须改 core、contracts、主进程、CSP 或协议，就停，不在 E1 里改。半径 2 放在 UI 的具名常量。把它挪进 domain 就是 core，本批不允许。
 
 ## 需 Wisdom 决定
 
@@ -210,7 +231,7 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 
 ## 不做
 
-配置存储，AC-11 chip，解析服务说明。视口绘制。侧栏、Aa、大纲、⋯、Range、`disableRange`。CSP、wasm、`blob:`、`.mjs`、协议。侧键、触控板横滑、长按历史列表。查找。改 DESIGN。把 `expose` 改成 true。按文档记住缩放。菜单置灰通道。Win ☰。
+配置存储，AC-11 chip，解析服务说明。侧栏、Aa、大纲、⋯、Range、`disableRange`。CSP、wasm、`blob:`、`.mjs`、协议、主进程里除已列菜单文件以外的改动、core、contracts、`library/src`。分块渲染。`PDFDocumentProxy.cleanup()`。侧键、触控板横滑、长按历史列表。查找。改 DESIGN。把 `expose` 改成 true。按文档记住缩放。菜单置灰通道。Win ☰。用放宽像素上限来通过 8 GB 实测。
 
 ## 测试计划
 
@@ -218,7 +239,11 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 
 单测：已有历史和缩放边界测试保持通过。`go-to-page` 断言越界不调用跳转、`clampPage` 的返回值不被当成目标页。`history-controls` 断言空的 ← 不调用离开。`view-mode-empty` 断言原句、链接文字，以及没有「开始翻译」「去设置」。键位分 `metaKey` 和 `ctrlKey`。
 
-Electron e2e：打开小 PDF。窗口缩放因子在 Ctrl+滚轮后仍是 1，画布变大。Ctrl+G 跳页，Alt+← 回去，历史用尽后回库。‹ 在有历史时直接回库。Ctrl+2 出现空态，没有翻译请求。
+Electron e2e：打开小 PDF。窗口缩放因子在 Ctrl+滚轮后仍是 1，画布变大。Ctrl+G 跳页，Alt+← 回去，历史用尽后回库。‹ 在有历史时直接回库。Ctrl+2 出现空态，没有翻译请求。25 页样本上，DOM 里的 canvas 不超过 5。滚过一页之后，保留 canvas 的页码集合换成新的当前页 ±2。
+
+视口和上限的单测只断言行为：窗口在首页、末页和中页的页码集合；scale 不超过上限对应的值，CSS 尺寸仍是缩放后的尺寸。不读源码做文本断言（F-08）。
+
+内存在 100%、200%、400% 各记一次：当时 canvas 的像素字节合计，以及 Tab working set。8 GB Windows 真机要有录屏和截图。超限就停，不把常量调大再交。没有确认是 8 GB 的机器就标未验证。
 
 §10 的十项实测按上面的测法做，和功能测试分开记。
 
@@ -242,7 +267,7 @@ Windows 真机要有录屏和对应截图，Box 不能代替：
 
 - D-15 的「Alt+← 一律回库」会失败，E1 改断言。
 - 菜单 accelerator 在输入框聚焦时会不会抢走 ⌘[，属于 §10。抢的话停，不加第二套 keydown。
-- 400% 的内存可能超过机器。视口绘制不在本批里用来躲过这一项。
+- 400% 的内存可能仍超过 8 GB。视口绘制不保证压力后的 `[anon]` 下降，0011 已经量过。超限就停，不放宽常量。
 - 档位列表在实测前不存在。E1 不能先写一个临时数组。
 
 ## 自检
