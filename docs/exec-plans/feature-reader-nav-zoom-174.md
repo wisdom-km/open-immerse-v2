@@ -18,7 +18,7 @@
 | --- | --- | --- | --- |
 | 缩放 | `reader.setZoom` 的 `expose` 是 false。桌面没有注册它。`clampZoomPercent`、`resolveZoomPercent`、`viewportForZoom` 已在 `pure.ts`。画页固定 `scale: 1`，不乘 dpr | 14:13 的 6-2 A：浏览器式预设档位，25–400%。不记住，每次打开 100%。UIX-56 未满足。已在 Edge 157 和 Chrome 157 上实测，按批次 E 的 6-2 A（#174 评论 6872935563）截到 400，由 PR #209（`e8095da`）合入 | 实际大小、适合宽度、适合页面用已有纯函数。+/−、捏合、Ctrl+滚轮调用已合入的 `nextZoomPercent`、`previousZoomPercent` |
 | 转到页码 | 「第 N / M 页」只是文字 | DESIGN §11.4。越界用 `clampPage(n, M) === n` 判断，不相等就不跳、不夹取 | 做。不新增 domain 函数 |
-| 位置历史 | `recordJump` 在 `current` 为空时只写入 current，不压栈。界面没有 ← → | 2A（2026-11-05 21:01，评论 6658666956）。Loom §4.2：打开时先写 current；跳转前把可见页写成 current，且滚动不入栈。阅读屏「后退」不置灰：来源待核。台账 2A 的原话是「无历史时 ← 仍置灰」，没有这句 | 打开时 `recordJump` 已够用。可见页写成 current 且不压栈，现有函数做不到。15:13 已批，先于档位单开 core PR |
+| 位置历史 | `recordJump` 在 `current` 为空时只写入 current，不压栈。界面没有 ← → | 2A（2026-11-05 21:01，评论 6658666956）。Loom §4.2：打开时先写 current；跳转前把可见页写成 current，且滚动不入栈。依据 6658666956 第 2 条，⌘[ / Alt+← 有历史就后退，没有就回文献库，所以菜单「后退」在阅读屏里总有动作、不置灰；「无历史时 ← 仍置灰」指工具栏上的 ← → 按钮 | 打开时 `recordJump` 已够用。可见页写成 current 且不压栈，现有函数做不到。15:13 已批，先于档位单开 core PR |
 | 栏位 | 只有原文栏 | 14:13 的 6-1 A。默认原文。不记住（G-7：没有 setViewMode） | 做。文案用已批原句 |
 | 菜单 | 只有「打开…」和「返回文献库」 | 14:13 的 6-3 A：文献库里不置灰，点了不起作用，记缺口。「主进程知道当前界面」挂进 M2 退出格 | 加视图菜单。不建场景通道 |
 
@@ -59,14 +59,16 @@
 
 ## 拆分
 
-本 PR 只写计划。实现按下面「reader 切片的串行」：替换当前位置的 core PR，然后缩放档位的 core PR，然后 E1，然后 E2。15:13 已批。这一轮仍不写实现。复审 PASS 之前不开那几笔。
+本 PR 只写计划。实现按下面「reader 切片的串行」：替换当前位置的 core PR，然后缩放档位的 core PR，然后 E1a、E1b、E1c，然后 E2。15:13 已批。Forge 排期（评论 6876352033）把原来的一笔 E1 拆成三笔，不扩范围。菜单项跟着各自的功能走。先做视口绘制，后开缩放。
 
 | 实现 PR | 内容 | 分开的原因 |
 | --- | --- | --- |
-| E1 | 转到页码、历史按钮、视图菜单、实际大小、适合宽度、适合页面、按 dpr 绘制、可见页 −2 到 +2、单页像素上限 | 转到页码是历史的唯一入栈来源。#202 和画页在同一文件，不另开 PR |
+| E1a | 转到页码（`go-to-page.tsx`）、位置历史 ← →（`history-controls.tsx`、`use-position-history.ts`）、`copy.ts`、`reader-screen.tsx` 里这一截的拼装，以及 `reader.css` 里 ← → 置灰和页码按钮的默认外观。不含菜单 | 转到页码是历史的唯一入栈来源。不带缩放，不带视口 |
+| E1b | 按 dpr 绘制、可见页 −2 到 +2、单页像素上限（`page-column.tsx`、`pdf-session.ts`、`canvas-window.ts`、`reader.css`） | #202 和画页在同一 PR。释放时先把宽高设为 0。先于缩放 |
+| E1c | `use-zoom.ts`、`zoom-controls.tsx`、实际大小 / 适合宽度 / 适合页面、菜单里的缩放项，以及视图菜单「后退 / 前进 / 转到页码」（`library-menu.ts` 只在这一笔改一次，加上 `shell.tsx`、`shell-events.ts`）。不另写「不在阅读屏就丢掉」。菜单从 E1a 移来，来源是 Forge 评论 6877059582 的「排期记录」 | 8 GB 真机实测在 E1c 之后做 |
 | E2 | 栏位分段和已批空态 | 不碰画页比例 |
 
-+/−、捏合、Ctrl+滚轮放进 E1，但只在缩放档位的 core PR 已经合入之后。替换当前位置的纯函数先合入，E1 才写「跳转前记下可见页」。这两笔都是 15:13 已批。
++/−、捏合、Ctrl+滚轮放进 E1c，但只在缩放档位的 core PR 已经合入之后。替换当前位置的纯函数先合入，E1 才写「跳转前记下可见页」。这两笔都是 15:13 已批。
 
 ## 键盘
 
@@ -99,9 +101,9 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 | 视图 › 原文 / 对照 / 译文 | ⌘1/2/3 | Ctrl+1/2/3 | 单选。对照和译文是空态 |
 | 视图 › 放大 / 缩小 / 实际大小 / 适合宽度 | 见上表 | 见上表 | 只缩 PDF 栏 |
 
-6-3 A：这些项在文献库里也显示，不置灰。点了或按下快捷键，渲染进程不在阅读屏时丢掉事件。这是缺口，违反 DESIGN 第 707 行的置灰要求，按 6-3 A 接受。补上置灰的小 PR 已写入 `docs/prd/08.md` 的 M2 退出格，本批不做那条通道。
+6-3 A：这些项在文献库里也显示，不置灰。点了或按下快捷键，阅读屏已经卸载，没有监听者。不另写「不在阅读屏就丢掉」（Forge 评论 6876777382 的 N1）。这是缺口，违反 DESIGN 第 707 行的置灰要求，按 6-3 A 接受。补上置灰的小 PR 已写入 `docs/prd/08.md` 的 M2 退出格，本批不做那条通道。
 
-快捷键文字写在菜单项上，accelerator 只注册一份。`useLeaveKeys` 删除，避免 Alt+← 走两次。
+快捷键文字写在菜单项上，accelerator 只注册一份。`useLeaveKeys` 留到 E1c，和菜单一起删，避免 Alt+← 走两次。E1a 保持 main 上的 Alt+← 回库。← → 带快捷键的 tooltip 也留到 E1c。
 
 ## 历史的调用顺序
 
@@ -118,27 +120,27 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 
 | 文件 | PR | 职责 | 上限 | 禁区 |
 | --- | --- | --- | --- | --- |
-| `packages/features/reader/src/ui/go-to-page.tsx` | E1，新建 | 就地输入。越界只调用 `clampPage` 做相等判断。可访问名称「转到页码，第 N / M 页」。加载前和出错时不渲染 | 150 | 否 |
-| `packages/features/reader/src/ui/history-controls.tsx` | E1，新建 | ← →。空的一侧 `aria-disabled`。不调用 ‹ | 80 | 否 |
+| `packages/features/reader/src/ui/go-to-page.tsx` | E1a，新建 | 就地输入。越界只调用 `clampPage` 做相等判断。可访问名称「转到页码，第 N / M 页」。关闭后焦点回到页码按钮。加载前和出错时不渲染 | 150 | 否 |
+| `packages/features/reader/src/ui/history-controls.tsx` | E1a，新建 | ← →。空的一侧 `aria-disabled`。E1a 的 tooltip 只写「后退」「前进」，不写快捷键。带快捷键的 tooltip 留到 E1c，等菜单 accelerator 再加，补上 DESIGN 第 283 行 IconButton 的要求。不调用 ‹ | 80 | 否 |
 | `packages/features/reader/src/domain/position-history.ts` | 替换当前位置的 core PR，改 | 现 70 行。加一个只替换 current、不清 forward、不压栈的纯函数。先于档位 | 400 | 不改 contracts。不在 E1 里写这个函数 |
 | `packages/features/reader/src/domain/zoom-bounds.ts` | 缩放档位的 core PR，改 | 现 64 行。加上一档和下一档。等上一笔合入 | 400 | 不改 contracts，不改 `expose`。已在 Edge 157 和 Chrome 157 上实测，按批次 E 的 6-2 A（#174 评论 6872935563）截到 400，由 PR #209（`e8095da`）合入 |
 | `packages/features/reader/src/pure.ts` | 上面两笔 core PR | 现 42 行。只加这两笔的导出 | 80 | 不在 E1、E2 里改 |
-| `packages/features/reader/src/ui/zoom-controls.tsx` | E1，新建 | 「− % +」和百分比菜单。+/− 只调用已合入的档位纯函数。加载前和出错时不渲染，快捷键什么都不做 | 160 | +/− 调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent` |
-| `packages/features/reader/src/ui/canvas-window.ts` | E1，新建 | 给定第一张可见页、最后一张可见页和总页数，返回闭区间 [第一张−2, 最后一张+2]，夹在 1..M。只服务 `page-column` | 80 | 否。放 UI，不放 domain。放进 domain 就碰到 core，那要停下来问 |
-| `packages/features/reader/src/ui/page-column.tsx` | E1，改 | 现 95 行。主改文件。栏宽、wheel、按窗口挂 canvas 或占位。尺寸齐了才挂 `Restore`。释放时先把 canvas 宽高设为 0，再移出 DOM，并走已有 cancel | 250 | 否。离开阅读屏时不清零 |
-| `packages/features/reader/src/ui/pdf-session.ts` | E1，改 | 现 228 行。绘制 scale 是 `min(缩放 × devicePixelRatio, 上限对应的 scale)`。CSS 尺寸仍按缩放。超过上限就拉伸 | 400 | 否。这是 UI 文件 |
-| `packages/features/reader/src/ui/use-reader-session.ts` | E1，改 | 现 258 行。打开、离开、滚动、`readVisible`。把第一张和最后一张可见页交给 `page-column`。不持有历史栈，不持有缩放百分比 | 400 | 否。改完不超过 400 |
-| `packages/features/reader/src/ui/use-position-history.ts` | E1，新建 | 持有历史栈。只调用 `position-history.ts` 的纯函数。打开时写入恢复页 | 120 | 替换当前位置的纯函数不在这个文件里写 |
-| `packages/features/reader/src/ui/use-zoom.ts` | E1，新建 | 持有本次打开的缩放百分比，初值 100。适合宽度、适合页面调用已有纯函数 | 120 | +/− 调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent` |
-| `packages/features/reader/src/ui/reader-screen.tsx` | E1、E2 | 撤掉 `useLeaveKeys`。‹ 的 tooltip 改为「返回文献库」。只拼装，不持有历史栈和缩放百分比 | 250 | 否 |
-| `packages/features/reader/src/ui/copy.ts` | E1、E2 | 现 10 行。越界句、按钮名、6-1 A 的原句 | 80 | 否 |
+| `packages/features/reader/src/ui/zoom-controls.tsx` | E1c，新建 | 「− % +」和百分比菜单。+/− 只调用已合入的档位纯函数。加载前和出错时不渲染，快捷键什么都不做 | 160 | +/− 调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent` |
+| `packages/features/reader/src/ui/canvas-window.ts` | E1b，新建 | 给定第一张可见页、最后一张可见页和总页数，返回闭区间 [第一张−2, 最后一张+2]，夹在 1..M。只服务 `page-column` | 80 | 否。放 UI，不放 domain。放进 domain 就碰到 core，那要停下来问 |
+| `packages/features/reader/src/ui/page-column.tsx` | E1b，改 | 现 95 行。主改文件。栏宽、wheel、按窗口挂 canvas 或占位。尺寸齐了才挂 `Restore`。释放时先把 canvas 宽高设为 0，再移出 DOM，并走已有 cancel | 250 | 否。离开阅读屏时不清零 |
+| `packages/features/reader/src/ui/pdf-session.ts` | E1b，改 | 现 228 行。绘制 scale 是 `min(缩放 × devicePixelRatio, 上限对应的 scale)`。CSS 尺寸仍按缩放。超过上限就拉伸 | 400 | 否。这是 UI 文件 |
+| `packages/features/reader/src/ui/use-reader-session.ts` | E1b，改 | 现 258 行。打开、离开、滚动、`readVisible`。把第一张和最后一张可见页交给 `page-column`。不持有历史栈，不持有缩放百分比 | 400 | 否。改完不超过 400 |
+| `packages/features/reader/src/ui/use-position-history.ts` | E1a，新建 | 持有历史栈、跳转后的待显示页和播报文字，并 `scrollIntoView`。只调用 `position-history.ts` 的纯函数。打开时写入恢复页。滚动结束只清待显示页，不清播报。同一句再跳时先清空，下一帧再写入 | 120 | 替换当前位置的纯函数不在这个文件里写 |
+| `packages/features/reader/src/ui/use-zoom.ts` | E1c，新建 | 持有本次打开的缩放百分比，初值 100。适合宽度、适合页面调用已有纯函数 | 120 | +/− 调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent` |
+| `packages/features/reader/src/ui/reader-screen.tsx` | E1a、E1c、E2 | E1a 只拼装。`useLeaveKeys` 和 ‹ 的 tooltip 留到 E1c，和菜单一起改。不持有历史栈和缩放百分比 | 250 | 否 |
+| `packages/features/reader/src/ui/copy.ts` | E1a、E1c、E2 | 现 10 行。越界句、按钮名、6-1 A 的原句。菜单事件名不放这里，E1c 再定 | 80 | 否 |
 | `packages/features/reader/src/ui/view-mode-switch.tsx` | E2，新建 | `radiogroup`。默认原文 | 120 | 否 |
 | `packages/features/reader/src/ui/view-mode-empty.tsx` | E2，新建 | 6-1 A 的句子和文字链接。6-1 A 之后留稳定插入点 `data-testid="view-mode-empty-degrade"`，本批不填字。0 个主按钮 | 100 | 否。不写降级句，不造未配置状态 |
-| `apps/desktop/src/renderer/reader.css` | E1、E2 | 排列、焦点环、`forced-colors`。不新造颜色定稿 | 220 | 否 |
-| `apps/desktop/src/renderer/shell.tsx` | E1 | 现 81 行。听返回和视图菜单事件。不在阅读屏时丢掉 | 160 | 否 |
-| `apps/desktop/src/renderer/shell-events.ts` | E1 | 事件名常量，与菜单用同一字符串 | 40 | 否。不新建 `ui-events.ts` |
-| `apps/desktop/src/main/library-menu.ts` | E1 | 现 53 行。追加视图菜单。点击仍 `dispatchEvent`。不新 IPC，不改 CSP，不改协议。阅读屏「后退」不 `enabled: false` | 160 | 主进程。授权是 2026-11-05 21:01（评论 6658666956）的「菜单 + 已批快捷键」，加上 6-3 A。D 也改过这个文件 |
-| `apps/desktop/test/library-menu.test.ts` | E1 | 标签、访问键 (V)、快捷键、没有置灰 | 140 | 随菜单文件 |
+| `apps/desktop/src/renderer/reader.css` | E1a、E1b、E2 | 排列、焦点环、`forced-colors`。E1a 只给 `aria-disabled` 的 ← → 设 0.45 透明度，并去掉页码按钮的默认边框和背景。不新造颜色定稿 | 220 | 否 |
+| `apps/desktop/src/renderer/shell.tsx` | E1c | 现 81 行。听返回和视图菜单事件。不另写丢掉 | 160 | 否 |
+| `apps/desktop/src/renderer/shell-events.ts` | E1c | 事件名常量，与菜单用同一字面值。不放进 `copy.ts` | 40 | 否。不新建 `ui-events.ts` |
+| `apps/desktop/src/main/library-menu.ts` | E1c | 现 53 行。追加视图菜单，只在 E1c 改一次。点击仍 `dispatchEvent`。不新 IPC，不改 CSP，不改协议。阅读屏「后退」不 `enabled: false` | 160 | 主进程。授权是 2026-11-05 21:01（评论 6658666956）的「菜单 + 已批快捷键」，加上 6-3 A。D 也改过这个文件 |
+| `apps/desktop/test/library-menu.test.ts` | E1c | 标签、访问键 (V)、快捷键、没有置灰 | 140 | 随菜单文件 |
 
 测试与被测文件配对，放在 `packages/features/reader/test/ui/` 和 `apps/desktop/test/`。一个测试文件只测一块。
 
@@ -308,7 +310,7 @@ RULES.md 第 87 行：一个切片同一时间一个活跃 PR。15:13 已批的�
 4. E2。`view-mode-empty.tsx` 在 E2 合入后才存在。#206 是计划 PR，合入后仓库里还没有这个文件。
 5. PR #205 第 3 笔。等 #206 的 E2 合入。14:49 的其余顺序不变：第 3 笔仍等第 2 笔合入，再从 main 开新分支。每笔合入单独请 Wisdom 批。本批不创建 `view-mode-empty.tsx`，也不写降级句。
 
-E1 不提前。依据是第 87 行：E1 不能和这两笔 core PR 同时开着。E1 里的 +/−、捏合和 Ctrl+滚轮要调用档位函数，所以 E1 整份等第 2 笔合入。缩放档位列表已经由 PR #209 合入 main（`e8095da7d67459a4225f1827c9c55eee342c7bb1`）。E1 只用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent`，以及已有的 `ZOOM_PERCENT_MIN`、`ZOOM_PERCENT_MAX`。不改 domain，不改 `pure.ts`。E1 要改主进程文件 `apps/desktop/src/main/library-menu.ts`。依据是 2026-11-05 21:01 批准的「菜单 + 已批快捷键」（[评论 6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956)）。E1 合入前 Forge 会向 Wisdom 讲明。
+E1 不提前。依据是第 87 行：E1 不能和这两笔 core PR 同时开着。E1 里的 +/−、捏合和 Ctrl+滚轮要调用档位函数，所以 E1 整份等第 2 笔合入。缩放档位列表已经由 PR #209 合入 main（`e8095da7d67459a4225f1827c9c55eee342c7bb1`）。E1 只用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent`，以及已有的 `ZOOM_PERCENT_MIN`、`ZOOM_PERCENT_MAX`。不改 domain，不改 `pure.ts`。E1c 才改主进程文件 `apps/desktop/src/main/library-menu.ts`，只改一次。依据是 2026-11-05 21:01 批准的「菜单 + 已批快捷键」（[评论 6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956)）。E1 合入前 Forge 会向 Wisdom 讲明。
 
 功能上不必等新函数的，有视口窗口、占位尺寸、释放时先把宽高设为 0 再移出 DOM、转到页码、已有的 `recordJump` / `goBack`、实际大小、适合宽度、适合页面、按 dpr 绘制、像素上限、视图菜单。跳转前把可见页写成 current 必须等第 1 笔。这些也不另开一笔插到 core PR 前面或中间。
 
@@ -332,7 +334,7 @@ E1 不提前。依据是第 87 行：E1 不能和这两笔 core PR 同时开着�
 
 单测：已有历史和缩放边界测试保持通过。`go-to-page` 断言越界不调用跳转、`clampPage` 的返回值不被当成目标页。`history-controls` 断言空的 ← 不调用离开。`view-mode-empty` 只按精确文案或稳定 testid 断言：`view-mode-empty-copy` 的文本等于 6-1 A 的原句，链接文字等于「切到原文（Ctrl+1）」或「切到原文（⌘1）」，并且没有「开始翻译」「去设置」。`view-mode-empty-degrade` 的文本是空的。不用 `/解析/` 或同类宽正则去匹配空态整段。测试不写「未解析 / 去配置」。键位分 `metaKey` 和 `ctrlKey`。
 
-Electron e2e：打开小 PDF。窗口缩放因子在 Ctrl+滚轮后仍是 1，画布变大。Ctrl+G 跳页，Alt+← 回去，历史用尽后回库。‹ 在有历史时直接回库。Ctrl+2 出现空态，没有翻译请求。25 页样本上，DOM 里的 canvas 数 ≤ 当时可见页数 + 4。滚过之后，保留 canvas 的页码集合换成新的第一张可见页 −2 到最后一张可见页 +2。
+Electron e2e 按笔归：E1c 做窗口缩放因子在 Ctrl+滚轮后仍是 1、画布变大，以及 Ctrl+G 跳页、Alt+← 回去、历史用尽后回库（菜单和快捷键不在 E1a）。E1a 用单测覆盖 ‹ 在有历史时直接回库。E2 做 Ctrl+2 出现空态、没有翻译请求。E1b 做 25 页样本上 DOM 里的 canvas 数 ≤ 当时可见页数 + 4，滚过之后保留 canvas 的页码集合换成新的第一张可见页 −2 到最后一张可见页 +2。
 
 视口和上限的单测只断言行为，不读源码做文本断言（F-08）：
 

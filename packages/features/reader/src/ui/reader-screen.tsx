@@ -7,8 +7,11 @@ import {
   LOST_PLACE,
   pageLabel,
 } from "./copy.js";
+import { GoToPage } from "./go-to-page.js";
+import { HistoryControls } from "./history-controls.js";
 import { PageColumn } from "./page-column.js";
 import type { ReaderClient } from "./reader-client.js";
+import { usePositionHistory } from "./use-position-history.js";
 import { useReaderSession } from "./use-reader-session.js";
 
 const SKELETON_MS = 200;
@@ -23,6 +26,16 @@ export function ReaderScreen(props: {
     | undefined;
 }): ReactElement {
   const session = useReaderSession(props.client, props.id, props.onLeave);
+  const reading =
+    session.phase.kind === "view" ? session.phase.reading : undefined;
+  const viewing =
+    reading?.paint !== undefined && session.shownPage !== undefined;
+  const nav = usePositionHistory(
+    props.id,
+    viewing ? session.shownPage : undefined,
+    session.columnRef,
+    reading?.pageCount,
+  );
   useLeaveKeys(session.leave);
   useLayoutEffect(() => {
     props.onBindLeave?.(session.leave);
@@ -30,30 +43,17 @@ export function ReaderScreen(props: {
       props.onBindLeave?.(undefined);
     };
   }, [props.onBindLeave, session.leave]);
-  const reading =
-    session.phase.kind === "view" ? session.phase.reading : undefined;
   return (
     <section className="oi-reader" aria-label={props.title}>
-      <header className="oi-reader-bar">
-        <button
-          type="button"
-          className="oi-reader-back"
-          aria-label={BACK_LABEL}
-          title={BACK_TOOLTIP}
-          onClick={session.leave}
-        >
-          ‹
-        </button>
-        <h1>{props.title}</h1>
-        <PageMark page={session.shownPage} pageCount={reading?.pageCount} />
-        {session.lostPlace ? (
-          <p className="oi-reader-status" role="status">
-            {LOST_PLACE}
-          </p>
-        ) : null}
-        <span className="oi-reader-gap" />
-        <span className="oi-reader-chip" />
-      </header>
+      <ReaderBar
+        title={props.title}
+        leave={session.leave}
+        viewing={viewing}
+        pageCount={reading?.pageCount}
+        lostPlace={session.lostPlace}
+        fallbackPage={session.shownPage}
+        nav={nav}
+      />
       <ReaderBody
         loading={session.phase.kind === "loading"}
         sentence={reading?.sentence}
@@ -61,12 +61,77 @@ export function ReaderScreen(props: {
         pageCount={reading?.pageCount}
         columnRef={session.columnRef}
         onScroll={session.onScroll}
-        onScrollEnd={session.onScrollEnd}
+        onScrollEnd={() => {
+          nav.clearPending();
+          session.onScrollEnd();
+        }}
         paint={reading?.paint}
         cancel={reading?.cancel}
         onLeave={session.leave}
       />
     </section>
+  );
+}
+
+function ReaderBar(props: {
+  readonly title: string;
+  readonly leave: () => void;
+  readonly viewing: boolean;
+  readonly pageCount: number | undefined;
+  readonly lostPlace: boolean;
+  readonly fallbackPage: number | undefined;
+  readonly nav: ReturnType<typeof usePositionHistory>;
+}): ReactElement {
+  const page =
+    props.viewing &&
+    props.nav.shown !== undefined &&
+    props.pageCount !== undefined ? (
+      <GoToPage
+        page={props.nav.shown}
+        pageCount={props.pageCount}
+        onJump={(target) => {
+          props.nav.jump(target);
+        }}
+      />
+    ) : (
+      <PageMark page={props.fallbackPage} pageCount={props.pageCount} />
+    );
+  return (
+    <header className="oi-reader-bar">
+      <button
+        type="button"
+        className="oi-reader-back"
+        aria-label={BACK_LABEL}
+        title={BACK_TOOLTIP}
+        onClick={props.leave}
+      >
+        ‹
+      </button>
+      {props.viewing ? (
+        <HistoryControls
+          canBack={props.nav.canBack}
+          canForward={props.nav.canForward}
+          onBack={() => {
+            props.nav.back();
+          }}
+          onForward={() => {
+            props.nav.forward();
+          }}
+        />
+      ) : null}
+      <h1>{props.title}</h1>
+      {page}
+      <p className="oi-reader-live" role="status">
+        {props.nav.spoken}
+      </p>
+      {props.lostPlace ? (
+        <p className="oi-reader-status" role="status">
+          {LOST_PLACE}
+        </p>
+      ) : null}
+      <span className="oi-reader-gap" />
+      <span className="oi-reader-chip" />
+    </header>
   );
 }
 

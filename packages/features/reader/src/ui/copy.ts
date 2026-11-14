@@ -8,3 +8,7 @@ export const BACK_TOOLTIP = "返回文献库（Alt+←）";
 export function pageLabel(page: number, pageCount: number): string {
   return `第 ${String(page)} / ${String(pageCount)} 页`;
 }
+
+export function pageCountNote(pageCount: number): string {
+  return `共 ${String(pageCount)} 页`;
+}

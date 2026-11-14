@@ -29,6 +29,24 @@
   outline-offset: var(--oi-focus-offset, 2px);
 }
 
+.oi-reader-back[aria-disabled="true"] {
+  opacity: 0.45;
+}
+
+.oi-reader-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+button.oi-reader-pages {
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+
 .oi-reader-bar h1 {
   margin: 0;
   font-size: 1rem;
