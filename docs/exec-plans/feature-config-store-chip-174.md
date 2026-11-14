@@ -1,10 +1,10 @@
 # 执行计划
 
-分支 `feature/config-store-chip-174`。基线是 `main` `5db585df3c460a1d6a8ac2d33583cde16e48970e`，tree `b56d0d364b9dea92a04c4c7da98a8575034d9716`（提交说明 `docs: 按现状改正阅读界面与 renderer 清单 (#203)`）。本文件按 [docs/exec-plans/TEMPLATE.md](TEMPLATE.md) 编写。它必须自包含。
+分支 `feature/config-store-chip-174`。基线是 `main` `d8e5afb2aff5d9b151050e07aa3a11b4a0a41290`，tree `7c60f428c10db03e23052ad93956c823905597b6`（提交说明 `docs: 改正 ADR 0010 的 CCITT 描述与 arch/09 wasm 现状 (#204)`）。本文件按 [docs/exec-plans/TEMPLATE.md](TEMPLATE.md) 编写。它必须自包含。
 
-停点：第一笔提交只有本文件。第二笔提交只有 [docs/approvals.md](../approvals.md) 的 2026-11-14 13:57 那一行，以及 [docs/spec-changelog.md](../spec-changelog.md) 的对应一行。批准数从 151 改为 152。`tools/compare-spec-bytes/manifest.json` 不动：比对的规格字节没有变，不追加空修订。这两笔都不是执行计划 PASS。第三笔只按 PR #205 评论 [6873016564](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873016564) 改本文件和 changelog，仍然不是 PASS，不回填下面的「实际」列。Forge 对修订后的 tip 再审并 PASS 之前，不写实现。
+停点：本分支不改台账。13:57 那一行已由 PR #204 写在 main 上。本文件和 [docs/spec-changelog.md](../spec-changelog.md) 都不是执行计划 PASS，不回填下面的「实际」列。`tools/compare-spec-bytes/manifest.json` 不动：比对的规格字节没有变，不追加空修订。按 PR #205 评论 [6873016564](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873016564) 与 [6873205344](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873205344) 修订之后，仍然不写实现。
 
-本两笔不改业务代码、测试、CI、CSP、协议注册、codegen 生成物、契约、主进程、`packages/features/library/src/`、[DESIGN.md](../../DESIGN.md)、[docs/design-principles.md](../design-principles.md)、`docs/design/**`（N-10）。不标 Ready，不合入，不发版。为接上已合入的 PR #204，本分支 rebase 到 main `d8e5afb` 后用 `--force-with-lease` 推送。不对别的分支 force-push。
+本两笔不改业务代码、测试、CI、CSP、协议注册、codegen 生成物、契约、主进程、`packages/features/library/src/`、[DESIGN.md](../../DESIGN.md)、[docs/design-principles.md](../design-principles.md)、`docs/design/**`（N-10）。不标 Ready，不合入，不发版。为接上已合入的 PR #204，本分支 rebase 到 main `d8e5afb` 后用 `--force-with-lease` 推送。依据是 2026-11-14 14:20 的批准，Issue #174 评论 [6873024142](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6873024142)。这个依据只适用于本 feature 分支上的 rebase。不对别的分支 force-push。14:20 的台账行由 PR #206 补，本分支不写。
 
 任务类型：本两笔是纯文档。交接说明写「不适用」。后面的编码按下面的 PR 拆开。存储那一笔是 core 改动。chip 那一笔是 UI 改动，任务说明必须带上下面这一句，且 core 目录零改动：
 
@@ -21,7 +21,7 @@
 - AC-11 在 [docs/prd/06-01.md](../prd/06-01.md) 第 18 行：未配置任何解析服务时，可打开 PDF、浏览原文、读取文字层通读、记笔记；界面显示明确降级状态。US-16 在 [docs/prd/05.md](../prd/05.md) 第 25 行，提示的原词是「未解析 / 去配置」。③ 只覆盖「打开 PDF、浏览原文」和这句降级状态。文字层通读和记笔记仍不在本批。
 - PRC-10 在仓库里没有定义。批次 D 计划的 D-20 写明：这个编号未入库，只沿用设计稿编号，不把编号写进 PRD。本文件沿用这个边界。
 - DESIGN 里任务摘要 chip 的位置在 [DESIGN.md](../../DESIGN.md) §4.5.1 第 468 行：弹性空白（拖拽区）之后、栏位分段之前。§3.8.1 第 341 行的 chip 文案是进度、「解析失败 · 查看」、「✓ 解析完成」，那是任务状态，不是未配置句。§4.1 第 367 行把「解析与翻译状态摘要」放在标题栏。§4.1 第 394 行的空态是「这篇论文还没有译文。可以先读原文文字层 · 去设置翻译服务」。3A 要求切到对照或译文时把降级句再说一次，不用阅读区横幅。本批不改 DESIGN 正文。
-- 另一条分支是 Draft [PR #206](https://github.com/wisdom-km/open-immerse-v2/pull/206)，tip `bce792691509a93f285a28759fe8eb6c0c787a4a`。范围来自 Issue #174 评论 [6872732174](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872732174)：同一基线 `5db585d`，只交计划和台账，做缩放、转到页码、位置历史和栏位；不含配置存储和 AC-11 chip。它的 diff 是 `docs/approvals.md`、`docs/spec-changelog.md`、`docs/prd/08.md`、`tools/compare-spec-bytes/manifest.json`，以及它自己的计划。本分支 rebase 之后不再改台账，所以不再和它抢 13:57 那一行。对照和译文的空态容器在它的计划第 120 行：`view-mode-empty.tsx`。6-1 A 已在 14:13 批过，接缝见 chip 一节。
+- 另一条分支是 Draft [PR #206](https://github.com/wisdom-km/open-immerse-v2/pull/206)，tip 以合入时为准。范围来自 Issue #174 评论 [6872732174](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872732174)：只交计划和台账，做缩放、转到页码、位置历史和栏位；不含配置存储和 AC-11 chip。本分支不改台账。14:13、14:17、14:20 的批准行和 PR #204 的合入同步行都由 #206 补。对照和译文的空态容器是它计划里的 `view-mode-empty.tsx`。6-1 A 已在 14:13 批过，接缝见 chip 一节。
 
 ## 来源核对
 
@@ -45,7 +45,7 @@
 
 配置存储放在新的 `settings` 切片，不放进 `library`，不放进 `reader`。`settings` 拥有 `set_` 表（[docs/arch/04-02.md](../arch/04-02.md)、[docs/arch/08-02.md](../arch/08-02.md)）。目录按 [docs/arch/03-01.md](../arch/03-01.md)。
 
-表名用 [docs/arch/08-03.md](../arch/08-03.md) 第 9 行已有的 `set_providers`。不另起 `set_parse_service`，也不改 08-03。那一行已经要存 `vendorId`、API 格式、Base URL、模型、能力标记和 `allowedHosts`。本批的列就是这些：`vendor_id`、`format`、`base_url`、`model_id`、`allowed_hosts`（JSON 文本），再加一列 `capability`。解析服务这一行的值是 `parse`。唯一约束是部分唯一索引 `WHERE capability = 'parse'`，所以解析服务最多一行，以后别的能力仍可以各有多行。没有密钥列。密钥是否可用按这一行的 `vendor_id` 去问端口。不读 `secrets.bin`。这些列放得下，不另请 Wisdom 决定表名。
+表名用 [docs/arch/08-03.md](../arch/08-03.md) 第 9 行已有的 `set_providers`。不另起 `set_parse_service`，也不改 08-03。本批写入的列是 `vendor_id`、`format`、`base_url`、`model_id`、`allowed_hosts`（JSON 文本）、`purpose`、`credential_slot`。`purpose` 表示这条配置拿来做什么。解析服务这一行的值是 `parse`。部分唯一索引是 `WHERE purpose = 'parse'`，所以解析服务最多一行。[docs/arch/07-09.md](../arch/07-09.md) §7.9.3 的「能力标记」是 `chat`、`vision`、`ocr`、`scoring`、`streaming`，按服务商和模型给，不是这一列。本批不写那些标记，列名也不叫 `capability`。`credential_slot` 只存 §7.9.5 的 slot 引用，不存密钥字节。密钥是否可用按这一列去问端口，对齐 [docs/arch/02-05.md](../arch/02-05.md) 第 32 行的「所引用密钥」，以及 [parse-service-status.ts](../../packages/contracts/src/parse-service-status.ts) 第 6–7 行：没有记录指向的密文不参与判断，记录在但密钥缺失是错误。不读 `secrets.bin`。查询结果里不带回 slot，也不带回密钥。这两列在第 1 笔写 `0001_set_providers.sql` 之前定稿。迁移进了用户的库之后再改列，就要另写 `0002`。本批不留这个口子。
 
 读口不新造契约。生产只接一条命令，它调用下面的用例：
 
@@ -64,11 +64,11 @@ createGetParseServiceStatus(deps: {
 >
 ```
 
-`ParseServiceStore.readMetadata()` 返回这一行，或 `null`，或 `storage_corrupt`。不返回密钥字节。`ParseSecretLookup` 只回答某个 `vendorId` 现在能不能用。本批的生产适配器固定返回 `secret_unavailable`，不打开 `secrets.bin`，不写密钥文件。测试替身可以返回「可用」，用来锁住「有记录且密钥可用 → configured」。生产 chip 走不到 `configured`。
+`ParseServiceStore.readMetadata()` 返回这一行，或 `null`，或 `storage_corrupt`。不返回密钥字节，也不把 `credential_slot` 放进 IPC 成功体。`ParseSecretLookup` 只回答这一行所引用的 slot 现在能不能用。本批的生产适配器固定返回 `secret_unavailable`，不打开 `secrets.bin`，不写密钥文件。测试替身可以返回「可用」，用来锁住「有记录且所引用密钥可用 → configured」。生产 chip 走不到 `configured`。
 
 分类规则放在 `settings` 的 domain，一处：
 
-- 没有 `capability = 'parse'` 的行：`unconfigured`。不询问密钥。孤儿密文因此不参与判断（A2）。
+- 没有 `purpose = 'parse'` 的行：`unconfigured`。不询问密钥。孤儿密文因此不参与判断（A2）。
 - 行读不出来，或任一文本列是空串，或 `allowed_hosts` 不是非空字符串数组：`storage_corrupt`。空串的口径和保存请求里的 `nonEmpty` 相同。
 - 有合法行，密钥不可用：`secret_unavailable`。
 - 有合法行，密钥可用：`configured`。本批生产适配器不产生这一支。
@@ -101,9 +101,9 @@ createGetParseServiceStatus(deps: {
 | `src/domain/parse-record-failure.ts` | 两个读错误码 | 30 |
 | `src/domain/parse-record.ts` | `classifyParseRecord` | 80 |
 | `src/application/ports/parse-service-store.ts` | `readMetadata` 端口 | 40 |
-| `src/application/ports/parse-secret-lookup.ts` | 「这个 vendorId 能否用」端口 | 30 |
+| `src/application/ports/parse-secret-lookup.ts` | 「这个 slot 能否用」端口 | 30 |
 | `src/application/use-cases/get-parse-service-status.ts` | 读端口，调用分类 | 70 |
-| `src/adapters/sqlite-parse-service-store.ts` | 只 SELECT `capability = 'parse'` 的那一行并校验 | 90 |
+| `src/adapters/sqlite-parse-service-store.ts` | 只 SELECT `purpose = 'parse'` 的那一行并校验 | 90 |
 | `src/adapters/unavailable-secret-lookup.ts` | 固定 `secret_unavailable`，无文件 IO | 25 |
 | `src/adapters/get-parse-capabilities-handler.ts` | 只翻译 `parsing.getParseCapabilities` | 50 |
 | `src/adapters/settings-main.ts` | `./main`：导出 handler 工厂和迁移目录 | 60 |
@@ -159,7 +159,7 @@ chip 是 `role=status` 的文本。没有 `href`，没有按钮，不导航。�
 
 AC-11 整句仍不标通过。文字层通读和记笔记没有做。可以单独验收的是这一截：
 
-1. 库里没有 `capability = 'parse'` 的 `set_providers` 行。
+1. 库里没有 `purpose = 'parse'` 的 `set_providers` 行。
 2. 打开一篇已入库 PDF，原文能浏览。
 3. chip 显示「未解析 / 去配置」，`role=status`，句子来自读口的 `unconfigured`，不是界面写死的常量分支绕过查询。单测里的常量只是文案；生产组件必须先拿到 `unconfigured` 才渲染它。
 4. 证据是：分类与用例单测、chip 组件测试、Electron e2e、Windows 真机截图。四样都在，这一截才算可验收。
@@ -174,11 +174,11 @@ Forge 排序，非业主决定。G18 只数 `packages/features/<name>/src`（`to
 
 | 顺序 | 内容 | 先要有的决定 | 切片 |
 | --- | --- | --- | --- |
-| 1 | `settings` 切片：`set_providers` 迁移、分类、用例、SQLite、固定不可用的密钥端口、`parsing.getParseCapabilities` 的 handler 工厂、临时库测试。不注册进生产 map，不改 `expose`，不建 `settings.getParseServiceStatus` 的 handler | 无。不碰下面的禁区 | 只有 `settings` |
+| 1 | `settings` 切片：`set_providers` 的 `0001` 用 `purpose` 和 `credential_slot`，不再改列名。分类、用例、SQLite、固定不可用的密钥端口、`parsing.getParseCapabilities` 的 handler 工厂、临时库测试。不注册进生产 map，不改 `expose`，不建 `settings.getParseServiceStatus` 的 handler | 无。不碰下面的禁区 | 只有 `settings` |
 | 2 | `library-main` 接受额外迁移，默认空，并把已打开的存储交回调用方。`library-wiring.ts` 只把 parsing 这一条 handler 并进现有 map。库打不开时这条仍在 map 里，返回 `handler_threw`。`expose` 改为 true，重新 codegen，同一笔改表面测试，并按 W4 更新 02-05 与 prd 08 的事实句、同步 manifest。`settings.*` 仍是 false。`composition-root.ts` diff 0 | W1、W2、W3，以及 W4 的事实更新。第 1 笔已合入 | 只有 `library`。契约和主进程在同一笔，见「不拆」 |
 | 3 | reader chip、`readParseStatus`、桌面 client 的生产调用、降级句函数、e2e。不新建空态组件。#206 已合入后，才在 `view-mode-empty.tsx` 的 6-1 A 之后插入降级句 | W1 已随第 2 笔合入。W5、W6、W7、W9 本批不做 | 只有 `reader` |
 
-第 1 笔单独合入还不满足 AC-11。第 3 笔的 e2e 要跑在第 2 笔已经合入的 main 上。第 2 笔和第 3 笔不能合成一笔：RULES §8.2 把 `contracts/src/ipc/**` 算作 core，UI 改动的 PR 不能带 core。
+第 1 笔单独合入还不满足 AC-11。第 3 笔的 e2e 要跑在第 2 笔已经合入的 main 上。第 2 笔和第 3 笔不能合成一笔：RULES §8 第 2 条把 `contracts/src/ipc/**` 算作 core，UI 改动的 PR 不能带 core。
 
 ## 不拆
 
@@ -190,14 +190,14 @@ Forge 排序，非业主决定。G18 只数 `packages/features/<name>/src`（`to
 
 单测：
 
-- 没有 parse 行 → `unconfigured`，密钥端口调用次数是 0。
+- 没有 `purpose = 'parse'` 的行 → `unconfigured`，密钥端口调用次数是 0。
 - 坏 JSON、空串、`allowed_hosts` 不是非空字符串数组 → `storage_corrupt`。
 - 合法行且密钥端口不可用 → `secret_unavailable`。
 - 合法行且测试替身报告密钥可用 → `configured`。生产适配器的测试锁住它从不返回可用，并且不读 `secrets.bin`。
 - 结果和错误里没有 `secret`、`secretRef`、路径。
 - 升级：先有一份只含 library 迁移的库，再打开并带上 `set_providers` 迁移。`lib_*` 行还在。`app_schema` 仍是打开前那个受支持的数（现在是 1，`applyMigrations` 把它写成 `supportedAppSchema`，不另加一）。没有 parse 行时查询是 `unconfigured`。做不到就按「还没核实」停，不改 `STORAGE_APP_SCHEMA`，也不改 [docs/arch/08-04.md](../arch/08-04.md)。
 - 库打不开：`createLibraryMain` 走 `unavailableHandlers()`（`library-main.ts` 第 82 行与第 183 行）。parsing 这条仍在 map 里，返回与文献库失败路径相同的 `handler_threw`，不返回 `unconfigured`。chip 不显示降级句。
-- 只读打开：`appSchema` 高于本应用时走 `openReadonly`（`open-storage.ts` 第 105–107 行），不跑迁移。表在就按分类规则 SELECT。表不在就是 `storage_corrupt`，不当成 `unconfigured`。不写库。chip 对这个错误留空。
+- 只读打开：`appSchema` 高于本应用时走 `openReadonly`（`open-storage.ts` 第 105–107 行），不跑迁移。表在就按分类规则 SELECT。表不在就是 `handler_threw`，不当成 `unconfigured`，也不当成 `storage_corrupt`。`storage_corrupt` 只留给已经读到、但内容坏了的记录。不写库。chip 对这个错误留空。
 - chip：`unconfigured` 显示这句且 `role=status`，节点在标题栏，不在 `.oi-reader-column` 里。`configured` 的假客户端留下空 chip。`handler_threw` 和两种读错误不显示这句。
 - `parse-degrade-copy` 只在 `unconfigured` 时返回这句。
 - 打开 PDF 的现有路径不调用 `submitParse`。本批没有这条命令的生产调用。
@@ -223,7 +223,7 @@ Windows 真机：
 
 ## 和 `feature/reader-nav-zoom-174` 可能冲突的文件
 
-对方现在是 Draft PR #206，tip `bce7926`。这一版 diff 只有计划、台账、changelog、`docs/prd/08.md` 和 manifest。实现文件还没改，下表后半是它计划里点名、本批也会碰到的文件。合入顺序不确定。本 PR 不 rebase 到它上面，也不改它的文件。
+对方是 Draft PR #206，tip 以合入时为准。实现文件以合入时为准。下表后半是它计划里点名、本批也会碰到的文件。合入顺序不确定。本 PR 不 rebase 到它上面，也不改它的文件。14:13、14:17、14:20 和 PR #204 合入同步的台账行由它补。
 
 | 文件 | 为什么会撞 | 本批怎么减少重叠 |
 | --- | --- | --- |
@@ -283,7 +283,7 @@ W5、W6、W7、W9 不再请批。登记成缺口，实现时不补。
 | --- | --- | --- | --- |
 | 1 | 本文件 |  |  |
 | 2 | 台账 13:57。#204 已写入 main，本分支不重复，合计仍是 152。manifest 不改 |  |  |
-| 3 | 按审查 6873016564 修订本文件，并 rebase 到 #204 之后的 main。不改规格正文 |  |  |
+| 3 | 按审查 6873016564 与 6873205344 修订本文件。不改台账，不改规格正文 |  |  |
 | 4 | settings 切片，见「实现顺序」第 1 笔 |  |  |
 | 5 | library 迁移、主进程只接 parsing、expose，W1、W2、W3、W4 之后 |  |  |
 | 6 | chip、降级句函数、e2e、Windows 截图 |  |  |
@@ -295,7 +295,8 @@ W5、W6、W7、W9 不再请批。登记成缺口，实现时不补。
 | 现在开计划 Draft，只交计划和台账，不写代码；不 Ready、不合入、不发版 | 13:57 这一行已由 PR #204 写入 main，本分支不重复。同一条评论里的 #201 文档修补也由 #204 落完 | 2026-11-14 13:57 | Wisdom。来源是 Forge 卡片「这两件怎么定？」。本批对应的评论是 [6872740488](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872740488) |
 | 存储放在 `settings`，只做读，保存命令不实现；chip 用 US-16 原句并且不可点击；错误不新写文案。第一稿拆成四笔 | 对齐 A1、A2、3A、6-2 A 和 G18。下一行把四笔收成三笔 | 2026-11-14 | Forge 排序，非业主决定 |
 | 表用 `set_providers`；降级句接在 6-1 A 之后，只在未配置时出现；生产只接 `parsing.getParseCapabilities`；契约与 handler 同一笔合入 | 回应 PR #205 评论 [6873016564](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873016564)。需 Wisdom 决定只剩 W1、W2、W3、W4。W5、W6、W7、W9 登记为本批不做。这不是新的 Wisdom 批准，台账不追加 | 2026-11-14 | Forge 排序，非业主决定 |
-| 重复的 13:57 行删掉，合计不改 | PR #204 已把同一条批准写入 main。本分支 rebase 到 `d8e5afb` 后只留那一行，合计仍是 152 | 2026-11-14 | 本任务的范围。不是新的产品决定 |
+| 重复的 13:57 行删掉，合计不改 | PR #204 已把同一条批准写入 main。本分支 rebase 到 `d8e5afb` 后只留那一行，合计仍是 152。14:13、14:17、14:20 和 #204 合入同步行由 PR #206 补 | 2026-11-14 | 本任务的范围。不是新的产品决定 |
+| `purpose` 表示用途，`credential_slot` 只存 slot 引用 | 回应 PR #205 评论 [6873205344](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873205344)。§7.9.3 的能力标记不是这一列。第 1 笔写 `0001` 时就用这两列。这不是新的 Wisdom 批准，台账不追加 | 2026-11-14 | Forge 排序，非业主决定 |
 
 ## 不改
 
@@ -307,7 +308,7 @@ W5、W6、W7、W9 不再请批。登记成缺口，实现时不补。
 - 不改 `tools/compare-spec-bytes/manifest.json`、不改基线 `f8d5d01`、不改 `compare.mjs`。
 - 不改批次 D 计划里的 D-19 / D-20。
 - 不改 `.cursor/environment.json`、`.cursor/install.sh`（N-11）。
-- 不标 Ready，不合入，不发版。只在本分支 rebase 之后用 `--force-with-lease`。
+- 不标 Ready，不合入，不发版。`--force-with-lease` 只用于本 feature 分支接上 main 的 rebase，依据是 14:20 批准（评论 [6873024142](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6873024142)）。
 
 ## 证据链接
 
