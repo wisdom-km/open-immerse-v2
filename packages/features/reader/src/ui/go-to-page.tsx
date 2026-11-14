@@ -7,6 +7,7 @@ export function GoToPage(props: {
   readonly page: number;
   readonly pageCount: number;
   readonly onJump: (page: number) => void;
+  readonly onBindOpen?: ((open: (() => void) | undefined) => void) | undefined;
 }): ReactElement {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -15,6 +16,11 @@ export function GoToPage(props: {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const restore = useRef(false);
   const name = `转到页码，${pageLabel(props.page, props.pageCount)}`;
+  const open = usePageOpener(props.onBindOpen, props.page, {
+    draft: setDraft,
+    note: setNote,
+    editing: setEditing,
+  });
   useEffect(() => {
     if (!editing) {
       if (restore.current) buttonRef.current?.focus();
@@ -35,11 +41,7 @@ export function GoToPage(props: {
         type="button"
         className="oi-reader-pages"
         aria-label={name}
-        onClick={() => {
-          setDraft(String(props.page));
-          setNote(undefined);
-          setEditing(true);
-        }}
+        onClick={open}
       >
         {pageLabel(props.page, props.pageCount)}
       </button>
@@ -71,6 +73,33 @@ export function GoToPage(props: {
       {note === undefined ? null : <span role="status">{note}</span>}
     </span>
   );
+}
+
+function usePageOpener(
+  onBindOpen: ((open: (() => void) | undefined) => void) | undefined,
+  page: number,
+  set: {
+    draft: (value: string) => void;
+    note: (note: string | undefined) => void;
+    editing: (editing: boolean) => void;
+  },
+): () => void {
+  const open = (): void => {
+    set.draft(String(page));
+    set.note(undefined);
+    set.editing(true);
+  };
+  const openRef = useRef(open);
+  openRef.current = open;
+  useEffect(() => {
+    onBindOpen?.(() => {
+      openRef.current();
+    });
+    return () => {
+      onBindOpen?.(undefined);
+    };
+  }, [onBindOpen]);
+  return open;
 }
 
 function onFieldKey(

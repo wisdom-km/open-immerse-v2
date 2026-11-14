@@ -1,8 +1,11 @@
+import { mkdtemp, rm } from "node:fs/promises";
 import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   test as base,
+  expect,
   _electron as electron,
   type ElectronApplication,
   type Page,
@@ -16,6 +19,7 @@ const desktopRoot = path.resolve(
 type Desktop = {
   app: ElectronApplication;
   page: Page;
+  userDataDir: string;
 };
 
 export const test = base.extend<{ desktop: Desktop }>({
@@ -24,24 +28,33 @@ export const test = base.extend<{ desktop: Desktop }>({
     // eslint-disable-next-line no-empty-pattern -- 空解构是 Playwright 要求的形式
     async ({}, use) => {
       const launchedAt = Date.now();
+      const userDataDir = await mkdtemp(path.join(tmpdir(), "oi-e2e-"));
       const app = await electron.launch({
         executablePath: electronBinary(),
         cwd: desktopRoot,
-        args: [path.join(desktopRoot, "dist/main/index.js")],
+        args: [
+          `--user-data-dir=${userDataDir}`,
+          path.join(desktopRoot, "dist/main/index.js"),
+        ],
       });
       try {
         const page = await app.firstWindow();
+        const actual: unknown = await app.evaluate(({ app: electronApp }) =>
+          electronApp.getPath("userData"),
+        );
+        expect(actual).toBe(userDataDir);
         console.log(`electron launch ms: ${String(Date.now() - launchedAt)}`);
-        await use({ app, page });
+        await use({ app, page, userDataDir });
       } finally {
         await app.close();
+        await rm(userDataDir, { recursive: true, force: true });
       }
     },
     { scope: "test" },
   ],
 });
 
-export { expect } from "@playwright/test";
+export { expect };
 
 function electronBinary(): string {
   const resolved: unknown = createRequire(import.meta.url)("electron");
