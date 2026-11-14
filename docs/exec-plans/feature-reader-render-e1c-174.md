@@ -22,10 +22,10 @@ E1c。从 main `d5d5ea234e36e7c5fc7336b387814b395c48aa91`（parent `311b419`，t
 
 | 笔 | PR | 做什么 | pr-size 估计 |
 | --- | --- | --- | --- |
-| E1c-1 | 本 PR #212，计划通过后才写代码 | 整段视图菜单只派发事件。缩放四项和三种视图没有监听者时什么都不做。tooltip、删 `useLeaveKeys`、菜单后退的测试、迷路和页码不各播两遍、n2–n5、`reader-screen.tsx` 收到 250 行以下、25 页 canvas 计数 e2e、Ctrl+G / Alt+← / 历史用尽回库的 e2e | 436 |
+| E1c-1 | 本 PR #212 | 整段视图菜单只派发事件。缩放四项和三种视图没有监听者时什么都不做。tooltip、删 `useLeaveKeys`、菜单后退的测试、迷路和页码不各播两遍、n2–n5、`reader-screen.tsx` 收到 250 行以下、25 页 canvas 计数 e2e、Ctrl+G / Alt+← / 历史用尽回库的 e2e | 482 |
 | E1c-2 | E1c-1 合入 main 之后另开 | 全部缩放：`use-zoom`、控件、占位乘缩放、当前页锚点、停下后播一次百分比、25% 和 400% 置灰、加载前和出错时不渲染、`passive: false` 的滚轮、捏合、Ctrl+滚轮后窗口缩放因子仍是 1 的 e2e、§10 第 2–4 项实测 | 504 |
 
-两笔都 ≤600，都不申请 G12。E1c-1 余量约 164 行。E1c-2 余量约 96 行。主进程菜单只在 E1c-1 改一次。8 GB 实测在 E1c-2 合入之后。N2、N3、N4 两笔都不做，理由在文末。
+两笔都 ≤600，都不申请 G12。E1c-1 余量约 118 行。E1c-2 余量约 96 行。主进程菜单只在 E1c-1 改一次。8 GB 实测在 E1c-2 合入之后。N2、N3、N4 两笔都不做，理由在文末。E1c-1 合入后，视图菜单里的缩放四项和三种视图在阅读屏里点了也什么都不做，直到 E1c-2 和 E2。
 
 界面交接句只约束 E1c-2：只调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent`、`clampZoomPercent`。不改 core、domain、`pure.ts`、contracts、`library/src`。两笔都不发整份 PDF，不用 Range，不改 CSP，不注册协议。`PROVISIONAL_PAGE_PIXEL_CAP` 保持 Infinity。
 
@@ -37,7 +37,7 @@ E1c。从 main `d5d5ea234e36e7c5fc7336b387814b395c48aa91`（parent `311b419`，t
 
 `library-menu.ts` 第 4–31 行的模板后追加视图菜单。mac「显示」，Windows「视图(&V)」。顺序：后退、前进、转到页码…、原文、对照、译文、放大、缩小、实际大小、适合宽度。适合页面不进这个菜单。第 41–49 行的 `scriptForMenuEvent` 放行这些名字，仍然 `dispatchEvent`。不设 `enabled: false`。文献库里点了没有监听者，什么都不做。
 
-适合宽度的快捷键是 `Alt+CmdOrCtrl+0`。#206 计划第 90 行已经记下：在部分欧洲键盘上这等于 AltGr。这是已批键位，只记风险，不改键。
+适合宽度的快捷键是 `Alt+CmdOrCtrl+0`。#206 计划第 90 行已经记下：在部分欧洲键盘上这等于 AltGr。这是已批键位，只记风险，不改键。linux 用 Windows 那一列。#206 没有写 linux。
 
 #206 第 106 行写明 accelerator 只注册一份。键盘表是按平台各一个键，不是同一项同时注册两个。`applicationMenuTemplate` 已经接收 `platform`：
 
@@ -64,15 +64,17 @@ Electron 的菜单项只有一个 `accelerator`。本计划按 #206 第 106 行�
 
 (b) 改 `library-wiring.ts` 第 144–154 行这 11 行。参数改成和 (a) 相同的共用条目，返回值在已有的 `label` / `accelerator` / `click` 之外，有 `visible` 时一并传入。改完大约 19 行，pr-size 大约 +8。6658666956 只批了「菜单 + 已批快捷键」，没有点名这个文件。选 (b) 之前先停，请 Wisdom 批准。
 
-推荐 (a) 的放宽类型，加上按平台各一个 accelerator。不改 `library-wiring.ts`，不用隐藏项。E1c-1 的 436 行不含 (b) 的 +8。即便改选 (b)，436+8 仍低于 600。
+推荐 (a) 的放宽类型，加上按平台各一个 accelerator。不改 `library-wiring.ts`，不用隐藏项。E1c-1 的 482 行不含 (b) 的 +8。即便改选 (b)，482+8 仍低于 600。
 
 ### 提示、离开、行数
 
 删 `reader-screen.tsx` 第 53 行和第 240–253 行。`copy.ts` 第 6 行改成「返回文献库」，不带快捷键。`history-controls.tsx` 第 21 行的 `title` 改成带快捷键的「后退」「前进」。缩放按钮的 tooltip 留到 E1c-2，因为 E1c-1 没有缩放控件。
 
-253 行删掉 `useLeaveKeys` 约 14 行，本笔不把缩放控件接进来，目标约 239 行，低于建议上限 250。
+`go-to-page.tsx` 第 11 行的 `editing` 仍是组件内部状态。阅读屏仿照 `onBindLeave` 增加 `onBindNav`，交给 shell 三个函数：`back`、`forward`、`openGoTo`。`GoToPage` 在挂上时登记 `openGoTo`，卸下时清掉。加载前或出错时输入框没有挂上，按「转到页码…」什么都不做（#206 第 100 行）。shell 收到 `oi-go-to-page` 就调用 `openGoTo`。测试派发这个事件后，页码输入框拿到焦点。这一段估计 20 到 40 行，算进下面的表。
 
-`shell.tsx` 第 24–32 行监听后退、前进、转到页码。有历史时 `oi-history-back` 退一步，没有历史时离开。前进没有目标时返回。窗口监听用 `flushSync` 包住离开，让 `page-column.tsx` 第 99–101 行的清理读到 `releasePixels === false`。微任务仍把标志设回 `true`，供没有卸载的情况。缩放和三种视图的事件没有监听者。
+`reader-screen.tsx` 现在 253 行。删掉 `useLeaveKeys` 之后还要接上 `onBindNav`。目标是绑定之后的物理行数低于 250。导航绑定放在新文件 `use-bound-nav.ts`，不把监听写进这个文件。若仍超过 250，按 `docs/arch/06.md` 第 19 行在 PR 正文写明为什么不拆，且不超过硬上限 400。
+
+`shell.tsx` 第 24–32 行监听后退、前进、转到页码。有历史时 `oi-history-back` 退一步，没有历史时离开。前进没有目标时返回。窗口监听用 `flushSync` 包住离开，让 `page-column.tsx` 第 99–101 行的清理读到 `releasePixels === false`。微任务仍把标志设回 `true`，供没有卸载的情况。缩放四项和三种视图只派发事件，没有监听者，点了什么都不做，要等 E1c-2 和 E2。#206 第 104 行的 6-3 A 已经接受这一点，两笔之间不发版。PR 正文要写明。
 
 ### 从 E1b 挪来的，以及导航 e2e
 
@@ -92,6 +94,8 @@ Electron 的菜单项只有一个 `accelerator`。本计划按 #206 第 106 行�
 - PDF：测试里手写一份最小的 25 页 PDF（一份 catalog、25 个空内容页）。不加依赖，不提交论文。
 - CI 会跑到：`playwright.config.ts` 没有跳过条件。新的 `e2e/*.spec.ts` 会被 `pnpm --filter desktop e2e` 收进去。用例里不写 `test.skip`。证据是 `desktop-e2e-windows` 的日志里这几条是 passed，不是 skipped。
 - 行数：fixture 隔离和对话框替身约 35 行，手写 PDF 约 40 行，25 页计数和三条导航约 55 行，合计约 130。原先的 60 行不够。
+- 导入之前先 `app.evaluate(({ app }) => app.getPath("userData"))`，断言等于这次的临时绝对路径。不相等就失败，不跳过。
+- Playwright 的 `keyboard.press` 是合成按键，未必触发 Electron 菜单快捷键。快捷键没有打开输入框或没有后退时，用 `app.evaluate` 从 `Menu.getApplicationMenu()` 按标签找到该项并 `click()`。这测的是菜单到阅读屏。accelerator 写在 `library-menu.test.ts` 里。真机再核对按键。
 
 ### E1c-1 行数
 
@@ -103,7 +107,9 @@ Electron 的菜单项只有一个 `accelerator`。本计划按 #206 第 106 行�
 | `apps/desktop/test/library-menu.test.ts` | 已有 53 行，追加视图菜单和字面值断言。不是新文件 | 45 |
 | `apps/desktop/src/renderer/shell-events.ts` | 第 1–2 行旁增加常量 | 14 |
 | `apps/desktop/src/renderer/shell.tsx` | 第 24–32 行；`flushSync` | 26 |
-| `packages/features/reader/src/ui/reader-screen.tsx` | 删第 53、240–253 行 | 22 |
+| `packages/features/reader/src/ui/go-to-page.tsx` | 第 11 行的 `editing` 仍在内部。登记 `openGoTo` | 24 |
+| `packages/features/reader/src/ui/use-bound-nav.ts` | 新文件。把 `back`、`forward`、`openGoTo` 交给 shell | 28 |
+| `packages/features/reader/src/ui/reader-screen.tsx` | 删第 53、240–253 行；接上 `onBindNav`。绑定后低于 250 行 | 16 |
 | `packages/features/reader/src/ui/history-controls.tsx` 及测试 | 第 21 行 `title` | 24 |
 | `packages/features/reader/src/ui/copy.ts` | 第 6 行。不写事件名 | 2 |
 | `packages/features/reader/src/ui/pdf-session.ts` | 删第 153–155 行 | 3 |
@@ -111,7 +117,7 @@ Electron 的菜单项只有一个 `accelerator`。本计划按 #206 第 106 行�
 | `packages/features/reader/test/ui/reader-screen.test.tsx` | 菜单后退、播报各一次、微任务、菜单离开不清零 | 70 |
 | `apps/desktop/e2e/fixtures/electron-app.ts` 与新的 e2e | 临时 userData、对话框替身、手写 PDF、25 页计数、Ctrl+G、Alt+←、历史用尽 | 130 |
 | 本计划的「实际」列 | 实现时补 | 18 |
-| 合计 |  | 436 |
+| 合计 |  | 482 |
 
 ## E1c-2
 
@@ -126,6 +132,7 @@ E1c-1 合入之后从当时的 main 另开。不改 `library-menu.ts`。缩放�
 - 加载前和出错时不渲染缩放控件（#206 第 128 行）。
 - Ctrl+滚轮：在 PDF 栏上 `addEventListener("wheel", …, { passive: false })`，再 `preventDefault`。React 的 `onWheel` 是被动的，写在里面的 `preventDefault` 不起作用。#206 第 51 行。无 Ctrl 的滚轮只滚动。
 - 捏合在松手时把比例交给 `clampZoomPercent`。
+- 百分比菜单底部一行是「只缩放 PDF 原文栏；界面跟随系统缩放」（#206 第 94 行）。适合页面只出现在这个菜单里，不进视图菜单。行数算在 `zoom-controls.tsx` 那 120 行里。
 - Electron e2e：Ctrl+滚轮之后 `webContents.getZoomFactor()` 仍是 1，画布的 CSS 尺寸变大。复用 E1c-1 的临时 userData 和对话框替身。
 - 不使用 `zoomIn` / `zoomOut` / `resetZoom` role，不调用 `webFrame.setZoomFactor`。
 
