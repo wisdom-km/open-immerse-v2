@@ -380,3 +380,24 @@ Windows 真机要有录屏和对应截图，Box 不能代替：
 - 不改 N-10、N-11 的文件，不改 CI。
 - M2 退出格在 `docs/prd/08.md` 第 12 行。已删掉不在 6-3 A 原话里的「阅读屏菜单「后退」不置灰」。manifest 同一条替换跟着删。不改基线，不改 `compare.mjs`。第 25 行留给 PR #205。
 - 合计 171 条批准 + 1 条反馈记录 + 4 条决定 + 11 条合入同步，表内共 187 行。merge-base 是 main `e8095da7d67459a4225f1827c9c55eee342c7bb1`。
+
+## E1b 开工（`feature/reader-render-e1b-174`）
+
+从 main `311b419` 开。范围只按 [6876352033](https://github.com/wisdom-km/open-immerse-v2/pull/210#issuecomment-6876352033) 的第 2 笔和 [6877059582](https://github.com/wisdom-km/open-immerse-v2/pull/210#issuecomment-6877059582) 的「排期记录」：按 dpr 绘制、视口 ±2、单页像素上限。#202 在这一笔。不做缩放、菜单、主进程、core、CSP、协议。Forge [6877442986](https://github.com/wisdom-km/open-immerse-v2/pull/210#issuecomment-6877442986) 的 m1、m4 顺手做。8 GB 实测仍在 E1c 之后。
+
+| 文件 | 估计 | 做什么 |
+| --- | --- | --- |
+| `ui/canvas-window.ts` 新建 | 40 行，上限 80 | 闭区间 [第一张可见−2, 最后一张可见+2]，夹到 1..M。半径 2 是具名常量 |
+| `ui/render-scale.ts` 新建 | 50 行，上限 80 | CSS 尺寸只乘缩放。backing store 乘 dpr。像素超过上限就压低 scale |
+| `ui/pdf-session.ts` | +40，现 228，上限 400 | 绘制改调上面的 scale。先 `getViewport({ scale: 1 })` 取各页尺寸，不 `render` |
+| `ui/page-column.tsx` | +80，现 95，上限 250 | 窗口内才挂 canvas。卸下时先把宽高设为 0，再 cancel，再移出。外框留着。尺寸未齐不挂 Restore |
+| `ui/use-canvas-window.ts` 新建 | 50 行，上限 120 | 读栏里相交的 article，把第一张和最后一张交给栏。不放进 `use-reader-session.ts` |
+| `reader.css` | +6，现 105，上限 220 | m1：`.oi-reader-live` 加 `white-space: nowrap` 和 `margin: 0`。占位只用已有 token |
+| 两个单测 | 各约 60 | 见下。不断言源码文本 |
+| 计划、changelog、`docs/evidence/<PR号>/`、`docs/evidence/210/commands.md` | 约 40 | m4 把 8 GB 的读数写回：Windows 任务管理器里渲染进程的专用工作集 |
+
+`PROVISIONAL_PAGE_PIXEL_CAP` 写在 `render-scale.ts`。值不是实测结果，N-14 不填一个待定标的数，暂用 `Infinity`，夹取函数仍会在传入有限上限时把 scale 压低。E1c 之后的 8 GB 真机测完，才换成那个数。不抄 pdf.js 的 `2 ** 25`。
+
+单测：首页、末页、总页数小于 5、同一视口多页，窗口页码集合正确。dpr 1、1.5、2 时 backing 像素是 CSS 的 dpr 倍，CSS 尺寸不变。有限上限时 backing 像素不超过上限，CSS 尺寸仍是逻辑尺寸。
+
+pr-size 估计约 450，上限 600。超过就停，不写 G12。离开阅读屏仍不清零，不调用 `cleanup()`。
