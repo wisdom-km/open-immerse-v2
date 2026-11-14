@@ -1,6 +1,6 @@
 # 批次 E · 阅读屏导航（缩放、转到页码、位置历史、栏位）
 
-分支 `feature/reader-nav-zoom-174`。基线 main `5c6b34ea6559463b8135112b808b741357205268`（#205 第 1 笔），tree `f106576602906c2801c334d0129e3e42862e2041`。本文件自洽。Forge 审查通过之前没有实现提交。本 PR 只改文档，不写产品代码，不改测试，不改 CI，不改 CSP，不改 DESIGN。不开 Ready，不合入，不发版。
+分支 `feature/reader-nav-zoom-174`。基线 main `e8095da7d67459a4225f1827c9c55eee342c7bb1`（#209 合入后），tree `8ffe2421989d3042002496b37f357c2fd517de67`。本文件自洽。Forge 审查通过之前没有实现提交。本 PR 只改文档，不写产品代码，不改测试，不改 CI，不改 CSP，不改 DESIGN。不开 Ready，不合入，不发版。
 
 开工依据是台账里已有的 2026-11-05 21:01 ③ 批准，[评论 6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956)。2026-11-14 14:13 的三件决定见 [评论 6872935563](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872935563)。2026-11-14 14:17 的内存方案 A 见 [评论 6872986479](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872986479) 与 [Issue #202 评论 6872987059](https://github.com/wisdom-km/open-immerse-v2/issues/202#issuecomment-6872987059)。#202 并入本批，不另开实现 PR。提议中的 ADR 是 [0012](../adr/0012-viewport-canvas-cap.md)。Loom 的对照稿在 Cloud 是 `/cursor/stores/bot/oi-v2/BATCH-E-DESIGN.md`，在 Box 是 `/workspace/oi-qa/v2-batch-e-design/BATCH-E-DESIGN.md`（下称 Loom）。两份都是 439 行，sha256 `034fa650b2ee5cd74c4da3ac54b378512ee250e0313f382691bc531cfb0d40a1`。Cloud 这一份已在本环境核对哈希。Box 那一份的哈希是 Forge 审查 [评论 6873533530](https://github.com/wisdom-km/open-immerse-v2/pull/206#issuecomment-6873533530) 记下的，与这一份相同。§4.6、验收 E-M1–E-M5、真机 R-E12 / R-E13 和 §9 的内存行都已按 14:17 写上。本计划按这一稿逐条满足 §9，并写入 §7、§8、§10。
 
@@ -8,7 +8,7 @@
 
 ## 现状理解
 
-1. main `d8e5afb` 上，打开一份 PDF 进入阅读屏，画原文页，标题下有「第 N / M 页」。#204 只改了文档，阅读屏代码和 `5db585d` 相同。工具栏 ‹ 和菜单「返回文献库」回文献库。`Alt+←` 一律回库。`Esc` 不回库。没有缩放、页码输入、← →、栏位切换。
+1. main `e8095da` 上，打开一份 PDF 进入阅读屏，画原文页，标题下有「第 N / M 页」。#204 只改了文档，阅读屏代码和 `5db585d` 相同。工具栏 ‹ 和菜单「返回文献库」回文献库。`Alt+←` 一律回库。`Esc` 不回库。没有缩放、页码输入、← →、栏位切换。
 2. 相关的节：DESIGN §4.1、§11.3、§11.4、§12.1、§12.2；原则 §4、§8；PRD §3.6 与 §8 的 M2 退出格；ARCH §6、§9.1；RULES §8 第 4 条。DESIGN 第 156 行仍写默认「对照」。不改 DESIGN 正文（N-10）。
 3. 还没做的是下面四项，加上 14:17 并进来的视口绘制和单页像素上限。侧栏、Aa、大纲、⋯、配置存储、AC-11 chip 仍不在本批。
 
@@ -16,11 +16,11 @@
 
 | 项 | 现在的代码 | 规格 / 决定 | 本批 |
 | --- | --- | --- | --- |
-| 缩放 | `reader.setZoom` 的 `expose` 是 false。桌面没有注册它。`clampZoomPercent`、`resolveZoomPercent`、`viewportForZoom` 已在 `pure.ts`。画页固定 `scale: 1`，不乘 dpr | 14:13 的 6-2 A：浏览器式预设档位，25–400%。不记住，每次打开 100%。UIX-56 未满足。档位列表要实测，不照抄 Loom 的近似值 | 实际大小、适合宽度、适合页面用已有纯函数。+/−、捏合、Ctrl+滚轮的下一档见「已批」2，等缩放档位的 core PR |
+| 缩放 | `reader.setZoom` 的 `expose` 是 false。桌面没有注册它。`clampZoomPercent`、`resolveZoomPercent`、`viewportForZoom` 已在 `pure.ts`。画页固定 `scale: 1`，不乘 dpr | 14:13 的 6-2 A：浏览器式预设档位，25–400%。不记住，每次打开 100%。UIX-56 未满足。已在 Edge 157 和 Chrome 157 上实测，按批次 E 的 6-2 A（#174 评论 6872935563）截到 400，由 PR #209（`e8095da`）合入 | 实际大小、适合宽度、适合页面用已有纯函数。+/−、捏合、Ctrl+滚轮调用已合入的 `nextZoomPercent`、`previousZoomPercent` |
 | 转到页码 | 「第 N / M 页」只是文字 | DESIGN §11.4。越界用 `clampPage(n, M) === n` 判断，不相等就不跳、不夹取 | 做。不新增 domain 函数 |
-| 位置历史 | `recordJump` 在 `current` 为空时只写入 current，不压栈。界面没有 ← → | 2A。Loom §4.2：打开时先写 current；跳转前把可见页写成 current，且滚动不入栈 | 打开时 `recordJump` 已够用。可见页写成 current 且不压栈，现有函数做不到。15:13 已批，先于档位单开 core PR |
+| 位置历史 | `recordJump` 在 `current` 为空时只写入 current，不压栈。界面没有 ← → | 2A（2026-11-05 21:01，评论 6658666956）。Loom §4.2：打开时先写 current；跳转前把可见页写成 current，且滚动不入栈。阅读屏「后退」不置灰：来源待核。台账 2A 的原话是「无历史时 ← 仍置灰」，没有这句 | 打开时 `recordJump` 已够用。可见页写成 current 且不压栈，现有函数做不到。15:13 已批，先于档位单开 core PR |
 | 栏位 | 只有原文栏 | 14:13 的 6-1 A。默认原文。不记住（G-7：没有 setViewMode） | 做。文案用已批原句 |
-| 菜单 | 只有「打开…」和「返回文献库」 | 14:13 的 6-3 A：文献库里不置灰，点了不起作用，记缺口。「主进程知道当前界面」挂进 M2 退出格。阅读屏「后退」不置灰 | 加视图菜单。不建场景通道 |
+| 菜单 | 只有「打开…」和「返回文献库」 | 14:13 的 6-3 A：文献库里不置灰，点了不起作用，记缺口。「主进程知道当前界面」挂进 M2 退出格 | 加视图菜单。不建场景通道 |
 
 ## 目标
 
@@ -121,15 +121,15 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 | `packages/features/reader/src/ui/go-to-page.tsx` | E1，新建 | 就地输入。越界只调用 `clampPage` 做相等判断。可访问名称「转到页码，第 N / M 页」。加载前和出错时不渲染 | 150 | 否 |
 | `packages/features/reader/src/ui/history-controls.tsx` | E1，新建 | ← →。空的一侧 `aria-disabled`。不调用 ‹ | 80 | 否 |
 | `packages/features/reader/src/domain/position-history.ts` | 替换当前位置的 core PR，改 | 现 70 行。加一个只替换 current、不清 forward、不压栈的纯函数。先于档位 | 400 | 不改 contracts。不在 E1 里写这个函数 |
-| `packages/features/reader/src/domain/zoom-bounds.ts` | 缩放档位的 core PR，改 | 现 64 行。加上一档和下一档。等上一笔合入 | 400 | 不改 contracts，不改 `expose`。档位列表等 §10 第 6 条。未合入前 E1 不写 +/− |
+| `packages/features/reader/src/domain/zoom-bounds.ts` | 缩放档位的 core PR，改 | 现 64 行。加上一档和下一档。等上一笔合入 | 400 | 不改 contracts，不改 `expose`。已在 Edge 157 和 Chrome 157 上实测，按批次 E 的 6-2 A（#174 评论 6872935563）截到 400，由 PR #209（`e8095da`）合入 |
 | `packages/features/reader/src/pure.ts` | 上面两笔 core PR | 现 42 行。只加这两笔的导出 | 80 | 不在 E1、E2 里改 |
-| `packages/features/reader/src/ui/zoom-controls.tsx` | E1，新建 | 「− % +」和百分比菜单。+/− 只调用已合入的档位纯函数。加载前和出错时不渲染，快捷键什么都不做 | 160 | 档位 core PR 未合入前，这个文件不写 +/− |
+| `packages/features/reader/src/ui/zoom-controls.tsx` | E1，新建 | 「− % +」和百分比菜单。+/− 只调用已合入的档位纯函数。加载前和出错时不渲染，快捷键什么都不做 | 160 | +/− 调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent` |
 | `packages/features/reader/src/ui/canvas-window.ts` | E1，新建 | 给定第一张可见页、最后一张可见页和总页数，返回闭区间 [第一张−2, 最后一张+2]，夹在 1..M。只服务 `page-column` | 80 | 否。放 UI，不放 domain。放进 domain 就碰到 core，那要停下来问 |
 | `packages/features/reader/src/ui/page-column.tsx` | E1，改 | 现 95 行。主改文件。栏宽、wheel、按窗口挂 canvas 或占位。尺寸齐了才挂 `Restore`。释放时先把 canvas 宽高设为 0，再移出 DOM，并走已有 cancel | 250 | 否。离开阅读屏时不清零 |
 | `packages/features/reader/src/ui/pdf-session.ts` | E1，改 | 现 228 行。绘制 scale 是 `min(缩放 × devicePixelRatio, 上限对应的 scale)`。CSS 尺寸仍按缩放。超过上限就拉伸 | 400 | 否。这是 UI 文件 |
 | `packages/features/reader/src/ui/use-reader-session.ts` | E1，改 | 现 258 行。打开、离开、滚动、`readVisible`。把第一张和最后一张可见页交给 `page-column`。不持有历史栈，不持有缩放百分比 | 400 | 否。改完不超过 400 |
 | `packages/features/reader/src/ui/use-position-history.ts` | E1，新建 | 持有历史栈。只调用 `position-history.ts` 的纯函数。打开时写入恢复页 | 120 | 替换当前位置的纯函数不在这个文件里写 |
-| `packages/features/reader/src/ui/use-zoom.ts` | E1，新建 | 持有本次打开的缩放百分比，初值 100。适合宽度、适合页面调用已有纯函数 | 120 | 档位 core PR 未合入前不写 +/− |
+| `packages/features/reader/src/ui/use-zoom.ts` | E1，新建 | 持有本次打开的缩放百分比，初值 100。适合宽度、适合页面调用已有纯函数 | 120 | +/− 调用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent` |
 | `packages/features/reader/src/ui/reader-screen.tsx` | E1、E2 | 撤掉 `useLeaveKeys`。‹ 的 tooltip 改为「返回文献库」。只拼装，不持有历史栈和缩放百分比 | 250 | 否 |
 | `packages/features/reader/src/ui/copy.ts` | E1、E2 | 现 10 行。越界句、按钮名、6-1 A 的原句 | 80 | 否 |
 | `packages/features/reader/src/ui/view-mode-switch.tsx` | E2，新建 | `radiogroup`。默认原文 | 120 | 否 |
@@ -190,7 +190,7 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 | C18 | 重开同一篇时栈留不留 | 清空 |
 | C19 | 每页都画。400% 面积约 16 倍。0011 写暂不开工 | 14:17 把 #202 并入本批。提议 ADR 0012 只改这一条 |
 | C20 | Win ☰ 还没有 | 不在本批 |
-| G-1 | 步长没定 | 6-2 A 定为浏览器档位。列表待实测 |
+| G-1 | 步长没定 | 已在 Edge 157 和 Chrome 157 上实测，按批次 E 的 6-2 A（#174 评论 6872935563）截到 400，由 PR #209（`e8095da`）合入 |
 | G-2 | 非数字、空、小数、全角、失焦 | 空 Enter 和失焦等于 Esc。其余提示「共 M 页」。全角不转换 |
 | G-3 | Home/End 入不入栈 | 不入栈。不劫持 |
 | G-4 | 离开时栈清不清 | 清 |
@@ -207,7 +207,7 @@ Mod 在 macOS 是 ⌘，在 Windows 是 Ctrl。不加 Electron 的缩放 role。
 3. 视觉缩放（捏合）是否默认关闭。测法：还没加监听时，在 PDF 栏上捏合，看标题栏和画布有没有变。Electron 类型里同时看 `setVisualZoomLevelLimits` 在不在。捏合已经在缩放整窗，就停下来再问，不自行改 main。
 4. Ctrl+滚轮的默认行为。测法：还没加监听时，在 PDF 栏上 Ctrl+滚轮，记录窗口缩放因子和标题栏字号。加上 `preventDefault` 后再做一次，标题栏必须不变，窗口缩放因子仍是 1。无 Ctrl 的 wheel 只滚动。
 5. Ctrl++ 在 Windows 美式键盘和中文输入法下的实际键。测法：输入法开、关各一遍，分别按 Ctrl+=、Ctrl+Shift+=、小键盘 +/−。哪一个进了放大或缩小，写进证据。计划不预先声称全部生效。Ctrl+= 进不了放大就停下来问。不加隐藏菜单项，也不加 keydown。
-6. 浏览器档位的精确列表。测法：在 Windows 上打开 Edge，用它自己的缩放从最小走到最大，记下界面上每一个百分比。Chrome 也在就再记一遍。两份相同才交给已批的档位纯函数。不同就停。不把 Loom 写的「约 25、33、50、67、75、80、90、100、110、125、150、175、200、250、300、400」抄进函数或本计划。
+6. 浏览器档位的精确列表。已在 Edge 157 和 Chrome 157 上实测，按批次 E 的 6-2 A（#174 评论 6872935563）截到 400，由 PR #209（`e8095da`）合入。菜单和气泡上的 −/+、系统缩放不是 100%，以及输入 NaN 时返回 NaN，留给 E1。
 7. DESKTOP-0GI64S8 的内存还没核实。停点是第 12 条。更高内存的机器不能代替。
 8. RULES 第 89 行的 `ui-events.ts` 登记是否适用于菜单的 window 事件。文件现在不存在。D 的返回事件没有登记。本计划不建这个文件。Forge 若认为必须登记，那是 contracts，停下来，不在 E 里新建。
 9. 评论 6764944106 本计划没有单独再拉取。0011 的正文仍是已采纳，这一轮不改。14:17 用提议中的 0012 修订「暂不开工」。15:13 已批：0011「不实现画布清零」收窄为只管离开阅读屏，释放视口里的 canvas 时先清零。这一条写在 0012，不改 0011 正文。
@@ -308,7 +308,7 @@ RULES.md 第 87 行：一个切片同一时间一个活跃 PR。15:13 已批的�
 4. E2。`view-mode-empty.tsx` 在 E2 合入后才存在。#206 是计划 PR，合入后仓库里还没有这个文件。
 5. PR #205 第 3 笔。等 #206 的 E2 合入。14:49 的其余顺序不变：第 3 笔仍等第 2 笔合入，再从 main 开新分支。每笔合入单独请 Wisdom 批。本批不创建 `view-mode-empty.tsx`，也不写降级句。
 
-E1 不提前。依据是第 87 行：E1 不能和这两笔 core PR 同时开着。E1 里的 +/−、捏合和 Ctrl+滚轮要调用档位函数，所以 E1 整份等第 2 笔合入。缩放档位列表已经由 PR #209 合入 main（`e8095da7d67459a4225f1827c9c55eee342c7bb1`）。E1 直接使用 `ZOOM_PERCENT_STEPS`、`nextZoomPercent`、`previousZoomPercent`。`ZOOM_PERCENT_STEPS` 在 `zoom-bounds.ts`，没有经 `pure.ts` 导出。
+E1 不提前。依据是第 87 行：E1 不能和这两笔 core PR 同时开着。E1 里的 +/−、捏合和 Ctrl+滚轮要调用档位函数，所以 E1 整份等第 2 笔合入。缩放档位列表已经由 PR #209 合入 main（`e8095da7d67459a4225f1827c9c55eee342c7bb1`）。E1 只用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent`，以及已有的 `ZOOM_PERCENT_MIN`、`ZOOM_PERCENT_MAX`。不改 domain，不改 `pure.ts`。E1 要改主进程文件 `apps/desktop/src/main/library-menu.ts`。依据是 2026-11-05 21:01 批准的「菜单 + 已批快捷键」（[评论 6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956)）。E1 合入前 Forge 会向 Wisdom 讲明。
 
 功能上不必等新函数的，有视口窗口、占位尺寸、释放时先把宽高设为 0 再移出 DOM、转到页码、已有的 `recordJump` / `goBack`、实际大小、适合宽度、适合页面、按 dpr 绘制、像素上限、视图菜单。跳转前把可见页写成 current 必须等第 1 笔。这些也不另开一笔插到 core PR 前面或中间。
 
@@ -317,7 +317,7 @@ E1 不提前。依据是第 87 行：E1 不能和这两笔 core PR 同时开着�
 来源是 [Issue #174 评论 6873638323](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6873638323)。同一原话在 [PR #206 评论 6873639011](https://github.com/wisdom-km/open-immerse-v2/pull/206#issuecomment-6873639011) 和 [PR #205 评论 6873639800](https://github.com/wisdom-km/open-immerse-v2/pull/205#issuecomment-6873639800)。计入批准。
 
 1. **释放画布时清零。** 视口里卸下一页时，先把 canvas 的宽高设为 0，再移出 DOM，并调用现有的 cancel。外框留着。0011「不实现画布清零」收窄为只管离开阅读屏。离开阅读屏时仍不清零，不调用 `PDFDocumentProxy.cleanup()`。
-2. **缩放档位放 core，单开 core PR。** 排在替换当前位置之后。位置是 `zoom-bounds.ts`，上一档和下一档，经 `pure.ts` 导出。输入是当前百分比，输出再经已有的 `clampZoomPercent`。不改 `packages/contracts`，不改 `expose`，不注册 `createSetZoom`。E1 的 +/−、捏合和 Ctrl+滚轮等这个 PR 合入。档位列表仍等 §10 第 6 条的实测，不照抄 Loom。捏合的连续变化在松手时用 `clampZoomPercent` 取整，取整后的档位用这两个函数，不在 UI 里另写一张表。缩放档位列表已经由 PR #209 合入 main（`e8095da7d67459a4225f1827c9c55eee342c7bb1`）。E1 直接使用 `ZOOM_PERCENT_STEPS`、`nextZoomPercent`、`previousZoomPercent`。`ZOOM_PERCENT_STEPS` 在 `zoom-bounds.ts`，没有经 `pure.ts` 导出。
+2. **缩放档位放 core，单开 core PR。** 排在替换当前位置之后。位置是 `zoom-bounds.ts`，上一档和下一档，经 `pure.ts` 导出。输入是当前百分比，输出再经已有的 `clampZoomPercent`。不改 `packages/contracts`，不改 `expose`，不注册 `createSetZoom`。E1 的 +/−、捏合和 Ctrl+滚轮等这个 PR 合入。已在 Edge 157 和 Chrome 157 上实测，按批次 E 的 6-2 A（#174 评论 6872935563）截到 400，由 PR #209（`e8095da`）合入。捏合的连续变化在松手时用 `clampZoomPercent` 取整，取整后的档位用这两个函数，不在 UI 里另写一张表。E1 只用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent`，以及已有的 `ZOOM_PERCENT_MIN`、`ZOOM_PERCENT_MAX`。不改 domain，不改 `pure.ts`。
 3. **替换当前位置的纯函数，先于档位单独做。** `recordJump` 在页不同时会把旧 current 推进 back。`position-history.ts` 加一个只替换 current、不清 forward、不压栈的纯函数，经 `pure.ts` 导出。不改 contracts。E1 的「原位置是可见页」等这个 PR 合入。没有它，后退回到的是上一次跳转或打开时的页，不是滚动后看见的页。
 4. **8 GB 超限线先不定数。** E1 在确认是 8 GB 的机器上实测后停下，带数据请 Wisdom 判断。不自定 MB 数。停点是 §10 第 12 条。
 5. **PR #205 第 3 笔改为等 #206 的 E2 合入。** 见上面的串行。14:49 里「等 #206 合入」按这条改。
@@ -370,11 +370,11 @@ Windows 真机要有录屏和对应截图，Box 不能代替：
 - D-15 的「Alt+← 一律回库」会失败，E1 改断言。
 - 菜单 accelerator 在输入框聚焦时会不会抢走 Alt+← 或 ⌘[，属于 §10 第 11 条。抢的话停，不加第二套 keydown。
 - 400% 的内存可能仍超过 8 GB。视口绘制不保证压力后的 `[anon]` 下降，0011 已经量过。测完停下，带数据请 Wisdom 判断。不自定 MB 数，不放宽常量。
-- 缩放档位列表已经由 PR #209 合入 main（`e8095da7d67459a4225f1827c9c55eee342c7bb1`）。E1 直接使用 `ZOOM_PERCENT_STEPS`、`nextZoomPercent`、`previousZoomPercent`，不另写临时数组。`ZOOM_PERCENT_STEPS` 在 `zoom-bounds.ts`，没有经 `pure.ts` 导出。
+- 缩放档位列表已经由 PR #209 合入 main（`e8095da7d67459a4225f1827c9c55eee342c7bb1`）。E1 只用 `pure.ts` 已导出的 `nextZoomPercent`、`previousZoomPercent`，以及已有的 `ZOOM_PERCENT_MIN`、`ZOOM_PERCENT_MAX`，不另写临时数组。不改 domain，不改 `pure.ts`。
 
 ## 自检
 
 - 本 PR 的任务类型是纯文档。UI–core 交接写不适用。
 - 不改 N-10、N-11 的文件，不改 CI。
 - M2 退出格在 `docs/prd/08.md` 第 12 行。已删掉不在 6-3 A 原话里的「阅读屏菜单「后退」不置灰」。manifest 同一条替换跟着删。不改基线，不改 `compare.mjs`。第 25 行留给 PR #205。
-- 这一笔补 15:13，计入批准。合计 164 条批准 + 1 条反馈记录 + 4 条决定 + 7 条合入同步，表内 176 行。merge-base 是 main `d8e5afb`。13:57 只留 #204 的批准行。14:13、14:17、14:20、14:22:10、14:37、14:49 都留着。
+- 合计 171 条批准 + 1 条反馈记录 + 4 条决定 + 11 条合入同步，表内共 187 行。merge-base 是 main `e8095da7d67459a4225f1827c9c55eee342c7bb1`。
