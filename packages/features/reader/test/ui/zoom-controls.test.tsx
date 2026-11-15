@@ -1,12 +1,6 @@
 // @vitest-environment happy-dom
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from "@testing-library/react";
-import { useRef, type ReactElement } from "react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, useRef, type ReactElement } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { useZoom, type ZoomState } from "../../src/ui/use-zoom.js";

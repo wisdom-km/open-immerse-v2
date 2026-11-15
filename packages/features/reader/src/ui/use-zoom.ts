@@ -165,8 +165,7 @@ function fitPagePercent(session: ZoomSession): number | undefined {
 }
 
 function clampFloor(budget: number, pageWidth: number): number | undefined {
-  const bad = !Number.isFinite(budget + pageWidth) || pageWidth <= 0;
-  if (bad) return undefined;
+  if (!Number.isFinite(budget + pageWidth) || pageWidth <= 0) return;
   const raw = Math.floor((budget / pageWidth) * 100);
   if (raw < ZOOM_PERCENT_MIN) return ZOOM_PERCENT_MIN;
   if (raw > ZOOM_PERCENT_MAX) return ZOOM_PERCENT_MAX;
