@@ -86,7 +86,7 @@
 1. **开工前声明。** 在 PR 描述（或任务说明）写明：要改的切片、要改的热点文件。热点文件包括：`apps/desktop/src/main/composition-root.ts`、`apps/desktop/src/renderer/slots.ts`、被两个以上切片 import 的契约文件（如 `ids.ts`、`errors.ts`；清单由 `tools/check-hotspots` 按 import 图算出）、`dependency-cruiser` 配置、`tools/check-file-size/allowlist.json`、根 `package.json`、`pnpm-lock.yaml`。只被一个切片使用的契约文件（如 `contracts/src/ipc/<切片>.ts`）算该切片的文件，不是热点（架构评审 P1-11）。
 2. **一个切片同一时间一个活跃 PR。** 与进行中的 PR 改同一切片时，串行；或先抽出接口（契约 PR）再并行。
 3. **契约先行。** 新功能先合入契约（类型、IPC 定义、端口接口），实现可以先返回固定值；接口稳定后，各切片并行实现。
-4. **热点文件只加行。** 装配根与插槽注册遵循「一行一个切片」，PR 对每个热点文件的改动不超过 30 行（G11）。新增 UI 事件或给事件新增发布方、订阅方，在 `contracts/src/ui-events.ts` 登记并附 ADR（ARCHITECTURE §4.3、§5.3）。
+4. **热点文件只加行。** 装配根与插槽注册遵循「一行一个切片」，PR 对每个热点文件的改动不超过 30 行（G11）。只有切片间的 UI 事件需要登记（ARCHITECTURE §4.3、§5.3）：写明名称、载荷类型、发布方切片与订阅方切片，并附 ADR。登记文件在首个切片间事件出现时建立，路径是 `contracts/src/ui-events.ts`，现在还没有这个文件。G5 的 `ui-events-declared` 仍延后（Issue #34）。
 5. **迁移不撞号。** 数据库迁移放在各切片自己的 `migrations/`，编号只在切片内递增。
 6. **锁文件冲突**：以目标分支为准重新生成，不手工合并。
 7. **短分支。** 分支落后目标分支时先同步再继续；同步方式用 merge 或 rebase 均可，但已推送的共享分支不得 force push（§6）。
