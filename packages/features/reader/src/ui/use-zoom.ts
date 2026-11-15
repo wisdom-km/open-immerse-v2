@@ -129,13 +129,10 @@ type MeasuredFit = {
 function measureFit(session: ZoomSession): MeasuredFit | undefined {
   const column = session.columnRef.current;
   const page = column === null ? undefined : readVisible(column);
-  const box =
-    page === undefined || session.phase?.kind !== "view"
-      ? undefined
-      : session.phase.reading.boxes[page - 1];
-  if (column === null || page === undefined || box === undefined) {
-    return undefined;
-  }
+  const boxes =
+    session.phase?.kind === "view" ? session.phase.reading.boxes : [];
+  const box = page === undefined ? undefined : boxes[page - 1];
+  if (column === null || page === undefined || box === undefined) return;
   return { column, page, box };
 }
 
@@ -168,13 +165,8 @@ function fitPagePercent(session: ZoomSession): number | undefined {
 }
 
 function clampFloor(budget: number, pageWidth: number): number | undefined {
-  if (
-    !Number.isFinite(budget) ||
-    !Number.isFinite(pageWidth) ||
-    pageWidth <= 0
-  ) {
-    return undefined;
-  }
+  const bad = !Number.isFinite(budget + pageWidth) || pageWidth <= 0;
+  if (bad) return undefined;
   const raw = Math.floor((budget / pageWidth) * 100);
   if (raw < ZOOM_PERCENT_MIN) return ZOOM_PERCENT_MIN;
   if (raw > ZOOM_PERCENT_MAX) return ZOOM_PERCENT_MAX;

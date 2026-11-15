@@ -78,19 +78,19 @@ export function GoToPage(props: {
 
 const historyBackEvent = "oi-history-back";
 
-/** 事件名是 shell-events.ts 的 historyBackEvent。捕获先于同一目标上的冒泡，框开着时 shell 收不到后退。 */
+/** 生产路径是菜单 click 执行的 window.dispatchEvent。目标是 window，先注册的 shell 先跑。 */
 function useCloseOnBack(editing: boolean, close: () => void): void {
   const closeRef = useRef(close);
   closeRef.current = close;
   useEffect(() => {
     if (!editing) return;
-    const onBack = (event: Event): void => {
-      event.stopImmediatePropagation();
-      closeRef.current();
+    const native = window.dispatchEvent.bind(window);
+    window.dispatchEvent = (event: Event) => {
+      if (event.type === historyBackEvent) closeRef.current();
+      return event.type === historyBackEvent || native(event);
     };
-    window.addEventListener(historyBackEvent, onBack, true);
     return () => {
-      window.removeEventListener(historyBackEvent, onBack, true);
+      window.dispatchEvent = native;
     };
   }, [editing]);
 }

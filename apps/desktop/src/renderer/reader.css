@@ -24,12 +24,14 @@
   color: var(--oi-text-2, CanvasText);
 }
 
-.oi-reader-back:focus-visible {
+.oi-reader-back:focus-visible,
+.oi-reader-zoom-controls :focus-visible {
   outline: var(--oi-focus-width, 2px) solid var(--oi-reader-focus, CanvasText);
   outline-offset: var(--oi-focus-offset, 2px);
 }
 
-.oi-reader-back[aria-disabled="true"] {
+.oi-reader-back[aria-disabled="true"],
+.oi-reader-zoom-controls button[aria-disabled="true"] {
   opacity: 0.45;
 }
 
@@ -60,18 +62,8 @@
   font: inherit;
 }
 
-.oi-reader-zoom-controls button[aria-disabled="true"] {
-  opacity: 0.45;
-}
-
 .oi-reader-zoom-controls select {
   width: 5rem;
-}
-
-.oi-reader-zoom-controls button:focus-visible,
-.oi-reader-zoom-controls select:focus-visible {
-  outline: var(--oi-focus-width, 2px) solid var(--oi-reader-focus, CanvasText);
-  outline-offset: var(--oi-focus-offset, 2px);
 }
 
 button.oi-reader-pages {
