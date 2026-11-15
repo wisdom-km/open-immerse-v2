@@ -46,6 +46,65 @@ test("enlarges the pdf page from the menu and leaves the window factor at 1", as
     .toContain(focus);
 });
 
+test("ctrl wheel enlarges the pdf column and a plain wheel does not", async ({
+  desktop,
+}) => {
+  const page = desktop.page;
+  await openSample(desktop.app, page, 8);
+  const width = await canvasCssWidth(page);
+  const title = await barFont(page);
+  const before = await zoomText(page);
+  expect(await windowZoom(desktop.app)).toBe(1);
+  await page.locator(".oi-reader-column").hover();
+  await page.keyboard.down("Control");
+  await page.mouse.wheel(0, -100);
+  await page.keyboard.up("Control");
+  await expect
+    .poll(async () => canvasCssWidth(page), { timeout: 10_000 })
+    .toBeGreaterThan(width);
+  expect(await windowZoom(desktop.app)).toBe(1);
+  expect(await barFont(page)).toBe(title);
+  const zoomed = await zoomText(page);
+  expect(zoomed).not.toBe(before);
+  await page.mouse.wheel(0, -400);
+  expect(await zoomText(page)).toBe(zoomed);
+});
+
+test("records wheel samples and menu keys without adding a key listener", async ({
+  desktop,
+}) => {
+  const page = desktop.page;
+  await openSample(desktop.app, page, 3);
+  notePath("electron", await mainFact(desktop.app));
+  await page.locator(".oi-reader-column").hover();
+  await page.evaluate(wheelTap);
+  await page.keyboard.down("Control");
+  await page.mouse.wheel(0, -100);
+  await page.keyboard.up("Control");
+  notePath("wheel", await page.evaluate(wheelRead));
+  const stepped = await zoomText(page);
+  for (const key of [
+    "Equal",
+    "Shift+Equal",
+    "NumpadAdd",
+    "Minus",
+    "NumpadSubtract",
+  ]) {
+    const current = await zoomText(page);
+    await page.keyboard.press(`Control+${key}`);
+    notePath(key, (await zoomText(page)) === current ? "unchanged" : "zoomed");
+  }
+  await openGoTo(desktop.app, page);
+  const focused = await zoomText(page);
+  await page.keyboard.press("Control+0");
+  await page.keyboard.press("Control+Minus");
+  notePath(
+    "goto-keys",
+    `${(await zoomText(page)) === focused ? "kept" : "stolen"} ${stepped}`,
+  );
+  expect(await windowZoom(desktop.app)).toBe(1);
+});
+
 test("field stays put on back", async ({ desktop }) => {
   const page = desktop.page;
   await openSample(desktop.app, page, 5);
@@ -113,10 +172,7 @@ async function menuBack(app: ElectronApplication, page: Page): Promise<void> {
   if (!moved) await clickMenu(app, "后退");
 }
 
-function notePath(
-  action: string,
-  pathName: "accelerator" | "menu click",
-): void {
+function notePath(action: string, pathName: string): void {
   const message = `${action}: ${pathName}`;
   console.log(message);
   test.info().annotations.push({ type: "menu-path", description: message });
@@ -152,6 +208,37 @@ async function labelMoved(
     return false;
   }
 }
+
+async function barFont(page: Page): Promise<string> {
+  const value: unknown = await page.evaluate(
+    "(() => getComputedStyle(document.querySelector('.oi-reader-bar h1')).fontSize)()",
+  );
+  if (typeof value !== "string") throw new Error("title font");
+  return value;
+}
+
+async function zoomText(page: Page): Promise<string> {
+  const value: unknown = await page.evaluate(
+    "(() => { const node = document.querySelector('.oi-reader-zoom-controls option[value=current]'); return node === null ? '' : node.textContent; })()",
+  );
+  if (typeof value !== "string") throw new Error("zoom text");
+  return value;
+}
+
+async function mainFact(app: ElectronApplication): Promise<string> {
+  const value: unknown = await app.evaluate(({ BrowserWindow }) => {
+    const contents = BrowserWindow.getAllWindows()[0]?.webContents;
+    return `${process.versions.electron} ${typeof contents?.setZoomMode}`;
+  });
+  if (typeof value !== "string") throw new Error("main fact");
+  return value;
+}
+
+const wheelTap =
+  "(() => { const node = document.querySelector('.oi-reader-column'); node.addEventListener('wheel', (event) => { node.dataset.wheel = [event.deltaY, event.deltaMode, event.ctrlKey, window.devicePixelRatio].join(','); }); })()";
+
+const wheelRead =
+  "(() => document.querySelector('.oi-reader-column').dataset.wheel || '')()";
 
 async function canvasCssWidth(page: Page): Promise<number> {
   const value: unknown = await page.evaluate(
