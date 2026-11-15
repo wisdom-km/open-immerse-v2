@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 
 import { ZOOM_PERCENT_MAX, ZOOM_PERCENT_MIN } from "../pure.js";
 import type { ZoomState } from "./use-zoom.js";
@@ -18,7 +18,6 @@ export function ZoomControls(props: {
 }
 
 function ZoomPad(props: { readonly zoom: ZoomState }): ReactElement {
-  const [tick, setTick] = useState(0);
   const mac = /Mac/.test(navigator.userAgent);
   return (
     <span className="oi-reader-zoom-controls">
@@ -34,12 +33,10 @@ function ZoomPad(props: { readonly zoom: ZoomState }): ReactElement {
         −
       </button>
       <select
-        key={tick}
         aria-label="缩放"
-        defaultValue="current"
+        value="current"
         onChange={(event) => {
           choose(event.target.value, props.zoom);
-          setTick((value) => value + 1);
         }}
       >
         <option value="current">{props.zoom.percent}%</option>

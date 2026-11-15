@@ -21,6 +21,20 @@ it("announces the new percent as soon as a button or the menu changes it", () =>
   expect(spoken()).toBe("100%");
 });
 
+it("keeps focus on the percent menu and shows the new percent", () => {
+  render(<Harness />);
+  fireEvent.click(screen.getByRole("button", { name: "放大" }));
+  const menu = screen.getByRole("combobox", { name: "缩放" });
+  menu.focus();
+  fireEvent.change(menu, { target: { value: "actual" } });
+  expect(document.activeElement).toBe(menu);
+  if (!(menu instanceof HTMLSelectElement)) {
+    throw new Error("percent menu");
+  }
+  const shown = menu.options[menu.selectedIndex]?.textContent;
+  expect(shown).toBe("100%");
+});
+
 it("disables zoom out at 25% and zoom in at 400%", () => {
   render(<Harness />);
   const zoomOut = () => screen.getByRole("button", { name: "缩小" });
