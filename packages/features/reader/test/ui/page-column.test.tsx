@@ -131,23 +131,26 @@ it("stays quiet for a cancelled paint", async () => {
   }
 });
 
-it("repaints the pages now in view when zoom changes without a scroll event", async () => {
+it("draws pages that enter at 25% and keeps canvases within the visible span plus 4", () => {
   const columnRef = createRef<HTMLDivElement>();
   const view = render(windowed(columnRef, 1));
-  await act(async () => {
-    await Promise.resolve();
-  });
-  expect(canvasPages(view.container)).toEqual([1, 2, 3]);
   const node = columnRef.current;
-  if (node === null) {
-    throw new Error("column");
+  if (node === null) throw new Error("column");
+  node.getBoundingClientRect = () => rect(0, 100);
+  for (const article of node.querySelectorAll("article")) {
+    article.getBoundingClientRect = () => rect(10, 90);
   }
-  place(node, 6);
-  view.rerender(windowed(columnRef, 2));
-  await act(async () => {
-    await Promise.resolve();
+  act(() => {
+    view.rerender(windowed(columnRef, 0.25));
   });
-  expect(canvasPages(view.container)).toEqual([4, 5, 6, 7, 8]);
+  expect(canvasPages(view.container)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  place(node, 1);
+  for (const zoom of [0.5, 1, 2, 4]) {
+    act(() => {
+      view.rerender(windowed(columnRef, zoom));
+    });
+    expect(canvasPages(view.container).length).toBeLessThanOrEqual(5);
+  }
 });
 
 it("cancels an unfinished paint on unmount without an unhandled rejection", async () => {

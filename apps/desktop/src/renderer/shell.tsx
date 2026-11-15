@@ -118,7 +118,7 @@ function zoomCommand(
   type: string,
   nav: MenuNav | undefined,
 ): (() => void) | undefined {
-  if (!(type in zoomActions)) return undefined;
+  if (!Object.hasOwn(zoomActions, type)) return undefined;
   return nav?.[zoomActions[type as keyof typeof zoomActions]];
 }
 
