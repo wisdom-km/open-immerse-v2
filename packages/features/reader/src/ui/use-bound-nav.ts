@@ -1,5 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 
+import type { GoToHandle } from "./go-to-page.js";
+
 export type ZoomNav = {
   readonly zoomIn: () => void;
   readonly zoomOut: () => void;
@@ -23,11 +25,12 @@ type History = {
 export function navCommands(
   nav: History,
   leave: () => void,
-  openGoTo: { readonly current: (() => void) | undefined },
+  openGoTo: { readonly current: GoToHandle | undefined },
   zoom: ZoomNav,
 ): ReaderNav {
   return {
     back() {
+      if (openGoTo.current?.closeOnBack() === true) return;
       if (nav.canBack) nav.back();
       else leave();
     },
@@ -35,7 +38,7 @@ export function navCommands(
       nav.forward();
     },
     openGoTo() {
-      openGoTo.current?.();
+      openGoTo.current?.open();
     },
     ...zoom,
   };

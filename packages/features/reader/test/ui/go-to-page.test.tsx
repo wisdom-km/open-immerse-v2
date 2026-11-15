@@ -1,14 +1,9 @@
 // @vitest-environment happy-dom
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act } from "react";
 import { afterEach, expect, it } from "vitest";
 
-import { GoToPage } from "../../src/ui/go-to-page.js";
+import { GoToPage, type GoToHandle } from "../../src/ui/go-to-page.js";
 
 afterEach(cleanup);
 
@@ -34,33 +29,22 @@ it("does not jump on 0 and returns focus after a jump or escape", () => {
   expect(document.activeElement).toBe(pageButton());
 });
 
-it("closes the page box and does not deliver back while the field is open", () => {
-  const jumped: number[] = [];
-  let delivered = 0;
-  const onBack = (): void => {
-    delivered += 1;
+it("closes the page box on back and only then lets back through", () => {
+  let go: GoToHandle | undefined;
+  const bind = (next: GoToHandle | undefined): void => {
+    go = next;
   };
-  window.addEventListener("oi-history-back", onBack);
-  try {
-    render(
-      <GoToPage page={4} pageCount={9} onJump={(page) => jumped.push(page)} />,
-    );
-    fireEvent.click(pageButton());
-    act(() => {
-      window.dispatchEvent(new Event("oi-history-back"));
-    });
-    expect(screen.queryByRole("textbox")).toBeNull();
-    expect(jumped).toEqual([]);
-    expect(delivered).toBe(0);
-    expect(document.activeElement).toBe(pageButton());
-    act(() => {
-      window.dispatchEvent(new Event("oi-history-back"));
-    });
-    expect(delivered).toBe(1);
-  } finally {
-    window.removeEventListener("oi-history-back", onBack);
-  }
+  render(<GoToPage page={4} pageCount={9} onJump={noop} onBindOpen={bind} />);
+  fireEvent.click(pageButton());
+  act(() => {
+    go?.closeOnBack();
+  });
+  expect(screen.queryByRole("textbox")).toBeNull();
+  expect(document.activeElement).toBe(pageButton());
+  expect(go?.closeOnBack()).toBe(false);
 });
+
+const noop = (): void => undefined;
 
 function pageButton(): HTMLElement {
   return screen.getByRole("button", { name: /转到页码/ });

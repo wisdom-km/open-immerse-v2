@@ -50,9 +50,7 @@ test("field stays put on back", async ({ desktop }) => {
   const page = desktop.page;
   await openSample(desktop.app, page, 5);
   await openGoTo(desktop.app, page);
-  await page.keyboard.press("Alt+ArrowLeft");
-  if (await page.getByRole("textbox").count())
-    await clickMenu(desktop.app, "后退");
+  await clickMenu(desktop.app, "后退");
   await expect(page.locator(".oi-reader")).toHaveCount(1);
   await expect(page.getByRole("button", { name: /第 1 \/ 5/ })).toBeFocused();
 });

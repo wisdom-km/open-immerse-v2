@@ -14,7 +14,7 @@ import {
   LOST_PLACE,
   pageLabel,
 } from "./copy.js";
-import { GoToPage } from "./go-to-page.js";
+import { GoToPage, type GoToHandle } from "./go-to-page.js";
 import { HistoryControls } from "./history-controls.js";
 import { PageColumn } from "./page-column.js";
 import type { PdfPaint, ReaderClient } from "./reader-client.js";
@@ -55,9 +55,9 @@ export function ReaderScreen(props: {
     reading?.pageCount,
   );
   const zoom = useZoom(viewing, props.id, session);
-  const openGoTo = useRef<(() => void) | undefined>(undefined);
-  const bindOpen = useCallback((open: (() => void) | undefined) => {
-    openGoTo.current = open;
+  const openGoTo = useRef<GoToHandle | undefined>(undefined);
+  const bindOpen = useCallback((handle: GoToHandle | undefined) => {
+    openGoTo.current = handle;
   }, []);
   useBoundNav(
     props.onBindNav,
@@ -112,7 +112,7 @@ function ReaderBar(props: {
   readonly lostPlace: boolean;
   readonly fallbackPage: number | undefined;
   readonly nav: ReturnType<typeof usePositionHistory>;
-  readonly onBindOpen: (open: (() => void) | undefined) => void;
+  readonly onBindOpen: (handle: GoToHandle | undefined) => void;
   readonly zoom: ReturnType<typeof useZoom>;
 }): ReactElement {
   const page =
