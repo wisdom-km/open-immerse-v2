@@ -95,6 +95,14 @@ it("subtracts the visible page chrome before flooring fit width", () => {
   ).toBe(185);
 });
 
+it("leaves the percent and announcement unchanged when fit width sees an infinite column width", () => {
+  assertColumnWidthIgnored(Number.POSITIVE_INFINITY, ["zoomFitWidth"]);
+});
+
+it("leaves the percent and announcement unchanged when the column width is NaN", () => {
+  assertColumnWidthIgnored(Number.NaN, ["zoomFitWidth", "zoomFitPage"]);
+});
+
 it("floors fit page after subtracting padding and border", () => {
   const column = fitColumn({
     clientWidth: 269,
@@ -154,6 +162,33 @@ function runFit(
   expect(screen.getByRole("status").textContent).toBe(`${String(percent)}%`);
   column.remove();
   return percent;
+}
+
+function assertColumnWidthIgnored(
+  clientWidth: number,
+  keys: readonly ("zoomFitWidth" | "zoomFitPage")[],
+): void {
+  const column = fitColumn({
+    clientWidth,
+    clientHeight: 900,
+    paddingLeft: "0px",
+    paddingRight: "0px",
+    pages: [{ page: 1, width: 612, top: 0, bottom: 900, border: "0px" }],
+  });
+  const api = hold();
+  render(
+    <Probe
+      api={api}
+      active
+      id="paper"
+      session={fitSession(column, [{ width: 612, height: 792 }])}
+    />,
+  );
+  for (const key of keys) zoom(api, key);
+  expect(api.current?.percent).toBe(100);
+  expect(screen.queryByRole("status")).toBeNull();
+  column.remove();
+  cleanup();
 }
 
 function fitSession(
