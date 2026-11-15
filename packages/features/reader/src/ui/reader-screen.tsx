@@ -17,10 +17,11 @@ import {
 import { GoToPage } from "./go-to-page.js";
 import { HistoryControls } from "./history-controls.js";
 import { PageColumn } from "./page-column.js";
-import type { ReaderClient } from "./reader-client.js";
+import type { PdfPaint, ReaderClient } from "./reader-client.js";
 import { navCommands, useBoundNav, type ReaderNav } from "./use-bound-nav.js";
 import { usePositionHistory } from "./use-position-history.js";
 import { useReaderSession } from "./use-reader-session.js";
+import { useZoom } from "./use-zoom.js";
 
 const SKELETON_MS = 200;
 export function ReaderScreen(props: {
@@ -52,11 +53,15 @@ export function ReaderScreen(props: {
     session.columnRef,
     reading?.pageCount,
   );
+  const zoom = useZoom(viewing, props.id, reading, session);
   const openGoTo = useRef<(() => void) | undefined>(undefined);
   const bindOpen = useCallback((open: (() => void) | undefined) => {
     openGoTo.current = open;
   }, []);
-  useBoundNav(props.onBindNav, navCommands(nav, leave, openGoTo));
+  useBoundNav(
+    props.onBindNav,
+    navCommands(nav, leave, openGoTo, zoom.commands),
+  );
   useLayoutEffect(() => {
     props.onBindLeave?.(leave);
     return () => {
@@ -74,6 +79,7 @@ export function ReaderScreen(props: {
         fallbackPage={session.shownPage}
         nav={nav}
         onBindOpen={bindOpen}
+        zoomSpoken={zoom.spoken}
       />
       <ReaderBody
         loading={session.phase.kind === "loading"}
@@ -89,6 +95,7 @@ export function ReaderScreen(props: {
         paint={reading?.paint}
         cancel={reading?.cancel}
         boxes={reading?.boxes}
+        zoom={zoom.ratio}
         releasePixels={releasePixels}
         onLeave={leave}
       />
@@ -105,6 +112,7 @@ function ReaderBar(props: {
   readonly fallbackPage: number | undefined;
   readonly nav: ReturnType<typeof usePositionHistory>;
   readonly onBindOpen: (open: (() => void) | undefined) => void;
+  readonly zoomSpoken: string;
 }): ReactElement {
   const page =
     props.viewing &&
@@ -149,6 +157,11 @@ function ReaderBar(props: {
       <p className="oi-reader-live" role="status">
         {props.nav.spoken}
       </p>
+      {props.zoomSpoken === "" ? null : (
+        <p className="oi-reader-zoom" role="status">
+          {props.zoomSpoken}
+        </p>
+      )}
       {props.lostPlace ? (
         <p className="oi-reader-status" role="status">
           {LOST_PLACE}
@@ -168,9 +181,8 @@ function ReaderBody(props: {
   readonly columnRef: { readonly current: HTMLDivElement | null };
   readonly onScroll: () => void;
   readonly onScrollEnd: () => void;
-  readonly paint:
-    | ((page: number, canvas: HTMLCanvasElement) => Promise<void>)
-    | undefined;
+  readonly paint: PdfPaint | undefined;
+  readonly zoom: number;
   readonly cancel: ((canvas: HTMLCanvasElement) => void) | undefined;
   readonly boxes: readonly { width: number; height: number }[] | undefined;
   readonly releasePixels: { current: boolean };
@@ -196,6 +208,7 @@ function ReaderBody(props: {
       paint={props.paint}
       cancel={props.cancel}
       boxes={props.boxes}
+      zoom={props.zoom}
       releasePixels={props.releasePixels}
     />
   );

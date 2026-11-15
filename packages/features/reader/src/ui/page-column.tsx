@@ -1,4 +1,10 @@
-import { useEffect, useRef, type ReactElement, type Ref } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  type ReactElement,
+  type Ref,
+} from "react";
 
 import type { PageBox } from "./render-scale.js";
 import { paintErrorIsQuiet } from "./pdf-session.js";
@@ -14,6 +20,7 @@ export function PageColumn(props: {
   readonly paint: PdfPaint | undefined;
   readonly cancel: PdfCancel | undefined;
   readonly boxes?: readonly PageBox[] | undefined;
+  readonly zoom: number;
   readonly releasePixels?: { current: boolean };
 }): ReactElement {
   const pages = pageNumbers(props.pageCount);
@@ -22,6 +29,11 @@ export function PageColumn(props: {
   return (
     <section className="oi-reader-main">
       <Restore columnRef={props.columnRef} page={props.page} />
+      <ZoomAnchor
+        columnRef={props.columnRef}
+        page={props.page}
+        zoom={props.zoom}
+      />
       <div
         className="oi-reader-column"
         ref={props.columnRef}
@@ -39,6 +51,7 @@ export function PageColumn(props: {
             kept={page >= canvas.span.first && page <= canvas.span.last}
             paint={props.paint}
             cancel={props.cancel}
+            zoom={props.zoom}
             releasePixels={releasePixels}
           />
         ))}
@@ -55,19 +68,21 @@ function PageFrame(props: {
   readonly kept: boolean;
   readonly paint: PdfPaint | undefined;
   readonly cancel: PdfCancel | undefined;
+  readonly zoom: number;
   readonly releasePixels: { current: boolean };
 }): ReactElement {
   return (
     <article
       data-page={props.page}
       className={props.box === undefined ? undefined : "oi-reader-sheet"}
-      style={frameStyle(props.box)}
+      style={frameStyle(props.box, props.zoom)}
     >
       {props.kept ? (
         <PaintedPage
           page={props.page}
           paint={props.paint}
           cancel={props.cancel}
+          zoom={props.zoom}
           releasePixels={props.releasePixels}
         />
       ) : null}
@@ -79,6 +94,7 @@ function PaintedPage(props: {
   readonly page: number;
   readonly paint: PdfPaint | undefined;
   readonly cancel: PdfCancel | undefined;
+  readonly zoom: number;
   readonly releasePixels: { current: boolean };
 }): ReactElement {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -92,7 +108,7 @@ function PaintedPage(props: {
     if (canvas === null || paint === undefined) {
       return;
     }
-    void paint(props.page, canvas).catch((error: unknown) => {
+    void paint(props.page, canvas, props.zoom).catch((error: unknown) => {
       reportPaintError(error);
     });
     return () => {
@@ -102,19 +118,39 @@ function PaintedPage(props: {
       }
       cancelRef.current?.(canvas);
     };
-  }, [props.page, props.paint]);
+  }, [props.page, props.paint, props.zoom]);
   return <canvas ref={canvasRef} aria-hidden="true" />;
 }
 
-function frameStyle(box: PageBox | undefined) {
+function frameStyle(box: PageBox | undefined, zoom: number) {
   if (box === undefined) {
     return undefined;
   }
   return {
-    width: `${String(box.width)}px`,
-    height: `${String(box.height)}px`,
+    width: `${String(box.width * zoom)}px`,
+    height: `${String(box.height * zoom)}px`,
     marginInline: "auto" as const,
   };
+}
+
+function ZoomAnchor(props: {
+  readonly columnRef: Ref<HTMLDivElement>;
+  readonly page: number;
+  readonly zoom: number;
+}): null {
+  const zoomRef = useRef(props.zoom);
+  useLayoutEffect(() => {
+    if (zoomRef.current === props.zoom) {
+      return;
+    }
+    zoomRef.current = props.zoom;
+    const column = columnElement(props.columnRef);
+    const selector = `[data-page="${String(props.page)}"]`;
+    column?.querySelector<HTMLElement>(selector)?.scrollIntoView({
+      block: "nearest",
+    });
+  }, [props.columnRef, props.page, props.zoom]);
+  return null;
 }
 
 function reportPaintError(error: unknown): void {

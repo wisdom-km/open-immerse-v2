@@ -20,6 +20,33 @@ test("counts canvases within the visible page window", async ({ desktop }) => {
     .toBe(true);
 });
 
+test("enlarges the pdf page from the menu and leaves the window factor at 1", async ({
+  desktop,
+}) => {
+  const page = desktop.page;
+  await openSample(desktop.app, page, 8);
+  await page.evaluate(
+    "(() => { const node = document.querySelector('.oi-reader-column'); node.scrollTop = node.scrollHeight / 2; })()",
+  );
+  await expect
+    .poll(async () => Math.min(...(await canvasReport(page)).visible), {
+      timeout: 10_000,
+    })
+    .toBeGreaterThan(1);
+  const before = await canvasReport(page);
+  const focus = Math.min(...before.visible);
+  const width = await canvasCssWidth(page);
+  expect(width).toBeGreaterThan(0);
+  await clickMenu(desktop.app, "放大");
+  await expect
+    .poll(async () => canvasCssWidth(page), { timeout: 10_000 })
+    .toBeGreaterThan(width);
+  expect(await windowZoom(desktop.app)).toBe(1);
+  await expect
+    .poll(async () => (await canvasReport(page)).visible, { timeout: 10_000 })
+    .toContain(focus);
+});
+
 test("jumps with the menu, steps back, then leaves when history is empty", async ({
   desktop,
 }) => {
@@ -116,6 +143,26 @@ async function labelMoved(
   } catch {
     return false;
   }
+}
+
+async function canvasCssWidth(page: Page): Promise<number> {
+  const value: unknown = await page.evaluate(
+    "(() => { const canvas = document.querySelector('.oi-reader-column canvas'); return canvas === null ? 0 : Number.parseFloat(canvas.style.width); })()",
+  );
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    throw new Error("canvas width");
+  }
+  return value;
+}
+
+async function windowZoom(app: ElectronApplication): Promise<number> {
+  const value: unknown = await app.evaluate(({ BrowserWindow }) => {
+    return BrowserWindow.getAllWindows()[0]?.webContents.getZoomFactor();
+  });
+  if (typeof value !== "number") {
+    throw new Error("zoom factor");
+  }
+  return value;
 }
 
 async function clickMenu(

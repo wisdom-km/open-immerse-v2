@@ -1,6 +1,13 @@
 import { useLayoutEffect, useRef } from "react";
 
-export type ReaderNav = {
+export type ZoomNav = {
+  readonly zoomIn: () => void;
+  readonly zoomOut: () => void;
+  readonly zoomActual: () => void;
+  readonly zoomFitWidth: () => void;
+};
+
+export type ReaderNav = ZoomNav & {
   readonly back: () => void;
   readonly forward: () => void;
   readonly openGoTo: () => void;
@@ -16,6 +23,7 @@ export function navCommands(
   nav: History,
   leave: () => void,
   openGoTo: { readonly current: (() => void) | undefined },
+  zoom: ZoomNav,
 ): ReaderNav {
   return {
     back() {
@@ -28,6 +36,7 @@ export function navCommands(
     openGoTo() {
       openGoTo.current?.();
     },
+    ...zoom,
   };
 }
 
@@ -41,11 +50,14 @@ export function useBoundNav(
     const call = (key: keyof ReaderNav) => () => {
       latest.current[key]();
     };
-    bind?.({
-      back: call("back"),
-      forward: call("forward"),
-      openGoTo: call("openGoTo"),
-    });
+    bind?.(
+      Object.fromEntries(
+        (Object.keys(latest.current) as (keyof ReaderNav)[]).map((key) => [
+          key,
+          call(key),
+        ]),
+      ) as ReaderNav,
+    );
     return () => {
       bind?.(undefined);
     };

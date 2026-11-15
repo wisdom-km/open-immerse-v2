@@ -6,6 +6,39 @@ import { expect, it, vi } from "vitest";
 import { PageColumn } from "../../src/ui/page-column.js";
 import type { PdfCancel, PdfPaint } from "../../src/ui/reader-client.js";
 
+it("grows the frame with the zoom and keeps the current page in view", async () => {
+  const zooms: number[] = [];
+  const paint: PdfPaint = (_page, _canvas, zoom) => {
+    zooms.push(zoom);
+    return Promise.resolve();
+  };
+  const scrolled: Element[] = [];
+  const spy = vi
+    .spyOn(HTMLElement.prototype, "scrollIntoView")
+    .mockImplementation(function scroll(this: HTMLElement) {
+      scrolled.push(this);
+    });
+  try {
+    const view = render(framed(paint, 1));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(zooms).toEqual([1]);
+    expect(frame(view.container)?.style.width).toBe("100px");
+    scrolled.length = 0;
+    view.rerender(framed(paint, 2));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(zooms).toEqual([1, 2]);
+    expect(frame(view.container)?.style.width).toBe("200px");
+    expect(frame(view.container)?.style.height).toBe("80px");
+    expect(scrolled).toContain(frame(view.container));
+  } finally {
+    spy.mockRestore();
+  }
+});
+
 it("does not paint the same page again when the shown page changes", async () => {
   const painted: number[] = [];
   const paint: PdfPaint = (page) => {
@@ -146,6 +179,7 @@ it("paints the shown page window, then releases canvases outside the scrolled wi
       cancel={(canvas) => {
         atCancel.push(canvas.width);
       }}
+      zoom={1}
     />,
   );
   await act(async () => {
@@ -217,6 +251,26 @@ async function dropped(flag: { current: boolean }): Promise<HTMLCanvasElement> {
   return canvas;
 }
 
+function framed(paint: PdfPaint, zoom: number): ReactElement {
+  return (
+    <PageColumn
+      page={1}
+      pageCount={1}
+      columnRef={createRef<HTMLDivElement>()}
+      onScroll={() => undefined}
+      onScrollEnd={() => undefined}
+      paint={paint}
+      cancel={() => undefined}
+      boxes={[{ width: 100, height: 40 }]}
+      zoom={zoom}
+    />
+  );
+}
+
+function frame(container: HTMLElement): HTMLElement | null {
+  return container.querySelector("[data-page='1']");
+}
+
 function column(
   page: number,
   paint: PdfPaint,
@@ -233,6 +287,7 @@ function column(
       onScrollEnd={() => undefined}
       paint={paint}
       cancel={cancel}
+      zoom={1}
       releasePixels={releasePixels}
     />
   );
