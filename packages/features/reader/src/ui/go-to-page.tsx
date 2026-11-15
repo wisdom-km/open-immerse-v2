@@ -3,11 +3,13 @@ import { useEffect, useRef, useState, type ReactElement } from "react";
 import { clampPage } from "../pure.js";
 import { pageCountNote, pageLabel } from "./copy.js";
 
+export type GoToHandle = { open(): void; closeOnBack(): boolean };
+
 export function GoToPage(props: {
   readonly page: number;
   readonly pageCount: number;
   readonly onJump: (page: number) => void;
-  readonly onBindOpen?: ((open: (() => void) | undefined) => void) | undefined;
+  readonly onBindOpen?: ((handle: GoToHandle | undefined) => void) | undefined;
 }): ReactElement {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -16,10 +18,12 @@ export function GoToPage(props: {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const restore = useRef(false);
   const name = `转到页码，${pageLabel(props.page, props.pageCount)}`;
+  const close = (): true => (setEditing(false), setNote(undefined), true);
   const open = usePageOpener(props.onBindOpen, props.page, {
     draft: setDraft,
     note: setNote,
     editing: setEditing,
+    back: () => editing && close(),
   });
   useEffect(() => {
     if (!editing) {
@@ -30,10 +34,6 @@ export function GoToPage(props: {
     restore.current = true;
     inputRef.current?.focus();
   }, [editing]);
-  const close = (): void => {
-    setEditing(false);
-    setNote(undefined);
-  };
   if (!editing) {
     return (
       <button
@@ -76,12 +76,13 @@ export function GoToPage(props: {
 }
 
 function usePageOpener(
-  onBindOpen: ((open: (() => void) | undefined) => void) | undefined,
+  onBindOpen: ((handle: GoToHandle | undefined) => void) | undefined,
   page: number,
   set: {
     draft: (value: string) => void;
     note: (note: string | undefined) => void;
     editing: (editing: boolean) => void;
+    back: () => boolean;
   },
 ): () => void {
   const open = (): void => {
@@ -91,9 +92,14 @@ function usePageOpener(
   };
   const openRef = useRef(open);
   openRef.current = open;
+  const backRef = useRef(set.back);
+  backRef.current = set.back;
   useEffect(() => {
-    onBindOpen?.(() => {
-      openRef.current();
+    onBindOpen?.({
+      open() {
+        openRef.current();
+      },
+      closeOnBack: () => backRef.current(),
     });
     return () => {
       onBindOpen?.(undefined);

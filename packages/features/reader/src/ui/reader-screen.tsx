@@ -14,7 +14,7 @@ import {
   LOST_PLACE,
   pageLabel,
 } from "./copy.js";
-import { GoToPage } from "./go-to-page.js";
+import { GoToPage, type GoToHandle } from "./go-to-page.js";
 import { HistoryControls } from "./history-controls.js";
 import { PageColumn } from "./page-column.js";
 import type { PdfPaint, ReaderClient } from "./reader-client.js";
@@ -22,6 +22,7 @@ import { navCommands, useBoundNav, type ReaderNav } from "./use-bound-nav.js";
 import { usePositionHistory } from "./use-position-history.js";
 import { useReaderSession } from "./use-reader-session.js";
 import { useZoom } from "./use-zoom.js";
+import { ZoomControls } from "./zoom-controls.js";
 
 const SKELETON_MS = 200;
 export function ReaderScreen(props: {
@@ -54,9 +55,9 @@ export function ReaderScreen(props: {
     reading?.pageCount,
   );
   const zoom = useZoom(viewing, props.id, session);
-  const openGoTo = useRef<(() => void) | undefined>(undefined);
-  const bindOpen = useCallback((open: (() => void) | undefined) => {
-    openGoTo.current = open;
+  const openGoTo = useRef<GoToHandle | undefined>(undefined);
+  const bindOpen = useCallback((handle: GoToHandle | undefined) => {
+    openGoTo.current = handle;
   }, []);
   useBoundNav(
     props.onBindNav,
@@ -79,7 +80,7 @@ export function ReaderScreen(props: {
         fallbackPage={session.shownPage}
         nav={nav}
         onBindOpen={bindOpen}
-        zoomSpoken={zoom.spoken}
+        zoom={zoom}
       />
       <ReaderBody
         loading={session.phase.kind === "loading"}
@@ -111,8 +112,8 @@ function ReaderBar(props: {
   readonly lostPlace: boolean;
   readonly fallbackPage: number | undefined;
   readonly nav: ReturnType<typeof usePositionHistory>;
-  readonly onBindOpen: (open: (() => void) | undefined) => void;
-  readonly zoomSpoken: string;
+  readonly onBindOpen: (handle: GoToHandle | undefined) => void;
+  readonly zoom: ReturnType<typeof useZoom>;
 }): ReactElement {
   const page =
     props.viewing &&
@@ -157,15 +158,14 @@ function ReaderBar(props: {
       <p className="oi-reader-live" role="status">
         {props.nav.spoken}
       </p>
-      <p className="oi-reader-zoom" role="status">
-        {props.zoomSpoken}
-      </p>
+      <ZoomControls active={props.viewing} zoom={props.zoom} controls={false} />
       {props.lostPlace ? (
         <p className="oi-reader-status" role="status">
           {LOST_PLACE}
         </p>
       ) : null}
       <span className="oi-reader-gap" />
+      <ZoomControls active={props.viewing} zoom={props.zoom} status={false} />
       <span className="oi-reader-chip" />
     </header>
   );

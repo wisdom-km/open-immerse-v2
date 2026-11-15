@@ -24,16 +24,19 @@
   color: var(--oi-text-2, CanvasText);
 }
 
-.oi-reader-back:focus-visible {
+.oi-reader-back:focus-visible,
+.oi-reader-zoom-controls :focus-visible {
   outline: var(--oi-focus-width, 2px) solid var(--oi-reader-focus, CanvasText);
   outline-offset: var(--oi-focus-offset, 2px);
 }
 
-.oi-reader-back[aria-disabled="true"] {
+.oi-reader-back[aria-disabled="true"],
+.oi-reader-zoom-controls button[aria-disabled="true"] {
   opacity: 0.45;
 }
 
-.oi-reader-live {
+.oi-reader-live,
+.oi-reader-zoom {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -41,6 +44,26 @@
   clip-path: inset(50%);
   margin: 0;
   white-space: nowrap;
+}
+
+.oi-reader-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--oi-space-1, 0.25rem);
+}
+
+.oi-reader-zoom-controls button,
+.oi-reader-zoom-controls select {
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.oi-reader-zoom-controls select {
+  width: 5rem;
 }
 
 button.oi-reader-pages {

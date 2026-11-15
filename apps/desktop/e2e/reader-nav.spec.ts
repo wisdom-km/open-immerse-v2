@@ -46,6 +46,15 @@ test("enlarges the pdf page from the menu and leaves the window factor at 1", as
     .toContain(focus);
 });
 
+test("field stays put on back", async ({ desktop }) => {
+  const page = desktop.page;
+  await openSample(desktop.app, page, 5);
+  await openGoTo(desktop.app, page);
+  await clickMenu(desktop.app, "后退");
+  await expect(page.locator(".oi-reader")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: /第 1 \/ 5/ })).toBeFocused();
+});
+
 test("jumps with the menu, steps back, then leaves when history is empty", async ({
   desktop,
 }) => {
