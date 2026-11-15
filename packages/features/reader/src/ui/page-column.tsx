@@ -33,6 +33,7 @@ export function PageColumn(props: {
         columnRef={props.columnRef}
         page={props.page}
         zoom={props.zoom}
+        onZoom={canvas.onScroll}
       />
       <div
         className="oi-reader-column"
@@ -137,6 +138,7 @@ function ZoomAnchor(props: {
   readonly columnRef: Ref<HTMLDivElement>;
   readonly page: number;
   readonly zoom: number;
+  readonly onZoom: () => void;
 }): null {
   const zoomRef = useRef(props.zoom);
   useLayoutEffect(() => {
@@ -149,7 +151,8 @@ function ZoomAnchor(props: {
     column?.querySelector<HTMLElement>(selector)?.scrollIntoView({
       block: "nearest",
     });
-  }, [props.columnRef, props.page, props.zoom]);
+    props.onZoom();
+  }, [props.columnRef, props.onZoom, props.page, props.zoom]);
   return null;
 }
 

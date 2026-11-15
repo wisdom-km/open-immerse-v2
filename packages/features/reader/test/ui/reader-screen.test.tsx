@@ -47,11 +47,13 @@ it("shows the lost-place line once and hides it after scrolling", async () => {
   expect(await screen.findByText(LOST_PLACE)).toBeTruthy();
   expect(screen.getAllByText(LOST_PLACE)).toHaveLength(1);
   expect(screen.getAllByRole("status").map((node) => node.textContent)).toEqual(
-    ["", LOST_PLACE],
+    ["", "", LOST_PLACE],
   );
+  expect(document.querySelector(".oi-reader-zoom")?.textContent).toBe("");
   fireEvent.scroll(column());
   expect(screen.queryByText(LOST_PLACE)).toBeNull();
-  expect(screen.getByRole("status").textContent).toBe("");
+  expect(document.querySelector(".oi-reader-zoom")?.textContent).toBe("");
+  expect(document.querySelector(".oi-reader-live")?.textContent).toBe("");
 });
 
 it("does not show the lost-place line after a successful read", async () => {
@@ -121,8 +123,11 @@ it("replaces the visible page before a jump, then forward returns", async () => 
   );
   await screen.findByRole("button", { name: /转到页码/ });
   vi.useFakeTimers();
-  const live = screen.getByRole("status");
-  expect(live.className).toBe("oi-reader-live");
+  const live = document.querySelector(".oi-reader-live");
+  if (!(live instanceof HTMLElement)) {
+    throw new Error("live");
+  }
+  expect(document.querySelector(".oi-reader-zoom")?.textContent).toBe("");
   expect(live.textContent).toBe("");
   layOut(2);
   jump("3");

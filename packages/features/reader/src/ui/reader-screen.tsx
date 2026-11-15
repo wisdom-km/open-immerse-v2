@@ -157,11 +157,9 @@ function ReaderBar(props: {
       <p className="oi-reader-live" role="status">
         {props.nav.spoken}
       </p>
-      {props.zoomSpoken === "" ? null : (
-        <p className="oi-reader-zoom" role="status">
-          {props.zoomSpoken}
-        </p>
-      )}
+      <p className="oi-reader-zoom" role="status">
+        {props.zoomSpoken}
+      </p>
       {props.lostPlace ? (
         <p className="oi-reader-status" role="status">
           {LOST_PLACE}

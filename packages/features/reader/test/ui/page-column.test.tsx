@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, render } from "@testing-library/react";
-import { createRef, type ReactElement } from "react";
+import { createRef, type ReactElement, type Ref } from "react";
 import { expect, it, vi } from "vitest";
 
 import { PageColumn } from "../../src/ui/page-column.js";
@@ -131,6 +131,25 @@ it("stays quiet for a cancelled paint", async () => {
   }
 });
 
+it("repaints the pages now in view when zoom changes without a scroll event", async () => {
+  const columnRef = createRef<HTMLDivElement>();
+  const view = render(windowed(columnRef, 1));
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(canvasPages(view.container)).toEqual([1, 2, 3]);
+  const node = columnRef.current;
+  if (node === null) {
+    throw new Error("column");
+  }
+  place(node, 6);
+  view.rerender(windowed(columnRef, 2));
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(canvasPages(view.container)).toEqual([4, 5, 6, 7, 8]);
+});
+
 it("cancels an unfinished paint on unmount without an unhandled rejection", async () => {
   const cancelled: number[] = [];
   let rejectPaint: (error: unknown) => void = () => undefined;
@@ -249,6 +268,21 @@ async function dropped(flag: { current: boolean }): Promise<HTMLCanvasElement> {
   canvas.height = 8;
   view.unmount();
   return canvas;
+}
+
+function windowed(columnRef: Ref<HTMLDivElement>, zoom: number): ReactElement {
+  return (
+    <PageColumn
+      page={1}
+      pageCount={8}
+      columnRef={columnRef}
+      onScroll={() => undefined}
+      onScrollEnd={() => undefined}
+      paint={() => Promise.resolve()}
+      cancel={() => undefined}
+      zoom={zoom}
+    />
+  );
 }
 
 function framed(paint: PdfPaint, zoom: number): ReactElement {
