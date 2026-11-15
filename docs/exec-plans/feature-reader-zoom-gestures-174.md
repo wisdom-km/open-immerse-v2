@@ -21,7 +21,7 @@ E1c-2 的 2b：阅读器缩放的滚轮、触控板捏合、Ctrl+滚轮。基线
 | 1 | 本文件 |  |  |
 | 2 | 台账补 15:37、17:58 的三句、18:03:04 的合入同步 |  |  |
 | 3 | Forge 审查。PASS 之前没有实现提交 |  |  |
-| 4 | 本 PR 合入后，从当时的 main 开 `feature/reader-zoom-fit-174`。只搬测量，不写滚轮 | 已从 main `04fa9be` 开 `feature/reader-zoom-fit-174`。测量在 `zoom-fit.ts`，只导出 `fitWidthPercent` 与 `fitPagePercent`。floor 仍在 UI。滚轮未写。`use-zoom.ts` 117 行，`zoom-fit.ts` 100 行，`reader-screen.tsx` 仍 258 行。n9 在 `use-zoom.test.tsx`：栏宽为 Infinity 时只调 `zoomFitWidth`，百分比仍是 100、不播报；删掉 isFinite 后这条失败（实际 400）。NaN 是同一条的第二项 | `docs/evidence/218/commands.md` |
+| 4 | 本 PR 合入后，从当时的 main 开 `feature/reader-zoom-fit-174`。只搬测量，不写滚轮 | 已从 main `04fa9be` 开 `feature/reader-zoom-fit-174`。测量在 `zoom-fit.ts`，只导出 `fitWidthPercent` 与 `fitPagePercent`。floor 仍在 UI。滚轮未写。`use-zoom.ts` 117 行，`zoom-fit.ts` 100 行，`reader-screen.tsx` 仍 258 行。n9 在 `use-zoom.test.tsx` 单独一条：栏宽为 Infinity 时只调 `zoomFitWidth`，百分比仍是 100、不播报；删掉 isFinite 后这条失败（实际 400）。NaN 那条保留，并仍调适合页面 | `docs/evidence/218/commands.md` |
 | 5 | 上一份合入后，从当时的 main 开 `feature/reader-zoom-wheel-174`。写监听之前先做下面「第 5 步还要记下」的测量。捏合已经在缩放整窗就停，不写滚轮产品代码 |  | `docs/evidence/<手势 PR号>/commands.md` |
 | 6 | 第 5 步没有叫停，才写监听、单测和 e2e |  | 同上 |
 

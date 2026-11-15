@@ -8,9 +8,9 @@ Node v22.23.4。工作目录是仓库根。基线 main `04fa9be8523614f43fb14a2c
 
 ## n9
 
-S1 之后，`use-zoom.test.tsx` 仍是 7 条。同一条里先把栏宽设成 `Number.POSITIVE_INFINITY`，只调 `zoomFitWidth`，百分比仍是 100，没有播报；再对 `Number.NaN` 做同样的断言。不把 `zoomFitPage` 放进 Infinity 这项：栏宽是 Infinity 时，适合页面会按高度得到有限百分比。NaN 单独守不住 `clampFloor` 的 `isFinite`，因为 `NaN` 还会被 `parseZoomPercent` 拦下。
+n9 是单独一条：栏宽 `Number.POSITIVE_INFINITY`，只调 `zoomFitWidth`，百分比仍是 100，没有播报。NaN 那条保留，仍调 `zoomFitWidth` 和 `zoomFitPage`。不把 `zoomFitPage` 放进 Infinity 这条：栏宽是 Infinity 时，适合页面会按高度得到有限百分比。
 
-临时删掉 `zoom-fit.ts` 里 `!Number.isFinite(budget + pageWidth) ||`，没有提交。这条失败：期望 100，实际 400。已还原。还原后 `git diff` 不含 `zoom-fit.ts`，7 条通过，退出码 0。
+临时删掉 `zoom-fit.ts` 里 `!Number.isFinite(budget + pageWidth) ||`，没有提交。Infinity 这条失败：期望 100，实际 400。NaN 那条仍通过。已还原。还原后 `git diff` 不含 `zoom-fit.ts`，8 条通过，退出码 0。
 
 ## GATE_BASE=origin/main corepack pnpm run check
 
@@ -18,10 +18,10 @@ S1 之后，`use-zoom.test.tsx` 仍是 7 条。同一条里先把栏宽设成 `N
 
 ## corepack pnpm test
 
-退出码 0。191 个文件。867 通过，3 跳过，共 870。跳过在 `tools/check-secrets/leak.test.ts`，本 PR 没有新增 skip。相对 main 多出的是 n9 这一条。CI run 43707232436 的 node job 是 870 通过、0 跳过。
+退出码 0。191 个文件。867 通过，3 跳过，共 870。跳过在 `tools/check-secrets/leak.test.ts`，本 PR 没有新增 skip。这是 `3b6dbb5`，当时只多 n9 一条。现在 `use-zoom.test.tsx` 是 8 条：Infinity 那条另计。CI run 43707232436（`402d5f4`）的 node job 是 870 通过、0 跳过。
 
 ## 真机
 
 未跑。适合宽度、适合页面在 Windows 真机上与 main 一致，留到真机。
 
-S1 之后相对 `origin/main` 的 pr-size 是 249。仍 ≤346。
+相对 `origin/main` 的 pr-size 是 258。仍 ≤346。n2 把 16:23 决定行移到 18:03:04 之前。n3 按 #174 6892720718 原文补全遗留项。合计仍是 198 + 1 + 5 + 20，合计那一行没有改。
