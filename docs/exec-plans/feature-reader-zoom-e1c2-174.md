@@ -17,7 +17,7 @@ E1c-2，阅读屏缩放。从 main `ba6a71e803d0640f11ab97ef3edc919379173050` �
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
 | 1 | PR #213：本文件、台账、规格记录。不写产品代码。合入前要 Wisdom 单独批准 |  |  |
-| 2 | #213 合入后，从新 main 开 Draft。2a 核心：状态、档位、播报、卸下时摘监听、占位乘缩放、当前页锚点。菜单和快捷键会真的缩放 PDF 栏。还没有工具栏按钮 | `0a46455`。`reader-screen.tsx` 260 行。回填后 pr-size 541。菜单命令随即播报，没有停手间隔 | `use-zoom.test.tsx`、`page-column.test.tsx`、`pdf-session.test.ts`、`reader-nav.spec.ts` |
+| 2 | #213 合入后，从新 main 开 Draft。2a 核心：状态、档位、播报、卸下时摘监听、占位乘缩放、当前页锚点。菜单和快捷键会真的缩放 PDF 栏。还没有工具栏按钮 | `7332d84`。缩放后重算画布窗口。播报节点常驻。`reader-screen.tsx` 258 行。pr-size 595 | `use-zoom.test.tsx`、`page-column.test.tsx`、`pdf-session.test.ts`、`reader-nav.spec.ts` |
 | 3 | 核心合入后，从新 main 开 Draft。2a 控件：− / 百分比 / +、百分比菜单、tooltip |  |  |
 | 4 | 控件合入后，在 2b 里、写监听之前先测。结果写入该 PR 的 `docs/evidence/<PR号>/commands.md`。捏合已经在缩放整窗就停，不写滚轮产品代码。见「第 4 步叫停」 |  |  |
 | 5 | 第 4 步没有叫停，才写 2b 的滚轮、捏合和 Ctrl+滚轮 e2e。仍是这一个 PR |  |  |
