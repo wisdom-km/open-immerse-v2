@@ -26,18 +26,18 @@ E1c-2，阅读屏缩放。从 main `ba6a71e803d0640f11ab97ef3edc919379173050` �
 
 `check-pr-size` 把新增和删除都算进去。下表是非生成行，含该 PR 里回填的「实际」列。建议上限和硬上限见 [docs/arch/06.md](../arch/06.md)：React 组件建议 250、硬上限 400；普通源文件建议 400、硬上限 600；测试建议 600、硬上限 800。超过建议上限时，该 PR 正文写明为什么不拆。
 
-1.73 来自 PR #212：`(755 − 436) / 436`。一份 PR 的估算要 ≤ 346，乘 1.73 才仍 ≤ 600。上一稿把状态和占位拆开：钩子若放在控件里，页列和 session 拿不到同一个值；只合入状态则没有调用方；只合入控件则百分比会变、页面不会变大。审查 r2 因此把状态和占位合成核心，控件放在后面。上一稿三份相加是 154 + 301 + 128 = 583，不是 582。核心加控件按本表是 329 + 300 = 629，乘 1.73 约 1088，仍然超过 600，所以这两份不合在一起。2b 单独留着，因为它依赖第 4 步的实测。
+1.73 来自 PR #212：`(755 − 436) / 436`。一份 PR 的估算要 ≤ 346，乘 1.73 才仍 ≤ 600。上一稿把状态和占位拆开：钩子若放在控件里，页列和 session 拿不到同一个值；只合入状态则没有调用方；只合入控件则百分比会变、页面不会变大。审查 r2 因此把状态和占位合成核心，控件放在后面。上一稿三份相加是 154 + 301 + 128 = 583，不是 582。核心加控件按本表是 339 + 300 = 639，乘 1.73 约 1105，仍然超过 600，所以这两份不合在一起。2b 单独留着，因为它依赖第 4 步的实测。
 
 | PR | 装什么 | 估算 | ×1.73 |
 | --- | --- | --- | --- |
 | #213 | 本文件、台账、规格记录。没有产品代码 | 只有文档 |  |
-| 2a 核心 | 状态、档位、播报、占位、锚点、菜单经 shell 调用命令、菜单放大的窗口系数 | 329 | 569 |
+| 2a 核心 | 状态、档位、播报、占位、锚点、菜单经 shell 调用命令、菜单放大的窗口系数 | 339 | 586 |
 | 2a 控件 | 按钮、百分比菜单、tooltip、样式 | 300 | 519 |
 | 2b | 滚轮、捏合、Ctrl+滚轮 e2e、测量记录。第 4 步叫停就不写产品代码 | 298 | 516 |
 
 任一实现 PR 的非生成行超过 600，就停下，不推那个提交。把 `git diff --numstat` 的实际行数，以及建议怎么再拆，报给 Forge。不写放行理由。不把下一份的文件塞进这一份。不把 PR 标成 Ready。
 
-2a 核心，合计 329。`use-reader-session.ts` 计 0，不改变这个和。审查 r2 的 284 没有算上菜单接线和 `PdfPaint` 的参数。下面补上的测试若是 20 行，合计 324，乘 1.73 是 561；若是 30 行，合计 334，乘 1.73 是 578。本表按 25 行测试计，329 × 1.73 = 569，没有超过 600，适合宽度留在核心。余量是 22 到 39 行。实现时超过 600 就把适合宽度（`resolveZoomPercent` 的接线和对应测试）挪到控件那一份，不写放行理由。
+2a 核心，合计 339。`use-reader-session.ts` 计 0，不改变这个和。审查 r4 把 `shell.tsx` 从 6 行改成 16 行，比上一稿多 10。`use-bound-nav.ts` 用展开写法，仍计 8 行。测试按表里的 25 行计，339 × 1.73 = 586，余量 14 行。测试若是 20 行，合计 334，乘 1.73 是 578；若是 30 行，合计 344，乘 1.73 是 595。不用展开、`use-bound-nav.ts` 到 14 行时，合计 345，345 × 1.73 = 597，余量 3 行。这些都没有超过 600，适合宽度留在核心。测试取 30 行、同时不用展开时合计 350，350 × 1.73 = 606，已经超过 600。实现时非生成行超过 600，就把适合宽度（`resolveZoomPercent` 的接线和对应测试）挪到控件那一份，不写放行理由。
 
 | 文件 | 计入 | 改完大约 | 会不会超 |
 | --- | --- | --- | --- |
@@ -51,14 +51,14 @@ E1c-2，阅读屏缩放。从 main `ba6a71e803d0640f11ab97ef3edc919379173050` �
 | `apps/desktop/e2e/` 里菜单「放大」后看窗口因子 | 30 |  | 不会。用 `clickMenu("放大")`。PR212 已证实 CI 上用 Playwright 按快捷键不会触发菜单 accelerator |
 | `packages/features/reader/src/ui/reader-screen.tsx` | 6 | 253 | 现 247。超过建议上限 250，停在 260。见下面 |
 | `packages/features/reader/src/ui/reader-client.ts`、`asset-pdf.ts`、`open-reading.ts` | 6 |  | 不会。`PdfPaint` 增加 zoom，后两个文件只把参数往后传。现各 50、67、151 行 |
-| `apps/desktop/src/renderer/shell.tsx` | 6 | 126 | 现 120。只在现有 `names` 和 `menuAction` 里加四项 |
-| `packages/features/reader/src/ui/use-bound-nav.ts` | 8 | 61 | 现 53。`ReaderNav` 加四个命令 |
+| `apps/desktop/src/renderer/shell.tsx` | 16 | 136 | 现 120。import 加 4 个名字，`MenuNav` 加 4 个命令，`names` 加 4 项，`menuAction` 加 4 个分支 |
+| `packages/features/reader/src/ui/use-bound-nav.ts` | 8 | 61 | 现 53。用展开写法，见下面。四个命令各自写成函数会到 12–14 行 |
 | shell 或阅读屏测试 | 25 |  | 浮动 20 到 30。用到 `paint` 的现有测试跟着改签名 |
 | 本文件「实际」列的回填 | 4 |  | 文档 |
 
-`useZoom` 在 `ReaderScreen` 里调用一次，不碰 window 事件。它只提供百分比、档位和四个命令。`shell.tsx` 把 `shell-events.ts` 里已有的 `zoomInEvent`、`zoomOutEvent`、`zoomActualEvent`、`zoomFitWidthEvent` 加进现有的 `names`，`menuAction` 增加四个分支，调用 `bindNav` 传进来的命令。不在 `shell.tsx` 再写一遍字面值。`ReaderNav` 增加 `zoomIn`、`zoomOut`、`zoomActual`、`zoomFitWidth`。事件名仍只写在 `shell-events.ts`。reader 包不出现这四个字面值，也不成为订阅方。
+`useZoom` 在 `ReaderScreen` 里调用一次，不碰 window 事件。它只提供百分比、档位和四个命令。`shell.tsx` 的 16 行是这四处：import 加上 `shell-events.ts` 里已有的 `zoomInEvent`、`zoomOutEvent`、`zoomActualEvent`、`zoomFitWidthEvent`，`MenuNav` 加四个命令，`names` 加这四项，`menuAction` 加四个分支。不在 `shell.tsx` 再写一遍字面值。`ReaderNav` 增加 `zoomIn`、`zoomOut`、`zoomActual`、`zoomFitWidth`。`use-bound-nav.ts` 用展开写法，仍计 8 行：`navCommands` 多收一个缩放命令对象，返回值里写 `...zoom`；`bind` 沿用已有的 `call(key)`，不把四个命令各自写成函数。各自写成函数会到 12–14 行。事件名仍只写在 `shell-events.ts`。reader 包不出现这四个字面值，也不成为订阅方。
 
-核实过 RULES 第 89 行。给事件新增发布方或订阅方才要登记 `contracts/src/ui-events.ts` 并附 ADR。PR212 没有登记 `oi-zoom-*`：`contracts/src/ui-events.ts` 不存在。同一次合入的 `oi-return-library`、`oi-history-back`、`oi-history-forward`、`oi-go-to-page` 也没有登记，而 `shell.tsx` 已经在听这四项。放大这四项的发布方仍是桌面菜单，订阅方仍是这个 shell，不是新的切片。reader 包不订阅。因此这次不登记，不改 contracts。G5 的 `ui-events-declared` 仍是延后项。
+核实过 RULES 第 89 行。给事件新增发布方或订阅方才要登记 `contracts/src/ui-events.ts` 并附 ADR。`contracts/src/ui-events.ts` 不存在。`oi-open-file` 是 #172 加的，没有登记。`oi-return-library` 是 #199 加的，不是 PR212 加的，也没有登记。PR212 加的 `oi-history-back`、`oi-history-forward`、`oi-go-to-page` 没有登记，`shell.tsx` 已经在听这三项，也在听 #199 的 `oi-return-library`。放大这四项的发布方仍是桌面菜单，订阅方仍是这个 shell，不是新的切片。reader 包不订阅。因此这次不登记，不改 contracts。G5 的 `ui-events-declared` 仍是延后项。RULES 第 89 行和架构正文「切片间」的分歧是审查 r4 的 H1，不在这一份里定，也不挡本 PR。
 
 绘制路径是这一条。`use-reader-session.ts` 只持有 `ReadingView`，`paint` 在 `open-reading.ts` 里创建。这个钩子不调用 `paint`，也不接收 zoom，所以保持 258 行，不改。普通源文件建议上限 400，硬上限 600。`ReaderScreen` 从 `session.phase.reading.paint` 取出绘制函数，把百分比另传给 `ReaderBody` 和 `page-column`。`page-column` 第 89 行的 effect 依赖加上 zoom，调用 `paint(page, canvas, zoom)`。`PdfPaint` 定义在 `reader-client.ts` 第 8 行，从 `(page, canvas)` 加上 zoom。`open-reading.ts` 和 `asset-pdf.ts` 把这个参数传到 `pdf-session.ts` 的 `drawPage`，替换写死的 `zoom: 1`。用到 `paint` 的测试跟着改签名。锚点要用的 `session.columnRef` 和当前页已经在 `ReaderScreen`。
 
@@ -93,11 +93,11 @@ E1c-2，阅读屏缩放。从 main `ba6a71e803d0640f11ab97ef3edc919379173050` �
 
 2b 的 e2e 接受现有 fixture，这一轮不修。`apps/desktop/e2e/fixtures/electron-app.ts` 在 `electron.launch` 之后才读 `getPath("userData")`，再期望它等于临时目录。这个顺序用来证明启动参数已经生效。改到启动之前会碰到每一条 e2e，和「只放大 PDF 栏」无关。断言失败就停。这是 PR212 r1 的 n5。
 
-PR212 r1 的 n2 这一轮不处理。那一条是 shell 层的 `flushSync` 只测过一次。本计划不改 `shell.tsx`。
+PR212 r1 的 n2 这一轮不处理。那一条是 shell 层的 `flushSync` 只测过一次。shell 只加四项，`flushSync` 那条路径不变。
 
 这几份都不改 `apps/desktop/src/main/`。`library-menu.ts` 也不改。依据：E1c-1 已经登记四项并派发事件。适合页面不进应用菜单，只进百分比菜单（批次 E 计划第 94 行）。百分比菜单在渲染进程，不新增主进程菜单项。
 
-改 `shell.tsx`，只在现有 `names` 和 `menuAction` 里加四项。不改 `apps/desktop/src/main/`。`use-zoom.ts` 不监听 window 事件。加载前和出错时命令直接返回。卸下后 `navRef` 已空，再派发这四个菜单事件，状态不变。
+改 `shell.tsx`，只加 import 里的四个名字、`MenuNav` 的四个命令、`names` 的四项和 `menuAction` 的四个分支。不改 `apps/desktop/src/main/`。`use-zoom.ts` 不监听 window 事件。加载前和出错时命令直接返回。卸下后 `navRef` 已空，再派发这四个菜单事件，状态不变。
 
 ## 行为
 
@@ -196,6 +196,7 @@ N2：打开时逐页 `getPage`。N3：阅读中途改系统缩放并重画。N4�
 | #213 只放计划和台账；实现分成核心、控件、滚轮 | 审查 r1 的方案甲，审查 r2 把状态和占位合成核心。审查 r3 补上 shell 接线和 `PdfPaint` 之后，核心 329，控件 300，滚轮 298。上一稿三份相加是 583。核心加控件是 629，乘 1.73 约 1088，不合在一起。超过 600 就把适合宽度挪到控件那一份，不写放行理由 | 2026-11-15 | Forge 计划审查 r3，[评论 6886102293](https://github.com/wisdom-km/open-immerse-v2/pull/213#issuecomment-6886102293) |
 | `useZoom` 在 `ReaderScreen` 调用一次，不碰 window 事件 | 菜单沿用 PR212。shell 已是菜单事件的订阅方，`oi-zoom-*` 在 PR212 里没有登记，这次也不登记。`use-reader-session.ts` 保持 258 行，建议上限 400，硬上限 600 | 2026-11-15 | 本计划的核实。审查 r3 的 B1 |
 | 底行字面值以 #206 第 94 行为准 | 出处是 DESIGN 第 718 行 | 2026-11-15 | Forge 计划审查 r3 的 n1 |
+| 核心 shell 计 16 行，合计 339 | 审查 r4：import、`MenuNav`、`names`、`menuAction` 各约 4 行。`use-bound-nav.ts` 用展开写法仍计 8。339 × 1.73 = 586，余量 14 行。不用展开会到 345 × 1.73 = 597，余量 3 行。超过 600 仍把适合宽度挪到控件那一份 | 2026-11-15 | Forge 计划审查 r4，[评论 6886274662](https://github.com/wisdom-km/open-immerse-v2/pull/213#issuecomment-6886274662) |
 | 滚轮和捏合的停手时长是「暂定 300 毫秒」 | 批次 E 计划第 37 行。按钮没有停手间隔，一点就播 | 2026-11-15 | 批次 E 计划。Forge 可以改这个数 |
 | 2b 接受启动之后才核对 userData | PR212 r1 的 n5。这个顺序证明启动参数已生效。改它会碰到每一条 e2e | 2026-11-15 | 本计划。审查 r1 要求写明是修还是接受 |
 | PDF 栏缩放不加过渡动画 | DESIGN §3.5 第 271 行和 DS-07 说的是动效里的缩放，§11.3 没有要求过渡。两处不相反 | 2026-11-15 | 本计划。已核对 DESIGN |
