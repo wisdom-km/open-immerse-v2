@@ -47,20 +47,19 @@ it("keeps focus at 25% and 400% and ignores another click or shortcut", () => {
   holdBound(api, "放大", "zoomIn", 16, "400%");
 });
 
-it("does not run a command when ArrowDown is pressed on the closed menu", () => {
+it("does not run a command from a closed-menu key", () => {
   render(<Harness />);
   fireEvent.click(screen.getByRole("button", { name: "放大" }));
   const menu = screen.getByRole("combobox", { name: "缩放" });
-  const event = new KeyboardEvent("keydown", {
-    key: "ArrowDown",
-    bubbles: true,
-    cancelable: true,
-  });
-  menu.dispatchEvent(event);
-  if (!event.defaultPrevented) {
-    fireEvent.change(menu, { target: { value: "actual" } });
+  const init = { bubbles: true, cancelable: true };
+  for (const key of ["ArrowDown", "PageDown", "PageUp"]) {
+    const event = new KeyboardEvent("keydown", { ...init, key });
+    menu.dispatchEvent(event);
+    if (!event.defaultPrevented) {
+      fireEvent.change(menu, { target: { value: "actual" } });
+    }
+    expect(spoken()).toBe("110%");
   }
-  expect(spoken()).toBe("110%");
 });
 
 it("does not render the controls before the page can be shown", () => {
