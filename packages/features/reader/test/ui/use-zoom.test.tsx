@@ -3,7 +3,6 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { useRef, type ReactElement } from "react";
 import { afterEach, expect, it } from "vitest";
 
-import { resolveZoomPercent } from "../../src/pure.js";
 import {
   useZoom,
   type ZoomSession,
@@ -115,26 +114,26 @@ it("subtracts the visible page chrome before flooring fit width", () => {
   column.remove();
 });
 
-it("asks resolveZoomPercent for fit page", () => {
-  const box = { width: 612, height: 792 };
+it("floors fit page after subtracting padding and border", () => {
   const column = fitColumn({
-    clientWidth: 400,
-    clientHeight: 500,
-    paddingLeft: "0px",
-    paddingRight: "0px",
-    pages: [{ page: 1, width: 612, top: 0, bottom: 500, border: "0px" }],
+    clientWidth: 269,
+    clientHeight: 400,
+    paddingLeft: "10px",
+    paddingRight: "10px",
+    pages: [{ page: 1, width: 250, top: 0, bottom: 400, border: "5px" }],
   });
   const api = hold();
   render(
-    <Probe api={api} active id="paper" session={fitSession(column, [box])} />,
+    <Probe
+      api={api}
+      active
+      id="paper"
+      session={fitSession(column, [{ width: 250, height: 200 }])}
+    />,
   );
   zoom(api, "zoomFitPage");
-  const percent = resolveZoomPercent("fit-page", box, {
-    width: 400,
-    height: 500,
-  });
-  expect(api.current?.percent).toBe(percent);
-  expect(screen.getByRole("status").textContent).toBe(`${String(percent)}%`);
+  expect(api.current?.percent).toBe(95);
+  expect(screen.getByRole("status").textContent).toBe("95%");
   column.remove();
 });
 

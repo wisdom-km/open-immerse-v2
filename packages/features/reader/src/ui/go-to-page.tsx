@@ -78,7 +78,7 @@ export function GoToPage(props: {
 
 const historyBackEvent = "oi-history-back";
 
-/** 菜单加速键在页码框聚焦时仍会派发后退。框开着时只关框，不把事件交给导航。 */
+/** 事件名是 shell-events.ts 的 historyBackEvent。捕获先于同一目标上的冒泡，框开着时 shell 收不到后退。 */
 function useCloseOnBack(editing: boolean, close: () => void): void {
   const closeRef = useRef(close);
   closeRef.current = close;

@@ -156,8 +156,15 @@ function fitPagePercent(session: ZoomSession): number | undefined {
   if (measured === undefined) return undefined;
   const width = measured.column.clientWidth - axisChrome(measured, "x");
   const height = measured.column.clientHeight - axisChrome(measured, "y");
-  if (width <= 0 || height <= 0) return undefined;
-  return resolveZoomPercent("fit-page", measured.box, { width, height });
+  const span = measured.box.height;
+  if (width <= 0 || height <= 0 || span <= 0) return undefined;
+  const limit = Math.min(width, (height * measured.box.width) / span);
+  const level = clampFloor(limit, measured.box.width);
+  if (level === undefined) return undefined;
+  return resolveZoomPercent(level, measured.box, {
+    width: Math.max(width, 1),
+    height: Math.max(height, 1),
+  });
 }
 
 function clampFloor(budget: number, pageWidth: number): number | undefined {
@@ -177,35 +184,25 @@ function clampFloor(budget: number, pageWidth: number): number | undefined {
 function axisChrome(measured: MeasuredFit, axis: "x" | "y"): number {
   const pad = getComputedStyle(measured.column);
   const frame = pageFrame(measured.column, measured.page);
-  return axis === "x" ? horizontal(pad, frame) : vertical(pad, frame);
-}
-
-function horizontal(
-  pad: CSSStyleDeclaration,
-  frame: CSSStyleDeclaration | undefined,
-): number {
-  return (
-    px(pad.paddingLeft) +
-    px(pad.paddingRight) +
-    px(frame?.borderLeftWidth) +
-    px(frame?.borderRightWidth) +
-    px(frame?.paddingLeft) +
-    px(frame?.paddingRight)
-  );
-}
-
-function vertical(
-  pad: CSSStyleDeclaration,
-  frame: CSSStyleDeclaration | undefined,
-): number {
-  return (
-    px(pad.paddingTop) +
-    px(pad.paddingBottom) +
-    px(frame?.borderTopWidth) +
-    px(frame?.borderBottomWidth) +
-    px(frame?.paddingTop) +
-    px(frame?.paddingBottom)
-  );
+  const edges =
+    axis === "x"
+      ? [
+          pad.paddingLeft,
+          pad.paddingRight,
+          frame?.borderLeftWidth,
+          frame?.borderRightWidth,
+          frame?.paddingLeft,
+          frame?.paddingRight,
+        ]
+      : [
+          pad.paddingTop,
+          pad.paddingBottom,
+          frame?.borderTopWidth,
+          frame?.borderBottomWidth,
+          frame?.paddingTop,
+          frame?.paddingBottom,
+        ];
+  return edges.reduce((sum, edge) => sum + px(edge), 0);
 }
 
 function pageFrame(
