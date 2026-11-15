@@ -22,8 +22,8 @@ E1c-2 的 2b：阅读器缩放的滚轮、触控板捏合、Ctrl+滚轮。基线
 | 2 | 台账补 15:37、17:58 的三句、18:03:04 的合入同步 |  |  |
 | 3 | Forge 审查。PASS 之前没有实现提交 |  |  |
 | 4 | 本 PR 合入后，从当时的 main 开 `feature/reader-zoom-fit-174`。只搬测量，不写滚轮 | 已从 main `04fa9be` 开 `feature/reader-zoom-fit-174`。测量在 `zoom-fit.ts`，只导出 `fitWidthPercent` 与 `fitPagePercent`。floor 仍在 UI。滚轮未写。`use-zoom.ts` 117 行，`zoom-fit.ts` 100 行，`reader-screen.tsx` 仍 258 行。n9 在 `use-zoom.test.tsx` 单独一条：栏宽为 Infinity 时只调 `zoomFitWidth`，百分比仍是 100、不播报；删掉 isFinite 后这条失败（实际 400）。NaN 那条保留，并仍调适合页面 | `docs/evidence/218/commands.md` |
-| 5 | 上一份合入后，从当时的 main 开 `feature/reader-zoom-wheel-174`。写监听之前先做下面「第 5 步还要记下」的测量。捏合已经在缩放整窗就停，不写滚轮产品代码 |  | `docs/evidence/<手势 PR号>/commands.md` |
-| 6 | 第 5 步没有叫停，才写监听、单测和 e2e |  | 同上 |
+| 5 | 上一份合入后，从当时的 main 开 `feature/reader-zoom-wheel-174`。写监听之前先做下面「第 5 步还要记下」的测量。捏合已经在缩放整窗就停，不写滚轮产品代码 | 2b-2 分支是 `feature/reader-zoom-gestures-2-174`。Electron 45.2.1。Playwright 的 Ctrl+滚轮 `deltaY` −100、`deltaMode` 0，`devicePixelRatio` 0.984375。`preventDefault` 之后窗口因子仍是 1，标题栏字号不变。没有改主进程 | `docs/evidence/219/commands.md` |
+| 6 | 第 5 步没有叫停，才写监听、单测和 e2e | 监听在 `zoom-gesture.ts`。percent ref 只在 apply 和换文档时写。300ms 只推迟播报。Windows 真机一格约 133px：`|deltaY| ≥ 100` 只走一档并清余量，更小的增量才累加，反向先清零 | `docs/evidence/219/commands.md` |
 
 ## 拆出 zoom-fit.ts
 
@@ -66,7 +66,7 @@ PR #216 第 1 轮 n3（[评论 6890312264](https://github.com/wisdom-km/open-imm
 
 步进只走这两条命令，也就是 `nextZoomPercent` / `previousZoomPercent`。不另写档位表，不调用 `zoomFitWidth` / `zoomFitPage`。`deltaY > 0` 缩小，`deltaY < 0` 放大，与浏览器 Ctrl+滚轮一致。符号若和真机相反，第 5 步停下，不写两套。
 
-默认按已批准的原文：E1c-2 计划第 145 行「若只能拿到带 Ctrl 的 wheel，就一格一档。」一格是 `deltaY` 的 100，不是「每个事件最多一档」。100 写在 `zoom-gesture.ts` 的具名常量里，不是新的百分比表。一个事件里每满 100 取一档，余量留下。`deltaY` 为 200 就是两格，走两档：从 100 到 110，再到 125。连续两个事件、中间不重渲染，也各走自己的档，因为 ref 已经更新。捏合的小 `deltaY` 累到 100 才走一档。
+默认按已批准的原文：E1c-2 计划第 145 行「若只能拿到带 Ctrl 的 wheel，就一格一档。」一格是 `deltaY` 的 100，不是「每个事件最多一档」。100 写在 `zoom-gesture.ts` 的具名常量里，不是新的百分比表。一个事件里每满 100 取一档，余量留下。`deltaY` 为 200 就是两格，走两档：从 100 到 110，再到 125。连续两个事件、中间不重渲染，也各走自己的档，因为 ref 已经更新。捏合的小 `deltaY` 累到 100 才走一档。已被第 6 步真机实测取代：单事件最多一档。
 
 「每个事件最多一档」不是已批准的那句，也不是默认。第 5 步若量到一格的 `|deltaY|` 远不是 100，或一次捏合跳过多档，就停下来把数写进证据，再改这个常量或改成每个事件最多一档。改之前不加第二套。
 
@@ -116,7 +116,7 @@ PR #216 第 1 轮 n3（[评论 6890312264](https://github.com/wisdom-km/open-imm
 | `test/ui/use-zoom.test.tsx` | 停手播报，仍走命令 | 30 |  | 不会 |
 | `test/ui/zoom-gesture.test.tsx` 新建 | 含下面两条不重渲染的用例 | 96 | 96 | 不会。目录与现有 UI 测试相同 |
 | `apps/desktop/e2e/reader-nav.spec.ts` | 现有放大用例在第 23–47 行，追加 Ctrl+滚轮 | 48 | 约 295 | 不会。测试硬上限 800。现 247 |
-| `docs/evidence/<手势 PR号>/commands.md` | 第 5 步的全部测量 | 48 | 48 | 文档 |
+| `docs/evidence/219/commands.md` | 第 5 步的全部测量 | 48 | 48 | 文档 |
 | 本文件回填手势的「实际」格 | 只改这几格 | 8 |  | 文档 |
 | `docs/approvals.md` | 没有新的业主批准就不改 | 0 |  |  |
 | `reader-screen.tsx`、`page-column.tsx`、`use-bound-nav.ts` | 不改 | 0 | 258、183、69 | 超过 260 就停 |
@@ -129,7 +129,7 @@ PR #216 第 1 轮 n3（[评论 6890312264](https://github.com/wisdom-km/open-imm
 
 - 没有 Ctrl、没有 ⌘ 的 wheel：百分比不变，`preventDefault` 没被调用。
 - `ctrlKey` 的 wheel，`deltaY` 为 100：少一档；为 −100：多一档。`preventDefault` 被调用。
-- 同一个 wheel，`deltaY` 为 200：走两档。从 100 先到 110，再到 125。中间不重渲染。
+- 同一个 wheel，`deltaY` 为 200：走两档。从 100 先到 110，再到 125。中间不重渲染。已被第 6 步真机实测取代：单事件最多一档。
 - 连续两个 wheel，中间不重渲染：两档都生效。
 - 连续小 `deltaY`（捏合那种）累到 100 才一档。
 - 300 毫秒之内连走两档，状态文字仍是空的或旧的；满 300 毫秒只出现最终百分比一次。按钮调用仍在同一拍写文字（现有用例保持）。
@@ -175,7 +175,7 @@ Playwright e2e 加在 `reader-nav.spec.ts`，复用现有临时 `userData`。接
 | 滚轮和捏合停手 300 毫秒再播一次 | 批次 E 计划第 37 行。按钮仍立刻播 | 2026-11-15 | 批次 E 计划。Forge 可以改这个数 |
 | 15:37 的显示缩放批准只覆盖 PR #216 tip `6146291` | 原话见台账 17:58 的第 2 句。不授权 2b 再改显示缩放 | 2026-11-15 17:58 | Wisdom。台账对应 [评论 6892665960](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6892665960) |
 | 实现分成「拆 fit」和「手势」 | E1c-2 计划第 29 行。估算乘 1.73 仍要 ≤ 600。第 1 轮 S2 | 2026-11-15 | Forge 排序，非业主决定。[6892912895](https://github.com/wisdom-km/open-immerse-v2/pull/217#issuecomment-6892912895) |
-| 默认一格一档，一格是 deltaY 100 | E1c-2 计划第 145 行。每个事件最多一档要等第 5 步的测量 | 2026-11-15 | 已批准计划。第 1 轮 n5 要求写清哪一个是默认 |
+| 默认一格一档，一格是 deltaY 100 | E1c-2 计划第 145 行。每个事件最多一档要等第 5 步的测量。已被第 6 步真机实测取代：单事件最多一档 | 2026-11-15 | 已批准计划。第 1 轮 n5 要求写清哪一个是默认 |
 
 ## 证据链接
 
@@ -185,7 +185,7 @@ Playwright e2e 加在 `reader-nav.spec.ts`，复用现有临时 `userData`。接
 
 | 项 | 改在哪 |
 | --- | --- |
-| S1 | 「2b 输入」的两只 ref。测试计划里 `deltaY` 200 走两档，以及连续两个事件不重渲染 |
+| S1 | 「2b 输入」的两只 ref。测试计划里 `deltaY` 200 走两档，以及连续两个事件不重渲染。已被第 6 步真机实测取代：单事件最多一档 |
 | S2 | 顺序表：先 `feature/reader-zoom-fit-174`（211，×1.73 = 365），后 `feature/reader-zoom-wheel-174`（312，×1.73 = 540） |
 | S3 | 第 5 步的第 4、5 项。真机清单的 R-E4 和 NVDA。PR #216 没有这些证据 |
 | S4 | 台账补 17:58 的第 1、3 句，以及 18:03:04 的合入同步 |
@@ -193,7 +193,7 @@ Playwright e2e 加在 `reader-nav.spec.ts`，复用现有临时 `userData`。接
 | n2 | effect 的 cleanup：卸载、`active` 为 false、换文档都清定时器 |
 | n3 | 不写「Anvil 代登，依 13:51 授权」。#174 6891163311 的标题是「批准登记（Anvil，按 Wisdom 2026-11-14 13:51 授权）」，台账来源栏写的是这句 |
 | n4 | 测试在 `packages/features/reader/test/ui/zoom-gesture.test.tsx` |
-| n5 | 默认是一格 100、一个事件可以含多格。每个事件最多一档不是默认 |
+| n5 | 默认是一格 100、一个事件可以含多格。每个事件最多一档不是默认。已被第 6 步真机实测取代：单事件最多一档 |
 
 ## 自检
 

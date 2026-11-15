@@ -11,6 +11,17 @@ import {
 
 afterEach(cleanup);
 
+it("applies both zoom-in steps when two commands run before the next render", () => {
+  const api = hold();
+  render(<Probe api={api} active id="paper" />);
+  act(() => {
+    api.current?.commands.zoomIn();
+    api.current?.commands.zoomIn();
+  });
+  expect(api.current?.percent).toBe(125);
+  expect(screen.getByRole("status").textContent).toBe("125%");
+});
+
 it("announces each step and stops at 25% and 400%", () => {
   const api = hold();
   render(<Probe api={api} active id="paper" />);

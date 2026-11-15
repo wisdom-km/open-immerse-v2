@@ -46,6 +46,30 @@ test("enlarges the pdf page from the menu and leaves the window factor at 1", as
     .toContain(focus);
 });
 
+test("ctrl wheel enlarges the pdf column and a plain wheel does not", async ({
+  desktop,
+}) => {
+  const page = desktop.page;
+  await openSample(desktop.app, page, 8);
+  const width = await canvasCssWidth(page);
+  const title = await barFont(page);
+  const before = await zoomText(page);
+  expect(await windowZoom(desktop.app)).toBe(1);
+  await page.locator(".oi-reader-column").hover();
+  await page.keyboard.down("Control");
+  await page.mouse.wheel(0, -100);
+  await page.keyboard.up("Control");
+  await expect
+    .poll(async () => canvasCssWidth(page), { timeout: 10_000 })
+    .toBeGreaterThan(width);
+  expect(await windowZoom(desktop.app)).toBe(1);
+  expect(await barFont(page)).toBe(title);
+  const zoomed = await zoomText(page);
+  expect(zoomed).not.toBe(before);
+  await page.mouse.wheel(0, -400);
+  expect(await zoomText(page)).toBe(zoomed);
+});
+
 test("field stays put on back", async ({ desktop }) => {
   const page = desktop.page;
   await openSample(desktop.app, page, 5);
@@ -151,6 +175,22 @@ async function labelMoved(
   } catch {
     return false;
   }
+}
+
+async function barFont(page: Page): Promise<string> {
+  const value: unknown = await page.evaluate(
+    "(() => getComputedStyle(document.querySelector('.oi-reader-bar h1')).fontSize)()",
+  );
+  if (typeof value !== "string") throw new Error("title font");
+  return value;
+}
+
+async function zoomText(page: Page): Promise<string> {
+  const value: unknown = await page.evaluate(
+    "(() => { const node = document.querySelector('.oi-reader-zoom-controls option[value=current]'); return node === null ? '' : node.textContent; })()",
+  );
+  if (typeof value !== "string") throw new Error("zoom text");
+  return value;
 }
 
 async function canvasCssWidth(page: Page): Promise<number> {
