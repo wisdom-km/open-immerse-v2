@@ -55,6 +55,16 @@ it("takes one step for a wide wheel and five steps for five 133.33px notches", (
   expect(api.current?.percent).toBe(50);
 });
 
+it("clears a pinch remainder when the next wheel is already one notch", () => {
+  const api = mount();
+  act(() => {
+    const node = column();
+    for (const deltaY of [-60, -133.33, -40])
+      node.dispatchEvent(wheel(deltaY, "ctrlKey"));
+  });
+  expect(api.current?.percent).toBe(110);
+});
+
 it("clears the pinch remainder when the next small delta reverses", () => {
   const api = mount();
   act(() => {
