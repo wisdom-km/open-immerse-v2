@@ -23,7 +23,7 @@ E1c-2 的 2b：阅读器缩放的滚轮、触控板捏合、Ctrl+滚轮。基线
 | 3 | Forge 审查。PASS 之前没有实现提交 |  |  |
 | 4 | 本 PR 合入后，从当时的 main 开 `feature/reader-zoom-fit-174`。只搬测量，不写滚轮 | 已从 main `04fa9be` 开 `feature/reader-zoom-fit-174`。测量在 `zoom-fit.ts`，只导出 `fitWidthPercent` 与 `fitPagePercent`。floor 仍在 UI。滚轮未写。`use-zoom.ts` 117 行，`zoom-fit.ts` 100 行，`reader-screen.tsx` 仍 258 行。n9 在 `use-zoom.test.tsx` 单独一条：栏宽为 Infinity 时只调 `zoomFitWidth`，百分比仍是 100、不播报；删掉 isFinite 后这条失败（实际 400）。NaN 那条保留，并仍调适合页面 | `docs/evidence/218/commands.md` |
 | 5 | 上一份合入后，从当时的 main 开 `feature/reader-zoom-wheel-174`。写监听之前先做下面「第 5 步还要记下」的测量。捏合已经在缩放整窗就停，不写滚轮产品代码 | 2b-2 分支是 `feature/reader-zoom-gestures-2-174`。Electron 45.2.1。Playwright 的 Ctrl+滚轮 `deltaY` −100、`deltaMode` 0，`devicePixelRatio` 0.984375。`preventDefault` 之后窗口因子仍是 1，标题栏字号不变。没有改主进程 | `docs/evidence/219/commands.md` |
-| 6 | 第 5 步没有叫停，才写监听、单测和 e2e | 监听在 `zoom-gesture.ts`。percent ref 只在 apply 和换文档时写。300ms 只推迟播报。真机项未验 | 同上 |
+| 6 | 第 5 步没有叫停，才写监听、单测和 e2e | 监听在 `zoom-gesture.ts`。percent ref 只在 apply 和换文档时写。300ms 只推迟播报。Windows 真机一格约 133px：`|deltaY| ≥ 100` 只走一档并清余量，更小的增量才累加，反向先清零 | `docs/evidence/219/commands.md` |
 
 ## 拆出 zoom-fit.ts
 

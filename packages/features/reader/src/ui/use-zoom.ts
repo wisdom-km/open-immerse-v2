@@ -97,10 +97,7 @@ export function useZoom(
   }, [id]);
   useEffect(() => {
     const column = sessionRef.current.columnRef.current;
-    if (!active || column === null)
-      return () => {
-        clearTimer(timer);
-      };
+    if (!active || column === null) return;
     const detach = attachColumnWheel(column, steps);
     return () => {
       detach();

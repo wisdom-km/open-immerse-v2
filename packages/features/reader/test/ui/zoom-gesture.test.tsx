@@ -37,18 +37,34 @@ it("steps one notch on ctrl or meta and cancels the browser zoom", () => {
   expect(api.current?.percent).toBe(100);
 });
 
-it("walks two zoom-in steps for one ctrl wheel before the next render", () => {
+it("takes one step for a wide wheel and five steps for five 133.33px notches", () => {
   const api = mount();
+  act(() => {
+    column().dispatchEvent(wheel(120, "ctrlKey"));
+  });
+  expect(api.current?.percent).toBe(90);
   act(() => {
     column().dispatchEvent(wheel(-200, "ctrlKey"));
   });
-  expect(api.current?.percent).toBe(125);
+  expect(api.current?.percent).toBe(100);
   act(() => {
     const node = column();
-    node.dispatchEvent(wheel(100, "ctrlKey"));
-    node.dispatchEvent(wheel(100, "ctrlKey"));
+    for (let index = 0; index < 5; index += 1)
+      node.dispatchEvent(wheel(133.33, "ctrlKey"));
   });
-  expect(api.current?.percent).toBe(100);
+  expect(api.current?.percent).toBe(50);
+});
+
+it("clears the pinch remainder when the next small delta reverses", () => {
+  const api = mount();
+  act(() => {
+    const node = column();
+    for (const deltaY of [-30, -30, -30])
+      node.dispatchEvent(wheel(deltaY, "ctrlKey"));
+    node.dispatchEvent(wheel(20, "ctrlKey"));
+    node.dispatchEvent(wheel(90, "ctrlKey"));
+  });
+  expect(api.current?.percent).toBe(90);
 });
 
 it("waits until pinch deltas add up to one notch", () => {
