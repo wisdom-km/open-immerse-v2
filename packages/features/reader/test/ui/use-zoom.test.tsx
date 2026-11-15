@@ -96,27 +96,29 @@ it("subtracts the visible page chrome before flooring fit width", () => {
 });
 
 it("leaves the percent and announcement unchanged when the column width is not finite", () => {
-  const column = fitColumn({
-    clientWidth: Number.NaN,
-    clientHeight: 900,
-    paddingLeft: "0px",
-    paddingRight: "0px",
-    pages: [{ page: 1, width: 612, top: 0, bottom: 900, border: "0px" }],
-  });
-  const api = hold();
-  render(
-    <Probe
-      api={api}
-      active
-      id="paper"
-      session={fitSession(column, [{ width: 612, height: 792 }])}
-    />,
-  );
-  zoom(api, "zoomFitWidth");
-  zoom(api, "zoomFitPage");
-  expect(api.current?.percent).toBe(100);
-  expect(screen.queryByRole("status")).toBeNull();
-  column.remove();
+  for (const clientWidth of [Number.POSITIVE_INFINITY, Number.NaN]) {
+    const column = fitColumn({
+      clientWidth,
+      clientHeight: 900,
+      paddingLeft: "0px",
+      paddingRight: "0px",
+      pages: [{ page: 1, width: 612, top: 0, bottom: 900, border: "0px" }],
+    });
+    const api = hold();
+    render(
+      <Probe
+        api={api}
+        active
+        id="paper"
+        session={fitSession(column, [{ width: 612, height: 792 }])}
+      />,
+    );
+    zoom(api, "zoomFitWidth");
+    expect(api.current?.percent).toBe(100);
+    expect(screen.queryByRole("status")).toBeNull();
+    column.remove();
+    cleanup();
+  }
 });
 
 it("floors fit page after subtracting padding and border", () => {
