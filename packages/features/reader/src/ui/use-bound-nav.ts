@@ -5,6 +5,7 @@ export type ZoomNav = {
   readonly zoomOut: () => void;
   readonly zoomActual: () => void;
   readonly zoomFitWidth: () => void;
+  readonly zoomFitPage: () => void;
 };
 
 export type ReaderNav = ZoomNav & {

@@ -33,7 +33,8 @@
   opacity: 0.45;
 }
 
-.oi-reader-live {
+.oi-reader-live,
+.oi-reader-zoom {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -41,6 +42,32 @@
   clip-path: inset(50%);
   margin: 0;
   white-space: nowrap;
+}
+
+.oi-reader-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--oi-space-1, 0.25rem);
+}
+
+.oi-reader-zoom-controls button,
+.oi-reader-zoom-controls select {
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.oi-reader-zoom-controls button:disabled {
+  opacity: 0.45;
+}
+
+.oi-reader-zoom-controls button:focus-visible,
+.oi-reader-zoom-controls select:focus-visible {
+  outline: var(--oi-focus-width, 2px) solid var(--oi-reader-focus, CanvasText);
+  outline-offset: var(--oi-focus-offset, 2px);
 }
 
 button.oi-reader-pages {

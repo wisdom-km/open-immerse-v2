@@ -22,6 +22,7 @@ import { navCommands, useBoundNav, type ReaderNav } from "./use-bound-nav.js";
 import { usePositionHistory } from "./use-position-history.js";
 import { useReaderSession } from "./use-reader-session.js";
 import { useZoom } from "./use-zoom.js";
+import { ZoomControls } from "./zoom-controls.js";
 
 const SKELETON_MS = 200;
 export function ReaderScreen(props: {
@@ -79,7 +80,7 @@ export function ReaderScreen(props: {
         fallbackPage={session.shownPage}
         nav={nav}
         onBindOpen={bindOpen}
-        zoomSpoken={zoom.spoken}
+        zoom={zoom}
       />
       <ReaderBody
         loading={session.phase.kind === "loading"}
@@ -112,7 +113,7 @@ function ReaderBar(props: {
   readonly fallbackPage: number | undefined;
   readonly nav: ReturnType<typeof usePositionHistory>;
   readonly onBindOpen: (open: (() => void) | undefined) => void;
-  readonly zoomSpoken: string;
+  readonly zoom: ReturnType<typeof useZoom>;
 }): ReactElement {
   const page =
     props.viewing &&
@@ -157,9 +158,7 @@ function ReaderBar(props: {
       <p className="oi-reader-live" role="status">
         {props.nav.spoken}
       </p>
-      <p className="oi-reader-zoom" role="status">
-        {props.zoomSpoken}
-      </p>
+      <ZoomControls active={props.viewing} zoom={props.zoom} />
       {props.lostPlace ? (
         <p className="oi-reader-status" role="status">
           {LOST_PLACE}
