@@ -34,6 +34,7 @@ export function GoToPage(props: {
     setEditing(false);
     setNote(undefined);
   };
+  useCloseOnBack(editing, close);
   if (!editing) {
     return (
       <button
@@ -73,6 +74,25 @@ export function GoToPage(props: {
       {note === undefined ? null : <span role="status">{note}</span>}
     </span>
   );
+}
+
+const historyBackEvent = "oi-history-back";
+
+/** 菜单加速键在页码框聚焦时仍会派发后退。框开着时只关框，不把事件交给导航。 */
+function useCloseOnBack(editing: boolean, close: () => void): void {
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => {
+    if (!editing) return;
+    const onBack = (event: Event): void => {
+      event.stopImmediatePropagation();
+      closeRef.current();
+    };
+    window.addEventListener(historyBackEvent, onBack, true);
+    return () => {
+      window.removeEventListener(historyBackEvent, onBack, true);
+    };
+  }, [editing]);
 }
 
 function usePageOpener(

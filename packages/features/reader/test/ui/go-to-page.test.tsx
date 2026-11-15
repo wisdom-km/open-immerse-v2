@@ -1,5 +1,11 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 
 import { GoToPage } from "../../src/ui/go-to-page.js";
@@ -26,6 +32,34 @@ it("does not jump on 0 and returns focus after a jump or escape", () => {
   fireEvent.click(pageButton());
   fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
   expect(document.activeElement).toBe(pageButton());
+});
+
+it("closes the page box and does not deliver back while the field is open", () => {
+  const jumped: number[] = [];
+  let delivered = 0;
+  const onBack = (): void => {
+    delivered += 1;
+  };
+  window.addEventListener("oi-history-back", onBack);
+  try {
+    render(
+      <GoToPage page={4} pageCount={9} onJump={(page) => jumped.push(page)} />,
+    );
+    fireEvent.click(pageButton());
+    act(() => {
+      window.dispatchEvent(new Event("oi-history-back"));
+    });
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(jumped).toEqual([]);
+    expect(delivered).toBe(0);
+    expect(document.activeElement).toBe(pageButton());
+    act(() => {
+      window.dispatchEvent(new Event("oi-history-back"));
+    });
+    expect(delivered).toBe(1);
+  } finally {
+    window.removeEventListener("oi-history-back", onBack);
+  }
 });
 
 function pageButton(): HTMLElement {
