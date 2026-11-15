@@ -5,37 +5,45 @@ import { expect, it, vi } from "vitest";
 
 import { PageColumn } from "../../src/ui/page-column.js";
 import type { PdfCancel, PdfPaint } from "../../src/ui/reader-client.js";
-import { rememberZoomAnchor } from "../../src/ui/use-zoom.js";
+import { useZoom, type ZoomState } from "../../src/ui/use-zoom.js";
 
-it("grows the frame with the zoom", () => {
+it("grows the frame with the zoom and paints at the new factor", async () => {
+  zoomProbe.paint = [];
   const view = render(zoomed(1, createRef(), 1, sheet));
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(zoomProbe.paint).toEqual([1]);
   expect(frame(view.container)?.style.width).toBe("100px");
   view.rerender(zoomed(2, createRef(), 1, sheet));
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(zoomProbe.paint).toEqual([1, 2]);
   expect(frame(view.container)?.style.width).toBe("200px");
   expect(frame(view.container)?.style.height).toBe("80px");
+  zoomProbe.paint = undefined;
 });
 
-it("stays on the page in view when zooming before scrollend", () => {
+it("stays on the page in view when a zoom command runs before scrollend", () => {
   const columnRef = createRef<HTMLDivElement>();
-  const view = render(zoomed(1, columnRef));
+  const api: { current: ZoomState | undefined } = { current: undefined };
+  render(<CommandColumn api={api} columnRef={columnRef} />);
   const column = columnRef.current;
   if (column === null) throw new Error("column");
-  let height = 80;
   column.getBoundingClientRect = () => rect(0, 100);
   for (const article of column.querySelectorAll<HTMLElement>("article")) {
     const top = article.dataset.page === "5" ? 20 : 200;
-    article.getBoundingClientRect = () => rect(top, top + height);
+    article.getBoundingClientRect = () => rect(top, top + zoomProbe.height);
     article.scrollIntoView = () => {
       column.scrollTop = 0;
     };
   }
   column.scrollTop = 400;
-  rememberZoomAnchor(column);
-  height = 160;
   act(() => {
-    view.rerender(zoomed(1.1, columnRef));
+    api.current?.commands.zoomIn();
   });
-  expect(column.scrollTop).toBe(380);
+  expect(column.scrollTop).toBe(398);
 });
 
 it("does not paint the same page again when the shown page changes", async () => {
@@ -273,6 +281,25 @@ async function dropped(flag: { current: boolean }): Promise<HTMLCanvasElement> {
 }
 
 const sheet = [{ width: 100, height: 40 }] as const;
+const zoomProbe: { height: number; paint: number[] | undefined } = {
+  height: 80,
+  paint: undefined,
+};
+
+function CommandColumn(props: {
+  readonly api: { current: ZoomState | undefined };
+  readonly columnRef: { readonly current: HTMLDivElement | null };
+}): ReactElement {
+  const zoom = useZoom(true, "paper", { columnRef: props.columnRef });
+  props.api.current = zoom;
+  zoomProbe.height = 80 * zoom.ratio;
+  return zoomed(zoom.ratio, props.columnRef, 8, pageBoxes);
+}
+
+const pageBoxes = Array.from({ length: 8 }, () => ({
+  width: 100,
+  height: 80,
+}));
 
 function zoomed(
   zoom: number,
@@ -287,7 +314,10 @@ function zoomed(
       columnRef={columnRef}
       onScroll={() => undefined}
       onScrollEnd={() => undefined}
-      paint={() => Promise.resolve()}
+      paint={(_page, _canvas, zoom) => {
+        zoomProbe.paint?.push(zoom);
+        return Promise.resolve();
+      }}
       cancel={() => undefined}
       boxes={boxes}
       zoom={zoom}

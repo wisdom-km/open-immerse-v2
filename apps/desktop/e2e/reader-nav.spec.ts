@@ -35,6 +35,7 @@ test("enlarges the pdf page from the menu and leaves the window factor at 1", as
     .toBeGreaterThan(1);
   const focus = Math.min(...(await canvasReport(page)).visible);
   const width = await canvasCssWidth(page);
+  expect(width).toBeGreaterThan(0);
   await clickMenu(desktop.app, "放大");
   await expect
     .poll(async () => canvasCssWidth(page), { timeout: 10_000 })
@@ -147,14 +148,18 @@ async function canvasCssWidth(page: Page): Promise<number> {
   const value: unknown = await page.evaluate(
     "(() => { const canvas = document.querySelector('.oi-reader-column canvas'); return canvas === null ? 0 : Number.parseFloat(canvas.style.width); })()",
   );
-  return typeof value === "number" && !Number.isNaN(value) ? value : 0;
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    throw new Error("canvas width");
+  }
+  return value;
 }
 
 async function windowZoom(app: ElectronApplication): Promise<number> {
   const value: unknown = await app.evaluate(({ BrowserWindow }) => {
     return BrowserWindow.getAllWindows()[0]?.webContents.getZoomFactor();
   });
-  return typeof value === "number" ? value : 0;
+  if (typeof value !== "number") throw new Error("zoom factor");
+  return value;
 }
 
 async function clickMenu(

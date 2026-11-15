@@ -4,10 +4,8 @@ import {
   DEFAULT_ZOOM_PERCENT,
   nextZoomPercent,
   previousZoomPercent,
-  resolveZoomPercent,
 } from "../pure.js";
 import { zoomSpoken } from "./copy.js";
-import { readVisible } from "./use-reader-session.js";
 
 export type ZoomCommands = {
   readonly zoomIn: () => void;
@@ -16,10 +14,7 @@ export type ZoomCommands = {
   readonly zoomFitWidth: () => void;
 };
 
-type Box = { readonly width: number; readonly height: number };
-type ReadingBoxes = { readonly boxes?: readonly Box[] | undefined };
 type ZoomSession = {
-  readonly shownPage: number | undefined;
   readonly columnRef: { readonly current: HTMLDivElement | null };
 };
 
@@ -33,7 +28,6 @@ export type ZoomState = {
 export function useZoom(
   active: boolean,
   id: string,
-  reading: ReadingBoxes | undefined,
   session: ZoomSession,
 ): ZoomState {
   const [percent, setPercent] = useState(DEFAULT_ZOOM_PERCENT);
@@ -48,8 +42,6 @@ export function useZoom(
     setPercent(next);
     setSpoken(zoomSpoken(next));
   };
-  const page = readVisible(session.columnRef.current) ?? session.shownPage;
-  const box = page === undefined ? undefined : reading?.boxes?.[page - 1];
   return {
     percent,
     ratio: percent / 100,
@@ -65,45 +57,10 @@ export function useZoom(
         apply(DEFAULT_ZOOM_PERCENT);
       },
       zoomFitWidth() {
-        apply(fitWidthPercent(box, session.columnRef.current));
+        apply(undefined);
       },
     },
   };
-}
-
-function fitWidthPercent(
-  page: Box | undefined,
-  column: HTMLDivElement | null,
-): number | undefined {
-  if (page === undefined || column === null) return undefined;
-  const budget = column.clientWidth - horizontalChrome(column);
-  const level = Math.min(
-    400,
-    Math.max(25, Math.floor((budget / page.width) * 100)),
-  );
-  return resolveZoomPercent(level, page, {
-    width: budget,
-    height: column.clientHeight,
-  });
-}
-
-function horizontalChrome(column: HTMLElement): number {
-  const pad = getComputedStyle(column);
-  const article = column.querySelector("article");
-  const box = article === null ? undefined : getComputedStyle(article);
-  return (
-    px(pad.paddingLeft) +
-    px(pad.paddingRight) +
-    px(box?.borderLeftWidth) +
-    px(box?.borderRightWidth) +
-    px(box?.paddingLeft) +
-    px(box?.paddingRight)
-  );
-}
-
-function px(value: string | undefined): number {
-  const parsed = Number.parseFloat(value ?? "");
-  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 type Hold = { page: number; ratio: number; overlap: number };
@@ -143,6 +100,5 @@ export function placeZoomAnchor(column: HTMLElement | null): void {
   if (column === null || hold === undefined || node === null) return;
   const view = column.getBoundingClientRect();
   const box = node.getBoundingClientRect();
-  column.scrollTop =
-    column.scrollTop + box.top - view.top + hold.ratio * box.height;
+  column.scrollTop += box.top - view.top + hold.ratio * box.height;
 }

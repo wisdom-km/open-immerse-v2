@@ -53,7 +53,7 @@ export function ReaderScreen(props: {
     session.columnRef,
     reading?.pageCount,
   );
-  const zoom = useZoom(viewing, props.id, reading, session);
+  const zoom = useZoom(viewing, props.id, session);
   const openGoTo = useRef<(() => void) | undefined>(undefined);
   const bindOpen = useCallback((open: (() => void) | undefined) => {
     openGoTo.current = open;
