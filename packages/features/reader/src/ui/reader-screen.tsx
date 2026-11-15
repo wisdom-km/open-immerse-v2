@@ -158,13 +158,14 @@ function ReaderBar(props: {
       <p className="oi-reader-live" role="status">
         {props.nav.spoken}
       </p>
-      <ZoomControls active={props.viewing} zoom={props.zoom} />
+      <ZoomControls active={props.viewing} zoom={props.zoom} controls={false} />
       {props.lostPlace ? (
         <p className="oi-reader-status" role="status">
           {LOST_PLACE}
         </p>
       ) : null}
       <span className="oi-reader-gap" />
+      <ZoomControls active={props.viewing} zoom={props.zoom} status={false} />
       <span className="oi-reader-chip" />
     </header>
   );

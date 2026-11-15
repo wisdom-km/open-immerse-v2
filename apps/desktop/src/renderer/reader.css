@@ -60,8 +60,12 @@
   font: inherit;
 }
 
-.oi-reader-zoom-controls button:disabled {
+.oi-reader-zoom-controls button[aria-disabled="true"] {
   opacity: 0.45;
+}
+
+.oi-reader-zoom-controls select {
+  width: 5rem;
 }
 
 .oi-reader-zoom-controls button:focus-visible,

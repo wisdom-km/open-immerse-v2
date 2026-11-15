@@ -184,25 +184,16 @@ function clampFloor(budget: number, pageWidth: number): number | undefined {
 function axisChrome(measured: MeasuredFit, axis: "x" | "y"): number {
   const pad = getComputedStyle(measured.column);
   const frame = pageFrame(measured.column, measured.page);
-  const edges =
-    axis === "x"
-      ? [
-          pad.paddingLeft,
-          pad.paddingRight,
-          frame?.borderLeftWidth,
-          frame?.borderRightWidth,
-          frame?.paddingLeft,
-          frame?.paddingRight,
-        ]
-      : [
-          pad.paddingTop,
-          pad.paddingBottom,
-          frame?.borderTopWidth,
-          frame?.borderBottomWidth,
-          frame?.paddingTop,
-          frame?.paddingBottom,
-        ];
-  return edges.reduce((sum, edge) => sum + px(edge), 0);
+  const [start, end] =
+    axis === "x" ? (["Left", "Right"] as const) : (["Top", "Bottom"] as const);
+  return (
+    px(pad[`padding${start}`]) +
+    px(pad[`padding${end}`]) +
+    px(frame?.[`border${start}Width`]) +
+    px(frame?.[`border${end}Width`]) +
+    px(frame?.[`padding${start}`]) +
+    px(frame?.[`padding${end}`])
+  );
 }
 
 function pageFrame(

@@ -1,33 +1,48 @@
-import type { ReactElement } from "react";
+import type { KeyboardEvent, ReactElement } from "react";
 
 import { ZOOM_PERCENT_MAX, ZOOM_PERCENT_MIN } from "../pure.js";
 import type { ZoomState } from "./use-zoom.js";
 
+const KEYS = {
+  放大: ["Ctrl+=", "⌘="],
+  缩小: ["Ctrl+−", "⌘−"],
+  实际大小: ["Ctrl+0", "⌘0"],
+  适合宽度: ["Ctrl+Alt+0", "⌥⌘0"],
+} as const;
+
 export function ZoomControls(props: {
   readonly active: boolean;
   readonly zoom: ZoomState;
+  readonly controls?: boolean;
+  readonly status?: boolean;
 }): ReactElement {
   return (
     <>
-      {props.active ? <ZoomPad zoom={props.zoom} /> : null}
-      <p className="oi-reader-zoom" role="status">
-        {props.zoom.spoken}
-      </p>
+      {props.controls !== false && props.active ? (
+        <ZoomPad zoom={props.zoom} />
+      ) : null}
+      {props.status === false ? null : (
+        <p className="oi-reader-zoom" role="status">
+          {props.zoom.spoken}
+        </p>
+      )}
     </>
   );
 }
 
 function ZoomPad(props: { readonly zoom: ZoomState }): ReactElement {
   const mac = /Mac/.test(navigator.userAgent);
+  const atMin = props.zoom.percent <= ZOOM_PERCENT_MIN;
+  const atMax = props.zoom.percent >= ZOOM_PERCENT_MAX;
   return (
     <span className="oi-reader-zoom-controls">
       <button
         type="button"
         aria-label="缩小"
         title={shortcut("缩小", mac)}
-        disabled={props.zoom.percent <= ZOOM_PERCENT_MIN}
+        aria-disabled={atMin || undefined}
         onClick={() => {
-          props.zoom.commands.zoomOut();
+          if (!atMin) props.zoom.commands.zoomOut();
         }}
       >
         −
@@ -35,6 +50,7 @@ function ZoomPad(props: { readonly zoom: ZoomState }): ReactElement {
       <select
         aria-label="缩放"
         value="current"
+        onKeyDown={keepClosed}
         onChange={(event) => {
           choose(event.target.value, props.zoom);
         }}
@@ -55,9 +71,9 @@ function ZoomPad(props: { readonly zoom: ZoomState }): ReactElement {
         type="button"
         aria-label="放大"
         title={shortcut("放大", mac)}
-        disabled={props.zoom.percent >= ZOOM_PERCENT_MAX}
+        aria-disabled={atMax || undefined}
         onClick={() => {
-          props.zoom.commands.zoomIn();
+          if (!atMax) props.zoom.commands.zoomIn();
         }}
       >
         +
@@ -66,30 +82,17 @@ function ZoomPad(props: { readonly zoom: ZoomState }): ReactElement {
   );
 }
 
+const CLOSED_KEYS = new Set(["ArrowDown", "ArrowUp", "Home", "End"]);
+function keepClosed(event: KeyboardEvent<HTMLSelectElement>): void {
+  if (!event.altKey && CLOSED_KEYS.has(event.key)) event.preventDefault();
+}
+
 function choose(value: string, zoom: ZoomState): void {
   if (value === "actual") zoom.commands.zoomActual();
   else if (value === "fit-width") zoom.commands.zoomFitWidth();
   else if (value === "fit-page") zoom.commands.zoomFitPage();
 }
 
-function shortcut(
-  name: "放大" | "缩小" | "实际大小" | "适合宽度",
-  mac: boolean,
-): string {
-  const key = mac ? macKey(name) : windowsKey(name);
-  return `${name}（${key}）`;
-}
-
-function macKey(name: "放大" | "缩小" | "实际大小" | "适合宽度"): string {
-  if (name === "放大") return "⌘=";
-  if (name === "缩小") return "⌘−";
-  if (name === "实际大小") return "⌘0";
-  return "⌥⌘0";
-}
-
-function windowsKey(name: "放大" | "缩小" | "实际大小" | "适合宽度"): string {
-  if (name === "放大") return "Ctrl+=";
-  if (name === "缩小") return "Ctrl+−";
-  if (name === "实际大小") return "Ctrl+0";
-  return "Ctrl+Alt+0";
+function shortcut(name: keyof typeof KEYS, mac: boolean): string {
+  return `${name}（${KEYS[name][mac ? 1 : 0]}）`;
 }

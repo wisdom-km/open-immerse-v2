@@ -68,22 +68,12 @@ it("floors fit width to 223% from the visible page", () => {
       { page: 2, width: 612, top: 0, bottom: 900, border: "1px" },
     ],
   });
-  const api = hold();
-  render(
-    <Probe
-      api={api}
-      active
-      id="paper"
-      session={fitSession(column, [
-        { width: 100, height: 100 },
-        { width: 612, height: 792 },
-      ])}
-    />,
-  );
-  zoom(api, "zoomFitWidth");
-  expect(api.current?.percent).toBe(223);
-  expect(screen.getByRole("status").textContent).toBe("223%");
-  column.remove();
+  expect(
+    runFit(column, "zoomFitWidth", [
+      { width: 100, height: 100 },
+      { width: 612, height: 792 },
+    ]),
+  ).toBe(223);
 });
 
 it("subtracts the visible page chrome before flooring fit width", () => {
@@ -97,21 +87,12 @@ it("subtracts the visible page chrome before flooring fit width", () => {
       { page: 2, width: 400, top: 0, bottom: 600, border: "5px" },
     ],
   });
-  const api = hold();
-  render(
-    <Probe
-      api={api}
-      active
-      id="paper"
-      session={fitSession(column, [
-        { width: 50, height: 50 },
-        { width: 400, height: 400 },
-      ])}
-    />,
-  );
-  zoom(api, "zoomFitWidth");
-  expect(api.current?.percent).toBe(185);
-  column.remove();
+  expect(
+    runFit(column, "zoomFitWidth", [
+      { width: 50, height: 50 },
+      { width: 400, height: 400 },
+    ]),
+  ).toBe(185);
 });
 
 it("floors fit page after subtracting padding and border", () => {
@@ -122,19 +103,7 @@ it("floors fit page after subtracting padding and border", () => {
     paddingRight: "10px",
     pages: [{ page: 1, width: 250, top: 0, bottom: 400, border: "5px" }],
   });
-  const api = hold();
-  render(
-    <Probe
-      api={api}
-      active
-      id="paper"
-      session={fitSession(column, [{ width: 250, height: 200 }])}
-    />,
-  );
-  zoom(api, "zoomFitPage");
-  expect(api.current?.percent).toBe(95);
-  expect(screen.getByRole("status").textContent).toBe("95%");
-  column.remove();
+  expect(runFit(column, "zoomFitPage", [{ width: 250, height: 200 }])).toBe(95);
 });
 
 type Api = { current: ZoomState | undefined };
@@ -171,16 +140,30 @@ function repeat(api: Api, key: "zoomIn" | "zoomOut", times: number): void {
   for (let index = 0; index < times; index += 1) zoom(api, key);
 }
 
+function runFit(
+  column: HTMLDivElement,
+  key: "zoomFitWidth" | "zoomFitPage",
+  boxes: readonly { width: number; height: number }[],
+): number | undefined {
+  const api = hold();
+  render(
+    <Probe api={api} active id="paper" session={fitSession(column, boxes)} />,
+  );
+  zoom(api, key);
+  const percent = api.current?.percent;
+  expect(screen.getByRole("status").textContent).toBe(`${String(percent)}%`);
+  column.remove();
+  return percent;
+}
+
 function fitSession(
   column: HTMLDivElement,
   boxes: readonly { width: number; height: number }[],
 ): ZoomSession {
-  const session = {
+  return {
     columnRef: { current: column },
-    shownPage: 1,
-    phase: { kind: "view" as const, reading: { boxes } },
+    phase: { kind: "view", reading: { boxes } },
   };
-  return session;
 }
 
 function fitColumn(input: {
@@ -197,27 +180,16 @@ function fitColumn(input: {
   }[];
 }): HTMLDivElement {
   const column = document.createElement("div");
-  column.style.paddingLeft = input.paddingLeft;
-  column.style.paddingRight = input.paddingRight;
-  column.style.paddingTop = "0px";
-  column.style.paddingBottom = "0px";
-  Object.defineProperty(column, "clientWidth", {
-    configurable: true,
-    value: input.clientWidth,
-  });
-  Object.defineProperty(column, "clientHeight", {
-    configurable: true,
-    value: input.clientHeight,
+  column.style.padding = `0px ${input.paddingRight} 0px ${input.paddingLeft}`;
+  Object.defineProperties(column, {
+    clientWidth: { configurable: true, value: input.clientWidth },
+    clientHeight: { configurable: true, value: input.clientHeight },
   });
   stubRect(column, 0, input.clientHeight);
   for (const page of input.pages) {
     const article = document.createElement("article");
     article.dataset.page = String(page.page);
-    article.style.borderStyle = "solid";
-    article.style.borderWidth = "0px";
-    article.style.borderLeftWidth = page.border;
-    article.style.borderRightWidth = page.border;
-    article.style.padding = "0px";
+    article.style.cssText = `border-style:solid;border-width:0;border-left-width:${page.border};border-right-width:${page.border};padding:0`;
     stubRect(article, page.top, page.bottom);
     column.append(article);
   }
@@ -226,17 +198,5 @@ function fitColumn(input: {
 }
 
 function stubRect(node: HTMLElement, top: number, bottom: number): void {
-  node.getBoundingClientRect = () => ({
-    x: 0,
-    y: top,
-    top,
-    bottom,
-    left: 0,
-    right: 100,
-    width: 100,
-    height: bottom - top,
-    toJSON() {
-      return {};
-    },
-  });
+  node.getBoundingClientRect = () => ({ top, bottom }) as DOMRect;
 }
