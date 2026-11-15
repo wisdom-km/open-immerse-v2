@@ -87,7 +87,7 @@ function Probe(props: {
   readonly box?: { readonly width: number; readonly height: number };
   readonly column?: HTMLDivElement;
   readonly page?: number;
-}): ReactElement {
+}): ReactElement | null {
   const column = useRef<HTMLDivElement | null>(props.column ?? null);
   const zoom = useZoom(
     props.active,
