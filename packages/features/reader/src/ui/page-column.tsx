@@ -151,8 +151,10 @@ function ZoomAnchor(props: {
     column?.querySelector<HTMLElement>(selector)?.scrollIntoView({
       block: "nearest",
     });
+  }, [props.columnRef, props.page, props.zoom]);
+  useEffect(() => {
     props.onZoom();
-  }, [props.columnRef, props.onZoom, props.page, props.zoom]);
+  }, [props.onZoom, props.zoom]);
   return null;
 }
 

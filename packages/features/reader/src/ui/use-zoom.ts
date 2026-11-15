@@ -19,7 +19,6 @@ type Box = {
   readonly width: number;
   readonly height: number;
 };
-
 type ReadingBoxes = {
   readonly boxes?: readonly Box[] | undefined;
 };
