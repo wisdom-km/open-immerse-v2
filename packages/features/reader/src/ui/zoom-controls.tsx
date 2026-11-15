@@ -83,8 +83,8 @@ function ZoomPad(props: { readonly zoom: ZoomState }): ReactElement {
 }
 
 function keepClosed(event: KeyboardEvent<HTMLSelectElement>): void {
-  if (event.altKey || !/^(Arrow|Page|Home|End)/.test(event.key)) return;
-  event.preventDefault();
+  const block = /^(Arrow(Up|Down|Left|Right)|Home|End|Page(Up|Down))$/;
+  if (!event.altKey && block.test(event.key)) event.preventDefault();
 }
 
 function choose(value: string, zoom: ZoomState): void {

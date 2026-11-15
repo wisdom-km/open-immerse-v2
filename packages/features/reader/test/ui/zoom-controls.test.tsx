@@ -52,14 +52,16 @@ it("does not run a command from a closed-menu key", () => {
   fireEvent.click(screen.getByRole("button", { name: "放大" }));
   const menu = screen.getByRole("combobox", { name: "缩放" });
   const init = { bubbles: true, cancelable: true };
-  for (const key of ["ArrowDown", "PageDown", "PageUp"]) {
+  const k = "ArrowUp,ArrowDown,ArrowLeft,ArrowRight,Home,End,PageUp,PageDown";
+  for (const key of k.split(",")) {
     const event = new KeyboardEvent("keydown", { ...init, key });
     menu.dispatchEvent(event);
-    if (!event.defaultPrevented) {
+    if (!event.defaultPrevented)
       fireEvent.change(menu, { target: { value: "actual" } });
-    }
     expect(spoken()).toBe("110%");
   }
+  const alt = { ...init, altKey: true, key: "ArrowDown" };
+  expect(menu.dispatchEvent(new KeyboardEvent("keydown", alt))).toBe(true);
 });
 
 it("does not render the controls before the page can be shown", () => {
