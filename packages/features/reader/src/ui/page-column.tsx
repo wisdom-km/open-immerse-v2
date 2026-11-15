@@ -10,6 +10,7 @@ import type { PageBox } from "./render-scale.js";
 import { paintErrorIsQuiet } from "./pdf-session.js";
 import type { PdfCancel, PdfPaint } from "./reader-client.js";
 import { useCanvasWindow } from "./use-canvas-window.js";
+import { placeZoomAnchor } from "./use-zoom.js";
 
 export function PageColumn(props: {
   readonly page: number;
@@ -31,7 +32,6 @@ export function PageColumn(props: {
       <Restore columnRef={props.columnRef} page={props.page} />
       <ZoomAnchor
         columnRef={props.columnRef}
-        page={props.page}
         zoom={props.zoom}
         onZoom={canvas.onScroll}
       />
@@ -136,22 +136,15 @@ function frameStyle(box: PageBox | undefined, zoom: number) {
 
 function ZoomAnchor(props: {
   readonly columnRef: Ref<HTMLDivElement>;
-  readonly page: number;
   readonly zoom: number;
   readonly onZoom: () => void;
 }): null {
   const zoomRef = useRef(props.zoom);
   useLayoutEffect(() => {
-    if (zoomRef.current === props.zoom) {
-      return;
-    }
+    if (zoomRef.current === props.zoom) return;
     zoomRef.current = props.zoom;
-    const column = columnElement(props.columnRef);
-    const selector = `[data-page="${String(props.page)}"]`;
-    column?.querySelector<HTMLElement>(selector)?.scrollIntoView({
-      block: "nearest",
-    });
-  }, [props.columnRef, props.page, props.zoom]);
+    placeZoomAnchor(columnElement(props.columnRef));
+  }, [props.columnRef, props.zoom]);
   useEffect(() => {
     props.onZoom();
   }, [props.onZoom, props.zoom]);

@@ -154,7 +154,7 @@ it("scales the canvas by the zoom factor without a pixel cap", async () => {
   const previous = host.devicePixelRatio;
   host.devicePixelRatio = 2;
   const session = createPdfSession(
-    wideDocument(),
+    blankPage(() => undefined, 10000),
     countingTask(() => undefined),
   );
   const canvas = fakeCanvas();
@@ -371,34 +371,13 @@ function renderDouble(
   };
 }
 
-function wideDocument(): PdfDocument {
+function blankPage(onRender: () => void, size = 4): PdfDocument {
   return {
     numPages: 1,
     getPage() {
       return Promise.resolve({
         getViewport() {
-          return { width: 10000, height: 10000 };
-        },
-        render() {
-          return {
-            promise: Promise.resolve(),
-            cancel() {
-              return undefined;
-            },
-          };
-        },
-      });
-    },
-  };
-}
-
-function blankPage(onRender: () => void): PdfDocument {
-  return {
-    numPages: 1,
-    getPage() {
-      return Promise.resolve({
-        getViewport() {
-          return { width: 4, height: 4 };
+          return { width: size, height: size };
         },
         render() {
           onRender();
