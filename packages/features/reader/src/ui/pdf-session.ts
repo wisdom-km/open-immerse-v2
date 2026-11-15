@@ -46,7 +46,7 @@ export type PdfSource = {
 export type PdfSession = {
   readonly pageCount: number;
   readonly boxes: readonly PageBox[];
-  paint(page: number, canvas: HTMLCanvasElement): Promise<void>;
+  paint(page: number, canvas: HTMLCanvasElement, zoom: number): Promise<void>;
   cancel(canvas: HTMLCanvasElement): void;
   close(): Promise<void>;
 };
@@ -90,7 +90,7 @@ export function createPdfSession(
   return {
     pageCount: doc.numPages,
     boxes,
-    paint(page, canvas) {
+    paint(page, canvas, zoom) {
       if (closed) {
         return Promise.resolve();
       }
@@ -98,6 +98,7 @@ export function createPdfSession(
         doc,
         pageNumber: page,
         canvas,
+        zoom,
         renders,
         tokens,
         isClosed: () => closed,
@@ -122,6 +123,7 @@ type PaintRequest = {
   readonly doc: PdfDocument;
   readonly pageNumber: number;
   readonly canvas: HTMLCanvasElement;
+  readonly zoom: number;
   readonly renders: Renders;
   readonly tokens: WeakMap<HTMLCanvasElement, number>;
   readonly isClosed: () => boolean;
@@ -150,7 +152,7 @@ async function drawPage(request: PaintRequest, page: PdfPage): Promise<void> {
   const size = renderSize({
     pageWidth: logical.width,
     pageHeight: logical.height,
-    zoom: 1,
+    zoom: request.zoom,
     dpr: deviceRatio(),
     pixelCap: PROVISIONAL_PAGE_PIXEL_CAP,
   });

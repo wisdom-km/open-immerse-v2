@@ -1,10 +1,50 @@
 // @vitest-environment happy-dom
 import { act, render } from "@testing-library/react";
-import { createRef, type ReactElement } from "react";
+import { createRef, type ReactElement, type Ref } from "react";
 import { expect, it, vi } from "vitest";
 
 import { PageColumn } from "../../src/ui/page-column.js";
 import type { PdfCancel, PdfPaint } from "../../src/ui/reader-client.js";
+import { useZoom, type ZoomState } from "../../src/ui/use-zoom.js";
+
+it("grows the frame with the zoom and paints at the new factor", async () => {
+  zoomProbe.paint = [];
+  const view = render(zoomed(1, createRef(), 1, sheet));
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(zoomProbe.paint).toEqual([1]);
+  expect(frame(view.container)?.style.width).toBe("100px");
+  view.rerender(zoomed(2, createRef(), 1, sheet));
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(zoomProbe.paint).toEqual([1, 2]);
+  expect(frame(view.container)?.style.width).toBe("200px");
+  expect(frame(view.container)?.style.height).toBe("80px");
+  zoomProbe.paint = undefined;
+});
+
+it("stays on the page in view when a zoom command runs before scrollend", () => {
+  const columnRef = createRef<HTMLDivElement>();
+  const api: { current: ZoomState | undefined } = { current: undefined };
+  render(<CommandColumn api={api} columnRef={columnRef} />);
+  const column = columnRef.current;
+  if (column === null) throw new Error("column");
+  column.getBoundingClientRect = () => rect(0, 100);
+  for (const article of column.querySelectorAll<HTMLElement>("article")) {
+    const top = article.dataset.page === "5" ? 20 : 200;
+    article.getBoundingClientRect = () => rect(top, top + zoomProbe.height);
+    article.scrollIntoView = () => {
+      column.scrollTop = 0;
+    };
+  }
+  column.scrollTop = 400;
+  act(() => {
+    api.current?.commands.zoomIn();
+  });
+  expect(column.scrollTop).toBe(398);
+});
 
 it("does not paint the same page again when the shown page changes", async () => {
   const painted: number[] = [];
@@ -98,6 +138,28 @@ it("stays quiet for a cancelled paint", async () => {
   }
 });
 
+it("draws pages that enter at 25% and keeps canvases within the visible span plus 4", () => {
+  const columnRef = createRef<HTMLDivElement>();
+  const view = render(zoomed(1, columnRef));
+  const node = columnRef.current;
+  if (node === null) throw new Error("column");
+  node.getBoundingClientRect = () => rect(0, 100);
+  for (const article of node.querySelectorAll("article")) {
+    article.getBoundingClientRect = () => rect(10, 90);
+  }
+  act(() => {
+    view.rerender(zoomed(0.25, columnRef));
+  });
+  expect(canvasPages(view.container)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  place(node, 1);
+  for (const zoom of [0.5, 1, 2, 4]) {
+    act(() => {
+      view.rerender(zoomed(zoom, columnRef));
+    });
+    expect(canvasPages(view.container).length).toBeLessThanOrEqual(5);
+  }
+});
+
 it("cancels an unfinished paint on unmount without an unhandled rejection", async () => {
   const cancelled: number[] = [];
   let rejectPaint: (error: unknown) => void = () => undefined;
@@ -146,6 +208,7 @@ it("paints the shown page window, then releases canvases outside the scrolled wi
       cancel={(canvas) => {
         atCancel.push(canvas.width);
       }}
+      zoom={1}
     />,
   );
   await act(async () => {
@@ -217,6 +280,55 @@ async function dropped(flag: { current: boolean }): Promise<HTMLCanvasElement> {
   return canvas;
 }
 
+const sheet = [{ width: 100, height: 40 }] as const;
+const zoomProbe: { height: number; paint: number[] | undefined } = {
+  height: 80,
+  paint: undefined,
+};
+
+function CommandColumn(props: {
+  readonly api: { current: ZoomState | undefined };
+  readonly columnRef: { readonly current: HTMLDivElement | null };
+}): ReactElement {
+  const zoom = useZoom(true, "paper", { columnRef: props.columnRef });
+  props.api.current = zoom;
+  zoomProbe.height = 80 * zoom.ratio;
+  return zoomed(zoom.ratio, props.columnRef, 8, pageBoxes);
+}
+
+const pageBoxes = Array.from({ length: 8 }, () => ({
+  width: 100,
+  height: 80,
+}));
+
+function zoomed(
+  zoom: number,
+  columnRef: Ref<HTMLDivElement> = createRef(),
+  pageCount = 8,
+  boxes?: readonly { width: number; height: number }[],
+): ReactElement {
+  return (
+    <PageColumn
+      page={1}
+      pageCount={pageCount}
+      columnRef={columnRef}
+      onScroll={() => undefined}
+      onScrollEnd={() => undefined}
+      paint={(_page, _canvas, zoom) => {
+        zoomProbe.paint?.push(zoom);
+        return Promise.resolve();
+      }}
+      cancel={() => undefined}
+      boxes={boxes}
+      zoom={zoom}
+    />
+  );
+}
+
+function frame(container: HTMLElement): HTMLElement | null {
+  return container.querySelector("[data-page='1']");
+}
+
 function column(
   page: number,
   paint: PdfPaint,
@@ -233,6 +345,7 @@ function column(
       onScrollEnd={() => undefined}
       paint={paint}
       cancel={cancel}
+      zoom={1}
       releasePixels={releasePixels}
     />
   );

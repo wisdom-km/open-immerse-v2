@@ -37,7 +37,7 @@ it("does not start a render after the session has closed", async () => {
     waitingDocument(waiters),
     countingTask(() => undefined),
   );
-  const pending = session.paint(1, fakeCanvas());
+  const pending = session.paint(1, fakeCanvas(), 1);
   await session.close();
   releaseClosed(waiters, () => {
     renders += 1;
@@ -59,7 +59,7 @@ it("returns quietly when the page request fails after close", async () => {
     },
     countingTask(() => undefined),
   );
-  const pending = session.paint(1, fakeCanvas());
+  const pending = session.paint(1, fakeCanvas(), 1);
   await session.close();
   rejectPage(new Error("Transport destroyed"));
   await expect(pending).resolves.toBeUndefined();
@@ -108,10 +108,10 @@ it("cancels the in-flight render when the same canvas is painted again", async (
   );
   try {
     const canvas = fakeCanvas();
-    const first = session.paint(1, canvas);
+    const first = session.paint(1, canvas, 1);
     release(waiters, slots, cancels);
     await flush();
-    const second = session.paint(1, canvas);
+    const second = session.paint(1, canvas, 1);
     expect(cancels.count).toBe(1);
     release(waiters, slots, cancels);
     await flush();
@@ -139,12 +139,34 @@ it("reports a missing 2d context and does not render", async () => {
   );
   try {
     await expect(
-      session.paint(1, contextlessCanvas()),
+      session.paint(1, contextlessCanvas(), 1),
     ).resolves.toBeUndefined();
     expect(renders).toBe(0);
     expect(reported.map(errorText)).toEqual(["2d context missing"]);
   } finally {
     spy.mockRestore();
+    await session.close();
+  }
+});
+
+it("scales the canvas by the zoom factor without a pixel cap", async () => {
+  const host = globalThis as { devicePixelRatio: number | undefined };
+  const previous = host.devicePixelRatio;
+  host.devicePixelRatio = 2;
+  const session = createPdfSession(
+    blankPage(() => undefined, 10000),
+    countingTask(() => undefined),
+  );
+  const canvas = fakeCanvas();
+  try {
+    await session.paint(1, canvas, 4);
+    expect([canvas.style.width, canvas.style.height]).toEqual([
+      "40000px",
+      "40000px",
+    ]);
+    expect([canvas.width, canvas.height]).toEqual([80000, 80000]);
+  } finally {
+    host.devicePixelRatio = previous;
     await session.close();
   }
 });
@@ -157,7 +179,7 @@ it("sizes the backing store from devicePixelRatio and keeps the CSS size", async
   const session = createPdfSession(page, quietTask);
   const canvas = fakeCanvas();
   try {
-    await session.paint(1, canvas);
+    await session.paint(1, canvas, 1);
     expect([canvas.width, canvas.height]).toEqual([8, 8]);
     expect([canvas.style.width, canvas.style.height]).toEqual(["4px", "4px"]);
   } finally {
@@ -171,7 +193,7 @@ it("does not resize a canvas cancelled while getPage is pending", async () => {
   const waiters: Array<(page: PdfPage) => void> = [];
   const session = createPdfSession(waitingDocument(waiters), quietTask);
   const canvas = fakeCanvas();
-  const pending = session.paint(1, canvas);
+  const pending = session.paint(1, canvas, 1);
   session.cancel(canvas);
   releaseClosed(waiters, () => mark(renders));
   await pending;
@@ -184,9 +206,9 @@ it("renders once when cancel is followed by another draw", async () => {
   const waiters: Array<(page: PdfPage) => void> = [];
   const session = createPdfSession(waitingDocument(waiters), quietTask);
   const canvas = fakeCanvas();
-  const first = session.paint(1, canvas);
+  const first = session.paint(1, canvas, 1);
   session.cancel(canvas);
-  const second = session.paint(1, canvas);
+  const second = session.paint(1, canvas, 1);
   releaseClosed(waiters, () => mark(renders));
   releaseClosed(waiters, () => mark(renders));
   await Promise.all([first, second]);
@@ -207,7 +229,7 @@ it("rejects a paint that fails for a reason other than cancellation", async () =
     },
     countingTask(() => undefined),
   );
-  const pending = session.paint(1, fakeCanvas());
+  const pending = session.paint(1, fakeCanvas(), 1);
   const resolve = waiters.shift();
   if (resolve === undefined) {
     throw new Error("no page");
@@ -349,13 +371,13 @@ function renderDouble(
   };
 }
 
-function blankPage(onRender: () => void): PdfDocument {
+function blankPage(onRender: () => void, size = 4): PdfDocument {
   return {
     numPages: 1,
     getPage() {
       return Promise.resolve({
         getViewport() {
-          return { width: 4, height: 4 };
+          return { width: size, height: size };
         },
         render() {
           onRender();

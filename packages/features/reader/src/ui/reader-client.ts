@@ -8,6 +8,7 @@ export type Pair = {
 export type PdfPaint = (
   page: number,
   canvas: HTMLCanvasElement,
+  zoom: number,
 ) => Promise<void>;
 
 export type PdfCancel = (canvas: HTMLCanvasElement) => void;

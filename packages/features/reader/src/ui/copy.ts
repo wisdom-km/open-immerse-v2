@@ -12,3 +12,7 @@ export function pageLabel(page: number, pageCount: number): string {
 export function pageCountNote(pageCount: number): string {
   return `共 ${String(pageCount)} 页`;
 }
+
+export function zoomSpoken(percent: number): string {
+  return `${String(percent)}%`;
+}

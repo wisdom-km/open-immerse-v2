@@ -16,6 +16,10 @@ import {
   historyForwardEvent,
   openFileEvent,
   returnLibraryEvent,
+  zoomActualEvent,
+  zoomFitWidthEvent,
+  zoomInEvent,
+  zoomOutEvent,
 } from "./shell-events.js";
 
 const client = desktopReaderClient();
@@ -24,6 +28,10 @@ type MenuNav = {
   readonly back: () => void;
   readonly forward: () => void;
   readonly openGoTo: () => void;
+  readonly zoomIn: () => void;
+  readonly zoomOut: () => void;
+  readonly zoomActual: () => void;
+  readonly zoomFitWidth: () => void;
 };
 
 export function Shell(): ReactElement {
@@ -49,6 +57,10 @@ export function Shell(): ReactElement {
       historyBackEvent,
       historyForwardEvent,
       goToPageEvent,
+      zoomInEvent,
+      zoomOutEvent,
+      zoomActualEvent,
+      zoomFitWidthEvent,
     ];
     for (const name of names) window.addEventListener(name, onEvent);
     return () => {
@@ -83,6 +95,13 @@ export function Shell(): ReactElement {
   );
 }
 
+const zoomActions = {
+  [zoomInEvent]: "zoomIn",
+  [zoomOutEvent]: "zoomOut",
+  [zoomActualEvent]: "zoomActual",
+  [zoomFitWidthEvent]: "zoomFitWidth",
+} as const;
+
 function menuAction(
   type: string,
   leave: (() => void) | undefined,
@@ -92,7 +111,15 @@ function menuAction(
   if (type === historyBackEvent) return nav?.back;
   if (type === historyForwardEvent) return nav?.forward;
   if (type === goToPageEvent) return nav?.openGoTo;
-  return undefined;
+  return zoomCommand(type, nav);
+}
+
+function zoomCommand(
+  type: string,
+  nav: MenuNav | undefined,
+): (() => void) | undefined {
+  if (!Object.hasOwn(zoomActions, type)) return undefined;
+  return nav?.[zoomActions[type as keyof typeof zoomActions]];
 }
 
 function selectedTitle(): string {

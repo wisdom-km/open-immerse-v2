@@ -119,7 +119,7 @@ function ready(
     page,
     lostPlace,
     canWrite: !lostPlace,
-    paint: (pageNumber, canvas) => pdf.paint(pageNumber, canvas),
+    paint: (pageNumber, canvas, zoom) => pdf.paint(pageNumber, canvas, zoom),
     cancel(canvas) {
       pdf.cancel(canvas);
     },
