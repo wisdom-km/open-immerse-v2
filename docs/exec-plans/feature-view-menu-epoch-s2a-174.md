@@ -159,9 +159,9 @@ GATE_BASE=origin/main node tools/check-pr-size/check.mjs
 | 1 | 本文件首稿 | `f9087a04`，+247/−0 |  |
 | 2 | 台账三行与页脚 | `d9f9c96e`，+4/−1。本修订不动 |  |
 | 3 | Forge 审 `d9f9c96e` | HOLD。无新 BLOCK。639 是预计 |  |
-| 4 | 删重复叙述并重算同一 Draft |  |  |
-| 5 | Forge 复审。PASS 前不实施 |  |  |
-| 6 | 另有实施指令后按白名单实施 |  |  |
+| 4 | 删重复叙述并重算同一 Draft | `bfc7dd97`，相对 main 本文件 +179/−0。先于实现 |  |
+| 5 | Forge 复审。PASS 前不实施 | `bfc7dd97` / tree `3bfedc0a` PASS。先于实现 |  |
+| 6 | 另有实施指令后按白名单实施 | `04d11267`，白名单 8 文件 +348/−7 |  |
 
 ## 决策记录
 
