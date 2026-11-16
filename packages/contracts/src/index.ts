@@ -140,6 +140,8 @@ export type {
 export { ingestIpc, openDocument } from "./ipc/ingest.js";
 export type { ReaderChannel, ReaderCommands } from "./ipc/reader.js";
 export { readerIpc, setZoom } from "./ipc/reader.js";
+export type { ShellChannel, ShellCommands } from "./ipc/shell.js";
+export { reportViewMenu, shellIpc } from "./ipc/shell.js";
 export type {
   SettingsParseChannel,
   SettingsParseCommands,
