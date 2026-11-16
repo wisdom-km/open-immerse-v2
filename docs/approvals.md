@@ -244,4 +244,6 @@
 
 | 2026-11-16 13:41 | 「当前项目进度距那个整体项目进度是怎么样的？然后真机说等8GB机器后补测，这个不用，你就用我这个测试就行。」 | 更新 11:08（6906182172）里等待真 8GB 的排期，不改写该行原文。R-E13 不再等待真 8GB，改在当前 DESKTOP-0GI64S8（已核实 32GB）测量，诚实标明硬件，不把结果称为 8GB 验证。不授权限制系统可用内存、修改启动配置或 Windows 显示缩放；显示缩放仍须当时明确批准。先按当前显示缩放测阅读缩放 100%/200%/400%，记录画布字节、渲染进程专用工作集峰值、视口保留范围和像素上限。不自定 MB 通过线。Anvil 已接实测。不含 Ready、合入、发版或 E2 编码批准，也不取消 PR #220 已写的菜单 seam 设计修正 | Issue #174、docs/exec-plans/feature-reader-view-modes-e2-174.md、docs/exec-plans/feature-reader-view-menu-seam-174.md | https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6908396514 。评论标题是「决定变更登记：R-E13 改用当前测试机」。来源是 Wisdom 在 Forge 对话中的直接指示。GitHub created_at 是 2026-11-16T05:41:22Z。台账时间用正文的 13:41 |
 
-共 207 条批准 + 1 条反馈记录 + 6 条决定 + 22 条合入同步
+| 2026-11-16 13:55 | 「批准：仅本轮内存测试在 DESKTOP-0GI64S8 临时把 Windows 显示缩放从100%调到200%，测400%阅读缩放，测完恢复100%；不改其他系统设置」 | 只批此次 R-E13 在当前 32GB 真机上的第 4 点：临时把 Windows 显示缩放从 100% 调到 200%，测 400% 阅读缩放，测完恢复 100% 并核验。不改其他系统设置，不限制启动内存，不称 8GB 验证。Anvil 串行实跑，记录切换前、测试时和恢复后。既有前三点数据保留。CIM 约 2 秒且样本稀疏的限制不抹去；更密的只读采样仍只报告采样最大值，不自定 MB 通过线。尚未实跑，不写成已测。不改写 13:41 那一行。不含产品、IPC、contracts、main 编码，不含 Ready、合入、发版，也不扩大 E2 编码 | Issue #174、docs/exec-plans/feature-reader-view-modes-e2-174.md | https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6908614620 。评论标题是「Wisdom 批准记录 · 2026-11-16 13:55 Asia/Shanghai」。来源是 Wisdom 在 Forge 对话中直接回答「是否补测 200% 系统显示缩放？」批准卡片。GitHub created_at 是 2026-11-16T05:55:40Z。台账时间用正文的 13:55 |
+
+共 208 条批准 + 1 条反馈记录 + 6 条决定 + 22 条合入同步
