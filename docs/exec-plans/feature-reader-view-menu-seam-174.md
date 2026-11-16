@@ -2,7 +2,7 @@
 
 E2 菜单选中状态回传的最小 seam 设计。文件名按指定保留。分支仍是 `feature/reader-view-modes-e2-plan-174`。栏位与空态在 [E2 计划](feature-reader-view-modes-e2-174.md)。
 
-本文件只写设计。2026-11-16 12:08 原话只批准写设计，不批准编码。来源 [#174 6907026822](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6907026822)、[PR #220 6907027779](https://github.com/wisdom-km/open-immerse-v2/pull/220#issuecomment-6907027779)。Forge 对 `8ac2c97` 的第五轮审查是 FAIL，只剩两处状态转移。第四轮已关的架构不换。本轮只改文档，不请求编码批准，不自称通过。
+本文件只写设计。2026-11-16 12:08 原话只批准写设计，不批准编码。来源 [#174 6907026822](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6907026822)、[PR #220 6907027779](https://github.com/wisdom-km/open-immerse-v2/pull/220#issuecomment-6907027779)。Forge 对 `efbccaf` 的第六轮审查：技术方案 PASS，R1/R2 关闭，架构不换。整体计划只剩 S2c 的估算越过 600 的余量。本轮只把这一笔拆开，不请求编码批准，不自称新 tip 已通过。
 
 不改产品代码、测试、生成物、CI、PRD、ARCHITECTURE、RULES、DESIGN。不开 Ready，不合入，不发版。
 
@@ -18,7 +18,7 @@ E2 菜单选中状态回传的最小 seam 设计。文件名按指定保留。�
 
 `MenuWillShow`（`electron_api_menu.cc` 132–145 行）会把全 false 的 radio 勾上第一项。none 用普通原生项，不写 checked。活动三模式用 radio，构造参数里恰一项 `checked: true`。不在已挂 radio 上写 checked。不加「无」项，不自绘，不置灰，不改 checkbox。标签、accelerator、enabled、事件名不变。这和已批语义相容。
 
-S1 的 `expose` 保持 false。S2c 同一笔改为 true、跑 codegen，并把 handler 放进 `startLibrary` 返回的那张生产表。不削弱 `assertHandlers` 或 `acceptsSender`。`composition-root.ts` 仍只调用 `startLibrary`，它的 diff 是 0。
+S1 的 `expose` 保持 false。S2c-prep 只写未暴露的 handler 和它的单元行为测试，不进 registry，也不改生产表。S2c-on 同一笔才把 `expose` 改为 true、跑 codegen，并把 handler 放进 `startLibrary` 返回的那张生产表，同时改装配测试。expose 和生产注册不拆开。不削弱 `assertHandlers` 或 `acceptsSender`。`composition-root.ts` 仍只调用 `startLibrary`，它的 diff 是 0。这两笔的实施都还没批。
 
 阅读屏里的 PDF 错误页不是浏览器错误文档，不退役。空态句仍只在成功支。
 
@@ -119,15 +119,16 @@ click 按已提交镜像重建，用来抵消 radio 的自动勾。门正在替�
 
 实际硬线 600。只改 `packages/contracts/` 时实际硬线 200。346 只是估算 × 1.73 ≤ 600 的重估触发点，不是门禁。生成物计入。计入的是新增+删除。函数软 50、硬 80。估算超过 346 先重算，必要时拆整批。实际 diff 超过 346 不写成失败，不请 G12。超过适用的 600 或 200 才停。不删测试，不靠删断言凑数。上一稿里渲染端事件接收器的测试随公开机制删除，不是删掉已有测试。上一稿的 310、332、246 不含本轮补的转移和断言，下面按补齐后的行重算。
 
-顺序：S1 → S2a → S2b → S2c → E2-0 → E2-1 → E2-2 → S3。没有循环。E2 三笔不写上报。S3 依赖 S2c 和 E2-1。每一笔另批。批准编码不包含改 ARCHITECTURE。
+顺序：S1 → S2a → S2b → S2c-prep → S2c-on → E2-0 → E2-1 → E2-2 → S3。没有循环。E2 三笔不写上报。S3 依赖 S2c-on 和 E2-1。每一笔另批。S2c-prep 与 S2c-on 的实施都未批。批准编码不包含改 ARCHITECTURE。
 
 | 笔 | 合入后能启动 | 菜单 | 计入 | ×1.73 |
 | --- | --- | --- | --- | --- |
 | S1 | 能。不进 registry | 今天的普通项 | 198 | 343。200 档只用 198 |
 | S2a | 能。无这条 handler | 与 S1 相同 | 234 | 405 |
 | S2b | 能。仍不暴露 | none 形状的普通项 | 344 | 595 |
-| S2c | 能。生产表里已有 handler | 仍是 none 形状，直到提交被接受 | 360 | 623。生成物未实测，开工前重算 |
-| E2-0 | 能 | 与 S2c 相同 | 72 | 125 |
+| S2c-prep | 能。命令仍不进 registry | 与 S2b 相同，none 形状 | 190 | 329 |
+| S2c-on | 能。生产表里已有 handler | 仍是 none 形状，直到提交被接受 | 252 | 436。生成物约 150 未实测 |
+| E2-0 | 能 | 与 S2c-on 相同 | 72 | 125 |
 | E2-1 | 能 | 仍无勾。工具栏能改栏位 | 338 | 585 |
 | E2-2 | 能 | `clickMenu` 只证明事件 | 109 | 189 |
 | S3 | 能 | 文献库是普通项。接受原文后才是恰一勾的 radio | 340 | 588 |
@@ -138,7 +139,11 @@ S2a：`ipc-router.ts` 244 行，计入 18，改完约 262，`commandContext` 短
 
 S2b：`view-menu-gate.ts` 104。上一稿 90 行不含「新快照先清同阶段旧 none」和「只按最终结果写已知」。这两段各成短函数，短于 50。`view-menu-mirror.ts` 50，替换函数短于 50。`library-menu.ts` 94 行，计入 20，改完约 110。`library-wiring.ts` 这一笔只改菜单装配，252 行，计入 40，改完约 280，仍低于 400。测试 130。上一稿 110 行不含最终 contrast 不被旧 none 盖掉，以及替换期间换代后旧 submit 不提交。344 = 104+50+20+40+130。
 
-S2c：expose 计入 2。生成物约 150，不是跑过 codegen：本轮把请求的 `anyOf` 用两空格 JSON 数过，registry 约 83 行，方法加 `oi-api.d.ts` 约 67 行。`view-menu-handler.ts` 78。范围检查单独成函数，短于 50；不把整个文件当成一个函数。`library-wiring.ts` 从 S2b 之后的约 280 行接着改，这一笔的新增+删除是 30，不是在 280 上再加 30 行；改完仍低于 400。它把 `shell.reportViewMenu` 放进 `wiredLibraryCommands`，`startLibrary` 因而带上它。测试 100：生产表含这条通道；用这张表加完整 `ipcRegistry` 调用 `registerIpcRouter` 不抛；越界整数是 `invalid_payload`，generation 不大于地板仍是 `rejected`。不含生成物是 210 = 2+78+30+100。加上约 150 是 360。360 × 1.73 = 623，超过 346 这个重估触发，也超过 600 的安全余量。这不是门禁失败。S2c 另批开工前用 codegen 的真实新增+删除替换约 150，再加这 210。若合计估算仍超过 346，先重算这一笔。不拆 expose、handler 和生产注册。实际超过 600 才停。不写 G12，不删测试。
+上一稿把 S2c 估成 360，360 × 1.73 = 622.8，超过 600 的估算余量。346 只是重估或拆分的触发点，不是 CI 失败，也不请 G12。本轮不把用例删到 138 或 222 那种示意拆法里。示意数没有把准备笔的测试接线和启用笔对现有装配测试的增删算进去。用例都留着，按下面两笔重算。不跑 codegen。
+
+S2c-prep：`view-menu-handler.ts` 78。范围检查单独成函数，短于 50。不改 `shell.ts` 的 expose，不改三份生成物，不改 `wiredLibraryCommands`。单元测试 112 = 28 的夹具接线 + 22 的越界 `invalid_payload` + 16 的 generation 不大于地板 + 18 的零个或两个窗口 + 28 的阶段、epoch 或窗口不符且发生在菜单副作用之前。190 = 78+112。190 × 1.73 = 329。合入后能启动，因为这条命令还不在 registry，`assertHandlers` 不会找它。
+
+S2c-on：expose 计入 2。生成物约 150，不是跑过 codegen：请求的 `anyOf` 用两空格 JSON 数过，registry 约 83 行，方法加 `oi-api.d.ts` 约 67 行。`library-wiring.ts` 从 S2b 之后的约 280 行接着改，这一笔的新增+删除是 30，不是在 280 上再加 30 行；改完仍低于 400。它把 `shell.reportViewMenu` 放进 `wiredLibraryCommands`，`startLibrary` 因而带上它。装配测试 70 = 现有 `ipc-production-assembly.test.ts`（现在 46 行，手写通道表）的新增+删除 28，加上生产表含这条通道、用这张表加完整 `ipcRegistry` 调用 `registerIpcRouter` 不抛、缺通道就抛，这三项 42。252 = 2+150+30+70。252 × 1.73 = 436，低于 346 这个触发点，也低于 600。生成物仍是估算。实跑 codegen 若把这一笔的估算推过 346，先重算；expose、codegen、生产表注册和这份装配测试仍在同一笔。实际超过 600 才停。不写 G12，不删测试。S2c-prep 不代替这一笔。两笔实施都未批。
 
 S3 的 `shell.tsx` 基线是 E2-1 的约 161 行，不是 main 上的 147。E2-2 的 20 行是事件测试，不把 shell 的基线再改掉；若那一笔实际改了文件，S3 开工前按当时行数重算。`view-menu-report.ts` 新建 128。上一稿 100 行不含「read 保留快照」「read 成功后续 submit」和那一个重读标记。这三段各短于 50。`shell.tsx` 计入 40，改完约 190。`use-view-mode.ts` 由约 36 到约 56，计入 24。上一稿 16 行不含同值也回调目标值。函数短于 50。测试 148。上一稿 90 行不含下面验收里 read 接续和 load 交错的用例。340 = 128+40+24+148。不把回调塞进 `ReaderScreen`。
 
@@ -150,7 +155,9 @@ S2a：监听先于 `loadURL`。初始 blank、成功 `oi-app:` commit 即 `open`
 
 S2b：none 经过 `_menuWillShow` 仍无勾；活动形状恰一勾。成功、抛错、后置失败三种退出都会消费仍有效的 pending，并且最多再替换一次。修复期间 pending 更新后保持 `unknown` 且不递归。恢复中留下的同代 pending none，被下一份合法 contrast 先清掉；最终原生菜单和镜像都是 contrast，不先装 contrast 再被旧 none 盖掉。这次替换期间换代写下的 none 优先，旧 submit 不提交旧镜像。窗口销毁不碰 Menu。不把模板读数当成菜单仍开着的画面。
 
-S2c：上面的 handler 检查逐条有测试。越界整数在副作用前是 `invalid_payload`。generation 相等或更小在副作用前是 `rejected`。不把只含 `Number.isInteger` 的 schema 测试写成 transport 已拒绝越界。生产表缺这条通道时 `registerIpcRouter` 抛出。零个或两个窗口不替换。
+S2c-prep：handler 检查逐条有单元测试。越界整数在副作用前是 `invalid_payload`。generation 相等或更小在副作用前是 `rejected`。零个或两个窗口不替换。阶段、epoch 或窗口不符也在副作用前拒绝。不把只含 `Number.isInteger` 的 schema 测试写成 transport 已拒绝越界。本笔不注册生产表。
+
+S2c-on：`wiredLibraryCommands` 含这条通道。用这张表加完整 `ipcRegistry` 调用 `registerIpcRouter` 不抛。生产表缺这条通道时抛出。现有手写通道表的装配测试同一笔改掉，否则新暴露的命令会让它失败。expose、生成物、生产注册和这些断言在同一笔。
 
 S3：未完成 invoke 始终不超过一个，最新槽始终不超过一个。唯一 original 在 read 成功后被 submit，中间不要求再改栏位。read 期间多次变化只提交最后一份。早读失败在 load 前、load 后两种到达都只再读一次。load 撞上 busy 不丢掉那一次。read 成功后不再消耗它。无新快照时 submit 失败不自旋。超时不增加 invoke，也不清除 busy。同值命令仍回调目标快照。正常接续和失败补发分成两组断言。不断言源码文本。`clickMenu` 只算事件。物理键、读屏、菜单仍开着的画面、mac，继续未验证。R-E13 不再等真 8GB：13:41 起在 DESKTOP-0GI64S8（32GB）上测，标明硬件，不称 8GB 验证。本文件不跑这项测量，也没有测量数。这些用例本轮没有跑。
 
@@ -161,7 +168,8 @@ S3：未完成 invoke 始终不超过一个，最新槽始终不超过一个。�
 - S1：`packages/contracts/src/ipc/shell.ts`、`packages/contracts/src/index.ts`、`packages/contracts/test/ipc-shell.test.ts`。
 - S2a：`ipc-router.ts` 的 context 字段，`view-menu-epoch.ts`，`window.ts` 的加载顺序，`index.ts` 的挂接，及测试。不含菜单形状，不含 expose。
 - S2b：`view-menu-gate.ts`、`view-menu-mirror.ts`、`library-menu.ts`、`library-wiring.ts` 的菜单装配，及测试。不含 handler。
-- S2c：`shell.ts` 的 expose、三份生成物、`view-menu-handler.ts`、`library-wiring.ts` 的 `wiredLibraryCommands`、`ipc-production-assembly.test.ts` 或同等的生产表测试。不含 renderer 上报。
+- S2c-prep：`view-menu-handler.ts` 和它的单元测试。不含 expose，不含生成物，不含 `wiredLibraryCommands`。
+- S2c-on：`shell.ts` 的 expose、三份生成物、`library-wiring.ts` 的 `wiredLibraryCommands`、`ipc-production-assembly.test.ts`。不含 renderer 上报。不把 handler 再挪到另一笔。
 - S3：`view-menu-report.ts`、`shell.tsx`、`use-view-mode.ts` 的回调及测试。不改 reader 的 domain、application、`index.ts`、`pure.ts`，不改 `contracts/src/ipc/reader.ts`。
 
 不批：手改生成物、削弱断言或 `acceptsSender`、载荷自定 epoch、新的 `ipcMain` 或取消通道、公开用的 `executeJavaScript`、CSP、协议、缩放菜单勾、置灰、持久化、ARCH 正文。
@@ -184,6 +192,7 @@ S3：未完成 invoke 始终不超过一个，最新槽始终不超过一个。�
 | 三种退出都消费 pending | 只在失败时 drain，正常返回会把 none 留在槽里 | 2026-11-16 | 同上 |
 | 同值菜单命令也提交快照 | React 同值更新不会再上报，菜单会停在旧镜像 | 2026-11-16 | 同上 |
 | S2c 改 `wiredLibraryCommands` | 新建 handler 文件不会进入 `startLibrary` 的表。`assertHandlers` 会在启动时抛 | 2026-11-16 | 同上 |
+| S2c 拆成准备笔和原子启用笔 | `efbccaf` 的 360 × 1.73 超过 600 的估算余量。handler 可先不暴露。expose 与生产注册仍同一笔。两笔实施都未批 | 2026-11-16 | 按第六轮审查修正，不是新批准 |
 | read 成功后续 submit；load 忙时保留一次重读 | 只发 submit 才取走快照。失败不把同一份补回。重读机会合成一个标记 | 2026-11-16 | 按第五轮审查修正，不是新批准 |
 | 新合法快照先清同阶段旧 pending none | 否则 contrast 装上之后，退出时又被更早的 none 盖掉 | 2026-11-16 | 同上 |
 | R-E13 改在当前 32GB 真机测 | 13:41 原话只改等待真 8GB 的排期。不取消上面的设计修正。不称 8GB 验证 | 2026-11-16 | Wisdom，[6908396514](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6908396514) |
@@ -192,4 +201,4 @@ S3：未完成 invoke 始终不超过一个，最新槽始终不超过一个。�
 
 从当时的 main 另开，Draft。先完整读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md` 和本文件。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。没有点名的笔不开工。不改 ARCH。技术复审通过前不开工。通过后一次只请求点名的一笔，并且不包含 ARCH 正文。
 
-S1 是 seam 变更。估算 198，契约档实际 200。S2a 估算 234。S2b 估算 344。S2c 估算 360，生成物约 150 未实测，开工前重算；必须含生产注册。S3 是 UI 改动，估算 340，`shell.tsx` 从约 161 行续。346 不是门禁。R-E13 按 13:41 在 DESKTOP-0GI64S8（32GB）上测，标明硬件，不称 8GB 验证。本文件不跑这项测量。
+S1 是 seam 变更。估算 198，契约档实际 200。S2a 估算 234。S2b 估算 344。S2c-prep 估算 190，未暴露。S2c-on 估算 252，生成物约 150 未实测；expose 与生产注册同一笔。S3 是 UI 改动，估算 340，`shell.tsx` 从约 161 行续。346 不是门禁，600 才是。R-E13 按 13:41 在 DESKTOP-0GI64S8（32GB）上测，标明硬件，不称 8GB 验证。这不是 PRD §8 里 M2 仍写的 8 GB 真机录屏的豁免，本轮不改 PRD。本文件不跑这项测量。
