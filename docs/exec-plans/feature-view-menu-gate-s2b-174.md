@@ -6,6 +6,8 @@ S2b：视图菜单的 none / 活动形状、替换门与镜像。分支 `feature
 
 Wisdom 2026-11-16 21:52 原话：「按照项目进度推进吧」。范围在 [docs/approvals.md](../approvals.md) 的 21:52 行，是 Forge 的限定解释，不是本计划的 PASS。20:57 与 21:03:24 只补记 PR #222。Loom 对上述 main 的只读原则复核是 PASS；Forge 读过 `/workspace/oi-qa/v2-s2b-principles/LOOM.md`，本工作区没有那份报告，这里不抄。四条结论：栏位切换仍是支持性能力，用户仍在系统原生菜单里选择；`none` 是内部状态，不是第四项；本笔没有 handler、`expose` 和 renderer 上报，生产仍是 none 的普通项，活动模板或装配测试不是生产已联动；`none` 不写 `checked`，活动构造恰一勾，pending 与换代沿已合 seam。原则 PASS 不代替精确计划 PASS，也不表示实现、原生画面或真机已验。
 
+Forge 对 `25d3769a75c0728692027bdd77ca3bf43af38538` 的精确复审是 HOLD。下面的 B1–B10 保留。Wisdom 2026-11-16 22:41 已选择本 PR 只收口计划与台账，原话在台账 22:41 行。这和 21:52 的推进不是同一句。Forge 只核算和推荐。载体、拆分、精确 Ready 与合入由 Wisdom 决定。
+
 ## 现状
 
 `library-menu.ts` 94 行，已有原文、对照、译文和 `oi-view-original`、`oi-view-bilingual`、`oi-view-translation`。`library-wiring.ts` 252 行。`dispatchMenu` 返回 `executeJavaScript` 的 Promise，调用处是 `void dispatchMenu`，没有 `.catch`。不能假定这句 `void` 已经接住拒绝。`view-menu-epoch.ts` 128 行，公开的只有 `attach` 和 `read`。`index.ts` 的 `startDesktop` 私自 `createViewMenuEpoch()`，只传给 `createMainWindow`。`composition-root.ts` 的 `startLibrary` 拿不到这个实例。S2a 的假 `Menu` 没有 `_menuWillShow`。
@@ -43,7 +45,7 @@ B1、B2 读的是子菜单 `_menuWillShow` 返回之后的真实 `MenuItem`。�
 
 ## 文件与预算
 
-口径是相对 `origin/main` 的新增+删除。下表同时是实施白名单和逐文件预算。旧底稿把产品与测试估成 481，门测试 158 行只数 `replace`，没有本表 B3–B8 的镜像和安装状态，也没有 B10 的失败派发与 Promise 拒绝。按 `view-menu-epoch.test.ts` 的密度把这些断言写成未入库底稿后，门测试 213 行，原生父进程 58 行，子进程 18 行。门实现在旧 131 行上加 6 行，只捕获视图事件的 Promise。其余文件仍用旧底稿。产品与测试因此是 553，不是用 481 去限制测试。
+口径是相对 `origin/main` 的新增+删除。下表是 `25d3769` 时「实现与计划留在同一 Draft」的历史预计，也是将来实施 PR 要另核的文件范围。本 PR 不改这些产品文件。旧底稿把产品与测试估成 481，门测试 158 行只数 `replace`，没有本表 B3–B8 的镜像和安装状态，也没有 B10 的失败派发与 Promise 拒绝。按 `view-menu-epoch.test.ts` 的密度把这些断言写成未入库底稿后，门测试 213 行，原生父进程 58 行，子进程 18 行。门实现在旧 131 行上加 6 行，只捕获视图事件的 Promise。其余文件仍用旧底稿。产品与测试因此是 553，不是用 481 去限制测试。
 
 | 文件 | 现在 | 本笔 | 增 | 删 | 合计 |
 | --- | --- | --- | --- | --- | --- |
@@ -57,21 +59,23 @@ B1、B2 读的是子菜单 `_menuWillShow` 返回之后的真实 `MenuItem`。�
 | `apps/desktop/test/library-menu.test.ts` | 100 | 无勾、无第四项 | 12 | 0 | 12 |
 | 产品与测试 |  |  | 538 | 15 | 553 |
 | `docs/evidence/<PR号>/commands.md` | 无 | 只记实际跑过的命令和退出码 | 36 | 0 | 36 |
-| `docs/approvals.md` | 已提交 | 本回合不改 | 4 | 1 | 5 |
-| 本文件 | 无 | 计划 | 113 | 0 | 113 |
-| 同一 Draft |  |  |  |  | 707 |
+| `docs/approvals.md` | 当时已有三行 | 历史预计里的台账 | 4 | 1 | 5 |
+| 本文件 | 无 | 当时的短稿 | 113 | 0 | 113 |
+| 当时的同一 Draft |  |  |  |  | 707 |
 
-553+36+5=594。本文件 113 行，合计 707。要在 600 内再留至少 10 行，计划得是负数。正常短稿做不到。已合 seam「分批」里的 344 是当时的估计，不是本笔额度。346 只触发重估。1.73×481=832.13；旧稿写成 827.13，那个乘积是算错的。1.73×553=956.69。两个乘积都只披露风险，不是第二门槛，也不改 600。
+553+36+5=594。当时短稿 113 行，历史合计 707。594 漏掉了计划，不能写成同一 Draft 可以实施。707 也不是本 PR 现在的文档行数。已合 seam「分批」里的 344 是当时的估计。346 只触发重估。1.73×481=832.13；更早一稿写成 827.13，那个乘积是算错的。1.73×553=956.69。两个乘积都只披露风险，不是第二门槛，也不改 600。10 行余量只是当时争取的空间，不是门禁。
+
+Wisdom 2026-11-16 22:41 原话：「批准 PR223 仅收口 S2b 计划与台账，完整实现及测试另 PR；先修正计划并精确审查，新 PR 全部预算另核，放不下再报，不删测试、不改600。不批准本次 Ready、合入、实施或后续范围。」来源是 [issue #174 评论 6919591592](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6919591592)。本 PR 因此只收口计划与台账。Forge 只核算和推荐，不决定载体、拆分、Ready 或合入。21:52 只授权把计划写出来。本句不是实施批准，也不是 Ready 或合入批准。
+
+本 PR 相对 `origin/main` 的实际文档预算是计划 119 行、台账新增 5 行删除 1 行，合计 125。它只含本文件和 `docs/approvals.md`。本回合不新建 `docs/evidence/`。命令和退出码写在「计划 / 实际」，并写入 PR 说明。完整实现与测试另开 PR，本回合不开。那一笔目前只知道产品与测试 553、证据 36，合起来 589。还要加上它自己的计划变更、新台账和全部其他变更。589 不是那一笔的全预算，也不承诺它不超过 600。放不下再报。不自动拆成子批，不删测试，不改 600。
 
 不改：`composition-root.ts`、`view-menu-epoch.ts`、`window.ts`、`index.ts`、`wiredLibraryCommands`、`ipc-production-assembly.test.ts`、`packages/contracts/**`、三份生成物、renderer、UI、存储、CSP、协议、DESIGN、设计原则、`docs/design/**`、环境安装文件、CI、规格正文、seam 与 E2 计划。不启用 handler。codegen 后生成物零 diff。函数软 50、硬 80。文件软 400、硬 600；测试软 600、硬 800。不写模块级 `let`。`max-params` 为 4。不写 `G12:`。
-
-Forge 还没选载体。本回合不拆 PR，也不先合文档。两条都要另有明确决定才许动：本 Draft 停在计划和已提交台账，实施文件与证据等下一次精确范围批准；或者仍在这一支实施，由 Forge 处理 594 已经没有计划行可挤的缺口。不删断言，不把 600 改掉。
 
 ## 命令
 
 本回合只跑 `node tools/check-docs/check.mjs`。PATH 前置 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin`。不跑 codegen、Vitest、`pnpm test`、`pnpm run check`，不启动 Electron。
 
-实施要等精确复审通过，并且另有实施指令，还要先有放得进 600 的载体。那时才跑，并且只把实际退出码写入证据：
+下面这些命令不属于本 PR。将来的实施 PR 要先有自己的精确计划审查和另发的实施指令，并把计划、台账、证据、产品与全部测试计入之后，才跑它们。全预算放不下就停下来报告。只把实际退出码写入那一笔的证据：
 
 ```text
 corepack pnpm run codegen
@@ -90,8 +94,9 @@ GATE_BASE=origin/main node tools/check-pr-size/check.mjs
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
 | 1 | 本文件。不写产品代码 | 172 行稿改成短稿，并按完整断言重估 | 本提交 |
-| 2 | 台账。本回合不改 | 已在 `202047d5`。本回合未改 | `202047d5` |
-| 3 | Forge 精确复审。另发实施指令前不实施 |  |  |
+| 2 | 台账。短稿那一回不改 | 已在 `202047d5`。短稿那一回未改 | `202047d5` |
+| 3 | Forge 精确复审 `25d3769` | HOLD。B1–B10 保留。Forge 只核算和推荐 | 审查在工作区外，不入库 |
+| 4 | 按 22:41 把本 PR 收口为计划与台账 | 本提交改载体和预算口径。台账另笔追加 22:41，页脚改为 217 条批准。全 PR 新增+删除 125。PATH 前置 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin` 后 `node tools/check-docs/check.mjs` 退出码 0 | 本提交；台账 22:41 行。`docs/evidence/` 无 |
 
 ## 决策记录
 
@@ -101,13 +106,14 @@ GATE_BASE=origin/main node tools/check-pr-size/check.mjs
 | 沿用已合 seam 的上列六节 | 不重开架构。验收留在本文件 | 2026-11-16 | 计划核对，非新批准 |
 | 原则复核只引用四条 | 基线是 `85632b3`。无新拍板。不代替技术 PASS | 2026-11-16 | Loom 复核，非新 Wisdom 批准 |
 | 产品与测试按 553 重估 | 旧 481 的门测试没有最终镜像、安装状态、失败派发和 Promise 拒绝 | 2026-11-16 | 按审查补断言后重数，非新批准 |
-| 短稿仍超 600 就停 | 594 加上任何可读的计划都留不出 10 行。不删测试，不拆 PR | 2026-11-16 | 按 21:52 的硬停点核对，非新批准 |
+| 短稿仍超 600 就停 | 当时把 594 与短稿放在同一 Draft。这行只保留那段历史，不代表本 PR 的文档已经超限 | 2026-11-16 | 按当时的硬停点核对，非新批准 |
+| 22:41 本 PR 只收口计划与台账 | 原话见台账。完整实现及测试另 PR，全预算另核。不删测试，不改 600。不是 Ready、合入、实施或后续范围 | 2026-11-16 | Wisdom 原话 |
 
 ## 交接
 
-从 main `85632b3d7f7073dbbd77b3db47142f015af272f4` 继续这一支 Draft。先读本文件、seam 上列六节和台账 21:52 行。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。本回合任务类型：不适用（纯文档）。下一笔不是实施。Forge 复审本短稿，并决定 600 的载体。在那之前不写 `view-menu-gate.ts`，不改菜单，不开 Ready。
+从 main `85632b3d7f7073dbbd77b3db47142f015af272f4` 继续这一支 Draft。先读本文件、seam 上列六节、台账 21:52 行和 22:41 行。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。本回合任务类型：不适用（纯文档）。下一笔不是实施，也不开实施 PR。Forge 精确审查这一 tip，只核算和推荐。Ready、合入、实施和另 PR 的范围由 Wisdom 决定。在那之前不写 `view-menu-gate.ts`，不改菜单，不开 Ready。
 
 ## 自检
 
 - [x] 影响 arch / prd 吗？不影响。
-- [x] 本回合只改本文件。
+- [x] 计划这一笔只改本文件。台账是下一笔。
