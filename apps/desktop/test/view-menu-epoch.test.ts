@@ -169,6 +169,24 @@ it("retires at the safe integer limit without wrapping", () => {
   });
 });
 
+it.each([-1, 0.5, Number.MAX_SAFE_INTEGER + 1])(
+  "retires illegal epoch %s and does not take the increment",
+  (epoch) => {
+    const next = reduceViewMenuSlot(
+      { phase: "open", epoch, floor: 4 },
+      { kind: "navigate", url: appUrl },
+    );
+    expect(next.phase).toBe("retired");
+    expect(next.epoch).toBe(epoch);
+    expect(next.floor).toBe(4);
+    expect(next).not.toEqual({
+      phase: "open",
+      epoch: epoch + 1,
+      floor: 0,
+    });
+  },
+);
+
 it("deletes the slot on closed and does not touch the menu", () => {
   const epoch = createViewMenuEpoch();
   const page = host();
