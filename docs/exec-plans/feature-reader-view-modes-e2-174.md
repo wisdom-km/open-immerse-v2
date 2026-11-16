@@ -1,226 +1,273 @@
 # 执行计划
 
-E2，阅读屏栏位分段和已批空态。基线是 main `dc35b82bb2682f83f87ef5af268975a9dba5dacc`。唯一 parent 是 `4e1d7ec64907147a56405a7bc37430f38f45cfb0`，tree 是 `541b99575dc2446ee057b3104a2e2c887046ca0e`。2026-11-16 已核对 `origin/main` 仍是这个 SHA。若审查时 main 已前移，实现从当时的 main 另开，本文件不改写成新基线。
+E2，阅读屏栏位分段和已批空态。基线是 main `dc35b82bb2682f83f87ef5af268975a9dba5dacc`。唯一 parent 是 `4e1d7ec64907147a56405a7bc37430f38f45cfb0`，tree 是 `541b99575dc2446ee057b3104a2e2c887046ca0e`。2026-11-16 已再核对 `origin/main` 仍是这个 SHA。若审查时 main 已前移，实现从当时的 main 另开，本文件不改写成新基线。
 
-本文件名是用户指定的 `feature-reader-view-modes-e2-174.md`，对应以后的实现主题。本 PR 的分支是 `feature/reader-view-modes-e2-plan-174`，只交计划和台账。[docs/exec-plans/README.md](README.md) 写文件名与分支同名。这里按指定文件名留在原地，避免实现阶段再改名。
+本文件名是用户指定的 `feature-reader-view-modes-e2-174.md`。本 PR 的分支是 `feature/reader-view-modes-e2-plan-174`，只交计划和台账。[docs/exec-plans/README.md](README.md) 写文件名与分支同名。这里按指定文件名留在原地。
 
-本 PR 不写产品代码，不改测试，不改 CI，不改 CSP，不改 PRD、ARCHITECTURE、RULES、DESIGN 正文。不开 Ready，不合入，不发版。Forge 审查本计划通过之前不实现。实现范围以审查通过后的本文件为准。
+本 PR 不写产品代码，不改测试，不改 CI，不改 CSP，不改 PRD、ARCHITECTURE、RULES、DESIGN 正文。不开 Ready，不合入，不发版。Forge 审查本计划通过之前不实现。
 
 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
 
+## 原则通过，实现未验证
+
+Loom 2026-11-16 的原则复核结论是：通过，沿用已批准的 E2，不增加新设计。依据是本轮读过的 Loom 附件。这不是实现验收，也不是测试或真机通过。台账不新增行：这次没有新的 Wisdom 原话，复核结论不算新批准。
+
+上一稿把「菜单不加勾选」写成计划选用。该句收回。菜单单选勾仍是已有要求。当前缺 checked 模型和 renderer→main 回传。本计划不删这项，也不写回传接线。路径要 Wisdom 选，见「菜单单选勾」。
+
+| 结论 | 范围 |
+| --- | --- |
+| 原则复核通过 | H1–H12 沿用已批规格。不改默认原文，不重问空态文案，不新定栏宽、拖拽或色板 |
+| 实现未验证 | 仓库里还没有 E2 的产品代码。下表 E2-01–E2-09 都未执行。读屏、物理键盘、高对比、mac、R-E13 都未测 |
+| 勾选未决 | 已批要求还在。现有授权边界里做不到勾选。不默默删除，不擅自加 IPC |
+
 ## 现状理解
 
-- 现在已有的行为：缩放 2a / 2b 已合入。打开 PDF 进入阅读屏，画原文页。视图菜单已有「原文」「对照」「译文」，Windows 是 Ctrl+1/2/3，mac 是 Cmd+1/2/3，点击只 `dispatchEvent`。`shell.tsx` 不听这三项。工具栏没有栏位分段。没有空态句。`open-session` 把 `viewMode` 写成 `original`。契约写明不发明 `reader.setViewMode`，页码与栏位留在 renderer。R-E13 未验证：DESKTOP-0GI64S8 是 32GB，Anvil 第 2–4 步未运行。不以 32GB 或限制系统内存代替真 8GB，不标 PASS。
-- 相关的节：[批次 E 计划](feature-reader-nav-zoom-174.md) 的栏位行、验收第 1 条、菜单表、G-7、与 PR #205 的空态接缝、R-E6；[DESIGN.md](../../DESIGN.md) §4.1、§4.5.1a、§11.4；[docs/design-principles.md](../design-principles.md) P4、P5、P7；[ARCHITECTURE.md](../../ARCHITECTURE.md) §2.1、§6；[docs/arch/06.md](../arch/06.md)。6-1 A（台账 2026-11-14 14:13，[评论 6872935563](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872935563)）默认原文、不记住，空态用已批原句。这覆盖 DESIGN 第 156 行的默认「对照」和 §11.4 的恢复视图。不改 DESIGN 正文（N-10）。
-- 还没做的部分：栏位 `radiogroup`、对照的左原文右空态、译文的整个主区空态、菜单事件接到这次打开的栏位。不接翻译，不改 PDF 画页比例。Loom 的原则复核还在进行，本文件不把它写成已通过。
+- 现在已有的行为：缩放 2a / 2b 已合入。打开 PDF 进入阅读屏，画原文页。视图菜单已有「原文」「对照」「译文」和 Ctrl / ⌘+1/2/3，点击只 `dispatchEvent`。`shell.tsx` 不听这三项，所以快捷键现在不会切栏位。工具栏没有栏位分段。没有空态句。一次打开只有一份 `ReaderScreen`：session、历史和 zoom 都在它的上层。`PageColumn` 只有一份。`open-session` 把 `viewMode` 写成 `original`。契约写明不发明 `reader.setViewMode`。R-E13 未验证。
+- 相关的节：[批次 E 计划](feature-reader-nav-zoom-174.md) 的栏位行、验收第 1 条、菜单表、G-7、空态接缝、R-E6；[DESIGN.md](../../DESIGN.md) §4.1、§11.4；[docs/design-principles.md](../design-principles.md) P4、P5、P7 与 §4；[ARCHITECTURE.md](../../ARCHITECTURE.md) §2.1、§6。6-1 A 覆盖 DESIGN 第 156 行的默认「对照」和 §11.4 的恢复视图。不改 DESIGN 正文（N-10）。
+- 还没做的部分：栏位分段、已批空态、把已有三个事件接到同一次阅读会话。不接翻译，不改画页比例。
 
 ## 目标
 
-一次打开里可以在原文、对照、译文之间切换。默认原文。离开后再打开，仍是原文，不记住。对照是左栏原文、右栏空态。译文是整个主区空态。空态句子是「本阶段暂不提供译文，请先阅读原文。」文字链接在 Windows 是「切到原文（Ctrl+1）」，在 mac 是「切到原文（⌘1）」。没有「开始翻译」，没有「去设置」。点链接或按 Ctrl+1 / ⌘1 回到原文，页码不变，缩放百分比不变，不入位置历史，不发翻译请求，不改画页比例。
+同一次打开、同一份阅读会话里，可以在原文、对照、译文之间切换。默认原文。离开后再打开，仍是原文，不记住栏位。对照是左栏现有原文、右栏空态，只把原文容器变窄，不自动适合宽度。译文是整个主区空态，PDF 隐藏但不另开文档。回到原文时页码、位置历史和缩放百分比都还在。空态句子是「本阶段暂不提供译文，请先阅读原文。」Windows 链接文字是「切到原文（Ctrl+1）」，mac 是「切到原文（⌘1）」。没有「开始翻译」，没有「去设置」。0 个主按钮。不发翻译请求。
 
 ## 已批来源
 
 | 决定 | 原话与范围 | 出处 |
 | --- | --- | --- |
-| 6-1 A | 「6-1 按推荐 A：空态文案「本阶段暂不提供译文，请先阅读原文。」加「切到原文（Ctrl+1）」链接，mac 显示 ⌘1」。没有「开始翻译」，没有「去设置」 | 台账 2026-11-14 14:13，[6872935563](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872935563) |
+| 1A | 「1A ³默认原文（临时）…M4 再恢复对照…不改 DESIGN 正文」。对照 / 译文可切，是诚实空态，不出「开始翻译」 | 台账 2026-11-05 21:01，[6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956) |
+| 6-1 A | 「6-1 按推荐 A：空态文案「本阶段暂不提供译文，请先阅读原文。」加「切到原文（Ctrl+1）」链接，mac 显示 ⌘1」 | 台账 2026-11-14 14:13，[6872935563](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6872935563) |
 | 6-3 A | 文献库里这几项不置灰，点了不起作用。「主进程知道当前界面」挂进 M2 退出格，本批不做 | 同一条 |
-| 栏位不记住 | G-7。没有 `setViewMode`。每次打开原文 | [批次 E 计划](feature-reader-nav-zoom-174.md) |
-| 空态接缝 | `view-mode-empty-copy` 放 6-1 A。`view-mode-empty-degrade` 本批没有文字。降级句等 E2 合入后由 PR #205 第 3 笔再填 | 批次 E 计划「与 PR #205 的空态接缝」。15:13 已把第 3 笔的前置改成等 E2 合入 |
-| 先做 E2 | 「按推荐：R-E13 记为未验证遗留，先做 E2；有真 8GB 机器后在当时的 main 上补测」 | 2026-11-16 11:08，[6906182172](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6906182172)。台账行在本 PR 第二笔 |
+| 菜单单选 | 批次 E 计划菜单表：视图 › 原文 / 对照 / 译文，「单选。对照和译文是空态」 | [批次 E 计划](feature-reader-nav-zoom-174.md)。这是已有要求，不是本轮新设计 |
+| 栏位不记住 | G-7。没有 `setViewMode`。每次打开原文 | 批次 E 计划 |
+| 空态接缝 | `view-mode-empty-copy` 放 6-1 A。`view-mode-empty-degrade` 本批没有文字 | 批次 E 计划。降级句等 E2 合入后由 PR #205 第 3 笔再填 |
+| 先做 E2 | 「按推荐：R-E13 记为未验证遗留，先做 E2；有真 8GB 机器后在当时的 main 上补测」 | 2026-11-16 11:08，[6906182172](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6906182172) |
 
-R-E13 保持未验证。E2 的实现和验收都不改 Windows 或任何系统设置，不用限制内存的办法重跑 R-E13，也不把 R-E13 标成 PASS。
+## H1–H12
+
+这些是 Loom 复核写明的硬约束。本计划沿用，不另加产品行为。
+
+| ID | 硬约束 | 本计划怎么落 |
+| --- | --- | --- |
+| H1 | 只做栏位分段和已批空态。不碰画页比例，不请求翻译，不接服务或存储 | 排除项不变 |
+| H2 | 顺序是原文、对照、译文。`radiogroup` 名称「栏位」。选中始终只有一个 | 原生 radio，同一 `name` |
+| H3 | 放在标题栏右侧、空 chip 的右边。不改标题左区，不加侧栏或 Aa | `ReaderBar` 末尾，chip 之后 |
+| H4 | 每次打开默认原文，不持久化 viewMode。不改 DESIGN 终态默认 | `use-view-mode` 只活在这次打开。文档 id 变了就回到原文 |
+| H5 | 原文是现有 PDF。对照是左 PDF、右空态。译文是主内容空态。回原文页不变 | 见「同一阅读会话」 |
+| H6 | 空态逐字使用批准句。Windows「切到原文（Ctrl+1）」，mac「切到原文（⌘1）」。0 个主按钮 | `view-mode-empty.tsx`。linux 沿用 Windows 那一句 |
+| H7 | Ctrl / ⌘+1/2/3、工具栏、菜单、返回链接共用一份状态。全局快捷键只走已有菜单 accelerator | `shell.tsx` 订阅已有事件。不另写 renderer 全局 `keydown` |
+| H8 | 切换不入历史、不改页码、不主动写回。不能靠隐藏或重建阅读器把页码、历史、缩放复位 | 不卸载 `ReaderScreen`，不复制 `PageColumn`，不重新 `openDocument` |
+| H9 | 键盘可达。Tab 顺序跟视觉一致。焦点至少 2px。目标至少 24×24。选中不只靠颜色 | 原生 radio 的 checked。焦点环用现有 `--oi-reader-focus`。高对比未测，不写 PASS |
+| H10 | `view-mode-empty-degrade` 留着，本批为空。不写 AC-11 降级句 | 调用点不传降级句 |
+| H11 | 只改 UI。不改 domain、application、`index.ts`、`pure.ts`、contracts。seam 不够就停 | 勾选回传属于 seam 不够，见下节，本轮停 |
+| H12 | 没有 Ready、合入、发版授权。R-E13 保持未验证 | 本 PR 是 Draft。不用 32GB 或限制内存代替真 8GB |
 
 ## 代码位置（dc35b82）
 
-行数是这一版的物理行数。
-
 | 位置 | 现在 | E2 怎么用 |
 | --- | --- | --- |
-| `packages/features/reader/src/ui/reader-screen.tsx` | 258 行。`ReaderScreen` 第 28–105 行，78 行 | 只拼装。见下面的行数预算 |
+| `packages/features/reader/src/ui/reader-screen.tsx` | 258 行。`ReaderScreen` 第 28–105 行，78 行。session、历史、zoom 在这一层。`ReaderBar` 第 134 行是 `header`，不是 toolbar | 只拼装。栏位状态和这一层的 session 并列，不换成新的 key |
+| `packages/features/reader/src/ui/page-column.tsx` | 一份 `PageColumn`。`frameStyle` 是 `box.width * zoom` 与 `box.height * zoom`。`Restore` 在挂载时 `scrollIntoView` | 不复制第二份。切栏位不让 `Restore` 再跑 |
+| `packages/features/reader/src/ui/zoom-controls.tsx` | `keepClosed` 在缩放 `<select>` 上拦截 ArrowUp/Down/Left/Right、Home、End、PageUp、PageDown 这 8 个键 | 栏位组不复制这个函数 |
 | `packages/features/reader/src/ui/copy.ts` | 18 行 | 只加 6-1 A 的句子和两句链接文字 |
-| `packages/features/reader/src/ui/use-bound-nav.ts` | 69 行 | 用已有的展开写法，把三个栏位命令并进 `ReaderNav` |
-| `apps/desktop/src/renderer/shell.tsx` | 147 行 | 听已有的三个事件，转成命令。字面值仍只在 `shell-events.ts` |
-| `apps/desktop/src/renderer/shell-events.ts` | 12 行 | 已有 `viewOriginalEvent`、`viewBilingualEvent`、`viewTranslationEvent`。不改 |
-| `apps/desktop/src/renderer/reader.css` | 136 行 | 只加并排和焦点。沿用本文件已有的 token 和 `Canvas` / `CanvasText` 后备。不新造颜色 |
-| `apps/desktop/src/main/library-menu.ts` | 94 行 | 不改。三项和加速键已经在 |
-| `packages/features/reader/src/pure.ts` | 已导出 `READER_VIEW_MODE_ORIGINAL` | 不改 |
-| `packages/contracts/src/ipc/reader.ts` | 第 22 行写明不发明 `reader.setViewMode` | 不改 |
-| `packages/features/reader/test/ui/reader-screen.test.tsx` | 736 行。`barSlots()` 现在期望 `gap zoom-controls chip`。第 65 行负向匹配不动 | 只改栏位插上之后的槽位断言 |
+| `packages/features/reader/src/ui/use-bound-nav.ts` | 69 行 | 展开写法，把三个栏位命令并进 `ReaderNav` |
+| `apps/desktop/src/renderer/shell.tsx` | 147 行。`MenuNav` 没有栏位命令。订阅列表没有这三项 | 只订阅已有事件 |
+| `apps/desktop/src/renderer/shell-events.ts` | 已有三个事件名 | 不改 |
+| `apps/desktop/src/renderer/reader.css` | 136 行。已有 `--oi-reader-focus`、`--oi-focus-width`、`--oi-focus-offset`，以及 `Canvas` / `CanvasText` 后备。`.oi-reader-live` 用 1px 裁剪 | 并排和焦点沿用这些。仓库里没有 `--oi-reader-link`、`--oi-reader-ink-2`，不引用、不新造 |
+| `apps/desktop/src/main/library-menu.ts` | `MenuItemSpec` 只有 label、event、accelerator。第 25–27 行已有三项和加速键 | 勾选路径未定之前不改 |
+| `apps/desktop/src/main/library-wiring.ts` | `installFileMenu` 启动时建一次菜单。`menuEntry` 只写 label、accelerator、click | 没有 checked，也没有按栏位重建 |
+| `packages/contracts/src/ipc/reader.ts` | 第 22 行：不发明 `reader.setViewMode` | 不改。勾选也不借用这个名字 |
+| `packages/features/reader/test/ui/reader-screen.test.tsx` | 736 行。`barSlots()` 期望 `gap zoom-controls chip`。第 65 行负向匹配不动 | 槽位改成 chip 后面还有栏位组 |
 | `apps/desktop/e2e/reader-nav.spec.ts` | 287 行。已有 `clickMenu` | 菜单点击走这里。加速键不走这里 |
-| `apps/desktop/test/library-menu.test.ts` | 100 行 | 不改。菜单标签和加速键保持原断言 |
+| `apps/desktop/test/library-menu.test.ts` | 100 行。断言标签和加速键 | 勾选未定之前不改 |
 
 ## 模块边界
 
-任务类型是 UI 改动。切片是 reader 的 `src/ui`，加上 desktop 的 renderer。core 不动：不改 `domain/`、`application/`、`index.ts`、`pure.ts`、`contracts/src/ipc/**`，也不改 `packages/features/library/src`。
+任务类型是 UI 改动。切片是 reader 的 `src/ui`，加上 desktop 的 renderer。core 不动。
 
-栏位是这一次打开的界面状态，放在新建的 `use-view-mode.ts`。初值是原文。文档 id 变化时回到原文。不写 `localStorage` / `sessionStorage`，不写回 `ReaderSession.viewMode`，不调用 IPC。domain 里的 `viewMode` 保持打开时的 `original`。
+栏位状态放在新建的 `use-view-mode.ts`，和 session、历史、zoom 并列，同属这一次 `ReaderScreen`。初值原文。不写 `localStorage` / `sessionStorage`，不写回 `ReaderSession.viewMode`，不调用 IPC。domain 里的 `viewMode` 保持打开时的 `original`。
 
-`reader-screen.tsx` 不承接切换、空态和分栏。三件分三个文件：
+三个新文件：
 
-- `view-mode-switch.tsx`：栏位分段。只负责三选一。
-- `view-mode-empty.tsx`：6-1 A 的句子、文字链接、空的降级插入点。
-- `view-mode-panes.tsx`：按栏位决定主区放什么。原文只放现有 `PageColumn`。对照是左栏现有原文、右栏空态。译文只放空态。
+- `view-mode-switch.tsx`：栏位分段。放在 chip 右边。
+- `view-mode-empty.tsx`：6-1 A 的句子、返回原文的文字链接、空的降级插入点。
+- `view-mode-panes.tsx`：按栏位安排这一份 `PageColumn` 和空态。不创建第二份阅读会话。
 
-优先系统行为。分段用原生 `<input type="radio" name="同一组">`，包在 `<fieldset>` 里，`<legend>` 的文字是「栏位」。每个单选的可访问名称是「原文」「对照」「译文」。选中态用原生的 `checked`，由它带出 `aria-checked`。焦点在这一组里时，← / → 用浏览器自己的单选组行为，不另写 `keydown`。不用 `div` 加 `role="radiogroup"`。不用 `appearance: none` 去掉系统外观。选中不只靠颜色。
+分段用原生 `<input type="radio">`，同一 `name`，包在 `<fieldset>` 里。`<legend>` 是「栏位」。三个可访问名称是「原文」「对照」「译文」。选中用原生 `checked`。组件留在现有 `header` 里，不加 `role="toolbar"`。普通 radiogroup 的 ← / → / ↑ / ↓ 用浏览器自己的组内行为：移动并选中。不写 `keydown`。不把 `zoom-controls.tsx` 的 `keepClosed` 搬过来。那 8 个键只继续作用在缩放 `<select>` 上。焦点在页码框、PDF 或别的文本控件里时，这一组不吞键。
 
-快捷键只走已经注册的菜单加速键。`shell.tsx` 把三个事件转成命令，写法对齐现在的 `zoomCommand`：单独一个小函数，不把三个分支堆进 `menuAction`。reader 包不出现 `oi-view-original` 这三串字面值，也不订阅 window。同一个键不走第二套 `keydown`。
+自绘分段和 `role="toolbar"` 都不做。APG 里嵌在 toolbar 中的 radio，方向键只移动焦点、不改变选中。那和普通组不同。若以后要改成 toolbar，先停下来报告。
 
-菜单项保持现在的普通项。不加 `type: "radio"`，不加勾选。勾选要主进程知道当前栏位，而 6-3 A 已把「主进程知道当前界面」挂进 M2 退出格。互斥由工具栏这一组原生单选表达。`library-menu.ts` 不改。
+Ctrl / ⌘+1/2/3 只走已经注册的菜单加速键。`shell.tsx` 把三个已有事件转成命令，写法对齐 `zoomCommand`。reader 包不出现这三串事件字面值，也不订阅 window。不写第二套全局 `keydown`。页码框聚焦时这三键若被菜单抢走，只记录并停，不加监听去抢回来。不修已知的 Ctrl+0 / Ctrl+−。
 
-空态不放 `role="status"`。不使用 toast，不用对话框。链接不是主按钮。`data-testid="view-mode-empty-degrade"` 的节点在，调用点不传降级句，文本是空的。组件可以接受可选字符串，E2 的调用不传。不写「未解析 / 去配置」，不接 `parsing.getParseCapabilities`。
+空态不放 `role="status"`，不用 toast，不用对话框。返回入口不是主按钮，名称等于已批整句，点击只切回原文，不离开阅读屏。`view-mode-empty-degrade` 的节点在，文本为空。不写「未解析 / 去配置」。
 
-切栏位不调用历史的 jump / back，不改缩放百分比，不改 `paint` 的比例参数，不改页码。加载中仍是现有骨架，出错仍是现有错误页。空态只替换已经能画出的主区。切到译文或离开原文栏时卸下 `PageColumn`，停止绘制；切回原文时仍是同一页。页内滚动位置没有已批规格，本计划不另做恢复。若卸下或挂回改写了页码、缩放或历史，就停。
+linux 的链接文字用「切到原文（Ctrl+1）」。分叉沿用缩放 tooltip 已有的 mac / 非 mac。
 
-linux 的链接文字走 Windows 那一句「切到原文（Ctrl+1）」。分叉方式沿用缩放 tooltip 已有的 mac / 非 mac，不新造第三句。
+## 同一阅读会话
+
+三个栏位共用现在这一份 session、这一份位置历史、这一份 zoom。切栏位不是重开文件。
+
+- 不改变 `ReaderScreen` 的文档 id，不用栏位当 React key，不卸载 `ReaderScreen`。
+- `PageColumn` 只保留现有这一份，传现在的 `columnRef`、`paint`、`boxes`、`zoom`、`releasePixels`。不复制第二份来凑对照，不调用打开文档。
+- 切栏位不调用历史的 jump / back，不改缩放百分比，不调用 `zoomFitWidth`、`fitWidthPercent` 或 `resolveZoomPercent`，不改 `frameStyle` 的公式，不改 dpr 和像素上限。
+- 原文：这一份 `PageColumn` 按现在的方式占满主区。
+- 对照：同一份 `PageColumn` 留在左边，空态在右边。容器变窄来自多了一个兄弟节点，空态按内容占位，原文栏用现有 flex 吃掉剩余空间。不新定百分比、不新定 38em、不加分隔条、不记住宽度。变窄不等于适合宽度。
+- 译文：主区看见空态。这一份 `PageColumn` 仍留在成功分支的树上，不卸载。卸载会让 `Restore` 再执行 `scrollIntoView`，绘制 effect 也会重跑。隐藏用 `inert` 移出 Tab 和读屏，视觉上不占主区，裁剪沿用 `.oi-reader-live` 已有的 1px 裁剪，不新造动画。切回原文或对照时去掉 `inert` 和裁剪，组件不重挂。
+- 页码、历史和缩放的主人不变。测试钉住：切换前后页码文字、缩放百分比、后退状态不变，`writePage` 不因这次切换多出来。若缩容器或隐藏仍然发出 scroll，并因此写回另一页，就停。不改写回 seam，也不改成卸载再滚回。
+
+## 加载、错误和焦点
+
+加载中仍是现有骨架，出错仍是现有错误页。这两支不被栏位切换换成空态。菜单和快捷键可以改栏位状态，但不能把错误页变成「暂不提供译文」的假成功。空态只出现在现在已经能画出 PDF 的那一支。加载完成后，若栏位已经是对照或译文，再按该栏位显示；第一次挂上 `PageColumn` 仍是打开时的那一次，不是为了切栏位又挂一次。
+
+焦点：
+
+- 在分段里用指针或方向键切换后，焦点留在分段上。
+- 不把焦点搬到空态正文。
+- 全局快捷键切换时，不抢还在的控件。页码框、缩放选择、返回按钮若还在，焦点留在原地。
+- 若焦点在即将隐藏的 PDF 子树里，或在即将移除的返回链接上，先落到仍然存在的对应 radio，再隐藏或移除。不落到 `body`。从空态链回原文时，落到「原文」radio。
+- 不因此新增播报文案。读屏是否够用，留真机，不在本计划写成通过。
+
+## 菜单单选勾
+
+已批要求是菜单里原文 / 对照 / 译文为单选，并显示现在的快捷键。加速键和事件名已经在。勾选状态还没有模型，也没有从 renderer 回到 main 的接线。只在 `shell.tsx` 订阅事件，可以让点击、加速键和工具栏共用 renderer 里的一份栏位；菜单上的勾不会出现。本计划不把「单选勾」写成已完成，也不把它从要求里删掉。
+
+dc35b82 上的缺口：
+
+1. `MenuItemSpec` 没有 `type`，没有 `checked`。
+2. `menuEntry` 的菜单项只有 label、accelerator、click。
+3. `installFileMenu` 只在启动时 `Menu.setApplicationMenu` 一次。之后没有按当前栏位改写菜单。
+4. 现有通道是 main 用 `executeJavaScript` 向 renderer 派发事件。没有反向通道把当前栏位送回 main。
+5. `shell.tsx` 还没订阅这三项。
+
+两条路径都要 Wisdom 选。本计划不代选。
+
+| 路径 | 内容 | 代价 |
+| --- | --- | --- |
+| 甲 | E2 只订阅已有三事件。菜单保持普通项，没有勾。要求保留，合入后记为未完成，不写成通过 | 不改 main，不改契约。已批「单选勾」仍未满足 |
+| 乙 | 另开菜单勾选 seam。`MenuItemSpec` 能表达 radio 和 checked。renderer 把当前栏位送到 main，main 只更新这三项的勾。离开阅读屏后勾清空。加速键和事件名不变 | 要改 main，并新增 IPC 或契约。不能叫 `reader.setViewMode`，契约写明不发明它，它也会写成持久化栏位。不能塞进只改 UI 的 PR，按 RULES §3 先单独合契约。6-3 A 的「文献库里置灰」仍不做。形状本身还没有批准 |
+
+路径乙若被选中，E2 的 UI PR 仍先停，等那条 seam 合入。本轮两种路径都不写代码。
 
 ## 行为
 
-- 打开是原文。分段里「原文」为选中。主区是现在的原文栏。
-- 对照：左栏仍是现在的原文栏，画页比例和缩放百分比不变。右栏是空态。
-- 译文：整个主区是空态，原文栏不在。
-- 空态里 `view-mode-empty-copy` 的文本等于「本阶段暂不提供译文，请先阅读原文。」链接的可访问名称在非 mac 等于「切到原文（Ctrl+1）」，在 mac 等于「切到原文（⌘1）」。两处都没有「开始翻译」，没有「去设置」。
-- 点链接，或菜单「原文」，或 Ctrl+1 / ⌘1，回到原文。页码文字不变，缩放百分比不变。
-- 切栏位不入位置历史。后退栈不变。
+- 打开是原文。分段里「原文」为选中。主区是现在的原文栏。chip 右边才是这一组。
+- 对照：左边仍是这一份原文栏，画页公式和缩放百分比不变，不调用适合宽度。右边是空态。
+- 译文：主区是空态。这一份原文栏还在树上，但是 `inert` 且不占主区。
+- `view-mode-empty-copy` 的文本等于「本阶段暂不提供译文，请先阅读原文。」链接名称在非 mac 等于「切到原文（Ctrl+1）」，在 mac 等于「切到原文（⌘1）」。没有「开始翻译」，没有「去设置」。主按钮数是 0。
+- 点返回入口、菜单「原文」或 Ctrl+1 / ⌘1，回到原文。页码、历史、缩放百分比不变。`ReaderScreen` 不重建。
 - 再打开同一篇或另一篇，都是原文。
-- 文献库里菜单三项仍不置灰。阅读屏已卸下时，事件没有监听者，状态不变。不另写「不在阅读屏就丢掉」。
-- 不出现翻译请求。测试看现有阅读 client 的调用记录，不新增翻译 IPC，也不发网络请求。
+- 文献库里三项仍不置灰。阅读屏卸下后，事件没有栏位可改。不另写「不在阅读屏就丢掉」。
+- 不出现翻译请求。
+- 方向键只在栏位组内改变选中。缩放选择框的 8 键拦截还在那个 `<select>` 上。
 
 ## 行数预算
 
-口径是 [docs/arch/06.md](../arch/06.md) 的物理行。普通源文件建议 400、硬上限 600。React 组件文件建议 250、硬上限 400。测试建议 600、硬上限 800。函数建议 50、硬上限 80。ESLint `max-lines-per-function` 是 80，空行和注释都算。`ReaderScreen` 现在 78 行，再加栏位钩子就会过 80。所以实现的第一笔先把离开接线移出去，不改行为。
+口径见 [docs/arch/06.md](../arch/06.md)。`ReaderScreen` 现在 78 行，函数硬上限 80。实现的第一笔先把离开接线移出去，不改行为。`reader-screen.tsx` 现在 258 行，超过组件建议上限 250。抽出之后回到 250 以下，E2 只加拼装，停在 250。
 
-`reader-screen.tsx` 现在 258 行，已经超过组件建议上限 250。E2 不把分段、空态、分栏写进这个文件。抽出离开接线之后，这个文件回到 250 以下，再只加拼装。停在 250。超过 250 就停下报告，不写「为什么不拆」来继续往里堆。函数超过 80 同样停下。
-
-`reader-screen.test.tsx` 现在 736 行，已经超过测试建议上限 600，离硬上限 800 还有余量。E2 只改 `barSlots()` 那一条期望。新行为写进新测试文件。不删已有测试来凑行数，也不把新用例挪进这个文件。
-
-`check-pr-size` 统计 `git diff --numstat` 的新增加删除，生成文件除外，上限 600。下表是非生成行。一份实现 PR 的估算要 ≤ 346，乘 1.73 才仍 ≤ 600。1.73 来自 PR #212：`(755 − 436) / 436`。超过 346 就停下，把 `git diff --numstat` 的实际行数和拆分建议报给 Forge。不写 `G12:`，不把下一份的文件塞进这一份，不把 PR 标成 Ready。
+`check-pr-size` 统计新增加删除，上限 600。一份实现 PR 的估算要 ≤ 346，乘 1.73 才仍 ≤ 600。超过 346 就停下报告。不写 `G12:`，不删已有测试来凑行数。路径乙的契约和 main 不在下表里。选了路径乙就另开 PR，不把那些行塞进 E2-1。
 
 | PR | 装什么 | 估算 | ×1.73 |
 | --- | --- | --- | --- |
 | 本 PR | 本文件和台账。没有产品代码 | 文档 |  |
-| E2-0 | 把 `ReaderScreen` 里的离开接线移到 `use-reader-leave.ts`。行为不变。现有 `reader-screen` 测试仍覆盖离开 | 72 | 125 |
-| E2-1 | 栏位状态、原生分段、空态、对照和译文的主区、菜单事件、并排所必需的样式、对应单测 | 338 | 585 |
-| E2-2 | `clickMenu` 的 e2e、mac / 非 mac 链接文字的第二支、shell 事件单测、`forced-colors` | 109 | 189 |
+| E2-0 | 把离开接线移到 `use-reader-leave.ts`。行为不变 | 72 | 125 |
+| E2-1 | 栏位状态、原生分段、空态、同一份 PageColumn 的显隐、已有菜单事件、并排样式、单测。不含勾选回传 | 338 | 585 |
+| E2-2 | `clickMenu` 的 e2e、链接文字的第二支、shell 事件单测、`forced-colors` | 109 | 189 |
 
 E2-0，合计 72。
 
 | 文件 | 计入 | 改完大约 | 会不会超 |
 | --- | --- | --- | --- |
-| `packages/features/reader/src/ui/use-reader-leave.ts` 新建 | 36 | 36 | 不会。普通文件 |
-| `packages/features/reader/src/ui/reader-screen.tsx` | 36 | 229 | 删掉移走的行，加上钩子调用。组件建议 250。`ReaderScreen` 函数降到 80 以下，并给 E2-1 留出余量 |
+| `use-reader-leave.ts` 新建 | 36 | 36 | 不会 |
+| `reader-screen.tsx` | 36 | 229 | `ReaderScreen` 降到 80 以下 |
 
-E2-1，合计 338。338 × 1.73 = 585。余量是到 346 的 8 行。某一格比预算少，别的格可以用这 8 行。合计超过 346 就停。
+E2-1，合计 338。338 × 1.73 = 585。到 346 还剩 8 行。合计超过 346 就停。焦点回落写在 `view-mode-panes.tsx` 的 40 行里，不另开文件；不够就停，不挤占勾选通道。
 
 | 文件 | 计入 | 改完大约 | 会不会超 |
 | --- | --- | --- | --- |
 | `use-view-mode.ts` 新建 | 36 | 36 | 不会 |
-| `view-mode-switch.tsx` 新建 | 60 | 60 | 不会。组件建议 250。函数停在 80 |
+| `view-mode-switch.tsx` 新建 | 60 | 60 | 不会。不加 8 键拦截 |
 | `view-mode-empty.tsx` 新建 | 40 | 40 | 不会 |
-| `view-mode-panes.tsx` 新建 | 40 | 40 | 不会。不在这里创建栏位状态 |
+| `view-mode-panes.tsx` 新建 | 40 | 40 | 不创建第二份 PageColumn，不创建栏位状态 |
 | `copy.ts` | 8 | 26 | 不会 |
-| `reader-screen.tsx` | 10 | 239 | E2-0 之后约 229。这里只调用钩子、把栏位传给栏和主区。停在 250 |
-| `reader.css` | 22 | 158 | 只写并排。不写新颜色，不去掉原生单选外观 |
-| `shell.tsx` | 14 | 161 | import 三个已有名字，`MenuNav` 加三个命令，`names` 加三项，新建 `viewCommand`。不改 main |
-| `use-bound-nav.ts` | 8 | 77 | 展开写法，与缩放相同 |
-| `view-mode-switch.test.tsx` 新建 | 36 | 36 | 不会 |
+| `reader-screen.tsx` | 10 | 239 | 停在 250 |
+| `reader.css` | 22 | 158 | 不新造颜色，不引用未定义的 link token |
+| `shell.tsx` | 14 | 161 | 只订阅已有事件。不改 main |
+| `use-bound-nav.ts` | 8 | 77 | 展开写法 |
+| `view-mode-switch.test.tsx` 新建 | 36 | 36 | 含组内方向键改变选中 |
 | `view-mode-empty.test.tsx` 新建 | 32 | 32 | 不会 |
-| `view-mode-panes.test.tsx` 新建 | 22 | 22 | 不会 |
-| `reader-screen.test.tsx` | 6 | 742 | 只改槽位断言。已超过建议上限 600。这一笔的正文写明：断言本来就在这个文件，新用例在新文件，所以不拆。不删测试 |
+| `view-mode-panes.test.tsx` 新建 | 22 | 22 | 页码、缩放、历史不变 |
+| `reader-screen.test.tsx` | 6 | 742 | 只改槽位断言。已超过建议上限 600。正文写明断言本来就在这个文件。不删测试 |
 | 本文件「实际」列的回填 | 4 |  | 文档 |
 
-E2-2，合计 109。只在 E2-1 合入之后，从当时的 main 另开。
+E2-2，合计 109。只在 E2-1 合入之后另开。`forced-colors` 只给新控件补系统色继承，不把高对比写成已通过，也不重做旧控件。改显示设置仍要当时的单独授权。
 
 | 文件 | 计入 | 改完大约 | 会不会超 |
 | --- | --- | --- | --- |
-| `apps/desktop/e2e/reader-nav.spec.ts` | 45 | 332 | 用 `clickMenu("对照")` 和 `clickMenu("原文")`。不在 CI 里按 Ctrl+1/2/3。PR #212 已证实 Playwright 按键不会触发菜单加速键 |
-| `reader.css` 的 `forced-colors` | 16 | 174 | 沿用已有焦点环写法。不新造颜色 |
-| 链接文字的 mac / 非 mac 第二支 | 24 |  | 放在空态测试文件。测试建议 600 |
-| shell 收到三个事件后栏位改变 | 20 |  | 卸下后再派发，状态不变 |
+| `reader-nav.spec.ts` | 45 | 332 | `clickMenu("对照")` 与 `clickMenu("原文")`。不在 CI 里按 Ctrl+1/2/3 |
+| `reader.css` 的 `forced-colors` | 16 | 174 | 沿用已有焦点环 |
+| 链接文字的 mac / 非 mac 第二支 | 24 |  | 放在空态测试 |
+| shell 收到三个事件 | 20 |  | 卸下后再派发，栏位无处可改 |
 | 本文件「实际」列的回填 | 4 |  | 文档 |
 
 ## 验收与测试
 
-本 PR 不跑 Vitest。实现 PR 才跑。只断言行为，不读源码文本做断言。
+本 PR 不跑 Vitest。下表是以后要覆盖的断言，现在全部未执行。只断言行为，不读源码文本做断言。
 
-单测：
+| # | 断言 | 现在 |
+| --- | --- | --- |
+| E2-01 | 新开、重开、换文献都是原文。选中和主区一致。不落盘 viewMode | 未执行 |
+| E2-02 | 对照左 PDF 右空态。译文主区空态。两句文字逐字正确。无「开始翻译」「去设置」。0 个主按钮 | 未执行 |
+| E2-03 | 快捷键、分段、菜单点击、返回链接是同一份状态。一次输入只切一次。文献库里菜单无作用。加速键不写成 e2e 已覆盖 | 未执行 |
+| E2-04 | 组名「栏位」。方向键在组内改变选中。不复制缩放 select 的 8 键拦截。焦点不落到隐藏子树 | 未执行 |
+| E2-05 | 页码、可见位置、历史、zoom 保持。不额外 `writePage`。不二次打开，不发翻译请求。不改画页尺寸公式。不自动适合宽度 | 未执行 |
+| E2-06 | 加载和错误不被切栏位绕过。页码框或输入法里冲突就停。不加第二套全局 keydown | 未执行 |
+| E2-07 | 200% 与高对比下名称、选中、焦点可辨，目标至少 24×24。改系统显示设置另要授权 | 未执行。不写 PASS |
+| E2-08 | diff 只在约定的 UI 和测试里。core 和契约不动。勾选若走路径乙，不在这份 UI diff 里 | 未执行 |
+| E2-09 | R-E13 保持未验证 | 未执行。不以本计划或 32GB 代填 |
 
-- 组的可访问名称是「栏位」。三个原生单选的名称是「原文」「对照」「译文」。打开时「原文」为选中。
-- `view-mode-empty-copy` 的文本等于「本阶段暂不提供译文，请先阅读原文。」
-- 链接名称等于「切到原文（Ctrl+1）」或「切到原文（⌘1）」，两支都测。没有「开始翻译」，没有「去设置」。
-- `view-mode-empty-degrade` 的文本是空的。不用 `/解析/` 或同类宽正则去匹配空态整段。不改 `reader-screen.test.tsx` 第 65 行。
-- 点链接回到原文。对照时原文栏还在，译文时原文栏不在。页码和缩放百分比不变。历史的后退状态不变。
-- 换文档 id 之后回到原文。
-- 加载中仍是骨架，出错仍是现有错误页。
-- 阅读 client 上没有新增的翻译调用。
-
-e2e 只覆盖菜单点击：`clickMenu("对照")` 之后看见空态句，`clickMenu("原文")` 之后原文栏回来。不把这条写成加速键已覆盖。
-
-真机清单。Box 和 Playwright 不能代替。没有对应设备就标未验证，不标 PASS。本计划不授权修改显示缩放、高对比、内存或任何系统设置。
-
-| 编号 | 内容 |
-| --- | --- |
-| R-E6 | 人手物理键盘：Windows Ctrl+1/2/3，mac ⌘1/2/3。对照和译文两种空态，再回到原文。页码不变。不发翻译请求。没有 mac 就标未验证 |
-| R-E6b | 页码框有焦点时，Ctrl+1/2/3 或 ⌘1/2/3 会不会被菜单加速键抢走。只记录。被抢走就停，不加第二套 `keydown`。不修已知的 Ctrl+0 / Ctrl+− |
-| 读屏 | Narrator 或 NVDA 读出组名「栏位」、当前选中项和空态句。没有新的批准就不改系统里的读屏安装 |
-
-R-E13 不在本清单里重测。
+真机沿用批次 E 的 R-E6。R-E11 的 mac ⌘1/2/3 没有设备就标未验证。物理键和 `clickMenu` 分开记。Narrator 或 NVDA 读组名、选中项和空态句；没有新的批准就不改系统里的读屏安装。
 
 ## 排除项
 
-不改 PRD、ARCHITECTURE、RULES、DESIGN、`docs/design/**`。不改 main 进程、`library-menu.ts`、core、`pure.ts`、contracts、`library/src`。不改 CSP。不加 wasm、`wasm-unsafe-eval`、`.mjs`、`blob:`、`bypassCSP`、协议注册、Range、`disableRange`、整份 PDF 的 IPC。不接翻译，不建 chip，不写降级句。不改画页比例，不改缩放档位，不把栏位写入历史。不修页码框抢走 Ctrl+0 / Ctrl+−。不做 B7，不做菜单置灰。不持久化栏位。不改 Windows 或任何系统设置。不用 32GB 或限制内存给 R-E13 标 PASS。
+不改 PRD、ARCHITECTURE、RULES、DESIGN、`docs/design/**`。勾选路径未定之前不改 main、`library-menu.ts`、preload、IPC、contracts。不改 core、`pure.ts`、`library/src`、CSP。不加 wasm、`wasm-unsafe-eval`、`.mjs`、`blob:`、`bypassCSP`、协议注册、Range、`disableRange`、整份 PDF 的 IPC。不接翻译，不建 chip，不写降级句。不改画页比例，不自动适合宽度，不把栏位写入历史。不重建 `ReaderScreen`，不复制 `PageColumn`，不重新打开文档。不修页码框抢走 Ctrl+0 / Ctrl+−。不做 B7，不做菜单置灰。不持久化栏位。不改 Windows 或任何系统设置。不用 32GB 或限制内存给 R-E13 标 PASS。
 
 ## 停止点
 
 - 本计划审查通过之前，不写 E2-0、E2-1、E2-2。
-- 下面两问没有答复之前，不写 E2-1。E2-0 不依赖这两问，但同样等计划审查。
-- 实现时非生成行超过 346，或 `reader-screen.tsx` 超过 250，或任一函数超过 80，就停。
-- 对照或译文必须改画页比例、改 core、改 contracts、改 main、改 CSP，才能完成已批行为，就停。把缺的那一项写出来，不在 E2 里改。
+- Wisdom 没有选定勾选路径之前，不改菜单模型，不加 renderer→main 通道，也不把「单选勾」从要求里删掉。
+- 路径乙被选中时，UI PR 等 seam 先合入。不在 E2-1 里顺手写 IPC。
+- 非生成行超过 346，或 `reader-screen.tsx` 超过 250，或任一函数超过 80，就停。
+- 缩容器或隐藏 PDF 若改写页码、历史或缩放，就停。
 - 页码框焦点抢走 Ctrl+1/2/3 时停。不加第二套按键监听。
-- 不把 R-E13 标成通过。没有真 8GB 机器就不测。
+- 不把 R-E13、高对比、读屏、加速键 e2e 标成通过。
 
-## 原则待核
+## 需要 Wisdom 决定
 
-Loom 正在做原则复核。下列各项本计划不写成已通过。
+只有菜单单选勾的路径。甲是勾选继续未完成，E2 只接已有事件。乙是另批菜单勾选 seam，再改 main。两条的代价在「菜单单选勾」。本计划不代选。这不是新的空态文案，也不是新的栏宽。
 
-- P4：计划用原生单选，不用自绘分段。DESIGN 标题栏画的是分段外观。若复核要求按图自绘，要先有决定，再去掉原生外观，并补高对比。
-- P4：菜单不加勾选。批次 E 计划的菜单表写「单选」。勾选和「主进程知道当前界面」是同一类事，6-3 A 已排除。
-- P5：空态是主区内容，不是 `role="status"`，也不是对话框。
-- P7：栏位留在 renderer，不写回 domain。契约已经这样写。复核若认为这是业务规则，就停，不在 E2 里改 core。
-- DESIGN 第 156 行默认对照，§11.4 写恢复视图。已批 6-1 A 和 G-7 是默认原文、不记住。不改 DESIGN 正文。
-- 空态元素：已批写的是「文字链接」，又写「不是主按钮」。见下面的待决问题。
-
-## 需要决定的问题
-
-这两问不答，E2-1 不开工。本计划不替它们补设计。
-
-1. 对照的右栏多宽。6-1 A 和批次 E 计划只写了「左原文、右空态」，没有比例。DESIGN 的 38em 是完整译文栏的行宽，不是这句空态。本计划不选 1:1，也不选 38em。译文占整个主区，不依赖这个数；为了不让「对照」先被选中而主区仍是整栏原文，对照和译文仍放在同一笔 E2-1。
-2. 文字链接用什么元素。推荐：`<button type="button">`，外观只有文字和下划线，可访问名称是整句，不设 `role="link"`，因为没有要打开的地址。不推荐 `<a href="#">`。若复核要求角色就是链接，再定，不在实现时擅自加 href。
-
-菜单勾选不是第三问的开工条件。默认不加勾、不改主进程。若审查要求勾选，E2 停下，另批主进程改动。
+上一稿问过的对照比例和链接元素，本轮收回。比例没有已批数字，计划不新定，只缩容器。链接沿用已批「文字链接」和 0 个主按钮，不重问皮肤。
 
 ## 计划 / 实际
 
-计划列在开工前填。实际列与证据在做完后填。
-
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本 PR：本文件和台账。不写产品代码 |  |  |
-| 2 | 审查通过后，从当时的 main 开 E2-0。只移离开接线 |  | 现有 `reader-screen` 测试 |
-| 3 | 上面两问有答复后，从 E2-0 合入后的 main 开 E2-1 |  | 三个新测试文件、槽位断言 |
-| 4 | E2-1 合入后开 E2-2。e2e 只用 `clickMenu` |  | `reader-nav.spec.ts`、真机 R-E6 另记，不写成 e2e 已覆盖 |
+| 1 | 本 PR：计划与台账。不写产品代码 |  |  |
+| 2 | 审查通过，且勾选路径已选之后，从当时的 main 开 E2-0。只移离开接线 |  | 现有 `reader-screen` 测试 |
+| 3 | 从 E2-0 合入后的 main 开 E2-1。只订阅已有事件。路径乙的 seam 不在这一笔 |  | E2-01–E2-06 里能在单测钉住的部分。仍非真机通过 |
+| 4 | E2-1 合入后开 E2-2。e2e 只用 `clickMenu` |  | 加速键和 R-E6 另记 |
 
 ## 决策记录
 
 | 决定 | 理由 | 日期（Asia/Shanghai） | 谁定的 |
 | --- | --- | --- | --- |
-| R-E13 记为未验证遗留，先做 E2。有真 8GB 机器后在当时的 main 上补测 | 原话见上表。不以 32GB 或限制内存代替 | 2026-11-16 11:08 | Wisdom，[6906182172](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6906182172) |
-| 菜单不加单选勾，不改 `library-menu.ts` | 6-3 A 已把主进程感知界面挂进 M2。勾选属于那一类。这是计划选用，审查可以否掉并叫停 | 2026-11-16 | 计划选用，非业主新批准 |
-| 栏宽和链接元素先问再写 E2-1 | 已批规格没有这两项。不在计划里补数字或补元素 | 2026-11-16 | 待审查 |
+| R-E13 记为未验证遗留，先做 E2 | 原话见已批来源。不以 32GB 或限制内存代替 | 2026-11-16 11:08 | Wisdom，[6906182172](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6906182172) |
+| 原则复核通过，不增加新设计 | Loom 附件。不是新批准，不是实现通过 | 2026-11-16 | Loom 复核。台账不新增行 |
+| 收回「计划选用不加菜单勾」 | 上一稿把已有要求写成了不做。勾选缺的是 checked 和回传，不是授权消失 | 2026-11-16 | 本计划更正。路径仍待 Wisdom |
+| 译文隐藏不卸载 PageColumn；对照不调用适合宽度 | 沿用 H5、H8 和现有 `Restore` 只在挂载时滚动。不是新布局比例 | 2026-11-16 | 计划落实已批约束，非业主新批准 |
 
 ## 实施交接
 
-下面整段可以交给实现。计划审查通过之前不要执行。
+计划审查通过，并且 Wisdom 选定勾选路径之前，不要执行。
 
 任务类型：UI 改动。涉及切片：reader 的 `src/ui`，desktop 的 renderer。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
 
-从审查通过时的 main 开工，不要从本计划分支继续写代码。先读本文件。E2-0 只把 `ReaderScreen` 的离开接线移到 `use-reader-leave.ts`，行为不变。栏宽和文字链接两问有书面答复之后才开 E2-1。E2-1 按本文件的文件表和 338 行预算实现：原生单选组名「栏位」，默认原文，不记住；对照左原文右空态，译文整个主区空态；句子和链接用 6-1 A 的原句；`view-mode-empty-degrade` 为空；不出现「开始翻译」「去设置」；不发翻译请求；不改画页比例、页码、缩放和历史。菜单事件只在 `shell.tsx` 转接，不改 main，不加勾选。E2-2 再用 `clickMenu` 补 e2e。物理 Ctrl / ⌘+1/2/3 写入真机清单，不写成 e2e 已覆盖。R-E13 保持未验证。不改系统设置。非生成行超过 346，或必须碰到本文件「排除项」里的文件，就停下来报告。
+从当时的 main 开工，不从本计划分支写产品代码。先读本文件的 H1–H12。E2-0 只移离开接线。E2-1 用原生 radiogroup「栏位」，放在空 chip 右边；三个栏位共用同一 `ReaderScreen`、同一 session、同一历史、同一 zoom；对照只缩容器，不调用适合宽度；译文用 `inert` 隐藏这一份 `PageColumn`，不卸载、不复制、不重新打开文档；回到原文保留页码、历史和缩放。加载和错误页不被空态替换。焦点在即将消失的节点上时落到对应 radio。组内方向键用浏览器自己的 radio 行为，不复制 `keepClosed` 的 8 键拦截。Ctrl / ⌘+1/2/3 只订阅已有菜单事件。路径甲不改 main，并在验收里把菜单勾选写成未完成。路径乙先另合 seam，不进入 E2-1。R-E13 保持未验证。原则通过不等于实现通过。
