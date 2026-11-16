@@ -2,202 +2,197 @@
 
 E2 菜单选中状态回传的最小 seam 设计。文件名按指定保留。分支仍是 `feature/reader-view-modes-e2-plan-174`。栏位与空态在 [E2 计划](feature-reader-view-modes-e2-174.md)。
 
-本文件只写设计。2026-11-16 12:08 原话只批准写设计，不批准编码。来源 [#174 6907026822](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6907026822)、[PR #220 6907027779](https://github.com/wisdom-km/open-immerse-v2/pull/220#issuecomment-6907027779)。Forge 对 `a5b06e5` 的第二轮审查是 FAIL。本轮仍只改文档，不请求编码批准，不自称通过。
+本文件只写设计。2026-11-16 12:08 原话只批准写设计，不批准编码。来源 [#174 6907026822](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6907026822)、[PR #220 6907027779](https://github.com/wisdom-km/open-immerse-v2/pull/220#issuecomment-6907027779)。Forge 对 `4652c9c` 的第三轮审查是 FAIL。本轮只改文档，不请求编码批准，不自称通过。
 
 不改产品代码、测试、生成物、CI、PRD、ARCHITECTURE、RULES、DESIGN。不开 Ready，不合入，不发版。
 
 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
 
-## 源码已否定的两条
+## 仍然成立
 
-标签 v45.2.1，本轮读的是这份标签的源码，没有启动 Electron。
+`MenuWillShow`（`electron_api_menu.cc` 132–145 行）会把全 false 的 radio 勾上第一项。none 用普通原生项，不写 checked。活动三模式用 radio，构造参数里恰一项 `checked: true`。不在已挂 radio 上写 checked。不加「无」项，不自绘，不置灰，不改 checkbox。标签、accelerator、enabled、事件名不变。这和已批「文献库不置灰、点了无作用」以及「有栏位时单选」相容，不是待用户选择的产品项。
 
-`Menu::MenuWillShow`（`electron_api_menu.cc` 132–145 行）注释是确保 radio 组至少有一项选中。全 false 时对组里第一项调用 `SetCheckedForRadioGroup`。`ElectronMenuModel::MenuWillShow` 会进到这里。因此「none 用三枚 radio 且构造期全 false」在第一次打开菜单时会被改成第一项勾上。重建一份尚未显示的全 false 组不能躲开下一次显示。这条不再列为实施时验证。
+S1 的 `expose` 保持 false。S2c 才同一笔改为 true、跑 codegen、注册 handler。不削弱 `assertHandlers` 或 `acceptsSender`。
 
-`SetChecked`（`electron_api_menu_item.cc` 481–487 行）对已挂 radio 忽略布尔值并选中自己。不在已挂项上写 `checked`。
+阅读屏里的 PDF 错误页不是浏览器错误文档，不退役 epoch。空态句仍只在成功支。
 
-`will-navigate` 只在渲染进程发起的导航上发出，`preventDefault` 会取消（`electron_navigation_throttle.cc` 55–61 行）。本应用 `decideNavigation` 恒为 prevent。取消的导航没有 commit，不会发 `did-navigate`。`DidFinishNavigation` 对 `ERR_ABORTED` 不发 `did-fail-load`（约 2932 行）。所以不能靠 `did-start-navigation` 进入退役、再等 `did-fail-load` 恢复，否则一次被取消的导航会把上报永久停住。epoch 只在已提交的主 frame 导航上变化。
+## 证据和未知
 
-`ChangeApplicationMenu` 的非 mac 分支注释写明：设置菜单可能跑应用 JS（例如 resize），这些 JS 可能开、关窗口（451–472 行）。mac 分支只调用 `SetApplicationMenu`，本轮没有读那个函数的正文。两边都按有重入来设计。mac 是否还有这份注释以外的重入，未知。
+本轮没有启动 Electron。结论只来自 v45.2.1 已读源码和本仓库入口。
 
-`isAppSender` 只核对 `oi-app:`、`sender.id` 和当前 `mainFrame` 引用。`RenderFrameHostChanged` 按 frame tree node 更新已有的 `WebFrameMain`，同站重载可能不换这个对象。因此它不能证明新文档，也不能代替 epoch。不改它，不削弱 `assertHandlers`。
-
-## 产品取舍
-
-这是本稿唯一的复审停点，不是未跑的源码问题。
-
-已批菜单表写这三项是单选。已批 6-3 A 是文献库不置灰、点了无作用，并且不假勾成原文。Electron 不允许一组 radio 全不勾。要同时不假勾，文献库里这三项不能是 radio。
-
-本候选：文献库用同标签、同 accelerator、保持 enabled 的普通原生项；阅读中的三模式才用原生 radio，且构造参数里恰有一项 `checked: true`。不加「无」项，不自绘，不置灰，不改成 checkbox。有栏位时的单选勾仍在。标签、快捷键、可点、事件名不变。
-
-若复审把「单选」读成「文献库里控件类型也必须是 radio」，则与上述源码冲突。本设计不另造自绘或假勾。编码仍不开始。
-
-## 两种菜单形状
-
-镜像只有 `none`、`original`、`contrast`、`translation`。`none` 是没在阅读。`oi-view-bilingual` 仍只是事件名，状态值是 `contrast`。
-
-装配只发生在 `Menu.buildFromTemplate` 的构造参数里，然后 `setApplicationMenu`。应用、编辑、窗口 role 照现有模板。历史、页码、缩放保持普通项，不设成 radio。三项模式是这一子菜单里仅有的 radio，所以它们成一组；普通项不会把组拆开，也不另加分隔线（那是视觉改动）。
-
-| 镜像 | 三项的 type | checked | 打开菜单 |
-| --- | --- | --- | --- |
-| none | 普通项，不写 checked | 没有勾 | `MenuWillShow` 跳过非 radio，不会勾上第一项 |
-| 三模式之一 | radio | 对应一项 true，另两项 false | 组里已有选中项，不会改去勾第一项 |
-
-普通项不写 `checked: true`。本轮没有跑各平台，不能另外声称「写了也不显示」。
-
-系统菜单和 accelerator 都会走 `RunBuiltInAction`。radio 会先选中被点的那一项；普通项不会改 checked。click 回调不写已挂项的 checked。它先按已提交镜像整份重建，把刚被自动勾上的那份换掉，再派发已有事件。重建抛错则不派发，并记下失败。`executeJavaScript` 的拒绝要接住并记下，不能变成未处理拒绝。不等待它。文献库镜像是 none，点了仍是普通项，事件可以派发，阅读屏不在时没有栏位可改。
-
-重复点当前 radio：内建动作仍会选中自己，重建按已提交镜像放回同一项。
-
-可访问性验收只读项的 type 和 checked，并调用锁定版本上的 `_menuWillShow`（它直接进入上面的 C++ 函数）。不把 `item.click` 单独算过。读屏会怎么念、菜单仍打开时替换的画面，本轮未跑，不写通过。方向键在打开的系统菜单里怎么移动，本轮未知，不另写一套按键逻辑。
-
-## 谁有权换 epoch
-
-main 按 `webContents.id` 保存槽。epoch 是 main 的整数，从 0 起。渲染进程不提交 bootId，也不提交一个自己生成的 UUID。载荷里的 epoch 只是回声，必须等于该槽当前已公开的 epoch。不相等就 `rejected`，不改菜单，不改地板。
-
-槽的阶段：
-
-- 未公开：还没有一次 `oi-app:` 的 `did-finish-load`。上报一律 `rejected`。
-- 退役：已提交的主 frame、非 same-document 的 `did-navigate` 且 URL 是 `oi-app:`。立刻拒绝一切上报。地板先不动。`about:blank` 的 `did-navigate` 不退役。S2a 只记阶段，不改菜单。S2b 起，窗口还活着就按 none 形状重建；这不是一次被接受的上报。
-- 公开：随后的 `did-finish-load`，且当时 URL 仍是 `oi-app:`。epoch 加一，地板归零，镜像记为 none。若加一会超过 `Number.MAX_SAFE_INTEGER`，保持退役，不回绕，不再接受上报。
-
-same-document 的 `did-navigate-in-page` 不改变 epoch。阅读屏开关不是导航。`render-process-gone` 进入退役并尽量换成 none 形状，直到下一次合格的 `did-finish-load` 才公开新 epoch。窗口 `closed` 删掉该槽；窗口已销毁就不再 `setApplicationMenu`。
-
-公开时 main 用已有的 `executeJavaScript` 派发一次 `CustomEvent`，detail 只是这个整数。脚本不拼接渲染进程来的字符串。这不是新的 IPC 通道，不改 CSP，不改协议。页面可以伪造这个事件，但伪造的数字对不上槽就会被拒绝，不能把地板重置。监听写在随页面加载的 shell 模块里，不写在晚加载的分包里。`did-finish-load` 没有 URL 参数，公开前读 `getURL()`。脚本失败只再试一次，不排定时器。两次都失败则槽仍公开，页面没听到；上报不发明 epoch，菜单停在上次形状，直到下一次合格的 `did-finish-load`。
-
-`IpcCommandContext` 增加可选的 `senderWebContentsId`。router 在 `acceptsSender` 已经通过之后，从 `event.sender.id` 抄进去。载荷里没有这个字段，schema 也不接受它。缺这个字段的调用 `rejected`。不改 `acceptsSender`，不改 `assertHandlers`。这是权限开口：handler 能看见 main 已经核对过的 webContents id。
-
-## 提交菜单
-
-handler 在任何 await 之前，并且在任何菜单副作用之前，同步做完：
-
-1. 未销毁窗口恰好一个，且它的 `webContents.id` 等于 context 里的 id。
-2. 该槽阶段是公开，载荷 epoch 等于槽的 epoch，generation 是大于地板且不超过安全整数上限的整数。
-3. 没有另一笔菜单替换正在进行。
-
-任一不满足：`rejected`，不重建，不消耗地板。坏形状仍是 `invalid_payload`。发送方仍是 `sender_rejected`。不新造错误码。
-
-然后记下尝试记号，调用 `setApplicationMenu`。返回之后再次核对：同一 webContents 仍是唯一未销毁窗口，槽还在，阶段和 epoch 没变，尝试记号没被清掉。都成立才把地板和镜像写成这一笔。否则 `rejected` 且不写地板。
-
-替换抛错：不写地板和镜像。不宣称原生菜单能回滚。已安装的菜单视为未知。返回 `handler_threw`。下一次被接受的上报按最新镜像整份重建，不打补丁。
-
-重入：`closed` 若在替换期间清掉槽，外层看到槽没了，不提交。重入的另一笔上报看到正在替换，直接 `rejected`，不再次 `setApplicationMenu`。
-
-## 上报状态机
-
-shell 模块里一份上报器，不放进 `ReaderScreen`。同一 JS 领域里卸载再打开，generation 不归零。新文档是新领域，generation 从 1 重新计。超过安全整数上限就不再发送，不回绕；阅读仍可切换，菜单停在上次提交的镜像。
-
-任意时刻最多一个 `reportViewMenu` invoke。没有发出的期望可以被替换。已经发出的不撤回。
-
-期望每次变化得到新的 revision。每个 revision 自己有两次发送额度，不和上一份共用。发送时才把额度减一，并分配新的 generation。
-
-完成回调闭包记下 `attemptId`。对不上当前在飞的那次，就什么都不做：不改额度，不发送。这是迟到响应。它不能改 main，也碰不到新领域里的另一份上报器。main 的成功响应不带新的 epoch，不根据响应改菜单。
-
-无响应：2 秒到点就放弃这一次，算消耗一次额度。迟到的响应仍按 `attemptId` 丢掉。放弃之后若期望还在且该 revision 仍有额度，才发送下一次。不会永久停在「在飞所以不能发新的」。
-
-| 到达的结果 | 同一 revision 仍是期望 | 期望已经换成新 revision |
+| 声明 | 证据 | 未知 |
 | --- | --- | --- |
-| 成功 | 停。菜单已是这份 | 新 revision 额度仍是两次，发送它 |
-| `handler_threw` 或超时 | 还有额度就用新 generation 再发这份 | 不把失败算进新 revision。发送新的 |
-| `invalid_payload` 或 `rejected` | 这个 revision 不再发 | 若是 epoch 对不上，先等下一次公开事件再发新的；其它拒绝不重发旧的 |
+| `executeJavaScript` 先 await，再在当时的 webContents 上跑 | `lib/browser/api/web-contents.ts` 44–58 行。有 URL 且主 frame 不在加载才立即跑，否则等一次 `did-stop-loading` | 没跑过重载把旧脚本送进新文档的时序。脚本正文仍是调用时写死的整数 |
+| 正常首屏脚本先于 load | `index.html` 在 body 末尾同步引用 `main.js`。`main.tsx` 静态引用 shell。监听放在 shell 模块求值，不放 effect | 没跑过 `did-finish-load` 与这次求值的先后。不据此声称监听一定丢失 |
+| 已提交错误页不发 `did-navigate` | `DidFinishNavigation`：未 commit 直接返回（2872 行）。非错误页才发 `did-navigate`（2885–2907 行）。错误页发 `did-fail-provisional-load`（2925–2930 行） | 该字符串在已读的 `electron_api_web_contents.cc` 里只出现一次。没搜完全部编译单元 |
+| `did-finish-load` 不证明成功的应用文档 | `DidFinishLoad` 没有错误页判断（2541–2557 行）。`getURL` 是 `GetLastCommittedURL`（3267–3268 行） | 错误页提交后这个 URL 的具体字符串未跑 |
+| `did-fail-load` 不是换文档信号 | 同文件还有非法 URL、加载失败、`beforeunload` 的 `ERR_ABORTED`（约 3280、3329、5003 行）。2932 行只让错误页分支不发 aborted | 不把「永远不会在别的路径发 aborted」写成结论 |
+| 设置菜单可能重入 | `ChangeApplicationMenu` 非 mac 注释（451–472 行） | mac 的 `SetApplicationMenu` 正文本轮没读。门两边都用 |
+| invoke 不会因定时器消失 | 计划不再把逻辑放弃叫成取消 | 未完成 Promise 的进程内上限未测 |
 
-两次用尽后不排定时器。下一次期望变化重新获得两次。阅读屏不因菜单失败停住。菜单停在上次成功提交的镜像。这是故障状态，不写成「重开一定已经勾上原文」。
+`createMainWindow` 现在在返回前就 `loadURL`（`window.ts` 23 行）。挂接必须改成：先创建窗口并注册 epoch 监听，再 `loadURL`。不改导航决定，不加通道。
 
-离开：先把期望写成 none，再同步卸下，不 await。none 若还没发出就被新的 original 替换，则 none 从不发送。none 若已经在飞，它返回之后才发送 original；main 可能先接受 none，再接受 original。不存在两笔同时在飞，也就不靠「后到的 none 被拒绝」来保证顺序。
+## 菜单形状
+
+镜像是 `none`、`original`、`contrast`、`translation`。`oi-view-bilingual` 只是事件名。历史、页码、缩放保持普通项。三项模式是该子菜单里仅有的 radio，不加分隔线。应用、编辑、窗口 role 照旧。
+
+系统菜单和 accelerator 先走 `RunBuiltInAction`。click 不写已挂项。它请求替换门按已提交镜像重建；门成功才派发，失败不派发。`executeJavaScript` 的拒绝要接住。验收读 type、checked，并调用 `_menuWillShow`。只点 `item.click` 不算过。读屏、菜单仍开着时的画面、物理键，本轮未跑。
+
+## epoch
+
+main 按 `webContents.id` 存槽。载荷里的 epoch 只是回声。渲染进程不提交 bootId。`senderWebContentsId` 由 router 在 `acceptsSender` 通过后从 `event.sender.id` 抄入，可选。载荷里没有它。这是权限开口：handler 能看见已经核对过的 id。
+
+阶段：`unpublished`、`awaiting-finish`、`open`、`retired`。same-document 忽略。非主 frame 忽略。
+
+| 事件 | 条件 | 结果 |
+| --- | --- | --- |
+| `did-navigate` | 主 frame，URL 是 `oi-app:` | `awaiting-finish`。作废未完成的公开。拒绝上报。不在这里加 epoch |
+| `did-navigate` | 主 frame，URL 不是 `oi-app:`，槽还没公开过 | 保持 `unpublished`。初始 blank 不退役 |
+| `did-navigate` | 主 frame，URL 不是 `oi-app:`，已经公开或正在等 finish | `retired`。作废公开。拒绝上报 |
+| `did-fail-provisional-load` | 主 frame | `retired`。作废公开。随后的 `did-finish-load` 不公开 |
+| `did-finish-load` | 阶段是 `awaiting-finish`，且当时 `getURL()` 仍是 `oi-app:` | epoch 加一，地板归零，镜像记为 none，进入 `open`，安排公开。加一会超过安全整数上限则改为 `retired`，不回绕，不公开 |
+| `did-finish-load` | 其它 | 不公开。`retired` 维持 `retired` |
+| `render-process-gone` | 该 webContents | `retired`。作废公开 |
+| `closed` | 窗口销毁 | 删槽。不再碰 Menu |
+| 未 commit 的取消 | 没有 `did-navigate` | 阶段不变。不用 `did-fail-load` 解冻 |
+
+`awaiting-finish` 和 `retired` 时，上报在菜单副作用之前 `rejected`，不改地板。同站重载会先 `did-navigate`，所以旧请求在新 epoch 公开前就已经被阶段挡住。已读源码里 `DidFinishNavigation` 先于 `DidFinishLoad`。本设计依赖这个顺序：成功提交先进入 `awaiting-finish`，错误提交先进入 `retired`，然后才看到 `did-finish-load`。若实现时看到 finish 先到，停，不凭 `getURL()` 把这次 finish 公开。
+
+## 公开事件
+
+每次进入 `open` 安排一次公开。槽记下 `{ epoch, attempt }`。脚本用现有 `executeJavaScript` 派发 `CustomEvent`，detail 只是这个整数，不拼接渲染进程的字符串。没有第二条 IPC，没有确认回执，没有轮询。
+
+脚本的 Promise 失败时，只再试一次。重试前必须仍是同一次 attempt、同一 epoch、阶段仍是 `open`、窗口未关。`retired`、`closed` 或 epoch 已经前进，就丢掉这次失败，不补发旧整数。成功只表示脚本没抛，不表示监听方收到。
+
+shell 模块求值时就监听。同一 JS 领域里：
+
+- detail 不是 1 到 `Number.MAX_SAFE_INTEGER` 的整数：忽略。
+- 还没有 epoch：收下。
+- 相等：忽略。
+- 更小：忽略。不改当前 epoch，不清逻辑尝试，不重置额度。
+- 更大：改记这个 epoch。旧逻辑尝试立刻失效，不等它的响应。若有期望，按新 epoch 发当前期望。
+
+两次脚本都失败：main 的槽可以仍是 `open`，渲染端没有 epoch，就不发送，也不自己造一个。菜单停在上次替换结果。同一文档不再公开。下一次合格的 `did-finish-load` 才重新安排。不改成无限重试。
+
+## 替换门
+
+上报、click、生命周期要的 none，都进同一个门。替换进行中只记下最新的待恢复镜像，不再次调用 `setApplicationMenu`。click 若撞上正在替换：不派发，也不用旧镜像盖掉已经记下的更新镜像。
+
+调用原生替换之前失败：不调用 `setApplicationMenu`，不改地板，已安装状态不变。这是副作用前的 `rejected`。
+
+调用之后抛错，或返回后的窗口、槽、epoch、记号核对失败：不写地板，已安装状态标为 `unknown`。不说屏幕仍是上次提交的镜像。窗口还在，就用当时最新的有效镜像再替换一次。这次再失败就保持 `unknown`，不再连环替换，也不排定时器。下一次上报、click 或生命周期事件才再试。窗口已销毁则不碰 Menu。
+
+不新造错误码。不宣称原生回滚。
+
+## 上报
+
+shell 持有上报器，不放进 `ReaderScreen`。同一领域里卸载再打开，generation 不归零。新文档是新领域，从 1 计。超过安全整数上限就不发送，不回绕。
+
+每个上报器同时只有一个逻辑尝试。2 秒无响应、响应已处理，或收到更大的 epoch，都只放弃这个逻辑尝试。Electron 的 invoke 仍在。`attemptId` 只丢掉对不上的响应，不能当成取消。
+
+每个 revision 两次额度，发送时才扣，旧 revision 的失败不扣新的。连续 revision 留下的未完成 Promise 没有总上限。这是取舍：不新增取消通道，也不把超时后的发送说成物理上仍只有一个 invoke。若要物理上只有一个，就必须等原调用结束，不能再承诺超时后继续发。本设计不选那条。
+
+离开先把期望写成 none，再同步卸下，不 await。还没发送的 none 可以被 original 替换，于是从不发送。已经发送的 none 不撤回。
 
 ## 轨迹
 
 | 轨迹 | 结果 |
 | --- | --- |
-| 启动，epoch 未公开 | none 形状。上报被拒绝 |
-| `oi-app:` 的 did-finish-load | epoch 变为 1，地板 0，公开事件。之后才能接受 generation 1 |
-| 打开阅读，含加载 | 期望 original。接受后才是 radio，且只勾原文 |
-| 错误页 | 不把期望改成 none。空态句仍只在成功支 |
-| 换文献 | 同一 epoch，generation 增加。主人直接到 original，不先发上一篇 |
-| 连点 | 在飞只有一个。未发的期望被最后一次替换 |
-| 离开 | 期望 none，不 await。未发就替换则不发 none |
-| 离开的 none 已在飞，立刻重开 | none 先结束，再发 original。中间菜单可以短暂成为 none 形状 |
-| 一次抛错 | 同一 revision 用新 generation 再发当时的期望，不重放旧 mode |
-| 在飞时期望已变 | 旧失败不占用新 revision 的两次 |
-| 同一 revision 两次失败或两次超时 | 停在上次提交。下次期望变化重新计数 |
-| 响应迟到 | `attemptId` 不符则忽略 |
-| 旧 epoch 的请求迟到 | `rejected`。不改地板，不重建 |
-| 已提交的 oi-app 导航 | 退役，拒绝上报，菜单先换成 none 形状。did-finish-load 后才是新 epoch |
-| 被 preventDefault 取消的导航 | 没有 did-navigate，epoch 不变 |
-| generation 或 epoch 将溢出 | 不发送，不回绕 |
-| 第二个窗口或替换期间窗口没了 | `rejected`，不提交地板 |
-| 替换抛错 | 不写地板。下一次接受才整份重建 |
-| click 重建抛错 | 不派发菜单事件 |
+| 启动，尚未 `open` | 不上报。S2b 起菜单是 none 形状 |
+| 首次 `oi-app:` navigate 再 finish | epoch 为 1。监听已在模块求值时装上 |
+| 打开阅读 | 接受后才是 radio，且只勾原文 |
+| 阅读屏错误页 | 不退役，不改成 none |
+| 换文献 | 同一 epoch。直接到 original |
+| 连点 | 未发送的期望被最后一次替换。逻辑尝试仍只有一个 |
+| 离开 | 不 await。未发送的 none 可被替换掉 |
+| none 超时后再发 original | 两笔 Promise 都可以还在。后到的 none 请求若 generation 已旧或 epoch 不符：副作用前拒绝，不改地板。若 main 先接受了 none，菜单可以先变成 none 形状，再接受 original |
+| none 的响应迟到 | `attemptId` 不符则忽略。不释放新的逻辑尝试 |
+| 旧公开整数晚于新 epoch 到达 | 渲染端不回退。不重发旧整数 |
+| 新文档先收到旧整数 | 可以先记下。main 已是更大的 epoch 就拒绝该请求。更大的事件再到时向前更新并发送当前期望 |
+| 两次公开脚本失败 | 不发第三次。渲染端不发明 epoch |
+| 无效或溢出的事件 | 忽略 |
+| 已提交错误文档 | `did-fail-provisional-load` 退役。后面的 finish 不公开 |
+| 公开之后提交 blank 或其它 URL | 退役 |
+| 初始 blank | 保持未公开 |
+| 取消的导航 | 没有 commit，epoch 不变 |
+| 重载后新 epoch 已接受，旧请求才到 | 副作用前拒绝。不改地板，不重建 |
+| 调用原生菜单之前拒绝 | 不调用替换 |
+| 调用之后核对失败或抛错 | 状态 `unknown`。有界再换一次。再不成就保持 `unknown` |
+| click 撞上正在替换 | 不嵌套替换，不派发 |
+| 窗口销毁 | 不碰 Menu |
 
 ## 分批
 
-硬线：非生成新增+删除 600；只改 `packages/contracts/` 时 200。346 是估算 × 1.73 ≤ 600 的门槛。生成物不在 pr-size 排除名单，下面的生成行计入 600，不重复乘进「还能用的 200」。函数软 50、硬 80。超过软线就拆函数，到硬线就停。不写 G12，不删测试。基本行为测试不能挪到合入之后。
+硬线 600。只改 `packages/contracts/` 时 200。346 是估算 × 1.73 ≤ 600 的门槛。生成物计入，不排除。下面的「计入」是预计的新增+删除，不是净增。函数软 50、硬 80。超过 346 先重算再拆整批。超过适用的 600 或 200 就停。不写 G12，不删测试，不靠删断言来凑数。
 
-唯一顺序：S1 → S2a → S2b → E2-0 → E2-1 → E2-2 → S3。没有循环。S2b 依赖 S2a 的槽和 context 字段。S3 依赖 S2b 的 handler 和 E2-1 的栏位主人。E2 三笔不写上报，也不等 S3。每一笔都要单独批准。批准编码不包含改 ARCHITECTURE。
+顺序：S1 → S2a → S2b → S2c → E2-0 → E2-1 → E2-2 → S3。没有循环。E2 三笔不写上报。S3 依赖 S2c 和 E2-1 的栏位主人。每一笔另批。批准编码不包含改 ARCHITECTURE。
 
-| 笔 | 合入后能启动 | 菜单实际状态 | 估算 | ×1.73 |
+| 笔 | 合入后能启动 | 菜单 | 计入 | ×1.73 |
 | --- | --- | --- | --- | --- |
-| S1 | 能。命令不进 registry | 仍是今天的普通项，没有勾 | 178 | 308。契约档看 200，178 用去 200 的额度，不是 308 |
-| S2a | 能。仍无这条 handler | 与 S1 相同。公开事件没有监听者 | 227 | 393 |
-| S2b | 能。handler 已注册 | none 形状：三项普通项，不开勾。还没有上报者，不会变成 radio | 322 | 557 |
-| E2-0 | 能 | 与 S2b 相同 | 72 | 125 |
-| E2-1 | 能 | 仍是 none 形状。工具栏能改栏位，勾还没跟上 | 338 | 585 |
-| E2-2 | 能 | `clickMenu` 只证明事件派发 | 109 | 189 |
-| S3 | 能 | 文献库是普通项。接受 original 之后才是 radio 且只勾原文 | 187 | 324 |
+| S1 | 能。不进 registry | 今天的普通项 | 178 | 308。200 档只用 178 |
+| S2a | 能。无这条 handler | 与 S1 相同 | 324 | 561 |
+| S2b | 能。仍不暴露 | none 形状的普通项。没有上报者，不会变成 radio | 290 | 502 |
+| S2c | 能。handler 已注册 | 仍是 none 形状，直到有被接受的活动上报 | 242 | 419 |
+| E2-0 | 能 | 与 S2c 相同 | 72 | 125 |
+| E2-1 | 能 | 仍无勾。工具栏能改栏位 | 338 | 585 |
+| E2-2 | 能 | `clickMenu` 只证明事件 | 109 | 189 |
+| S3 | 能 | 文献库是普通项。接受原文后才是恰一勾的 radio | 246 | 426 |
 
-S1 改完行数：新建 `packages/contracts/src/ipc/shell.ts` 78，低于 400；`packages/contracts/src/index.ts` 200 增到约 210；`packages/contracts/test/ipc-shell.test.ts` 90。178 = 78+10+90。`expose: false`，三份生成物 diff 为 0。真实 diff 超过 200 就停，只压缩注释，不把测试挪走，不改成 expose true。
+S1：`shell.ts` 新建 78；`packages/contracts/src/index.ts` 200 到约 210，计入 10；契约测试 90。178 = 78+10+90。生成物 diff 为 0。超过 200 就停。
 
-S2a：`ipc-router.ts` 244 增到约 262，计入 18，文件仍低于 400，`commandContext` 仍短于 50。新建 `view-menu-epoch.ts` 110，reducer 和 attach 都短于 50。`index.ts` 59 增到约 68，计入 9。行为测试 90。227 = 18+110+9+90。不改生成物，不注册 handler。
+S2a：`ipc-router.ts` 244 行，计入 18，改完约 262，`commandContext` 短于 50。`view-menu-epoch.ts` 新建 140，reducer、公开、挂接都短于 50。`window.ts` 把 `loadURL` 移到挂接之后，计入 4。`index.ts` 59 行，计入 12。测试 150，包含下面 S2a 验收的每一项。324 = 18+140+4+12+150。
 
-S2b 生成物按 schema 展开估算，不是实测：registry 这一条约 53 行，`oi.generated.ts` 约 25，`oi-api.d.ts` 约 23，合计约 110，都计入。再加 expose 替换 2、`view-menu-mirror.ts` 60、`view-menu-handler.ts` 55、`library-menu.ts` 94 增到约 109（计入 15）、`library-wiring.ts` 252 增到约 277（计入 25）、基本测试 55。322 = 110+2+60+55+15+25+55。两个菜单文件改完仍低于 400。重建函数和 handler 都短于 50。codegen 若把 322 推过 346，先停；只可把基本四项以外的用例拆走，不能拆掉「expose 与 handler 同一笔」，也不能先合没有这四项的通道。四项是：none 经过 `_menuWillShow` 仍无勾；活动形状恰一勾且显示后不变；epoch 不符不重建；替换抛错不写地板。
+S2b：`view-menu-gate.ts` 80，`view-menu-mirror.ts` 50，两者的替换函数短于 50。`library-menu.ts` 94 行，计入 20，改完约 110。`library-wiring.ts` 252 行，计入 40，改完约 280。测试 100，包含下面 S2b 验收的每一项，没有另写「外加」。290 = 80+50+20+40+100。文件改完仍低于 400。
 
-S3 计入 100+20+12+55 = 187。新建 `view-menu-report.ts` 100，入队和重试都短于 50。`shell.tsx` 147 增到约 167。`use-view-mode.ts` 由 E2 的约 36 增到约 48，仍短于 50。行为测试 55，覆盖上表。不把回调塞进 `ReaderScreen`。
+S2c：expose 计入 2。生成物约 110，是 schema 展开估算，不是跑过 codegen：registry 约 53，`oi.generated.ts` 约 25，`oi-api.d.ts` 约 23。`view-menu-handler.ts` 50，短于 50。测试 80。242 = 2+110+50+80。codegen 若把 242 推过 346，先停。不能把 expose 和 handler 拆开，也不能把 S2c 验收移出这一笔。
+
+S3：`view-menu-report.ts` 120，入队和放弃都短于 50。`shell.tsx` 147 行，计入 30，改完约 170。`use-view-mode.ts` 由 E2 的约 36 增到约 48，计入 16，函数仍短于 50。测试 80。246 = 120+30+16+80。不把回调塞进 `ReaderScreen`。
 
 ## 验收
 
-S1：契约钉住 expose false、四值、generation 与 epoch 的上下限、多余字段、没有 bootId。不启动 Electron。
+S1：expose false、四值、两个整数的上下限、多余字段、没有 bootId。不启动 Electron。
 
-S2a：reducer 覆盖未公开、退役、公开、溢出、取消的导航不退役、`render-process-gone`、closed。不把 `did-fail-load` 当成取消信号。
+S2a：挂接先于 `loadURL`。未公开、初始 blank、`oi-app:` 的 navigate 加 finish、错误文档后的 finish 不公开、公开后的 blank、取消不变、溢出不回绕、`render-process-gone`、closed。公开：同代才重试一次、旧 attempt 不补发、更小事件不回退、无效事件忽略、两次失败不发第三次。
 
-S2b：上列四项，外加零个或两个窗口不重建，替换期间的重入不提交，click 重建失败不派发，`executeJavaScript` 的拒绝被接住。角色菜单和缩放加速键仍各有一份。不把静态模板读数当成系统菜单仍打开时的画面。该项画面未跑。
+S2b：none 经过 `_menuWillShow` 仍无勾；活动形状恰一勾且显示后不变；门在替换中不嵌套；click 撞上时不派发；抛错和后置失败都是 `unknown`，并且只再修一次；再失败保持 `unknown`；窗口销毁不碰 Menu；角色和缩放加速键仍各一份。不把模板读数当成菜单仍开着的画面。
 
-S3：轨迹表每一行有行为测试，不断言源码文本。不写 `ReaderSession`。不发翻译。
+S2c：副作用前拒绝不调用替换；epoch 或窗口不符不改地板；后置失败不写地板且状态是 `unknown`；零个或两个窗口不替换。
+
+S3：轨迹表里上报、超时、迟到请求、迟到响应、迟到公开事件各有行为测试。不断言源码文本。不写 `ReaderSession`。不发翻译。`clickMenu` 只算事件。物理键、读屏、菜单仍开着的画面、mac，继续未验证。
 
 ## 将来另批才许改的文件
 
-审查通过后才可以请 Wisdom 批某一笔。本文件不代批。ARCH 正文是独立禁区。
+技术复审通过前不开工。通过后一次只请求点名的一笔。ARCH 正文不在其内。
 
-- S1：`packages/contracts/src/ipc/shell.ts`、`packages/contracts/src/index.ts`、`packages/contracts/test/ipc-shell.test.ts`。不含生成物，不含 handler。
-- S2a：`ipc-router.ts` 只加上述 context 字段，`view-menu-epoch.ts`、`index.ts` 的一处挂接，及测试。不含菜单形状，不含 expose。
-- S2b：`shell.ts` 的 expose、三份生成物、`view-menu-mirror.ts`、`view-menu-handler.ts`、`library-menu.ts`、`library-wiring.ts` 及基本测试。不含 renderer 上报。
+- S1：`packages/contracts/src/ipc/shell.ts`、`packages/contracts/src/index.ts`、`packages/contracts/test/ipc-shell.test.ts`。
+- S2a：`ipc-router.ts` 的 context 字段，`view-menu-epoch.ts`，`window.ts` 的加载顺序，`index.ts` 的挂接，及测试。不含菜单形状，不含 expose。
+- S2b：`view-menu-gate.ts`、`view-menu-mirror.ts`、`library-menu.ts`、`library-wiring.ts` 及测试。不含 handler。
+- S2c：`shell.ts` 的 expose、三份生成物、`view-menu-handler.ts` 及测试。不含 renderer 上报。
 - S3：`view-menu-report.ts`、`shell.tsx`、`use-view-mode.ts` 的回调及测试。不改 reader 的 domain、application、`index.ts`、`pure.ts`，不改 `contracts/src/ipc/reader.ts`。
 
-不批：手改生成物、削弱 `assertHandlers` 或 `acceptsSender`、让载荷自己决定 epoch、新的 `ipcMain` 通道、CSP、协议、缩放菜单勾、置灰、持久化、ARCH 正文。
+不批：手改生成物、削弱断言或 `acceptsSender`、载荷自定 epoch、新的 `ipcMain` 或取消通道、CSP、协议、缩放菜单勾、置灰、持久化、ARCH 正文。
 
 ## 计划 / 实际
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
 | 1 | 本文件。不写产品代码 |  |  |
-| 2 | Forge 复审。通过前不写 S1。文献库若被要求必须是 radio，本设计停 |  |  |
+| 2 | Forge 复审。通过前不写 S1 |  |  |
 
 ## 决策记录
 
 | 决定 | 理由 | 日期 | 谁定的 |
 | --- | --- | --- | --- |
 | 12:08 只写设计 | 原话见文首 | 2026-11-16 | Wisdom |
-| none 用普通项，活动模式才用 radio | `MenuWillShow` 会把全 false 的 radio 勾上第一项 | 2026-11-16 | 本设计按 Forge FAIL 修正，不是新批准 |
-| epoch 只由 main 在已提交导航上增加 | 渲染进程自报新 id 不能重置地板。取消的导航没有 commit | 2026-11-16 | 同上 |
-| S1 不暴露 | `assertHandlers` 在启动时抛 | 2026-11-16 | 同上 |
+| none 用普通项，活动模式才用 radio | `MenuWillShow` 会补选。与已批语义相容，不是新的产品选项 | 2026-11-16 | 按审查修正，不是新批准 |
+| 公开事件只向前接收 | `executeJavaScript` 的 await 可以把旧整数送进新文档 | 2026-11-16 | 同上 |
+| 错误文档用 `did-fail-provisional-load` 退役 | 已提交错误页不发 `did-navigate` | 2026-11-16 | 同上 |
+| 超时只放弃逻辑尝试 | invoke 不会因此取消 | 2026-11-16 | 同上 |
+| 三个入口共用替换门 | 后置失败不能证明屏幕仍是旧镜像 | 2026-11-16 | 同上 |
+| S1 不暴露 | 启动时 `assertHandlers` 会抛 | 2026-11-16 | 同上 |
 
 ## 交接
 
-从当时的 main 另开，Draft。先完整读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md` 和本文件。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。没有点名的笔不开工。不改 ARCH。文献库必须是 radio 的读法未接受之前，不开工。
+从当时的 main 另开，Draft。先完整读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md` 和本文件。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。没有点名的笔不开工。不改 ARCH。技术复审通过前不开工。通过后一次只请求点名的一笔，并且不包含 ARCH 正文。
 
-S1 是 seam 变更。expose 保持 false。估算 178，契约档硬线 200。
-
-S2a 是 main 的生命周期槽。估算 227。不改菜单。
-
-S2b 是 main 接线。依赖 S2a。估算 322。先做 `_menuWillShow` 的两项形状，不把全 false radio 留作停点。
-
-S3 是 UI 改动。依赖 S2b 和 E2-1。估算 187。R-E13 保持未验证。
+S1 是 seam 变更。估算 178，契约档 200。S2a 估算 324。S2b 估算 290。S2c 估算 242。S3 是 UI 改动，估算 246。R-E13 保持未验证。
