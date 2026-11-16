@@ -17,7 +17,7 @@ vi.mock("electron", () => {
   };
 });
 
-const context: IpcCommandContext = { requestId: "map" };
+const context: IpcCommandContext = { requestId: "map", senderWebContentsId: 0 };
 
 it("maps the four reading channels onto that library main", async () => {
   const root = mkdtempSync(path.join(tmpdir(), "oitest-reading-map-"));

@@ -13,6 +13,7 @@ import type { IpcInvokeEvent } from "./sender-frame.js";
 
 export type IpcCommandContext = {
   readonly requestId: string;
+  readonly senderWebContentsId: number;
   readonly droppedFilePath?: string;
 };
 
@@ -165,7 +166,7 @@ async function callHandler(
   // idempotent is a registry flag only. This path does not retry.
   const produced = await handler(
     attempt.payload,
-    commandContext(attempt.requestId, dropped),
+    commandContext(attempt.requestId, attempt.event.sender.id, dropped),
   );
   if (!isPassThrough(produced)) {
     return failThrew(
@@ -180,12 +181,13 @@ async function callHandler(
 
 function commandContext(
   requestId: string,
+  senderWebContentsId: number,
   dropped: DroppedPath,
 ): IpcCommandContext {
   if (dropped.kind !== "path") {
-    return { requestId };
+    return { requestId, senderWebContentsId };
   }
-  return { requestId, droppedFilePath: dropped.path };
+  return { requestId, senderWebContentsId, droppedFilePath: dropped.path };
 }
 
 function noteSize(attempt: CommandAttempt, value: unknown): void {
