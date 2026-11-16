@@ -31,7 +31,10 @@ vi.mock("electron", () => {
   };
 });
 
-const context: IpcCommandContext = { requestId: "open" };
+const context: IpcCommandContext = {
+  requestId: "open",
+  senderWebContentsId: 0,
+};
 
 it("writes recent after open and does not put an older page back", async () => {
   const root = mkdtempSync(path.join(tmpdir(), "oitest-open-document-"));

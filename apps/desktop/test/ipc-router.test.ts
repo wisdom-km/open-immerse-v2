@@ -101,6 +101,23 @@ it("returns handler_threw once when an idempotent handler throws", async () => {
   expect(JSON.stringify(result).includes(requestId)).toBe(false);
 });
 
+it("copies the sender webContents id after the sender check", async () => {
+  let seen = -1;
+  const harness = bind(
+    [command],
+    handler((_payload, context) => {
+      seen = context.senderWebContentsId;
+      return Promise.resolve({ ok: true, value: { name: "a" } });
+    }),
+  );
+  const listener = harness.listeners.get("library.open");
+  if (listener === undefined) {
+    throw new Error("listener");
+  }
+  await listener({ senderFrame: frame, sender: { id: 7 } }, { id: "doc-1" });
+  expect(seen).toBe(7);
+});
+
 it("returns sender_rejected when the frame is not this app", async () => {
   let calls = 0;
   const harness = bind(

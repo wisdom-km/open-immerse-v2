@@ -14,6 +14,7 @@ import {
   decidePermissionCheck,
   decidePermissionRequest,
 } from "./security/permissions.js";
+import { createViewMenuEpoch } from "./view-menu-epoch.js";
 import { createMainWindow } from "./window.js";
 
 registerAppScheme();
@@ -34,7 +35,7 @@ function startDesktop(): void {
   handleAppProtocol(rendererRoot(fileURLToPath(import.meta.url)));
   denyPermissions();
   startMainLogger();
-  createMainWindow();
+  createMainWindow(createViewMenuEpoch());
 }
 
 function reportReadyFailure(error: unknown): void {

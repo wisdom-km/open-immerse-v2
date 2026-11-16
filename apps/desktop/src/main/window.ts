@@ -11,8 +11,9 @@ import {
   appStartUrl,
   browserWindowOptions,
 } from "./security/window-preferences.js";
+import type { ViewMenuEpoch } from "./view-menu-epoch.js";
 
-export function createMainWindow(): BrowserWindow {
+export function createMainWindow(epoch: ViewMenuEpoch): BrowserWindow {
   const here = path.dirname(fileURLToPath(import.meta.url));
   const preload = path.join(here, "../preload/index.cjs");
   const win = new BrowserWindow(browserWindowOptions(preload));
@@ -20,6 +21,7 @@ export function createMainWindow(): BrowserWindow {
     blockUnlessAllowed(decideNavigation(), event);
   });
   win.webContents.setWindowOpenHandler(() => decideWindowOpen());
+  epoch.attach(win);
   void win.loadURL(appStartUrl);
   return win;
 }
