@@ -17,12 +17,12 @@ Loom 2026-11-16 的原则复核结论是：通过，沿用已批准的 E2，不�
 | 结论 | 范围 |
 | --- | --- |
 | 原则复核通过 | H1–H12 沿用已批规格。不改默认原文，不重问空态文案，不新定栏宽、拖拽或色板 |
-| 实现未验证 | 仓库里还没有 E2 的产品代码。下表 E2-01–E2-09 都未执行。读屏、物理键盘、高对比、mac、R-E13 都未测 |
+| 实现未验证 | 仓库里还没有 E2 的产品代码。下表 E2-01–E2-09 都未执行。读屏、物理键盘、高对比、mac 都未测。R-E13 不再等真 8GB；13:41 起在 DESKTOP-0GI64S8（32GB）上测，本文件没有测量数，不称 8GB 验证 |
 | 勾选设计已另写 | 12:08 只批准写设计。编码未批。要求还在，不擅自加 IPC |
 
 ## 现状理解
 
-- 现在已有的行为：缩放 2a / 2b 已合入。打开 PDF 进入阅读屏，画原文页。视图菜单已有「原文」「对照」「译文」和 Ctrl / ⌘+1/2/3，点击只 `dispatchEvent`。`shell.tsx` 不听这三项，所以快捷键现在不会切栏位。工具栏没有栏位分段。没有空态句。一次打开只有一份 `ReaderScreen`：session、历史和 zoom 都在它的上层。`PageColumn` 只有一份。`open-session` 把 `viewMode` 写成 `original`。契约写明不发明 `reader.setViewMode`。R-E13 未验证。
+- 现在已有的行为：缩放 2a / 2b 已合入。打开 PDF 进入阅读屏，画原文页。视图菜单已有「原文」「对照」「译文」和 Ctrl / ⌘+1/2/3，点击只 `dispatchEvent`。`shell.tsx` 不听这三项，所以快捷键现在不会切栏位。工具栏没有栏位分段。没有空态句。一次打开只有一份 `ReaderScreen`：session、历史和 zoom 都在它的上层。`PageColumn` 只有一份。`open-session` 把 `viewMode` 写成 `original`。契约写明不发明 `reader.setViewMode`。R-E13 的当前排期是 13:41 的这台 32GB 真机，结果还没写入本文件。
 - 相关的节：[批次 E 计划](feature-reader-nav-zoom-174.md) 的栏位行、验收第 1 条、菜单表、G-7、空态接缝、R-E6；[DESIGN.md](../../DESIGN.md) §4.1、§11.4；[docs/design-principles.md](../design-principles.md) P4、P5、P7 与 §4；[ARCHITECTURE.md](../../ARCHITECTURE.md) §2.1、§6。临时默认原文来自 1A，台账 2026-11-05 21:01，[评论 6658666956](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6658666956)。6-1 A 只定空态文案。不记住栏位是 G-7。这两条覆盖 DESIGN 第 156 行的默认「对照」和 §11.4 的恢复视图。不改 DESIGN 正文（N-10）。
 - 还没做的部分：栏位分段、已批空态、把已有三个事件接到同一次阅读会话。不接翻译，不改画页比例。
 
@@ -41,6 +41,7 @@ Loom 2026-11-16 的原则复核结论是：通过，沿用已批准的 E2，不�
 | 栏位不记住 | G-7。没有 `setViewMode`。每次打开原文 | 批次 E 计划 |
 | 空态接缝 | `view-mode-empty-copy` 放 6-1 A。`view-mode-empty-degrade` 本批没有文字 | 批次 E 计划。降级句等 E2 合入后由 PR #205 第 3 笔再填 |
 | 先做 E2 | 「按推荐：R-E13 记为未验证遗留，先做 E2；有真 8GB 机器后在当时的 main 上补测」 | 2026-11-16 11:08，[6906182172](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6906182172) |
+| R-E13 用当前测试机 | 「当前项目进度距那个整体项目进度是怎么样的？然后真机说等8GB机器后补测，这个不用，你就用我这个测试就行。」只改 11:08 里等待真 8GB 的排期。历史原话不改。DESKTOP-0GI64S8（已核实 32GB）测量，标明硬件，不称 8GB 验证。不授权限制启动内存或改 Windows 显示缩放 | 2026-11-16 13:41，[6908396514](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6908396514) |
 
 ## H1–H12
 
@@ -59,7 +60,7 @@ Loom 2026-11-16 的原则复核结论是：通过，沿用已批准的 E2，不�
 | H9 | 键盘可达。Tab 顺序跟视觉一致。焦点至少 2px。目标至少 24×24。选中不只靠颜色 | 原生 radio 的 checked。焦点环用现有 `--oi-reader-focus`。高对比未测，不写 PASS |
 | H10 | `view-mode-empty-degrade` 留着，本批为空。不写 AC-11 降级句 | 调用点不传降级句 |
 | H11 | 只改 UI。不改 domain、application、`index.ts`、`pure.ts`、contracts。seam 不够就停 | 勾选回传属于 seam 不够，见下节，本轮停 |
-| H12 | 没有 Ready、合入、发版授权。R-E13 保持未验证 | 本 PR 是 Draft。不用 32GB 或限制内存代替真 8GB |
+| H12 | 没有 Ready、合入、发版授权。R-E13 在当前真机测，不称 8GB 验证 | 本 PR 是 Draft。13:41 起用 DESKTOP-0GI64S8（32GB），标明硬件。不限制启动内存，不改 Windows 显示缩放 |
 
 ## 代码位置（dc35b82）
 
@@ -222,13 +223,13 @@ E2-2，合计 109。只在 E2-1 合入之后另开。`forced-colors` 只给新�
 | E2-06 | 加载和错误不被切栏位绕过。页码框或输入法里冲突就停。不加第二套全局 keydown | 未执行 |
 | E2-07 | 200% 与高对比下名称、选中、焦点可辨，目标至少 24×24。改系统显示设置另要授权 | 未执行。不写 PASS |
 | E2-08 | diff 只在约定的 UI 和测试里。core 和契约不动。勾选若走路径乙，不在这份 UI diff 里 | 未执行 |
-| E2-09 | R-E13 保持未验证 | 未执行。不以本计划或 32GB 代填 |
+| E2-09 | R-E13 在 DESKTOP-0GI64S8（32GB）上测。当前显示缩放下记阅读缩放 100% / 200% / 400% 的画布字节、渲染进程专用工作集峰值、视口保留范围和像素上限。标明硬件，不称 8GB 验证，不自定 MB 通过线 | 未执行。Anvil 已接实测。本文件没有测量数。不限制启动内存，不改显示缩放 |
 
 真机沿用批次 E 的 R-E6。R-E11 的 mac ⌘1/2/3 没有设备就标未验证。物理键和 `clickMenu` 分开记。Narrator 或 NVDA 读组名、选中项和空态句；没有新的批准就不改系统里的读屏安装。
 
 ## 排除项
 
-不改 PRD、ARCHITECTURE、RULES、DESIGN、`docs/design/**`。勾选编码未批准。seam 设计不写在本文件，不改 main、`library-menu.ts`、preload、IPC、contracts。不改 core、`pure.ts`、`library/src`、CSP。不加 wasm、`wasm-unsafe-eval`、`.mjs`、`blob:`、`bypassCSP`、协议注册、Range、`disableRange`、整份 PDF 的 IPC。不接翻译，不建 chip，不写降级句。不改画页比例，不自动适合宽度，不把栏位写入历史。不重建 `ReaderScreen`，不复制 `PageColumn`，不重新打开文档。不修页码框抢走 Ctrl+0 / Ctrl+−。不做 B7。沿 6-3 A，文献库里不置灰；置灰缺口本批不修。不持久化栏位。不改 Windows 或任何系统设置。不用 32GB 或限制内存给 R-E13 标 PASS。
+不改 PRD、ARCHITECTURE、RULES、DESIGN、`docs/design/**`。勾选编码未批准。seam 设计不写在本文件，不改 main、`library-menu.ts`、preload、IPC、contracts。不改 core、`pure.ts`、`library/src`、CSP。不加 wasm、`wasm-unsafe-eval`、`.mjs`、`blob:`、`bypassCSP`、协议注册、Range、`disableRange`、整份 PDF 的 IPC。不接翻译，不建 chip，不写降级句。不改画页比例，不自动适合宽度，不把栏位写入历史。不重建 `ReaderScreen`，不复制 `PageColumn`，不重新打开文档。不修页码框抢走 Ctrl+0 / Ctrl+−。不做 B7。沿 6-3 A，文献库里不置灰；置灰缺口本批不修。不持久化栏位。不限制启动内存，不改 Windows 显示缩放；系统缩放仍要当时另批。R-E13 用 DESKTOP-0GI64S8（32GB）测量并标明硬件，不把结果写成 8GB 验证，也不写成 PASS。批次 E 计划里「确认是 8GB」的句子是当时原文，本轮不改那份已合入计划。本文件的当前排期以 13:41 为准。
 
 ## 停止点
 
@@ -259,7 +260,8 @@ E2-2，合计 109。只在 E2-1 合入之后另开。`forced-colors` 只给新�
 
 | 决定 | 理由 | 日期（Asia/Shanghai） | 谁定的 |
 | --- | --- | --- | --- |
-| R-E13 记为未验证遗留，先做 E2 | 原话见已批来源。不以 32GB 或限制内存代替 | 2026-11-16 11:08 | Wisdom，[6906182172](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6906182172) |
+| R-E13 记为未验证遗留，先做 E2 | 原话见已批来源。这行保持 11:08 的历史，不改写成 13:41 | 2026-11-16 11:08 | Wisdom，[6906182172](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6906182172) |
+| R-E13 改在当前 32GB 真机测 | 原话见已批来源。不再等真 8GB。标明硬件，不称 8GB 验证。不授权限制启动内存或改显示缩放。不取消菜单 seam 的设计修正 | 2026-11-16 13:41 | Wisdom，[6908396514](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6908396514) |
 | 原则复核通过，不增加新设计 | Loom 附件。不是新批准，不是实现通过 | 2026-11-16 | Loom 复核。台账不新增行 |
 | 收回「计划选用不加菜单勾」 | 上一稿把已有要求写成了不做。勾选缺的是 checked 和回传，不是授权消失 | 2026-11-16 | 本计划更正。路径仍待 Wisdom |
 | 译文隐藏不卸载 PageColumn；对照不调用适合宽度 | 沿用 H5、H8 和现有 `Restore` 只在挂载时滚动。不是新布局比例 | 2026-11-16 | 计划落实已批约束，非业主新批准 |
@@ -274,4 +276,4 @@ E2-2，合计 109。只在 E2-1 合入之后另开。`forced-colors` 只给新�
 
 任务类型：UI 改动。涉及切片：reader 的 `src/ui`，desktop 的 renderer。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
 
-从当时的 main 开工，不从本计划分支写产品代码。先读本文件的 H1–H12。临时默认原文来自 1A / 6658666956。6-1 A 只定空态文案。6-3 A 是文献库里不置灰，置灰缺口本批不修。E2-0 只移离开接线。E2-1 的组容器用 `getByRole('radiogroup', { name: '栏位' })` 能够找到，可访问名称是「栏位」。`<fieldset>` 的默认角色是 `group`，不能只靠 fieldset 充数。放在空 chip 右边。三个栏位共用同一 `ReaderScreen`、同一 session、同一历史、同一 zoom。对照只缩容器，不调用适合宽度。译文用 `inert` 隐藏这一份 `PageColumn`，不卸载、不复制、不重新打开文档。回到原文保留页码、历史和缩放。加载和错误页不被空态替换。焦点在即将消失的节点上时落到对应 radio。组内方向键用浏览器自己的 radio 行为，不复制 `keepClosed` 的 8 键拦截，不另写全局 `keydown`。Ctrl / ⌘+1/2/3 只订阅已有菜单事件。估算超过 346 就重算；实际非生成行超过 600 才是 `check-pr-size` 的停点。两种情况都不删测试，也不把 346 写成 G12。路径甲不改 main，并在验收里把菜单勾选写成未完成。路径乙不进入 E2-1。顺序是 S1、S2a、S2b、S2c、然后这三笔、最后 S3。R-E13 保持未验证。原则通过不等于实现通过。
+从当时的 main 开工，不从本计划分支写产品代码。先读本文件的 H1–H12。临时默认原文来自 1A / 6658666956。6-1 A 只定空态文案。6-3 A 是文献库里不置灰，置灰缺口本批不修。E2-0 只移离开接线。E2-1 的组容器用 `getByRole('radiogroup', { name: '栏位' })` 能够找到，可访问名称是「栏位」。`<fieldset>` 的默认角色是 `group`，不能只靠 fieldset 充数。放在空 chip 右边。三个栏位共用同一 `ReaderScreen`、同一 session、同一历史、同一 zoom。对照只缩容器，不调用适合宽度。译文用 `inert` 隐藏这一份 `PageColumn`，不卸载、不复制、不重新打开文档。回到原文保留页码、历史和缩放。加载和错误页不被空态替换。焦点在即将消失的节点上时落到对应 radio。组内方向键用浏览器自己的 radio 行为，不复制 `keepClosed` 的 8 键拦截，不另写全局 `keydown`。Ctrl / ⌘+1/2/3 只订阅已有菜单事件。估算超过 346 就重算；实际非生成行超过 600 才是 `check-pr-size` 的停点。两种情况都不删测试，也不把 346 写成 G12。路径甲不改 main，并在验收里把菜单勾选写成未完成。路径乙不进入 E2-1。顺序是 S1、S2a、S2b、S2c、然后这三笔、最后 S3。R-E13 按 13:41 在 DESKTOP-0GI64S8（32GB）上测，标明硬件，不称 8GB 验证，不限制启动内存，不改显示缩放。原则通过不等于实现通过。

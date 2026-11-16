@@ -152,7 +152,7 @@ S2b：none 经过 `_menuWillShow` 仍无勾；活动形状恰一勾。成功、�
 
 S2c：上面的 handler 检查逐条有测试。越界整数在副作用前是 `invalid_payload`。generation 相等或更小在副作用前是 `rejected`。不把只含 `Number.isInteger` 的 schema 测试写成 transport 已拒绝越界。生产表缺这条通道时 `registerIpcRouter` 抛出。零个或两个窗口不替换。
 
-S3：未完成 invoke 始终不超过一个，最新槽始终不超过一个。唯一 original 在 read 成功后被 submit，中间不要求再改栏位。read 期间多次变化只提交最后一份。早读失败在 load 前、load 后两种到达都只再读一次。load 撞上 busy 不丢掉那一次。read 成功后不再消耗它。无新快照时 submit 失败不自旋。超时不增加 invoke，也不清除 busy。同值命令仍回调目标快照。正常接续和失败补发分成两组断言。不断言源码文本。`clickMenu` 只算事件。物理键、读屏、菜单仍开着的画面、mac，继续未验证。R-E13 未验证。这些用例本轮没有跑。
+S3：未完成 invoke 始终不超过一个，最新槽始终不超过一个。唯一 original 在 read 成功后被 submit，中间不要求再改栏位。read 期间多次变化只提交最后一份。早读失败在 load 前、load 后两种到达都只再读一次。load 撞上 busy 不丢掉那一次。read 成功后不再消耗它。无新快照时 submit 失败不自旋。超时不增加 invoke，也不清除 busy。同值命令仍回调目标快照。正常接续和失败补发分成两组断言。不断言源码文本。`clickMenu` 只算事件。物理键、读屏、菜单仍开着的画面、mac，继续未验证。R-E13 不再等真 8GB：13:41 起在 DESKTOP-0GI64S8（32GB）上测，标明硬件，不称 8GB 验证。本文件不跑这项测量，也没有测量数。这些用例本轮没有跑。
 
 ## 将来另批才许改的文件
 
@@ -186,9 +186,10 @@ S3：未完成 invoke 始终不超过一个，最新槽始终不超过一个。�
 | S2c 改 `wiredLibraryCommands` | 新建 handler 文件不会进入 `startLibrary` 的表。`assertHandlers` 会在启动时抛 | 2026-11-16 | 同上 |
 | read 成功后续 submit；load 忙时保留一次重读 | 只发 submit 才取走快照。失败不把同一份补回。重读机会合成一个标记 | 2026-11-16 | 按第五轮审查修正，不是新批准 |
 | 新合法快照先清同阶段旧 pending none | 否则 contrast 装上之后，退出时又被更早的 none 盖掉 | 2026-11-16 | 同上 |
+| R-E13 改在当前 32GB 真机测 | 13:41 原话只改等待真 8GB 的排期。不取消上面的设计修正。不称 8GB 验证 | 2026-11-16 | Wisdom，[6908396514](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6908396514) |
 
 ## 交接
 
 从当时的 main 另开，Draft。先完整读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md` 和本文件。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。没有点名的笔不开工。不改 ARCH。技术复审通过前不开工。通过后一次只请求点名的一笔，并且不包含 ARCH 正文。
 
-S1 是 seam 变更。估算 198，契约档实际 200。S2a 估算 234。S2b 估算 344。S2c 估算 360，生成物约 150 未实测，开工前重算；必须含生产注册。S3 是 UI 改动，估算 340，`shell.tsx` 从约 161 行续。346 不是门禁。R-E13 保持未验证。
+S1 是 seam 变更。估算 198，契约档实际 200。S2a 估算 234。S2b 估算 344。S2c 估算 360，生成物约 150 未实测，开工前重算；必须含生产注册。S3 是 UI 改动，估算 340，`shell.tsx` 从约 161 行续。346 不是门禁。R-E13 按 13:41 在 DESKTOP-0GI64S8（32GB）上测，标明硬件，不称 8GB 验证。本文件不跑这项测量。
