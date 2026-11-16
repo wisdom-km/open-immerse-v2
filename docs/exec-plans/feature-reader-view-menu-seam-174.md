@@ -1,141 +1,135 @@
 # 执行计划
 
-E2 菜单选中状态回传的最小 seam 设计与分批。本文件名是指定的 `feature-reader-view-menu-seam-174.md`。分支仍是 `feature/reader-view-modes-e2-plan-174`，与 [README](README.md) 的同名规则不同，按指定文件名留在原地。栏位与空态仍在 [E2 计划](feature-reader-view-modes-e2-174.md)。
+E2 菜单选中状态回传的最小 seam 设计。文件名按指定保留。分支仍是 `feature/reader-view-modes-e2-plan-174`。栏位与空态在 [E2 计划](feature-reader-view-modes-e2-174.md)。
 
-本文件只写设计。2026-11-16 12:08 的原话是：「按推荐：先写 E2 菜单选中状态回传的最小 seam 设计与分批计划；本次不批准 IPC、contracts 或 main 编码，方案审查后再定实施范围，不 Ready、不合入、不发版」。台账见 [docs/approvals.md](../approvals.md)，来源是 [#174 6907026822](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6907026822) 与 [PR #220 6907027779](https://github.com/wisdom-km/open-immerse-v2/pull/220#issuecomment-6907027779)。这不是编码批准。方案交 Forge 审查后，再请 Wisdom 定实施范围。
+本文件只写设计。2026-11-16 12:08 原话：「按推荐：先写 E2 菜单选中状态回传的最小 seam 设计与分批计划；本次不批准 IPC、contracts 或 main 编码，方案审查后再定实施范围，不 Ready、不合入、不发版」。来源 [#174 6907026822](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6907026822)、[PR #220 6907027779](https://github.com/wisdom-km/open-immerse-v2/pull/220#issuecomment-6907027779)。Forge 对 `71b3cc7` 的审查是 FAIL。本轮只改文档，不请求编码批准。
 
-不改产品代码、测试、CI、PRD、ARCHITECTURE、RULES、DESIGN。不开 Ready，不合入，不发版。`c4b3fb9` 的 CI 只属于那个 tip。
+不改产品代码、测试、生成物、CI、PRD、ARCHITECTURE、RULES、DESIGN。不开 Ready，不合入，不发版。`c4b3fb9` 的 CI 与 Anvil 评论只属于那个 tip。
 
 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
 
-## 现状理解
+## 现状
 
-- 现在已有的行为：`library-menu.ts` 的 `MenuItemSpec` 只有 label、event、accelerator。视图里「原文 / 对照 / 译文」是普通项，事件是 `oi-view-original`、`oi-view-bilingual`、`oi-view-translation`，加速键是 Cmd/Ctrl+1/2/3。它们和后退、页码、缩放项排在同一子菜单，中间没有分隔。`library-wiring.ts` 的 `installFileMenu` 只在启动时 `Menu.setApplicationMenu` 一次。`menuEntry` 的 click 只 `dispatchMenu`。`dispatchMenu` 取 `BrowserWindow.getAllWindows()[0]`，用 `executeJavaScript` 派发无载荷的 `Event`。`shell.tsx` 不听这三项。`packages/contracts/src/ipc/reader.ts` 写明不发明 `reader.setViewMode`，并且 `setZoom` 的 `expose` 是 false。`readerViewModeSchema` 的三个字面量是 `original`、`contrast`、`translation`。`open-session` 把会话里的 `viewMode` 写成 `original`。Electron 是 `apps/desktop/package.json` 的 45.2.1。
-- 相关的节：[ARCHITECTURE](../../ARCHITECTURE.md) §2.4、§9、§9.1；[RULES](../../RULES.md) §3 第 3 条、§8.2 规则 3、N-09；[原则](../design-principles.md) P4；批次 E 计划菜单表「单选」。Electron 45 的 [MenuItem.checked](https://www.electronjs.org/docs/latest/api/menu-item) 写明：radio 被点击时把自己的 `checked` 打开，并关掉同一菜单里相邻项的 `checked`。`checked` 只用于 checkbox 或 radio。
-- 还没做的部分：菜单勾。本文件不实现它。
+`MenuItemSpec` 没有 type / checked。三项是普通项，事件 `oi-view-original`、`oi-view-bilingual`、`oi-view-translation`。`installFileMenu` 启动时 `setApplicationMenu` 一次。click 只 `executeJavaScript` 派发无载荷事件。`shell.tsx` 不听这三项。`IpcCommandContext` 只有 `requestId` 和可选 `droppedFilePath`，没有 senderId。`registerIpcRouter` 先 `assertHandlers`，缺 handler 就抛 `missing ipc handler`，发生在绑定之前。codegen 只把 `expose: true` 放进 `oi.generated.ts`、`oi-api.d.ts`、`registry.generated.ts`。`setZoom` 的 `expose` 是 false，所以不在这三份里。契约禁止 `reader.setViewMode`。栏位字面量是 `original`、`contrast`、`translation`。Electron 锁定 45.2.1。
+
+已读标签 v45.2.1 的 `shell/browser/api/electron_api_menu_item.cc`。`MenuItem::SetChecked`（约 481–487 行）：radio 已经挂上菜单时调用 `SetCheckedForRadioGroup` 并 return，不用传入的布尔值。`SetCheckedForRadioGroup` 清掉同组其他项，再把自己设为 true。构造时 `checked` 写入 `checked_`，那时还没有 `radio_menu_`。`RunBuiltInAction`（约 544–549 行）对 radio 先 `SetChecked`，然后才到用户 click。`ClickThunk`（约 576–586 行）同样先走 `RunBuiltInAction`。因此对已挂 radio 赋 false，会选中自己，不能清成全不勾，也不能按三个布尔写回。直接调用 `item.click` 会走这条自动勾选，但单独用它不能证明系统菜单和 accelerator 的画面。本轮没有启动 Electron。
 
 ## 所有权
 
-阅读中的当前栏位只有一份，主人是将来 E2 的 `use-view-mode`，活在这一次 `ReaderScreen` 里。它用 `original`、`contrast`、`translation` 这三个已有字面量。初值 `original`。不写 `ReaderSession.viewMode`，不写存储，不调用 `reader.setZoom`。`oi-view-bilingual` 只是已有事件名，状态值用 `contrast`，不另造一套词。
+当前栏位只有一份，主人是 E2 的 `use-view-mode`，用那三个已有字面量，初值 `original`。不写 `ReaderSession`，不存储，不调用 `session.save`，不发明 `reader.setViewMode`。`oi-view-bilingual` 只是事件名，状态值是 `contrast`。
 
-main 只留菜单展示用的镜像：`none`、`original`、`contrast`、`translation`。`none` 表示没有打开的阅读屏，三个 radio 都不勾。镜像不驱动阅读屏，不回写会话，不进 `session.save`。ARCH §9.1 的 `session.save` 含「视图」，本批不实现，也不拿它存栏位。
+main 的镜像只有 `none` 与这三值。`none` 是没在阅读。镜像不驱动阅读屏。上报的 `mode` 只作接受结果，不拿来改 UI。
 
-## 比较
+代际和 `bootId` 放在持续存在的 shell 上报器，不放进 `ReaderScreen`。同一页里卸载再打开，计数器不归零。`bootId` 在这份 JS 上下文里生成一次。webContents 重载出新上下文，就有新的 `bootId`。main 见到新 `bootId` 才把代际地板重置，然后接受这条上报。
 
-| 方案 | 做什么 | 为什么不选 |
+## 菜单怎么更新
+
+保留原生 `type: 'radio'` 和已批单选。不改成 checkbox，不自绘勾，不把 `enabled` 设为 false，文献库不假勾成原文。checkbox 能被 `SetChecked` 写成 false，但平台不保证互斥，所以不用。
+
+更新办法只有重建菜单。按镜像做新模板：`original` / `contrast` / `translation` 在构造参数里给对应一项 `checked: true`，其余两项 false；`none` 三项都是 false。然后 `Menu.buildFromTemplate` 和 `setApplicationMenu`。不在已经挂上的 radio 上写 `checked`。应用、编辑、窗口 role 仍按现在的模板重建。缩放项保持普通项。
+
+系统菜单点击和 accelerator 都会先把点中的 radio 设为选中。click 回调不写 `checked`。它先用最后接受的镜像重建菜单，换掉那份已经自动勾上的菜单，再派发已有事件，不等待 `executeJavaScript`。之后只有被接受的上报才再次重建。文献库的镜像是 `none`，所以点了也不会留下勾，项仍可点。
+
+已批单选在有阅读栏位时由原生 radio 互斥表达。`none` 是一组里没有选中项，不另加「无」菜单项。读屏是否把「没有选中」说清楚，本轮未测，不写通过。
+
+未验停点：构造期的 `checked: false` 在菜单打开后，会不会被系统强行勾上一项。本轮没跑 45.2.1。S2 要用真实 `Menu` 读三项的 checked，覆盖 original、contrast、translation、none，并且用系统菜单点击和 accelerator 看 none 不会留下假勾。只调用 `item.click` 不算通过。若全 false 守不住，停，不改自绘，不置灰。
+
+## 通道
+
+一条 invoke：`shell.reportViewMenu`。字段只有 `mode`、`generation`、`bootId`。`mode` 是上述四值。`generation` 是 1 到 `Number.MAX_SAFE_INTEGER`（9007199254740991）的整数，与现有代际上限同形。`bootId` 是 36 位十六进制带连字符的字符串。多余字段拒绝。没有文档 id、路径、文案。幂等 false。坏形状 `invalid_payload`。过期代际或窗口不符用已有 `rejected`。发送方 `sender_rejected`。不新造错误码。
+
+S1 的 `expose` 是 false。codegen 不会把它写进三份生成物，运行时 registry 没有这条命令，`assertHandlers` 不会为它抛。不削弱断言，不吞启动错误。S2 才把 `expose` 改为 true，跑正常 codegen，并在同一次提交注册 handler。
+
+handler 不改 `IpcCommandContext`。router 已经拒绝非 `oi-app:` 主 frame。handler 在任何 await 之前同步做：`BrowserWindow.getAllWindows()` 里未销毁的窗口必须正好一个；不是就 `rejected`，不改菜单。然后同步重建并 `setApplicationMenu`。成功返回之后才记下代际、`bootId` 和镜像。重建抛错则不记代际，变成 `handler_threw`。同一 `bootId` 的代际必须更大。新 `bootId` 接受这条代际并换地板。
+
+窗口 `closed`：丢掉该槽。窗口已销毁就不再 `setApplicationMenu`。`window-all-closed` 现会退出进程；清理仍要做，避免槽留到测试或下一次窗口。
+
+## 上报状态机
+
+shell 只留一个期望快照，不是长队列。`ReaderScreen` 卸载不得删掉这个快照。离开不等待 invoke，回库不被卡住。更新的快照取代还没发出的旧快照。已经发出的旧上报不撤回；后到且代际更小的，main 返回 `rejected`。
+
+同一快照遇到 `handler_threw` 最多再发一次，用新代际，内容是当时的最新快照，不是失败前的旧 mode。`invalid_payload` 和 `rejected` 不重发这一份。两次用尽后不排定时器。下一次主人变化，包括再离开或重开，重新获得两次额度。阅读屏不因菜单失败停住。代际若再加一会超过安全整数，就不发送、不回绕；阅读仍可切换，菜单停在上次接受的镜像。
+
+| 轨迹 | 期望 mode | 序列 |
 | --- | --- | --- |
-| 推荐：一条 invoke | 见下节。renderer 在栏位提交后上报。main 只按接受的上报改勾 | 工具栏、空态链接和菜单都能改同一份栏位，只有上报能覆盖这三处 |
-| 只让 `executeJavaScript` 回传结果 | click 里问 renderer 这次命令有没有生效 | 工具栏和「切到原文」链接不经过 main。菜单会停在旧勾 |
-| `reader.setViewMode` 或改会话 | 把栏位写进 reader 契约或 `ReaderSession` | 契约已禁止这个名字。会话里的 `viewMode` 是打开时的 `original`，不是菜单镜像 |
-| main 再把镜像推回 renderer | 第二份状态回写 | 和上报对撞，形成回环 |
+| 启动 | none | 菜单按 none 重建。代际地板 0。还没有 bootId |
+| 打开，含加载 | original | 主人先到 original，再发新代际。勾在上报接受后才是原文 |
+| 错误页 | 已选栏位 | 不改成 none。空态句仍只在成功支 |
+| 换文献 | original | 同一 bootId，代际增加。不先发上一篇的栏位 |
+| 连点 | 最后一次 | 飞行中只保留最新快照 |
+| 离开 | none | 先记入期望，再同步卸下。不 await |
+| 离开未回就重开 | original | 新代际的 original 取代未发的 none。后到的 none 被拒绝 |
+| 抛错一次 | 最新快照 | 新代际重试这一次。不重放旧 mode |
+| 同一快照两次失败 | 上次成功的镜像 | 不冻结。下次主人变化重新计数 |
+| 重载 | 新上下文的初值 | 新 bootId 重置地板。旧代际不能压住新的 1 |
+| 代际将溢出 | 上次成功的镜像 | 不发送 |
+| 第二个窗口 | 不变 | `rejected`。不重建 |
 
-不新造菜单，不用自绘勾。不把缩放项改成 radio，不改缩放快捷键，不做文献库置灰。6-3 A 仍是：文献库里这三项不置灰，点了不改栏位。
+## 分批与行数
 
-## 推荐
+硬线：非生成新增+删除 600；只改 `packages/contracts/` 时 200。346 是估算 × 1.73 ≤ 600 的门槛。生成物不在 pr-size 排除名单。函数软 50、硬 80。超过软线就拆，到硬线就停。不写 G12，不删测试。
 
-新增一条暴露的 invoke，通道名 `shell.reportViewMenu`。preload 由描述符生成，出现在 `window.oi.shell.reportViewMenu`。renderer 不直接碰 `ipcRenderer`。reader 包不写通道名：`ReaderScreen` 用回调把当前栏位交给 `shell.tsx`，由 shell 调用。
+唯一顺序：S1 → S2 → E2-0 → E2-1 → E2-2 → S3。S3 依赖 E2 的栏位主人和 S2 的 handler。E2-0/1/2 不写上报，也不等 S3。没有循环。每一笔都要单独批准。
 
-请求只有两个字段，多余字段拒绝：`mode` 是 `none`、`original`、`contrast`、`translation` 之一；`generation` 是大于等于 1 的整数。响应只回接受后的 `mode`。没有文档 id、标题、页码、缩放、文案、路径。`bilingual`、`对照`、`dual` 都是坏载荷。
-
-幂等标记为 false。代际更旧时返回已有的 `rejected`，不新造错误码。形状不对用已有的 `invalid_payload`。发送方不对用已有的 `sender_rejected`。发送方沿用 `isAppSender`：只要本应用窗口、主 frame、`oi-app:`。不放宽。传输是 invoke，不建订阅，所以没有单独的解除订阅。窗口关掉时丢掉该 `webContents.id` 的镜像和代际。
-
-菜单是进程级的一份。产品是单窗口。上报的发送方必须是当前这一个窗口。窗口数不是 1，或发送方不是这个窗口时，返回 `rejected`，不改勾。现在的 `dispatchMenu` 仍取第一个窗口；实施时不要为多窗口改架构。
-
-main 按 `webContents.id` 记住最后接受的代际。新上报的代际必须更大。相同或更小的代际是 `rejected`，勾保持上次接受的镜像。shell 侧同一时刻只飞一次上报；更新的栏位等这次回来，再只发最新的那次。main 不把 mode 发回 renderer。click 不调用这条 invoke。这样没有回环。
-
-`handler_threw` 已是可重试。shell 对同一次栏位最多再发一次。再失败就停，勾留在上次接受的镜像，阅读屏不回滚。`invalid_payload` 不重试。
-
-## 原生 radio 与失败时的勾
-
-三个栏位项改成 Electron `type: 'radio'`，并且仍然相邻。后退、页码、缩放保持普通项，避免被算进相邻 radio。`enabled` 不动，文献库里也不置灰。
-
-Electron 文档写明：点击 radio 会先勾上它，并清掉同一菜单里相邻项。文档没有写 click 回调里再改 `checked` 是否赶在菜单关闭前画完。这点要在锁定的 45.2.1 上核实；核实不了就停，不改成自绘勾。
-
-click 回调的第一件事，是按最后接受的镜像把三个 radio 写回去，抵消这次自动勾选。然后才派发已有事件。回调返回时，勾仍等于镜像，不等于刚点的那一项。之后只有被接受的上报才能改勾。
-
-命令没人处理时（文献库、阅读屏还没绑上）不会上报。自动勾被写回，勾保持原镜像。文献库的镜像是 `none`，三项都不勾。阅读屏里上报失败时，界面栏位已经变了，菜单可能暂时还是旧勾；下一次成功的上报用更大的代际盖过。不把菜单失败写回栏位。
-
-`e2e` 的 `clickMenu` 是在主进程里直接调用 `item.click`。它不是系统菜单点击，也不是物理键。Box 同样不能冒充。Ctrl / ⌘+1/2/3 仍只走已有 accelerator，accelerator 会进同一个 click。物理键留 Windows 真机。
-
-## 生命周期顺序
-
-1. 进程启动：建菜单，三项 radio 的 `checked` 都是 false。镜像 `none`，代际 0。
-2. 打开文献：`ReaderScreen` 挂上，栏位初值 `original`。先改主人，再上报 `original`。加载骨架和错误页期间也报这个栏位。空态句仍只出现在能画 PDF 的成功支，沿 E2。
-3. 工具栏、空态链接、菜单或加速键改栏位：先改主人，代际加一，再上报。菜单路径是 click 先写回旧镜像，事件进 renderer，主人变更后再上报。
-4. 换文献：同一屏上主人回到 `original`，再上报 `original`。不先上报上一篇的栏位。
-5. 离开阅读屏：先上报 `none`，再卸下。三项都不勾。不置灰。
-6. 再次打开：新的一次会话，又是 `original`。不恢复上次的对照或译文。
-7. 飞行中的旧代际后到：main 返回 `rejected`，不覆盖更新的勾。
-
-对照和译文仍共用这一次会话。不丢页码、历史、缩放，不重新打开文档，不复制 `PageColumn`。6-1 A 的空态文案不变。R-E13 仍未验证。
-
-## 分批
-
-口径见 [docs/arch/06.md](../arch/06.md)。`check-pr-size` 硬线是非生成新增加删除 600。只改 `packages/contracts/` 时硬线是 200。346 是估算 × 1.73 ≤ 600 的估算门槛。估算超过 346 就重算拆开，不写 G12，不删测试。实际超过 600 才是门禁失败。
-
-S1 必须带上 codegen 改写的 `oi.generated.ts` 和 `registry.generated.ts`，否则 G7（`pnpm run codegen` 后 `git diff --exit-code`）失败。因此 S1 不是「只有 contracts」的 200 行档。生成物禁止手改（N-09）。这两份生成物现在不在 pr-size 的排除名单里，行数要算进 600。
-
-| PR | 目标 | 依赖 | 估算 | ×1.73 |
+| 笔 | 合入后能启动 | 菜单实际状态 | 估算 | ×1.73 |
 | --- | --- | --- | --- | --- |
-| S1 | 只增加描述符、导出、契约测试，并提交生成物 | 无。先合入 | 150 | 260 |
-| S2 | main 注册处理函数，三个菜单项改为 radio，镜像与 click 写回 | S1 已合入。不改 renderer | 170 | 294 |
-| S3 | shell 上报。reader 只加回调，不在 reader 里写通道名 | S2 已合入，且 E2 的栏位主人已在 main 上 | 110 | 190 |
+| S1 | 能。命令不进 registry | 仍是普通项，没有勾 | 167 | 289 |
+| S2 | 能。handler 已注册 | 三项 radio，镜像 none，全不勾。点击会被重建抹掉 | 299 | 517 |
+| E2-0 | 能 | 与 S2 相同 | 72 | 125 |
+| E2-1 | 能 | 菜单仍是 none。工具栏和事件能改栏位，勾还没跟上 | 338 | 585 |
+| E2-2 | 能 | `clickMenu` 只证明命令送达 | 109 | 189 |
+| S3 | 能 | 勾跟主人。离开为 none，重开为原文 | 182 | 315 |
 
-S1 文件：`packages/contracts/src/ipc/shell.ts` 新建约 55 行；`packages/contracts/src/index.ts` 约 12 行；`packages/contracts/test/ipc-shell.test.ts` 新建约 70 行；两份生成物合计约 13 行。不注册 handler。此时调用会走到现有的「handler missing」，变成 `handler_threw`。S3 不得早于 S2。
+S1 文件与改完行数：新建 `packages/contracts/src/ipc/shell.ts` 75，函数都短于 50；`packages/contracts/src/index.ts` 现有出口加约 12，文件仍低于 400；`packages/contracts/test/ipc-shell.test.ts` 80。合计 167，低于契约 200。`expose: false`，三份生成物的 diff 是 0。若 codegen 仍改出文件，停，不手改。
 
-S2 文件：`library-menu.ts` 约 25 行，只给三项加 radio；新建 `apps/desktop/src/main/view-menu-mirror.ts` 约 70 行，只做镜像、代际和写回；`library-wiring.ts` 约 35 行，现 253 行，改完约 288，低于普通文件建议 400；`library-menu.test.ts` 约 20 行；镜像的纯函数测试约 20 行。不改 `enabled`，不改加速键，不改事件名，不改缩放项的 type。
+S2 按 codegen 展开估算，不是只算通道名。registry 这一条命令约 77 行（请求和响应都展开 `anyOf` 与代际上下限）。`oi.generated.ts` 的方法约 22 行。`oi-api.d.ts` 的错误分支和 `Window.oi.shell` 约 18 行。三份合计约 117，都计入 600。再加 expose 替换 2、`view-menu-mirror.ts` 新建 90、`library-menu.ts` 由 94 增到约 109（计入约 15）、`library-wiring.ts` 由 253 增到约 273（计入约 20）、真实 Menu 与代际测试约 55。117+2+90+15+20+55 = 299，低于估算门槛 346。重建函数低于 50。两个菜单文件改完仍低于 400。codegen 的 numstat 若把 299 推过 346，先停，只拆测试，不拆「expose 与 handler 同一笔」。不改 `ipc-router.ts`。
 
-S3 文件：`shell.tsx` 约 35 行；`reader-screen.tsx` 或 `use-view-mode.ts` 的回调约 15 行；两边的行为测试约 60 行。不把上报塞进 E2-1 的 338 行估算。E2-1 仍只订阅已有事件。
+S3 计入 100+20+12+50 = 182：新建 `view-menu-report.ts` 100，入队和重试都低于 50；`shell.tsx` 由 147 到约 167；`use-view-mode.ts` 由约 36 到约 48，仍低于 50。不把回调塞进已经接近 80 行的 `ReaderScreen`。行为测试约 50，覆盖上表。
 
-### S1 验收
+## 验收
 
-描述符的通道、expose、invoke、幂等 false、四个 mode、代际、多余字段拒绝，都由契约测试钉住。生成物含 `shell.reportViewMenu`，且与描述符一致。没有 main 行为变化。坏载荷测试在契约层，不启动 Electron。
+S1：契约测试钉住 expose false、四值、代际上限、坏 `bootId`、多余字段。不启动 Electron。
 
-### S2 验收
+S2：唯一未销毁窗口才重建；零个或两个窗口是 `rejected` 且菜单不变。代际和 bootId 按上面的规则。真实 Menu 读 checked。系统点击和 accelerator 在 none 下不留假勾。`item.click` 不能单独算过。本轮这项未跑。
 
-处理函数：合法上报改镜像；坏 mode、多余字段、代际不增加、第二个窗口，分别是 `invalid_payload` 或 `rejected`；非 `oi-app:` 主 frame 是 `sender_rejected`。菜单模板里只有原文、对照、译文是 radio，缩放不是。在 Electron 45.2.1 上建真实菜单：点「对照」后，回调返回前勾回到旧镜像；随后接受 `contrast` 才只勾对照。若相邻规则把「放大」卷进去，停。不测物理键。
+S3：上表每一行都有行为测试。不读源码做断言。不写 `ReaderSession`。不发翻译。页码、历史、缩放不变。e2e 的 `clickMenu` 不代替 Windows 物理键。mac 无设备则未验证。R-E13 不在这三笔。
 
-### S3 验收
+## 将来另批的范围
 
-打开后菜单勾原文。工具栏改对照、译文、再回原文，勾跟着走，各一次上报。换文献后勾原文。回文献库后三项都不勾，项仍可点。加载和错误页不把勾清成 `none`。旧代际后到不改勾。飞行中连点只留下最后一次。不写 `ReaderSession`。不发翻译请求。页码、历史、缩放不变。
+审查通过后才可以请 Wisdom 批某一笔。本文件不代批。ARCH 正文是独立禁区：批准编码不包含改 ARCHITECTURE。要改 §9.1 必须另有明确授权，否则停。
 
-e2e 只用 `clickMenu` 看命令能进阅读屏。另有一条 Electron 内读 `checked` 的断言，标明不是物理键。Windows 真机另记：系统菜单里点三项，以及物理 Ctrl+1/2/3。mac 没有设备就标未验证。Box 不代替这张清单。R-E13 不在这三笔里测。
+- S1：`packages/contracts/src/ipc/shell.ts`、`packages/contracts/src/index.ts`、`packages/contracts/test/ipc-shell.test.ts`。不含生成物，不含 handler。
+- S2：上述 `shell.ts` 的 expose、三份生成物、`view-menu-mirror.ts`、`library-menu.ts`、`library-wiring.ts` 及测试。不含 renderer。
+- S3：`view-menu-report.ts`、`shell.tsx`、`use-view-mode.ts` 的回调及测试。不改 reader 的 domain、application、`index.ts`、`pure.ts`，不改 `contracts/src/ipc/reader.ts`。
 
-## 将来要另批的实施范围
-
-方案审查通过之后，Wisdom 若批准实施，最小范围只到下面这些文件。批准里要写明批的是 S1、S2、S3 的哪几笔。没有写到的笔不开工。
-
-- S1：`packages/contracts/src/ipc/shell.ts`、`packages/contracts/src/index.ts`、`packages/contracts/test/ipc-shell.test.ts`，以及 codegen 产出的 `apps/desktop/src/preload/oi.generated.ts`、`apps/desktop/src/main/ipc/registry.generated.ts`。不手改生成物。
-- S2：`apps/desktop/src/main/library-menu.ts`、`apps/desktop/src/main/library-wiring.ts`、新建 `apps/desktop/src/main/view-menu-mirror.ts`，以及对应测试。这是 main 编码，本次未批。
-- S3：`apps/desktop/src/renderer/shell.tsx`，reader 的 UI 回调和测试。不改 `packages/features/reader/src/domain`、`application`、`index.ts`、`pure.ts`，不改 `contracts/src/ipc/reader.ts`。
-
-不批：preload 手写、CSP、协议、`reader.setViewMode`、缩放菜单、文献库置灰、持久化、ARCH 正文。若实施时要在 ARCH §9.1 补一句 shell 通道，那是同一次实施 PR 里的规格同步，不在本次设计批准里先改。
+不批：手改生成物、给 context 加 senderId、削弱 `assertHandlers`、CSP、协议、缩放菜单、置灰、持久化、ARCH 正文。
 
 ## 计划 / 实际
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 本 PR 只交本文件、E2 计划里的关联和停点、台账 |  |  |
-| 2 | Forge 审查本设计。通过前不写 S1 |  |  |
-| 3 | Wisdom 另批实施范围之后，从当时的 main 开 S1，Draft |  |  |
+| 1 | 按 FAIL 修订本文件和 E2 顺序。不编码 |  |  |
+| 2 | Forge 复审。通过前不写 S1 |  |  |
+| 3 | 另批之后从当时的 main 开被点名的那一笔 |  |  |
 
 ## 决策记录
 
 | 决定 | 理由 | 日期（Asia/Shanghai） | 谁定的 |
 | --- | --- | --- | --- |
-| 先写本设计，不编码 | 原话见文首 | 2026-11-16 12:08 | Wisdom，[6907026822](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6907026822) |
-| 推荐一条 `shell.reportViewMenu` | 菜单 click 的回传盖不住工具栏和链接。不新增第二条通道 | 2026-11-16 | 本设计的推荐，不是实施批准 |
+| 先写设计，不编码 | 12:08 原话 | 2026-11-16 12:08 | Wisdom，[6907026822](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-6907026822) |
+| 用重建菜单表达四态 | v45.2.1 的 `SetChecked` 不能把已挂 radio 写成 false | 2026-11-16 | 本设计按 Forge FAIL 修正，不是新批准 |
+| S1 不暴露命令 | `assertHandlers` 会在启动时抛，不是 `handler_threw` | 2026-11-16 | 同上 |
 
 ## 自检
 
-- [x] 影响 arch / prd 吗？不影响。未改 arch / prd。
+- [x] 影响 arch / prd 吗？不影响。未改正文。批准编码也不自动包含 ARCH。
 
 ## 交接
 
-三笔都从当时的 main 另开分支，不从本计划分支写代码。先完整读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md` 和本文件。PR 先开 Draft。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
+从当时的 main 另开，Draft。先完整读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md` 和本文件。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。没有点名的笔不开工。不改 ARCH。
 
-S1 的任务类型是 seam 变更。涉及切片：无 feature 切片；契约文件是新建的 `contracts/src/ipc/shell.ts`。只做描述符、导出、契约测试和 codegen 生成物。不注册 handler，不改菜单。估算 150。坏载荷留在契约测试。
+S1 是 seam 变更。无 feature 切片。expose 保持 false。估算 167。
 
-S2 的任务类型是 seam 变更里的 main 接线。涉及 desktop main。依赖 S1 已合入。只做 radio、镜像、代际、click 写回和 handler。不改 renderer，不置灰，不改缩放项。先在 Electron 45.2.1 上核实相邻 radio。估算 170。
+S2 是 main 接线。依赖 S1 已合入。重建菜单，不写已挂 radio 的 checked。先做真实 Menu 停点。估算 299。
 
-S3 的任务类型是 UI 改动。涉及切片：reader 的 `src/ui`，加上 desktop renderer。依赖 S2 已合入，并且 E2 栏位主人已在 main。shell 上报，reader 只提供回调。不改 core。对照 / 译文仍共用会话。估算 110。R-E13 保持未验证。物理键不写成 e2e 已覆盖。
+S3 是 UI 改动。切片是 reader 的 `src/ui` 加 desktop renderer。依赖 S2 和 E2-1 的主人。估算 182。R-E13 保持未验证。
