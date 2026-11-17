@@ -159,11 +159,11 @@ mirror：导入 6，类型 14，表和 `columnItems` 16，`columnItem` 18，空�
 
 ## 三笔账
 
-账 1 是本 PR 的纯文档，相对当前 main `9a1b56d1b5feb4d8188e14a713d48eecfb28b7d5`。只有本文件和 `docs/approvals.md`。口径修正提交 `03ec8a759897feff177e998444014056b65b4b7c` 时，本文件新增 235、删除 0，台账新增 4、删除 1，新增+删除 240，账 3 是 1068。那两个数是当时的实测。本轮追加职责候选和 09:59 台账行之后，当前实测改记在这里：本文件新增 338、删除 0；台账新增 5、删除 1；新增+删除 344。与 PR 说明同一套数。344 低于 600 只说明这份 Draft 的文档 diff 没有越过门禁，不表示任何实施候选放得下，也不是开工许可。若本轮文档本身超过 600，停在这里报告，不削本节去贴线。
+账 1 是本 PR 的纯文档，相对当前 main `9a1b56d1b5feb4d8188e14a713d48eecfb28b7d5`。只有本文件和 `docs/approvals.md`。口径修正提交 `03ec8a759897feff177e998444014056b65b4b7c` 时，本文件新增 235、删除 0，台账新增 4、删除 1，新增+删除 240，账 3 是 1068。`5b16f15bfb8bc45374a479b31e71ee47e647e41e` 时，本文件新增 338、删除 0，台账新增 5、删除 1，新增+删除 344，账 3 是 1172。344 和 1172 是那个 tip 的历史实数。该 tip 的台账 diff 只有空行和页脚 220，没有 09:59 正文，也不能把 220 当成已经落账。补上正文和交接前置之后，当前实测是：本文件新增 340、删除 0；台账新增 6、删除 1；新增+删除 347。与 PR 说明同一套数。347 低于 600 只说明这份 Draft 的文档 diff 没有越过门禁，不表示任何实施候选放得下，也不是开工许可。若本轮文档本身超过 600，停在这里报告，不削本节去贴线。
 
 账 2 是未来另开的实施 PR。全账是当前列明项点估计再加上当时的计划变更、新台账和其他未知：828 + P + A + X。P 是那支 PR 里的计划变更行数，A 是新台账行数，X 是其他未知。native 额外加载若没有计进子进程那 40 行，就在 X 里，不写成 0。P、A、X 现在没有实测，这里不填数。点估计 828 超过 600，缺口 228。当前函数/用例轮廓假设下的收紧估计 613 超过 600，缺口 13。账 2 因此保持 HOLD。这个加法不证明全账不能短于 828，也不证明没有更短的完整实现。
 
-账 3 是假如把整笔实施放进本 PR、仍相对当前 main。它等于 828 加上账 1 的当前实测新增+删除，也就是 828+344=1172。23:58 没有批准这种做法。账 3 也是 HOLD。1172 与账 1 同步。1068 只属于 `03ec8a7` 当时的文档行数。
+账 3 是假如把整笔实施放进本 PR、仍相对当前 main。它等于 828 加上账 1 的当前实测新增+删除，也就是 828+347=1175。23:58 没有批准这种做法。账 3 也是 HOLD。1175 与账 1 同步。1172 只属于 `5b16f15` 当时的文档行数，而且当时台账没有 09:59 正文。1068 只属于 `03ec8a7`。整笔 828 不含 C 的 94 行装配测试。227+515+198=940，那是三批「产品加测试再加 16 行证据预留」的轮廓和，与 828 分开，仍不含各自的 P、L、X，也不保证 ≤ 600。
 
 只看当前列明的产品、门测试和菜单测试，不含 native、不含证据：点估计 325 + 357 + 18 = 700，缺口仍是 100。HOLD 不依赖 native 和证据这两项。700 是点估计，不是数学保证下限。
 
@@ -263,13 +263,13 @@ C 改的是启动时怎么装菜单。A、B 未合入时，这支不能靠临时
 
 ### 交接指令
 
-下面三段可以以后另获实施批准时粘给 Cursor。现在没有实施授权。不创建这些分支，不写这些文件。
+下面 A、B、C 三段各自完整。单独粘贴任何一段即可，不必再去找上一段。三段都未获实施授权。不创建这些分支，不写这些文件。Forge 指出交接不完整，只补这三句的阅读范围和约束，不是新的实施授权。
 
-A 的指令：目标是形状和原生语义。完整验收是 B1、B2，加上四种形状和静态标签、加速键、三个事件名。文件白名单是 `apps/desktop/src/main/view-menu-mirror.ts`、`apps/desktop/src/main/library-menu.ts`、`apps/desktop/test/view-menu-mirror.test.ts`、`apps/desktop/test/view-menu-native.test.ts`、`apps/desktop/test/view-menu-native-electron.mjs`、`apps/desktop/test/library-menu.test.ts`，以及那一支自己的计划、台账追加和 `docs/evidence/<PR号>/commands.md`。架构硬约束：本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。不调用 Menu 的生产装配，不导入 gate，不改 wiring、epoch、`index.ts`、`expose`、生成物、DESIGN 和规格。子进程必须加载同一个 mirror；加载不了或没有显示就停，不 skip，不改 CI。建议分支 `feature/view-menu-mirror-s2b-a-174`，独立 worktree，PR 保持 Draft。这整段未获实施授权。
+A 的指令：未获实施授权。本段必须整段粘贴。开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、已合 seam 的「仍然成立」「替换门」「轨迹」「验收」「分批」「将来另批才许改的文件」，以及批准台账里当时已经写下的原话。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。依赖只沿 ARCHITECTURE §5 允许的方向。不临时导入还不存在的模块，不预造兼容层。一个文件不堆多件职责。普通源文件建议 400、硬上限 600，函数建议 50、硬上限 80，测试文件建议 600、硬上限 800。优先系统原生菜单，不自造控件。生产启动保持 none，`expose` 保持 false。三份生成物、`composition-root.ts`、`index.ts`、`view-menu-epoch.ts` 零 diff。不含 handler、生产命令表、renderer、UI、存储、CSP、协议、S2c 及后续、账户或登录。不造第二份代次表或模块级单例。新增+删除超过 600 就停报，不删测试，不改 600。目标是形状和原生语义。完整验收是 B1、B2，加上四种形状和静态标签、加速键、三个事件名。文件白名单是 `apps/desktop/src/main/view-menu-mirror.ts`、`apps/desktop/src/main/library-menu.ts`、`apps/desktop/test/view-menu-mirror.test.ts`、`apps/desktop/test/view-menu-native.test.ts`、`apps/desktop/test/view-menu-native-electron.mjs`、`apps/desktop/test/library-menu.test.ts`，以及那一支自己的计划、台账追加和 `docs/evidence/<PR号>/commands.md`。禁止改 `library-wiring.ts`、gate、epoch、`index.ts`、`expose`、生成物、DESIGN 和规格正文。子进程必须加载同一个 mirror。加载不了或没有显示就停，不 skip，不装系统库，不改 CI。建议分支 `feature/view-menu-mirror-s2b-a-174`，独立 worktree，PR 保持 Draft。
 
-B 的指令：目标是纯替换门和全部 fake 证明。完整验收是 B3–B10，一条不删。形状从已合 mirror 导入。文件白名单是 `apps/desktop/src/main/view-menu-gate.ts`、`apps/desktop/test/view-menu-gate.test.ts`，以及那一支自己的计划、台账追加和证据。架构硬约束沿用上一节那一句。不导入 Electron，不改 `library-wiring.ts`、`library-menu.ts`、epoch、`index.ts`、`expose` 和生成物。不把 B10 分到别的 PR。全账超过 600 就停报。建议分支 `feature/view-menu-gate-s2b-b-174`，base 是 A 已合的 main，独立 worktree，PR 保持 Draft。这整段未获实施授权。
+B 的指令：未获实施授权。本段必须整段粘贴。开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、已合 seam 的「仍然成立」「替换门」「轨迹」「验收」「分批」「将来另批才许改的文件」，以及批准台账里当时已经写下的原话。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。依赖只沿 ARCHITECTURE §5 允许的方向。不临时导入还不存在的模块，不预造兼容层。一个文件不堆多件职责。普通源文件建议 400、硬上限 600，函数建议 50、硬上限 80，测试文件建议 600、硬上限 800。优先系统原生菜单，不自造控件。生产启动保持 none，`expose` 保持 false。三份生成物、`composition-root.ts`、`index.ts`、`view-menu-epoch.ts` 零 diff。不含 handler、生产命令表、renderer、UI、存储、CSP、协议、S2c 及后续、账户或登录。不造第二份代次表或模块级单例。新增+删除超过 600 就停报，不删测试，不改 600。目标是纯替换门和全部 fake 证明。完整验收是 B3–B10，一条不删。形状从已合 mirror 导入。文件白名单是 `apps/desktop/src/main/view-menu-gate.ts`、`apps/desktop/test/view-menu-gate.test.ts`，以及那一支自己的计划、台账追加和证据。禁止导入 Electron，禁止改 `library-wiring.ts`、`library-menu.ts`、epoch、`index.ts`、`expose` 和生成物。不把 B10 分到别的 PR。全账超过 600 就停报。建议分支 `feature/view-menu-gate-s2b-b-174`，base 是 A 已合的 main，独立 worktree，PR 保持 Draft。
 
-C 的指令：目标是生产 none 装配和上表五行装配断言。完整验收不含把 B9、B10 再实现一遍，那两号仍以 B 的测试为准；C 只证明启动 none、三个栏位进门、文件菜单不进门、拒绝被接住、记号是常量、销毁不会推动门。文件白名单是 `apps/desktop/src/main/library-wiring.ts` 的菜单装配、对应的新测试、那一支自己的计划、台账追加和证据。`composition-root.ts`、`index.ts`、`view-menu-epoch.ts`、三份生成物为零 diff。`expose` 保持 false。不含 handler、生产命令表、renderer、UI、存储、CSP、协议、S2c、账户或登录。架构硬约束沿用上面那一句。建议分支 `feature/view-menu-wiring-s2b-c-174`，base 是 A 和 B 已合的 main，独立 worktree，PR 保持 Draft。这整段未获实施授权。
+C 的指令：未获实施授权。本段必须整段粘贴。开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、已合 seam 的「仍然成立」「替换门」「轨迹」「验收」「分批」「将来另批才许改的文件」，以及批准台账里当时已经写下的原话。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。依赖只沿 ARCHITECTURE §5 允许的方向。不临时导入还不存在的模块，不预造兼容层。一个文件不堆多件职责。普通源文件建议 400、硬上限 600，函数建议 50、硬上限 80，测试文件建议 600、硬上限 800。优先系统原生菜单，不自造控件。生产启动保持 none，`expose` 保持 false。三份生成物、`composition-root.ts`、`index.ts`、`view-menu-epoch.ts` 零 diff。不含 handler、生产命令表、renderer、UI、存储、CSP、协议、S2c 及后续、账户或登录。不造第二份代次表或模块级单例。新增+删除超过 600 就停报，不删测试，不改 600。目标是生产 none 装配和上表五行装配断言。完整验收不含把 B9、B10 再实现一遍，那两号仍以 B 的测试为准。C 只证明启动 none、三个栏位进门、文件菜单不进门、拒绝被接住、记号是常量、销毁不会推动门。文件白名单是 `apps/desktop/src/main/library-wiring.ts` 的菜单装配、对应的新测试、那一支自己的计划、台账追加和证据。禁止借本批改 `index.ts` 或 `view-menu-epoch.ts`，也不在本批接上生命周期。建议分支 `feature/view-menu-wiring-s2b-c-174`，base 是 A 和 B 已合的 main，独立 worktree，PR 保持 Draft。
 
 ## 供 Forge 推荐的算法
 
@@ -311,7 +311,9 @@ GATE_BASE=origin/main node tools/check-pr-size/check.mjs
 | 4 | Forge 精确审查。通过前不写 `view-menu-gate.ts` | 已审 head `610b07587963ae9bb71fa85bdc23d013beb0b032`、tree `39ce6852b08bb7ab6d2eb89648983a0f9be7ce21`、base `9a1b56d1b5feb4d8188e14a713d48eecfb28b7d5`。只要求改估算口径。产品与测试仍未写 | 审查 |
 | 5 | 第三笔只改本文件的口径。不改台账，不加批准行 | 账 1、账 3 在 `03ec8a7` 时是 240 与 1068。本表以后的步骤会再改这两个当前实数 | 口径 |
 | 6 | 09:59 只在本文件追加职责候选。不编码，不拆产品 PR | 第四笔只改本文件。当前 docs 账改成两笔提交后的实测 | 候选 |
-| 7 | 台账只追加 09:59。页脚批准从 219 改为 220。反馈 1、决定 7、合入同步 26 不动。旧行不改 | 第五笔只改 `docs/approvals.md` | 次笔 |
+| 7 | 台账只追加 09:59。页脚批准从 219 改为 220。反馈 1、决定 7、合入同步 26 不动。旧行不改 | `5b16f15` 只多了一行空行，并把页脚改成 220。文件里没有 6935563052，也没有 09:59 正文。这一笔没有落账 | 未落账 |
+| 8 | 只补 A、B、C 的交接，使每一段单独粘贴也含五份规格和架构约束。不新增批准 | 本笔只改本文件。账 1 改成台账正文也提交之后的实测 | 交接 |
+| 9 | 把已有的 09:59 原条写入台账。页脚保持 220，因为第五笔已经改了计数，当时没有对应正文。旧行不改。不是新的用户批准 | 下一笔只改 `docs/approvals.md`。远端读回含 6935563052 和原话之后才算落账 | 补行 |
 
 ## 决策记录
 
@@ -323,7 +325,7 @@ GATE_BASE=origin/main node tools/check-pr-size/check.mjs
 | 589 不作为额度 | 它是已合计划里的未入库底稿。本文件按文件和断言重数 | 2026-11-16 | 计划核对，非新批准 |
 | 点估计 828 与收紧估计 613 都 HOLD | 两数都超过 600。613 是当前函数/用例轮廓假设下的收紧估计，不是数学保证下限。不删断言，不拆，不改 600。口径修正不是新决定 | 2026-11-16 | 按 23:58 的停点核对，非新批准 |
 | 不补 epoch 接线 | 同一实例、换代通知和 floor 写者还没有另批。职责候选也不把它们放进 A、B、C | 2026-11-16 | 沿用已合 seam 的文件名单，非新批准 |
-| 09:59 只拟职责候选 | 用户原话只有「请你按照项目进度继续推进吧」。分批限定写在台账，是 Forge 解释，不是用户第二句。不执行拆分 | 2026-11-17 | Wisdom 原话；范围是 Forge 解释 |
+| 09:59 只拟职责候选 | 用户原话只有「请你按照项目进度继续推进吧」。分批限定是 Forge 解释，不是用户第二句。`5b16f15` 没有把这句话写入台账。补上同一条 6935563052 不是新授权，也不执行拆分 | 2026-11-17 | Wisdom 原话；范围是 Forge 解释 |
 
 ## 交接
 
