@@ -410,7 +410,7 @@ Windows 全账 = 261 + P + L + E + X。历史公式留在上文，不回写。�
 
 ### 本 PR 的文档账
 
-与 Windows 全账分开。分支 `feature/view-menu-windows-native-plan-174`，从 live main `84486518a818264ba19d6225961622a9e76d1f0b` 另开。相对这个 base 的最终新增+删除：SIZE_PENDING。只改本计划和 `docs/approvals.md`。
+与 Windows 全账分开。分支 `feature/view-menu-windows-native-plan-174`，从 live main `84486518a818264ba19d6225961622a9e76d1f0b` 另开。相对这个 base 的最终新增+删除：计划 96/0、台账 9/1，合计 106。只改本计划和 `docs/approvals.md`。
 
 ### 仍要另批
 
