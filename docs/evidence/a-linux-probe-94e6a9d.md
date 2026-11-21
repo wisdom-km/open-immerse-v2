@@ -2,7 +2,7 @@
 
 这是 2026-11-17 那一次临时目录原型的短索引。源是固定 main `94e6a9d847f6e5fc3c3ebbe2e089f535e31f5ed3`，tree `46baf7af4ea5b13e9a3025c4049d651115d15ce6`。只在 Linux、已有 X.Org `:1`（1920×1200）上跑过一次。它不是正式 mirror、不是 A 批验收、不是 CI、Windows、mac、物理键、读屏或截图通过。
 
-本文不重跑探针。保留的日志在当时的证据目录 `view-menu-probe-94e6a9d`：`logs/hashes.txt`、`logs/electron-result.json`、`logs/toolchain.txt`、`logs/compile.log`、`logs/download.log`、`logs/spawn.log`、`logs/check.log`、`report.md`。Forge 的复核是 Issue #174 评论 7062635369 所附的证据审查。下面只列可核对的结果。
+本文不重跑探针。保留目录 `view-menu-probe-94e6a9d/logs/` 里，编译、下载、启动、检查各自有 `.out`、`.err`、`.exit`。没有 `compile.log`、`download.log`、`spawn.log`、`check.log`。同目录还有 `hashes.txt`、`electron-result.json`、`toolchain.txt`。`report.md` 在该目录的上一级。Issue #174 评论 7062635369 的正文承接复核摘要，评论里没有审查报告附件。下面只列可核对的结果。
 
 ## 口径
 

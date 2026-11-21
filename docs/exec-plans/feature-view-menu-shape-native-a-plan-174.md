@@ -283,9 +283,33 @@ corepack pnpm exec vitest run apps/desktop/test/view-menu-mirror.test.ts apps/de
 
 当前 CI 绿不覆盖 B1、B2。失败仍停。不 skip，不用 fake，不复制十项模板。B3–B10、gate、wiring、epoch、floor 不改。生产启动仍是 `installFileMenu`。`expose` 仍是 false。三份生成物仍零 diff。
 
+### 21:37 宿主推荐
+
+2026-11-21 21:37 Asia/Shanghai，Wisdom 原话只有「按照你的建议执行吧」。来源是 Issue #174 评论 7063443765。承接的建议是先修正引用，再确定正式 native 的运行环境与收集安排；涉及 CI 或系统的改变仍另批。Forge 的限定解释不是用户的第二句。上一节「这次不决定」是 20:31 当时的文本，不回写。本段写下判断。判断不是实施批准，也没有跑过。
+
+证据索引已按保留目录改正：四阶段是各自的 `.out`、`.err`、`.exit`，不是四个 `.log`。评论 7062635369 只承接复核摘要，没有报告附件。历史 `report.md` 不改。
+
+推荐：将来若另批 A 的产品与正式测试，B1、B2 的第一宿主就是现有 `node` 作业。文件仍是 `apps/desktop/test/view-menu-native.test.ts` 和 `apps/desktop/test/view-menu-native-electron.mjs`。四种形状与静态标签、事件、快捷键留在同一 `apps/desktop/test/`。不改 `vitest.config.ts`，不改 `.github/workflows/ci.yml`。
+
+静态依据，这次仍不跑测试、不安装、不下载、不启动 Electron：
+
+- 根 `package.json` 的 `test` 是 `vitest run`。`vitest.config.ts` 的 `environment` 是 `node`，include 含 `apps/desktop/test/**/*.test.ts`。exclude 只有夹具和 `node_modules`，没有 native 例外。`node` 作业跑的就是这条，所以父测试一落进去就会被收集。
+- 子进程是 `.mjs`，不匹配 `*.test.ts`，不会被收成另一条用例。它必须加载同一个正式 mirror 编译出的 `.js`。
+- `desktop-e2e-windows` 在 e2e 之前执行 `vitest run apps/desktop/test`。同一父测试会被再收集一次。那是额外一次，不是 `node` 失败后的通过。该作业的 e2e 先跑 desktop 的整份 `build`，再启动 `dist/main/index.js`。它不加载 mirror，不算 B1、B2。
+- `worker-health` 的 macOS 只跑 worker 与协议夹具。它不是 Electron 菜单宿主。
+- `node` 作业没有配置 `DISPLAY`。这只说明配置里没有，不等于已经测出进程起不来。二进制是否随 `pnpm install` 出现、系统库够不够，仍未知。仓库没有 `onlyBuiltDependencies` 或 `ignore-scripts`。`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` 不代替 Electron。
+
+不选两条替代。只在 Windows 收集 native，并把该文件排除出 `node`，会让 Windows 作业替无显示配置的 `node` 作业承担失败。现在就给 `node` 作业加显示或系统库，会把还没发生的失败写成必须的 CI 成本。两条都不在本推荐里。带显示的新 Linux 作业同样要改 CI，未批准，也未证实能跑。
+
+代价：本推荐不新增 CI diff，所以不能把 CI 成本从全账拿走。全账仍是 261 + P + L + E + X。P、L、X 不记 0。E 的 16 仍只是预留。若进程起不来，停在上文停点 2 或 5，那时才另批。候选估计：显示或库的准备是 `ci.yml` 里若干作业步骤，行数量级是个位数到数十行。这不是实测，不从 261 扣除，也不闭合全账。Windows 多跑同一父测试的耗时未知，不记 0。它不能代替 Linux 上的 `视图(&V)`，也不能代替 mac 的「显示」、物理键、读屏或截图。
+
+`node` 作业若进程起来，能证明的是该 `ubuntu-latest` 作业上的 `MenuItem` 字段。Windows 上同一文件若也起来，只多一个 Windows 进程上的字段。现有 e2e 截图是完整应用的画面，不读 mirror。物理键、读屏、mac 菜单栏仍各自独立。
+
+停点 5 若成立，最小另批只包括 `.github/workflows/ci.yml` 的显示或库步骤；真要改收集时再加上 `vitest.config.ts`。命令类别是显示准备、系统库安装，以及是否执行 electron 的 `install.js`。证据仍是那一支的 `docs/evidence/<PR号>/commands.md`。本文件不写这些 diff。四行验收不减。不 skip，不用 fake，不复制模板。
+
 ### 本 PR 的文档账
 
-与未来实施账分开。相对 base `94e6a9d847f6e5fc3c3ebbe2e089f535e31f5ed3` 的最终新增+删除：计划 76/0、证据索引 45/0、台账 7/1，合计 129。原型脚本行数不进这账，也不进 261。
+与未来实施账分开。相对 base `94e6a9d847f6e5fc3c3ebbe2e089f535e31f5ed3` 的最终新增+删除：SIZE_PENDING。原型脚本行数不进这账，也不进 261。
 
 ### 仍要另批
 
@@ -298,7 +322,7 @@ corepack pnpm exec vitest run apps/desktop/test/view-menu-mirror.test.ts apps/de
 
 上文「交接」是 PR #225 的原文。实施仍未授权。若以后另有精确批准，下面整段再贴给当时的 Cloud。
 
-开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、[Linux 临时原型索引](../evidence/a-linux-probe-94e6a9d.md)、已合 seam 的「仍然成立」「验收」「分批」「将来另批才许改的文件」，以及台账里 11:00、11:32、11:38、20:31 的原话。20:31 只覆盖这种纯文档补记。11:38 只覆盖已经做完的那一次临时目录验证。两句都不批准编码。
+开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、[Linux 临时原型索引](../evidence/a-linux-probe-94e6a9d.md)、已合 seam 的「仍然成立」「验收」「分批」「将来另批才许改的文件」，以及台账里 11:00、11:32、11:38、20:31、21:37 的原话。20:31 只覆盖当时的纯文档补记。21:37 只覆盖引用修正和本段宿主推荐的写入。11:38 只覆盖已经做完的那一次临时目录验证。三句都不批准编码。推荐的第一宿主是现有 `node` 作业，不改 CI；Windows 作业不能替它的失败兜底。涉及 CI 或系统的改变仍未批准。
 
 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。依赖只沿 ARCHITECTURE §5 允许的方向。不临时导入还不存在的模块，不预造兼容层。一个文件不堆多件职责。普通源文件建议 400、硬上限 600，函数建议 50、硬上限 80，测试文件建议 600、硬上限 800。优先系统原生菜单，不自造控件。从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。未获实施授权不得开工。
 
