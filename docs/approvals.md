@@ -274,4 +274,6 @@
 
 | 2026-11-21 21:37 | 「按照你的建议执行吧」 | Forge 本次限定解释（不是用户第二句原话）：只继续 PR #226 的纯文档。修正证据索引里四阶段日志的扩展名，以及评论 7062635369 被写成附有审查报告的那一句。按仓库静态事实写下正式 native B1/B2 的宿主与收集推荐、理由、代价和待另批项。保持 Draft。不批准产品或正式测试编码、续跑临时原型或下载、改 CI 或系统设置、安装库、A/B/C 实施、Ready、合入、后续或发版。这条推荐不是 CI 变更的批准。261+P+L+E+X 仍未闭合。不回写 20:31 | Issue #174、docs/exec-plans/feature-view-menu-shape-native-a-plan-174.md、docs/evidence/a-linux-probe-94e6a9d.md | https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7063443765 。评论标题是「Wisdom 批准登记 · 2026-11-21 21:37 Asia/Shanghai」。用户原话只有「按照你的建议执行吧」。GitHub created_at 是 2026-11-21T13:38:04Z，换成 Asia/Shanghai 是 21:38:04。台账时间用正文的 21:37。20:31 的 7062635369 与本条之间没有其他评论 |
 
-共 227 条批准 + 1 条反馈记录 + 7 条决定 + 28 条合入同步
+| 2026-11-21 22:13 | 「按照你的建议执行就行。」 | Forge 本次限定解释（不是用户第二句原话）：只继续 PR #226 的纯文档，纠正宿主比较。原样 Ubuntu 写成启动前提尚未建立的条件候选。事前另批的分平台职责是合法待决选项，要写明失去的 Linux 证明和其他平台缺口，不把它定义成失败兜底。事前规划显示或库配置不等于这些改动已证实必要。推荐仍是提案，没有选定甲、乙或丙，也不构成实施或环境批准。保持 Draft。不批准产品或正式测试编码、续跑临时原型或下载、改 CI 或系统设置、安装库、A/B/C 实施、Ready、合入、后续或发版。261+P+L+E+X 仍未闭合。不回写 21:37 | Issue #174、docs/exec-plans/feature-view-menu-shape-native-a-plan-174.md | https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7063930331 。评论标题是「Wisdom 批准登记 · 2026-11-21 22:13 Asia/Shanghai」。用户原话只有「按照你的建议执行就行。」。GitHub created_at 是 2026-11-21T14:14:16Z，换成 Asia/Shanghai 是 22:14:16。台账时间用正文的 22:13。21:37 的 7063443765 与本条之间没有其他评论 |
+
+共 228 条批准 + 1 条反馈记录 + 7 条决定 + 28 条合入同步
