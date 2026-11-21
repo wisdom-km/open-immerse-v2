@@ -338,3 +338,97 @@ corepack pnpm exec vitest run apps/desktop/test/view-menu-mirror.test.ts apps/de
 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。依赖只沿 ARCHITECTURE §5 允许的方向。不临时导入还不存在的模块，不预造兼容层。一个文件不堆多件职责。普通源文件建议 400、硬上限 600，函数建议 50、硬上限 80，测试文件建议 600、硬上限 800。优先系统原生菜单，不自造控件。从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。未获实施授权不得开工。
 
 目标仍是四种形状和真实 native B1、B2。完整验收是上文四行，一条不删。子进程必须加载同一个正式 mirror 的编译结果。编译失败、二进制或进程起不来、没有 `_menuWillShow`，都停。全账超过 600 就停报。不把纯文档通过写成可实施通过。
+
+## 2026-11-21 23:43 Windows 本阶段职责
+
+上文「21:37 宿主推荐」到「实施交接」是 PR #226 合入前的文本。甲、乙、丙在那里都还没选定。本节不回写那些段落，也不回写账 2 的 `261 + P + L + E + X`。
+
+2026-11-21 23:42 Asia/Shanghai，Wisdom 原话只有「这个项目主要是在Windows做测试，也是主要发Windows版吧，乌蒙图和Mac OS可以以后再做」。来源是 Issue #174 评论 7065088843。Forge 的限定解释不是第二句：本阶段 native 测试与主要交付验收由 Windows 承担，Ubuntu 与 macOS 的原生验证后置；这是把推荐改到乙，不是立刻改 CI、删测试或实施。
+
+2026-11-21 23:43 Asia/Shanghai，Wisdom 原话只有「对，那就按照你的建议去推进吧」。来源是 Issue #174 评论 7065095110。承接的建议是：按乙，先写清职责、收集边界和 Windows 完整预算，再另行批准实施。Forge 的限定解释不是第二句。这句批准的是本文件和台账的纯文档。它不批准产品或正式测试编码，不批准改 CI，也不把产品规格改成只发 Windows。
+
+### 与根规格的边界
+
+已读 `PRD.md`、`docs/prd/01.md`、`docs/prd/08.md`、`DESIGN.md` §4.10 的 11.1、`docs/design-principles.md` §3、`AGENTS.md`。产品句子仍是 Windows / macOS 桌面应用。M2 退出仍含 8 GB Windows 与 M1 真机录屏。M8 仍是双平台安装包。11.1 仍是 mac「显示」、Windows「视图(V)」。原则 §3 仍区分系统菜单栏和标题栏菜单按钮。这些句子本笔不改。
+
+23:42 因此不与根规格冲突：后置的是本阶段 native 平台证明，不是把 macOS 从产品范围删掉，也不是用 Windows 结果宣称那些验收已过。若要把 macOS 从产品或 M2、M8 拿掉，那是规格变更，本笔不做，到这里就停。
+
+### 本阶段职责
+
+Windows 承担本阶段的 native B1、B2：在 `windows-latest` 的进程里，真实 Electron 45.2.1 调用 `_menuWillShow` 之后，读视图子菜单的 `MenuItem` 字段。Windows 标签是 `library-menu.ts` 现在的非 mac 分支「视图(&V)」。
+
+Ubuntu 的 `node` 作业不再承担这项 native。失去的是该作业上的 Linux 字段证明。一次有显示的 Linux 临时原型仍只是历史可行性，不算本阶段通过，也不能被 Windows 绿掩盖。macOS 的系统菜单栏和「显示」标签后置，未验证。`worker-health` 的 macOS 只跑 worker 与协议夹具，不是 Electron 菜单宿主。
+
+现有通用跨平台门禁保留。`node` 作业仍跑根 `pnpm test`。形状测试与 `library-menu.test.ts` 仍进 `apps/desktop/test/**/*.test.ts`，Ubuntu 与 Windows 都继续收集。不 skip，不删除这些检查，不从 `node` 作业拿掉 `pnpm test`。`python-worker`、`worker-health-windows`、`worker-health-macos` 不因本阶段 native 后置而撤销。
+
+### 证明不能互相代替
+
+| 证明 | 本阶段 | 不能代替 |
+| --- | --- | --- |
+| Windows CI 进程字段 | 另批收集之后，由 Windows 作业里的 native 父测试读 `_menuWillShow` 之后的 `type`、`checked`、`label` | 不能代替真机按键、读屏、菜单画面，也不能代替 Linux 或 mac 的字段 |
+| Windows 真机 | Alt、F10、访问键、读屏、菜单截图。未做，记未验证 | 不能代替 CI 进程字段。现有 e2e 启动 `apps/desktop/e2e/fixtures/electron-app.ts` 第 37 行的 `dist/main/index.js`，不加载 mirror，它的截图不算 B1、B2 |
+| Linux native | 后置，未验证 | Windows 绿不能写成 Linux 通过 |
+| mac native | 后置，未验证。菜单栏与「显示」都没有 CI 宿主 | Windows「视图(&V)」不能写成 mac「显示」 |
+
+四行验收不减。形状断言仍不能代替 B1、B2。子进程必须加载同一个正式 mirror 的编译结果。编译失败、二进制或进程起不来、没有 `_menuWillShow`，都停。不写第二份十项模板，不用构造参数冒充。B3–B10、gate、wiring、epoch、floor、生产 `installFileMenu`、`expose` 仍不在 A。
+
+### 最小未来收集候选
+
+只写方案。本 PR 对 `vitest.config.ts` 和 `.github/workflows/ci.yml` 的 diff 是 0。
+
+静态事实：`vitest.config.ts` 第 31 行 include 含 `apps/desktop/test/**/*.test.ts`，exclude 没有 native 例外。`node` 作业第 85 行跑 `corepack pnpm test`。`desktop-e2e-windows` 第 272 行跑 `vitest run apps/desktop/test`。父测试若仍放在 `apps/desktop/test/view-menu-native.test.ts`，两个作业都会收集。`.mjs` 不匹配 `*.test.ts`。
+
+候选：native 父测试与子进程改放到 `apps/desktop/native-windows/view-menu-native.test.ts` 和 `apps/desktop/native-windows/view-menu-native-electron.mjs`。这个目录不在第 31 行的 glob 里，也不在第 272 行的 `apps/desktop/test` 里，所以现有 Ubuntu `node` 作业不会顺带收集它。形状测试与静态测试仍留在 `apps/desktop/test/`。
+
+要让 Windows 作业承担它，另批在 `desktop-e2e-windows` 第 272 行那一步之后加一条只跑 `apps/desktop/native-windows/view-menu-native.test.ts` 的步骤。根 include 会不会滤掉这条显式路径，本回合没有跑 Vitest，记未核实。若会滤掉，最小追加是一份只含该路径的配置，仍属另批，行数未知。禁止在测试里用 `skip` 或 `skipIf` 让 Ubuntu 变绿。禁止删掉通用检查来制造通过。
+
+### Windows 加载前提
+
+沿用上文「选定的候选」，宿主改成将来的 Windows 作业。`typescript` 6.0.3 只编译 `library-menu.ts` 与 `view-menu-mirror.ts`，选项与 `apps/desktop/tsconfig.main.json` 一致，输出在临时目录。不跑整份 desktop `build`。不设置 `ELECTRON_RUN_AS_NODE`。
+
+二进制仍是锁定的 `electron@45.2.1`。Linux 临时原型对过的是 linux-x64。win32 二进制会不会在 `windows-latest` 的 `pnpm install --frozen-lockfile` 之后出现，本回合不下载、不安装、不启动，记未核实。`install.js` 仍可能调用 `downloadArtifact`。`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` 不代替 Electron。Windows 不使用 `Xvfb` 这件事，不等于已经证明该作业能把进程跑起来。
+
+证据产物仍是那一支的 `docs/evidence/<PR号>/commands.md`，加上父测试收的 stdout 和退出码。真机录屏、读屏和菜单截图另记，不把 CI 字段输出当成这些产物。没有新的 npm 依赖。若实施时必须改根 `package.json` 或锁文件，停下来报告。
+
+### Windows 完整账
+
+这是未来实施的单列账，不是本 PR 的文档账，也不是把上文公式改写一遍。产品与测试列沿用已合账 2 的同一静态轮廓，不是新的实测。
+
+| 项 | 数量 | 依据 |
+| --- | --- | --- |
+| 产品与测试列明 | 新增 258、删除 3，合计 261，区间 243–303 | 62+9+24+18+98+50。低位用父进程 90 与子进程 40，高位用 120 与 70。路径改到 `native-windows/` 不新测行数 |
+| P | 未知，不记 0 | 未来实施 PR 对计划的 diff。已合计划已在 main，不会整份再计一次 |
+| L | 未知，不记 0 | 实施批准的台账行还不存在 |
+| E | 16 只是预留，不是下限 | `commands.md`。真机录屏、读屏、菜单截图的行数和附件未知，不记 0，也不算进这 16 |
+| X | 未知，不记 0 | `ci.yml` 增加的 Windows 步骤，以及根 include 若滤掉显式路径时的那份配置。候选估计是个位数到数十行，不是实测。二进制能否出现也不记 0 行通过 |
+
+Windows 全账 = 261 + P + L + E + X。历史公式留在上文，不回写。不能把 X 从全账拿走后声称已闭合。1.73×261=451.53 只披露风险，不是开工线。
+
+**HOLD。** 不能证明这本全账 ≤ 600。也没有把未知写成已经超过 600。不删测试，不改 600，不自动拆分。在另有批准证明放得下、或另有批准接受超出之前，不开始实施。
+
+### 本 PR 的文档账
+
+与 Windows 全账分开。分支 `feature/view-menu-windows-native-plan-174`，从 live main `84486518a818264ba19d6225961622a9e76d1f0b` 另开。相对这个 base 的最终新增+删除：SIZE_PENDING。只改本计划和 `docs/approvals.md`。
+
+### 仍要另批
+
+- 按上面的候选改 `ci.yml`，以及未核实的那份 vitest 配置。23:43 没有改 CI。
+- A 的产品与正式测试实施。全账仍是 HOLD。
+- Windows 真机按键、读屏、菜单截图。
+- Linux 与 macOS 的 native 证明。后置不是删除。
+- Ready、合入、发版。
+- B、C。把 macOS 从产品、M2 或 M8 拿掉。
+
+### 可粘贴的实施交接
+
+实施仍未授权。若以后另有精确批准，把下面整段再贴给当时的 Cloud。现在不要按这段开工。
+
+开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、`docs/evidence/a-linux-probe-94e6a9d.md`、已合 seam 的「仍然成立」「验收」「分批」「将来另批才许改的文件」，以及台账里 11:00、11:38、20:31、22:13、23:42、23:43 的原话。23:43 只批准把职责和预算写进文档。23:42 不改产品句子。11:38 只覆盖已经做完的那一次 Linux 临时验证。
+
+目标：四种形状的 Node 断言、静态标签与事件和快捷键、Windows 进程上的真实 native B1 与 B2。验收是上文四行，一条不删。mac 标签「显示」、mac 菜单栏、Linux 字段、物理键、读屏、菜单截图都还没验证，Windows 字段不能代替它们。通用门禁保留：形状与静态测试仍由 Ubuntu `node` 作业收集。
+
+架构约束：UI 与业务核心解耦，ARCHITECTURE.md §2.1 与 RULES.md §8。依赖只沿 ARCHITECTURE §5。不进 core，不进 renderer。一个文件不堆多件职责。普通源文件建议 400、硬上限 600，函数建议 50、硬上限 80，测试文件建议 600、硬上限 800。优先系统原生菜单。生产启动仍是 `installFileMenu`。`expose` 保持 false。三份生成物、`composition-root.ts`、`index.ts`、`view-menu-epoch.ts`、`library-wiring.ts` 零 diff。
+
+native 文件放在 `apps/desktop/native-windows/`，不要放进 `apps/desktop/test/**/*.test.ts`，否则 Ubuntu `node` 作业会收集它。收集步骤只加在 `.github/workflows/ci.yml` 的 `desktop-e2e-windows`。不用测试内 skip。子进程加载同一个正式 mirror 的编译结果。编译失败、win32 二进制或进程起不来、没有 `_menuWillShow`，都停。
+
+从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。Windows 全账是 261 + P + L + E + X，现在不能证明 ≤ 600。超过或仍不能证明，就停报。未获实施授权不得开工。纯文档通过不是可实施通过。
