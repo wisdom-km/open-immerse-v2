@@ -404,11 +404,13 @@ Ubuntu 的 `node` 作业不再承担这项 native。失去的是该作业上的 
 
 Windows 全账 = 261 + P + L + E + X。历史公式留在上文，不回写。不能把 X 从全账拿走后声称已闭合。1.73×261=451.53 只披露风险，不是开工线。
 
-**HOLD。** 不能证明这本全账 ≤ 600。也没有把未知写成已经超过 600。不删测试，不改 600，不自动拆分。在另有批准证明放得下、或另有批准接受超出之前，不开始实施。
+2026-11-21 23:55 Asia/Shanghai，Wisdom 原话只有「按你的推荐推进吧」。来源是 Issue #174 评论 7065245491。这句只批准删掉「另有批准接受超出再开工」。Forge 的限定解释不是第二句。
+
+**HOLD。** 产品、测试、计划、台账、证据和 CI 调整合在一起的全账，现在不能证明 ≤ 600。未知不写成已经超过，也不记 0。不删测试，不改 600，不自动拆分。开工要同时满足两件：这本全账已经证明 ≤ 600，并且另有精确实施批准。否则停报。
 
 ### 本 PR 的文档账
 
-与 Windows 全账分开。分支 `feature/view-menu-windows-native-plan-174`，从 live main `84486518a818264ba19d6225961622a9e76d1f0b` 另开。相对这个 base 的最终新增+删除：计划 94/0、台账 7/1，合计 102。只改本计划和 `docs/approvals.md`。
+与 Windows 全账分开。分支 `feature/view-menu-windows-native-plan-174`，从 live main `84486518a818264ba19d6225961622a9e76d1f0b` 另开。相对这个 base 的最终新增+删除：SIZE_PENDING。只改本计划和 `docs/approvals.md`。
 
 ### 仍要另批
 
@@ -421,9 +423,9 @@ Windows 全账 = 261 + P + L + E + X。历史公式留在上文，不回写。�
 
 ### 可粘贴的实施交接
 
-实施仍未授权。若以后另有精确批准，把下面整段再贴给当时的 Cloud。现在不要按这段开工。
+实施仍未授权。下面整段只在两件都满足之后再贴给当时的 Cloud：全账已经证明 ≤ 600，并且另有精确实施批准。现在不要按这段开工。
 
-开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、`docs/evidence/a-linux-probe-94e6a9d.md`、已合 seam 的「仍然成立」「验收」「分批」「将来另批才许改的文件」，以及台账里 11:00、11:38、20:31、22:13、23:42、23:43 的原话。23:43 只批准把职责和预算写进文档。23:42 不改产品句子。11:38 只覆盖已经做完的那一次 Linux 临时验证。
+开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、`docs/evidence/a-linux-probe-94e6a9d.md`、已合 seam 的「仍然成立」「验收」「分批」「将来另批才许改的文件」，以及台账里 11:00、11:38、20:31、22:13、23:42、23:43、23:55 的原话。23:43 只批准把职责和预算写进文档。23:55 只批准删掉接受超出 600 再开工的路径。23:42 不改产品句子。11:38 只覆盖已经做完的那一次 Linux 临时验证。
 
 目标：四种形状的 Node 断言、静态标签与事件和快捷键、Windows 进程上的真实 native B1 与 B2。验收是上文四行，一条不删。mac 标签「显示」、mac 菜单栏、Linux 字段、物理键、读屏、菜单截图都还没验证，Windows 字段不能代替它们。通用门禁保留：形状与静态测试仍由 Ubuntu `node` 作业收集。
 
@@ -431,4 +433,4 @@ Windows 全账 = 261 + P + L + E + X。历史公式留在上文，不回写。�
 
 native 文件放在 `apps/desktop/native-windows/`，不要放进 `apps/desktop/test/**/*.test.ts`，否则 Ubuntu `node` 作业会收集它。收集步骤只加在 `.github/workflows/ci.yml` 的 `desktop-e2e-windows`。不用测试内 skip。子进程加载同一个正式 mirror 的编译结果。编译失败、win32 二进制或进程起不来、没有 `_menuWillShow`，都停。
 
-从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。Windows 全账是 261 + P + L + E + X，现在不能证明 ≤ 600。超过或仍不能证明，就停报。未获实施授权不得开工。纯文档通过不是可实施通过。
+从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。Windows 全账是 261 + P + L + E + X。开工要同时满足两件：产品、测试、计划、台账、证据和 CI 调整的全账已经证明 ≤ 600，并且另有精确实施批准。否则停报。不删测试，不改 600，不自动拆分。未获实施授权不得开工。纯文档通过不是可实施通过。
