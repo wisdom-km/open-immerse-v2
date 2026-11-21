@@ -319,7 +319,7 @@ corepack pnpm exec vitest run apps/desktop/test/view-menu-mirror.test.ts apps/de
 
 ### 本 PR 的文档账
 
-与未来实施账分开。相对 base `94e6a9d847f6e5fc3c3ebbe2e089f535e31f5ed3` 的最终新增+删除：SIZE_PENDING。原型脚本行数不进这账，也不进 261。
+与未来实施账分开。相对 base `94e6a9d847f6e5fc3c3ebbe2e089f535e31f5ed3` 的最终新增+删除：计划 111/0、证据索引 45/0、台账 11/1，合计 168。原型脚本行数不进这账，也不进 261。
 
 ### 仍要另批
 
