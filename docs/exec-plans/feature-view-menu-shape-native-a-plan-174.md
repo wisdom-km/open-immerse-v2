@@ -289,32 +289,43 @@ corepack pnpm exec vitest run apps/desktop/test/view-menu-mirror.test.ts apps/de
 
 证据索引已按保留目录改正：四阶段是各自的 `.out`、`.err`、`.exit`，不是四个 `.log`。评论 7062635369 只承接复核摘要，没有报告附件。历史 `report.md` 不改。
 
-推荐：将来若另批 A 的产品与正式测试，B1、B2 的第一宿主就是现有 `node` 作业。文件仍是 `apps/desktop/test/view-menu-native.test.ts` 和 `apps/desktop/test/view-menu-native-electron.mjs`。四种形状与静态标签、事件、快捷键留在同一 `apps/desktop/test/`。不改 `vitest.config.ts`，不改 `.github/workflows/ci.yml`。
+2026-11-21 22:13 Asia/Shanghai，Wisdom 原话只有「按照你的建议执行就行。」来源是 Issue #174 评论 7063930331。承接的建议是只纠正宿主比较，公平列出各方案的条件、代价和证明范围，不新增实验。Forge 的限定解释不是用户的第二句。这句批准的是改正下面的判断。它没有选定某一宿主，也没有批准实施或改环境。`284e653` 把原样 Ubuntu 写成已经确定的第一宿主，并把事前分平台和事前显示配置写成不选。那段判断在这里改正。20:31 写过的「两条之一」仍留在上文，不回写。
 
-静态依据，这次仍不跑测试、不安装、不下载、不启动 Electron：
+静态事实，这次仍不跑测试、不安装、不下载、不启动 Electron：
 
-- 根 `package.json` 的 `test` 是 `vitest run`。`vitest.config.ts` 的 `environment` 是 `node`，include 含 `apps/desktop/test/**/*.test.ts`。exclude 只有夹具和 `node_modules`，没有 native 例外。`node` 作业跑的就是这条，所以父测试一落进去就会被收集。
-- 子进程是 `.mjs`，不匹配 `*.test.ts`，不会被收成另一条用例。它必须加载同一个正式 mirror 编译出的 `.js`。
-- `desktop-e2e-windows` 在 e2e 之前执行 `vitest run apps/desktop/test`。同一父测试会被再收集一次。那是额外一次，不是 `node` 失败后的通过。该作业的 e2e 先跑 desktop 的整份 `build`，再启动 `dist/main/index.js`。它不加载 mirror，不算 B1、B2。
-- `worker-health` 的 macOS 只跑 worker 与协议夹具。它不是 Electron 菜单宿主。
-- `node` 作业没有配置 `DISPLAY`。这只说明配置里没有，不等于已经测出进程起不来。二进制是否随 `pnpm install` 出现、系统库够不够，仍未知。仓库没有 `onlyBuiltDependencies` 或 `ignore-scripts`。`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` 不代替 Electron。
+- `node` 作业在 `ubuntu-latest` 上跑根 `pnpm test`。根 `package.json` 的 `test` 是 `vitest run`。`vitest.config.ts` 的 include 含 `apps/desktop/test/**/*.test.ts`，exclude 没有 native 例外。该作业没有配置 `Xvfb`，也没有配置 `DISPLAY`。
+- 临时原型成功发生在已有 X.Org `:1` 的 Linux 机器上。那不是当前 Ubuntu CI 的条件。
+- 新的父测试放进当前 glob，会同时被 Ubuntu 的 `node` 作业和 Windows 的 `desktop-e2e-windows` 收集。子进程是 `.mjs`，不匹配 `*.test.ts`，不会被收成另一条用例。父测试被收集，不等于子进程具备启动前提。
+- 未实测无法启动，不等于已经证明启动失败，也不等于已经证明现有宿主足以承载 native。二进制是否随 `pnpm install` 出现、系统库够不够，仍未知。仓库没有 `onlyBuiltDependencies` 或 `ignore-scripts`。`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` 不代替 Electron。
+- `desktop-e2e-windows` 的 e2e 先跑整份 desktop `build`，再启动 `dist/main/index.js`。它不加载 mirror，不算 B1、B2。`worker-health` 的 macOS 只跑 worker 与协议夹具。
 
-不选两条替代。只在 Windows 收集 native，并把该文件排除出 `node`，会让 Windows 作业替无显示配置的 `node` 作业承担失败。现在就给 `node` 作业加显示或系统库，会把还没发生的失败写成必须的 CI 成本。两条都不在本推荐里。带显示的新 Linux 作业同样要改 CI，未批准，也未证实能跑。
+下一步由用户决定职责和环境范围。下面三条都是提案，都还没选定。文件名仍是已列的 `apps/desktop/test/view-menu-native.test.ts` 与 `apps/desktop/test/view-menu-native-electron.mjs`。子进程必须加载同一个正式 mirror 的编译结果。四行验收不减。不 skip，不用 fake，不复制模板。
 
-代价：本推荐不新增 CI diff，所以不能把 CI 成本从全账拿走。全账仍是 261 + P + L + E + X。P、L、X 不记 0。E 的 16 仍只是预留。若进程起不来，停在上文停点 2 或 5，那时才另批。候选估计：显示或库的准备是 `ci.yml` 里若干作业步骤，行数量级是个位数到数十行。这不是实测，不从 261 扣除，也不闭合全账。Windows 多跑同一父测试的耗时未知，不记 0。它不能代替 Linux 上的 `视图(&V)`，也不能代替 mac 的「显示」、物理键、读屏或截图。
+| 候选 | 条件 | 代价 | 证明范围 |
+| --- | --- | --- | --- |
+| 甲，原样 Ubuntu | 父测试留在当前 glob。不改 `ci.yml`，不改 `vitest.config.ts`。启动前提尚未建立。这是条件候选，宿主和显示问题还没有解决 | 这一笔不加 CI diff。X 仍不记 0。显示或库若以后要加，行数未知 | 只有该 `ubuntu-latest` 作业真把进程跑起来，才证明那次的 MenuItem 字段。现在没有这个证明。Windows 同时收集同一文件时，Windows 绿不能掩盖这个作业的失败 |
+| 乙，事前另批分平台职责 | 用户事先批准 native 由哪个作业承担，以及无显示配置的 `node` 作业还收不收它。这是范围决定 | 收集范围若改，可能碰到 `vitest.config.ts` 和 `ci.yml`。行数未知，留在 X，不能从全账拿走 | 证明范围以当时批准的宿主为准。若不再让 `node` 作业承担 native，就失去该作业上的 Linux 字段证明。mac、物理键、读屏、截图仍缺。Windows 专门宿主只证明 Windows 进程上的字段 |
+| 丙，事前规划带显示的宿主或显示/库配置 | 可以在失败发生前列出并请求另批。列出和估算不等于这些改动已经证实必要 | 候选估计：`ci.yml` 里的显示或库步骤，量级是个位数到数十行。这不是实测，也不保证原因一定是显示或库，更不保证实际改动只落在 `ci.yml` | 另批的宿主若把进程跑起来，证明的是那个宿主上的字段。未列入的平台仍缺 |
 
-`node` 作业若进程起来，能证明的是该 `ubuntu-latest` 作业上的 `MenuItem` 字段。Windows 上同一文件若也起来，只多一个 Windows 进程上的字段。现有 e2e 截图是完整应用的画面，不读 mirror。物理键、读屏、mac 菜单栏仍各自独立。
+甲、乙、丙的共同缺口：mac 菜单栏、物理键、读屏、截图，以及 e2e 那条完整应用启动。一次有显示的 Linux 临时成功不能填上这些缺口。
 
-停点 5 若成立，最小另批只包括 `.github/workflows/ci.yml` 的显示或库步骤；真要改收集时再加上 `vitest.config.ts`。命令类别是显示准备、系统库安装，以及是否执行 electron 的 `install.js`。证据仍是那一支的 `docs/evidence/<PR号>/commands.md`。本文件不写这些 diff。四行验收不减。不 skip，不用 fake，不复制模板。
+要分开的两件事：保留 Linux 要求，再用 Windows 绿掩盖这个作业已经失败，这是错误。用户事前另批分平台职责和收集范围，是合法的待决选项。后者要写明失去的 Linux 证明和其他平台缺口。不能把乙本身定义成失败兜底或绕门禁。
+
+要分开的另一件事：显示或库肯定必要，和可以事前规划并另批的条件方案，是两句。丙属于后一句。不必先制造一次正式测试失败，才能讨论或估算丙。
+
+本文件仍把甲当作提案：少改配置，先看现有作业能否起来。这个倾向不是选定，也不把乙、丙排除。全账仍是 261 + P + L + E + X。P、L、X 不记 0。E 的 16 仍只是预留。不能把 CI 成本从全账拿走后声称已闭合，也不能证明全账 ≤ 600。
+
+「若起不来，那时才另批」可以当作偏好的未来顺序，不是唯一合法路径。用户也可以在实施前就选定乙或丙。最小另批的文件范围只是当前候选估计：显示或库步骤可能在 `ci.yml`，改收集时可能碰到 `vitest.config.ts`，命令类别可能包括显示准备、系统库安装，以及是否执行 electron 的 `install.js`。这不预先保证原因，也不预先保证实际变更文件。证据仍是那一支的 `docs/evidence/<PR号>/commands.md`。本文件不写这些 diff。
 
 ### 本 PR 的文档账
 
-与未来实施账分开。相对 base `94e6a9d847f6e5fc3c3ebbe2e089f535e31f5ed3` 的最终新增+删除：计划 100/0、证据索引 45/0、台账 9/1，合计 155。原型脚本行数不进这账，也不进 261。
+与未来实施账分开。相对 base `94e6a9d847f6e5fc3c3ebbe2e089f535e31f5ed3` 的最终新增+删除：SIZE_PENDING。原型脚本行数不进这账，也不进 261。
 
 ### 仍要另批
 
+- 在甲、乙、丙里选定职责和环境范围。22:13 没有选定。
 - A 的产品与正式测试实施。
-- 为 B1、B2 改 CI、安装库或改显示。
+- 为 B1、B2 改 CI、安装库或改显示。丙是可事前规划的条件方案，还没有证实这些改动必要。
 - Ready、合入、发版。
 - B、C。
 
@@ -322,7 +333,7 @@ corepack pnpm exec vitest run apps/desktop/test/view-menu-mirror.test.ts apps/de
 
 上文「交接」是 PR #225 的原文。实施仍未授权。若以后另有精确批准，下面整段再贴给当时的 Cloud。
 
-开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、[Linux 临时原型索引](../evidence/a-linux-probe-94e6a9d.md)、已合 seam 的「仍然成立」「验收」「分批」「将来另批才许改的文件」，以及台账里 11:00、11:32、11:38、20:31、21:37 的原话。20:31 只覆盖当时的纯文档补记。21:37 只覆盖引用修正和本段宿主推荐的写入。11:38 只覆盖已经做完的那一次临时目录验证。三句都不批准编码。推荐的第一宿主是现有 `node` 作业，不改 CI；Windows 作业不能替它的失败兜底。涉及 CI 或系统的改变仍未批准。
+开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、[Linux 临时原型索引](../evidence/a-linux-probe-94e6a9d.md)、已合 seam 的「仍然成立」「验收」「分批」「将来另批才许改的文件」，以及台账里 11:00、11:32、11:38、20:31、21:37、22:13 的原话。20:31 只覆盖当时的纯文档补记。21:37 只覆盖引用修正和当时写下的宿主比较。22:13 只覆盖把那段比较改成条件候选，没有选定甲、乙或丙。11:38 只覆盖已经做完的那一次临时目录验证。这些原话都不批准编码，也不批准改 CI 或系统。用 Windows 绿掩盖已经要求的 Linux 失败，仍然不允许。事前另批分平台职责是待决的范围决定。未获实施授权不得开工。
 
 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。依赖只沿 ARCHITECTURE §5 允许的方向。不临时导入还不存在的模块，不预造兼容层。一个文件不堆多件职责。普通源文件建议 400、硬上限 600，函数建议 50、硬上限 80，测试文件建议 600、硬上限 800。优先系统原生菜单，不自造控件。从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。未获实施授权不得开工。
 
