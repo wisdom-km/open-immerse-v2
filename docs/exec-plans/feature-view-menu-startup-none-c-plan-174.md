@@ -37,13 +37,13 @@ C 在 B 合入之后只做生产启动 none 装配。
 | --- | --- | --- |
 | 启动 none | 从 `startLibrary` 进入。它同步返回原来的命令表，并且已经启动安装。`buildFromTemplate` 与 `setApplicationMenu` 是同步端口：函数返回时，当前菜单已是这次 set 的那一份。三个视图槽在这份菜单上是 `type === "normal"`、`checked === false`，标签与 `viewSlotDescriptions("none")` 一致，每个 id 恰一项。`postCheck` 和 `known` 在 `await ports.replace` 之后才结算 | 有 Promise 不等于菜单仍空，也不等于返回时已经 `known`。A 的 `_menuWillShow` 仍是另一层 |
 | 核对的是当前菜单 | `getApplicationMenu()` 与这一次 `buildFromTemplate` 返回并 set 的对象是同一个。模板、上一份菜单或其他对象使核对失败 | 不把输入模板当成核对结果，不另存形状表 |
-| 负向不成为 known | 空菜单、缺一个视图槽、`type` 不是 `normal`、`checked` 不是 false、getter 抛错、没有 getter、`setApplicationMenu` 抛错：安装 Promise resolve，随后的视图 click 不派发。未勾选的 checkbox 同样失败 | 旧 fake 没有 getter，只证明 fail-closed，不证明核对成功。不改那两份旧测试 |
+| 负向不成为 known | 空菜单、缺一个视图槽、`type` 不是 `normal`、`checked` 不是 false、getter 抛错、没有 getter、`setApplicationMenu` 抛错：首次安装且此前没有 committed 时，安装 Promise resolve，随后的视图 click 不派发。未勾选的 checkbox 同样失败 | 旧 fake 没有 getter，只证明 fail-closed，不证明核对成功。不改那两份旧测试。这不是「任何失败之后都永久不能重建」 |
 | `noteNone` 为 0 | 安装完成到第一次成功 click 之前，替换只发生一次，而且载荷是 none。空闲时再调 `noteNone("unbound")` 会多一次 none 替换；生产路径没有这第二次 | 不导出 `pendingMark` 来数调用 |
 | 三个视图进入门 | 安装 settle 之后，点原文、对照或译文，都会先按 none 重建，再派发被点的那个事件。对照派发 `oi-view-bilingual` | 不把派发说成产品三视图已经激活 |
 | 早到 click | 用端口返回的受控 Promise 把 `postCheck` 停住。这段里视图 click 得到 0，不派发，不排队，不重试。放开之后的下一次 click 才派发 | 同步端口的启动时序与这条受控延迟分账。不加队列 |
 | 其他栏目不进门 | 打开、返回文献库、历史和缩放只派发，前面没有视图替换 | 不改这些栏目的 `void dispatchMenu` |
 | 视图拒绝被接住 | 视图 click 的 `executeJavaScript` 返回拒绝时，这条 handler 的 Promise 仍然 resolve | B 已经证明门的六条退出。这里只证明生产视图 click 走到门 |
-| 入口失败没有未处理拒绝 | 上表的失败从 `startLibrary` 进入。命令表已经返回，进程没有未处理拒绝，随后 click 不派发 | 只 await 安装函数不能证明入口的 `catch`。不用固定次数的微任务。不新增返回值、日志或 toast |
+| 入口失败没有未处理拒绝 | 门内部的 replace 或 postCheck 失败仍由门 resolve，并与下面分开记。安装任务本身的 reject 从真实 `startLibrary` 注入，命令表已经返回，进程没有未处理拒绝 | 只 await 安装函数，或只看门把端口失败 resolve 掉，都不能证明入口的 `catch`。不用固定次数的微任务。不新增返回值、日志或 toast |
 | 销毁不推进门 | 跑过现有 `will-quit` 监听之后，门仍接受下一次视图 click 并替换。生产不注册窗口 `closed`，也不调用 `setDestroyed` | B9 证明 `destroyed` 为真时门不碰替换 |
 | 没有窗口 | `getAllWindows()` 为空时，已 settle 的视图 click 仍先重建 none，派发按现有函数 resolve，handler 不拒绝 | 不改成按窗口各装一份菜单 |
 
@@ -67,11 +67,11 @@ C 在 B 合入之后只做生产启动 none 装配。
 
 没有 getter、getter 抛错、或对象对不上：返回 false，不向外抛。`open-document-wiring.test.ts` 第 27–30 行和 `reading-asset-protocol.test.ts` 第 37–43 行因此停在 `unknown`。那是 fail-closed，不是启动核对成功。这两个文件保持零 diff。`startLibrary` 仍不抛。不另造安装状态。
 
-`dispatch` 端口：调用现有 `dispatchMenu`。函数体保持第 156–168 行。没有窗口、未知事件、脚本执行成功或拒绝，都沿这个函数。视图 handler 是 `gate.click(item.event).catch(() => undefined)`。文件、历史和缩放保持 `void dispatchMenu`。判断哪三个事件进门，用 `viewSlotDescriptions("none")` 的 event，不在 wiring 里再写一份事件名单。
+`dispatch` 端口：调用现有 `dispatchMenu`。函数体不改，只随新的安装函数下移。没有窗口、未知事件、脚本执行成功或拒绝，都沿这个函数。视图 handler 是 `gate.click(item.event).catch(() => undefined)`。文件、历史和缩放保持 `void dispatchMenu`。判断哪三个事件进门，用 `viewSlotDescriptions("none")` 的 event，不在 wiring 里再写一份事件名单。
 
 异常、销毁、重复创建和多窗口：
 
-- 替换或后置核对失败由门接住。安装 Promise 不拒绝。失败后已提交形状仍是 null，下一次视图 click 返回 0，不派发。
+- 替换或后置核对失败由门接住。安装 Promise 不拒绝。这句话只描述首次启动、此前 committed 仍是 null：下一次视图 click 返回 0，不派发。已经提交过的镜像若后来失败，门留下那份镜像并标 unknown；空闲后的下一次合法 click 仍可按它重建。C 不把首次失败写成永久禁止重建。
 - `will-quit` 仍只 `main.close()`。`window-all-closed` 仍只 `app.quit()`（`index.ts` 第 22–24 行）。两者都不调用 `setDestroyed`。
 - 应用菜单仍是一份。`createMainWindow` 仍创建一个窗口。`setWindowOpenHandler` 仍拒绝额外窗口（`window.ts` 第 23 行）。C 不给每个窗口装菜单。
 - 派发目标仍是 `getAllWindows()[0]`。已经存在第二个窗口时，脚本仍只进第一个。C 不改变这条旧边界，也不为它新增测试产品。
@@ -122,7 +122,7 @@ Node 先把 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin` 放在 PATH 前面。
 | 3 | 只追加台账 | 下一提交 | `docs/approvals.md` |
 | 4 | 23:57 只修正 R1、R2 的计划口径 | 本提交只改本文件 | 本文件 |
 | 5 | 只追加 23:57 批准 | 下一提交 | `docs/approvals.md` |
-| 6 | 复审通过并且用户写出具体实施范围之后，才在这个 Draft 写代码 | 未开始 | 无 |
+| 6 | 00:07 批准后在这个 Draft 写启动 none | 已改 `library-wiring.ts` 和 `view-menu-wiring.test.ts`。本 worktree 没有 `node_modules`，没有安装或做依赖链接。类型检查、装配测试、相关回归和全仓门禁因此没有跑完 | `docs/evidence/232/commands.md` |
 
 ## 决策记录
 
