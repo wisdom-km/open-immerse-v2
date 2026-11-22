@@ -68,6 +68,12 @@
 
 现行 `check-file-size` 与 `check-pr-size` 仍按脚本里的数失败。那是还没改的技术门禁，不是把 600 说回用户的设计硬上限。失败不能记成通过。表和阈值口径在 [docs/arch/06.md](./docs/arch/06.md)。Wisdom 2026-11-22 14:22，原话在批准台账。
 
+同一功能可以按领域逻辑、应用编排、适配器、界面和测试分成多个文件。不把整项功能塞进一个文件。模块化靠职责边界、接口和依赖方向，不靠文件数量。变更尽量小且内聚，能单独看懂、验证和回退。可分开交付的功能可以分 PR。不为了行数拆成不能独立工作的碎片。
+
+行数用来看规模和把审查注意力放在哪里，不单独否决。变更若大到无法审完、混进了别的功能、职责不清或测试不够，可以要求收敛或按职责拆开，并写明原因。
+
+公开参考是 Google Engineering Practices 的 [Small CLs](https://google.github.io/eng-practices/review/developer/small-cls.html) 与 [What to look for in a code review](https://google.github.io/eng-practices/review/reviewer/looking-for.html)。前一页写变更应小而完整，没有统一的「太大」门槛，审查者仍可以因为太大要求拆开。后一页把总体设计放在审查的首位，并看功能、复杂度和测试是否真能发现问题。那两页的行数例子不是本项目的门槛。取消 600 的硬阻断是本项目的决定，不是所有大公司的惯例。Wisdom 2026-11-22 15:02、15:03。
+
 ## [7. 引擎抽象接口](./docs/arch/07.md#7-引擎抽象接口)
 
 ### [7.0 模型能力的默认来源：API 优先（Wisdom 2026-10-30 18:44）](./docs/arch/07-00.md#70-模型能力的默认来源api-优先wisdom-2026-10-30-1844)
