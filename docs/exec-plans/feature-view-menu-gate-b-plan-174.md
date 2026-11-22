@@ -1,6 +1,6 @@
 # 执行计划
 
-B「纯替换门」的精确实施计划。本文件只写计划。不建 `view-menu-gate.ts`，不建 `view-menu-gate.test.ts`，不改产品，不改测试。
+B「纯替换门」的精确实施计划。20:17 批准之后，同一 Draft 新增了门和 B3–B10 的 fake 测试。没有接上生产菜单。
 
 分支 `feature/view-menu-gate-b-plan-174`。基线是已合 main `f9725cac9eec23f08d08506ae592116c5dc876b2`，唯一 parent `a5a27bf0b3586f337f190a1ab8874dda538ce61d`，tree `30169b1cda6fb7e6bb7288670fcb7770c93647c6`。`git fetch origin main` 之后，这个 SHA、parent 和 tree 与官方 main 一致。
 
@@ -112,7 +112,7 @@ C 只启动 none 装配：常量记号，`noteNone` 次数是 0，三个栏位 c
 | --- | --- | --- | --- |
 | 1 | 只写本计划和台账，开 Draft | 本回合。不写两个产品文件 | 文档检查见 PR 说明 |
 | 2 | Forge 审本计划，用户再批具体实施范围 | 2026-11-22 20:17 已批。评论 7079006557。已审 head `a661e134f5d819c194917fabc5e6b6dceac57f99`。本行提交时两个产品文件还没有写 | 台账 20:17 |
-| 3 | 获批后才新增门和 B3–B10 测试 | 尚未写入。下一笔才写两个文件和证据 | 无 |
+| 3 | 获批后才新增门和 B3–B10 测试 | 已新增两个文件。13 条 fake：B3–B9 各一条，B10 六条。门 308 行，测试 333 行。不把 166 的旧轮廓当成额度 | `docs/evidence/231/commands.md` |
 
 ## 决策记录（Decision Log）
 
@@ -131,6 +131,6 @@ Wisdom 2026-11-22 15:08 原话已经在台账，这里不改写。16:01、17:12 
 
 ## 交接
 
-下面这一段是 20:17 批准之前写下的交接，整段保留。实施范围以台账 20:17 的原话为准。这一笔还没有写两个产品文件。
+下面这一段是 20:17 批准之前写下的交接，整段保留。实施范围以台账 20:17 的原话为准。两个文件已经按该原话新增。fake 通过不是 native，也不是产品 UI。本 Draft 仍不 Ready，不合入，不发版。
 
 B 的下一阶段仍未获实施授权。开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、已合 seam 的「仍然成立」「替换门」「轨迹」「验收」「分批」「将来另批才许改的文件」，以及批准台账里当时已经写下的原话。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。依赖只沿 ARCHITECTURE §5 允许的方向。不临时导入还不存在的模块，不预造兼容层。一个文件一种职责。优先系统原生菜单，不自造控件。本批无新 UI。生产启动保持 none，`expose` 保持 false。三份生成物、`composition-root.ts`、`index.ts`、`view-menu-epoch.ts` 零 diff。不含 handler、生产命令表、renderer、UI、存储、CSP、协议、S2c 及后续、账户或登录。不造第二份代次表或模块级单例。纯行数只打印，不因数字停工，不写理由字符串例外。PLR0915 仍是语句数量检查，不关。不删测试，不压格式。目标是纯替换门和全部 fake 证明。完整验收是 B3–B10，一条不删。形状从已合 mirror 导入。文件白名单是 `apps/desktop/src/main/view-menu-gate.ts`、`apps/desktop/test/view-menu-gate.test.ts`，以及那一支自己的计划、台账追加和证据。禁止导入 Electron。禁止改 `library-wiring.ts`、`library-menu.ts`、epoch、`index.ts`、`expose` 和生成物。不把 B10 分到别的 PR。fake 不能代替 native 或产品 UI。C 在 B 合入之后另支，只做启动 none。commit、退役、关闭和 floor 的唯一写者不在 B 或 C，须另计划。分支用 `feature/` 前缀，独立 worktree，base 是当时已合 main，PR 保持 Draft。Forge 审过本计划并且用户另批具体实施范围之前，不写这两个文件。不 Ready，不合入，不发版。
