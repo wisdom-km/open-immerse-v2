@@ -76,4 +76,8 @@ head 仍是上面的 `fd2263c` 之后的证据提交。https://github.com/wisdom
 
 退出码 0。5 个文件，14 个测试通过，3 个跳过。ruff 的 C901 与 PLR0915 仍失败。一百行注释、两条语句的函数不触发 PLR0915。依赖方向、密钥和许可证的既有失败样例仍失败。`workers/parser/pyproject.toml` 没有改动。
 
-未提交时跑过一次 `corepack pnpm run check`。它在 codegen 之后的 `git diff --exit-code` 失败，因为工作区还有未提交改动。这不是生成物漂移。本地 `main` 是 `94e6a9d847f6e5fc3c3ebbe2e089f535e31f5ed3`，不是 PR 的 base。那次 `check-pr-size` 因此打印 1261，不是相对 `origin/main` 的数。提交后再用 `GATE_BASE=origin/main` 重跑。
+未提交时跑过一次 `corepack pnpm run check`。它在 codegen 之后的 `git diff --exit-code` 失败，因为工作区还有未提交改动。这不是生成物漂移。本地 `main` 是 `94e6a9d847f6e5fc3c3ebbe2e089f535e31f5ed3`，不是 PR 的 base。那次 `check-pr-size` 因此打印 1261，不是相对 `origin/main` 的数。
+
+## GATE_BASE=origin/main corepack pnpm run check
+
+在 `45e209f10d723e1baafc636558b64b35ed4ddd56` 上退出码 0。格式、lint、类型、core 类型、单文件扫描、依赖（404 模块、1199 条依赖无违规）、许可证、切片、提交说明、热点、codegen 之后的 git diff 都通过。`check-pr-size` 打印 1379，并打印 former hint 600，退出码仍是 0。1379 等于相对 `origin/main` 的新增 1229 加删除 150。这不是把 run 44996860301 改写成通过。那次 node 停在总行数，codegen 和 Ubuntu 单测没有跑到。
