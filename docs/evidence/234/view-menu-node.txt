@@ -1,0 +1,112 @@
+Testing types with tsc and vue-tsc is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.
+
+ RUN  v5.0.5 /home/ubuntu/worktrees/feature-view-menu-lifecycle-none-174
+
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B3 commits the consumed pending none as known when the snapshot replace succeeds 2ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B4 commits the consumed pending none as known when the snapshot replace throws 1ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B5 commits the consumed pending none as known when the snapshot post-check fails 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B6 keeps the latest pending unknown and lets the next event consume it 1ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B7 clears the same-mark pending and replaces only contrast 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B8 does not commit the old snapshot when a newer none arrives during replace 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B9 does not replace when the window is already destroyed 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B10 dispatches nothing while the gate is busy and does not cover pending 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B10 dispatches the checked event once when an idle rebuild succeeds 1ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B10 dispatches nothing when the idle rebuild throws 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B10 dispatches nothing when the idle rebuild post-check fails 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B10 dispatches nothing when pending changes the mirror during rebuild 1ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B10 catches a rejected replace promise from an idle rebuild 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > dispatches the requested event when it differs from the committed mirror 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > does not dispatch the requested event when the idle rebuild throws 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > does not dispatch an event that is absent from the committed mirror 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > installs none noted while a resolved dispatch is still waiting 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > installs none noted while a rejected dispatch is still waiting 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > keeps the newest pending unknown when none changes again during dispatch closeout 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > does not dispatch when the window is destroyed during the rebuild post-check 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > does not dispatch when the window is destroyed during the extra none post-check 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B10 catches a rejected dispatch promise and accepts the next snapshot 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > keeps the observation fields readonly from the outside 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > B10 catches a synchronous dispatch throw and accepts the next snapshot 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > N6 returns 0 when a newer none becomes known during the click post-check 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > N7 keeps the newest pending unknown when none changes during the repair 0ms
+ ✓ apps/desktop/test/view-menu-gate.test.ts > N8 keeps the port call when the mark changes after dispatch has started 0ms
+(node:4228) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:4227) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:4248) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N1 passes one epoch from startup into the logger and the window 17ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N2 subscribes before loadURL and notes the first open commit 7ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > reports a synchronous loadURL throw through the ready failure path 11ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N4 ignores an unbound foreign id and still binds the next attached id 1ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N4 ignores a different id after the owner is bound 1ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N4 skips a stale slot when an earlier listener moves the epoch 0ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N5 destroys on a slotless closed and ignores a later navigate 1ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N5 blocks a reentered navigate and still destroys 0ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N5 flushes closed from a leading attached listener before any later menu 1ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N5 returns 0 for an old click when close reuses the open mark 1ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N12 keeps the initial provisional failure out of noteNone and still closes 0ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N13 keeps the initial renderer gone out of noteNone and still closes 0ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > observes the original noteNone rejection without a derived rejection 1ms
+ ✓ apps/desktop/test/view-menu-lifecycle.test.ts > N11 does not submit an active view shape 0ms
+ ✓ apps/desktop/test/view-menu-wiring.test.ts > returns the command map before postCheck and installs plain none 14ms
+ ✓ apps/desktop/test/view-menu-wiring.test.ts > sends the three view clicks through the gate and leaves other items on dispatch 7ms
+ ✓ apps/desktop/test/view-menu-wiring.test.ts > does not dispatch an early click and does not replay it 9ms
+ ✓ apps/desktop/test/view-menu-wiring.test.ts > does not treat a failed startup menu as known 27ms
+ ✓ apps/desktop/test/view-menu-wiring.test.ts > catches a rejected install task from startLibrary 8ms
+ ✓ apps/desktop/test/view-menu-wiring.test.ts > keeps a view click quiet when executeJavaScript rejects and when no window exists 4ms
+ ✓ apps/desktop/test/view-menu-wiring.test.ts > does not push the gate when the library quit listener runs 5ms
+ ✓ apps/desktop/test/view-menu-wiring.test.ts > N10 keeps noteNone at 0 before the first open commit 3ms
+ ✓ apps/desktop/test/view-menu-wiring.test.ts > N3 notes open, retire, and renderer gone after a real commit 5ms
+ ✓ apps/desktop/test/view-menu-wiring.test.ts > N5 destroys after a leading listener closes during attached 4ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > registers oi-asset through the injected function when startLibrary runs 23ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 200 when GET reads the current source pdf 10ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 200 without a body when HEAD reads the current source pdf 6ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when the asset id was never bound 4ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when the asset id was revoked 4ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when the asset id is from the previous generation 5ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when the path is the document id or keeps a leading zero 5ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when the host is numeric or an ipv4 spelling 6ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when dotdot or percent-encoded dotdot is in the url 1ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when the url has userinfo, a port, a query, a fragment, or another scheme 1ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 405 when the method is not GET or HEAD 0ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when a source symlink points outside the entry 1ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when the entry directory symlink points outside 1ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when the file is not a pdf 1ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when the copy was deleted 7ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns 404 when the data root cannot be opened 1ms
+ ✓ apps/desktop/test/reading-asset-protocol.test.ts > returns undefined when locate misses or the id is not a sha256 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > starts without a slot 1ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > keeps the first blank unpublished 1ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > opens on a committed oi-app navigate before finish 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > retires a blank only after a document was open 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > does not republish when finish follows a provisional failure 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > ignores a subframe provisional failure 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > leaves the slot unchanged when a cancel emits did-fail-load 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > does not change generation on a same-document navigation 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > opens again after retire when a later oi-app navigate commits 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > retires at the safe integer limit without wrapping 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > retires illegal epoch -1 and does not take the increment 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > retires illegal epoch 0.5 and does not take the increment 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > retires illegal epoch 9007199254740992 and does not take the increment 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > drops the readable slot on closed and does not rebuild it 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > registers handlers before attached and ignores a duplicate attach 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > rejects a sealed reattach without another attached notice 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > flushes one closed notice when close happens during attached 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > still flushes closed when an attached listener throws 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > does not announce a menu slot for the initial provisional failure 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > does not announce a menu slot for the initial renderer gone 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > announces open and later retired slots 0ms
+ ✓ apps/desktop/test/view-menu-epoch.test.ts > attaches before loadURL so the first commit is open 0ms
+(node:4262) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ apps/desktop/test/open-document-wiring.test.ts > writes recent after open and does not put an older page back 23ms
+ ✓ apps/desktop/test/open-document-wiring.test.ts > returns handler_threw when the library cannot be opened 1ms
+
+ Test Files  6 passed (6)
+      Tests  92 passed (92)
+Type Errors  no errors
+   Start at  19:48:49
+   Duration  1.33s (transform 54%, import 27%, tests 19%, worker 1%)
+

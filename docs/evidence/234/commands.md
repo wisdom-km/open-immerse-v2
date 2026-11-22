@@ -97,6 +97,6 @@ N1–N13 仍是未跑，不标通过。
 
 `corepack pnpm exec vitest run apps/desktop/test/view-menu-epoch.test.ts apps/desktop/test/view-menu-gate.test.ts apps/desktop/test/view-menu-wiring.test.ts apps/desktop/test/view-menu-lifecycle.test.ts apps/desktop/test/open-document-wiring.test.ts apps/desktop/test/reading-asset-protocol.test.ts --reporter=verbose`
 
-退出码 0。6 个文件，92 个用例通过，0 失败，0 跳过。原始输出在 `docs/evidence/234/view-menu-node.log`。
+退出码 0。6 个文件，92 个用例通过，0 失败，0 跳过。原始输出在 `docs/evidence/234/view-menu-node.txt`。
 
 `pnpm run check` 没有跑。完整门禁保持 HOLD。这次纯桩通过不写成真实 Electron、真机或首次全绿。历史里的 PR #232 启动失败、意外 zip、纯桩 7 通过 / 1 定位失败、六条负向 6 通过、lint、skip 和 HOLD 都还在。
