@@ -39,3 +39,7 @@ Node v22.23.4。工作目录是仓库根。下面的退出码是本机这次跑�
 ## node tools/check-format/check.mjs
 
 退出码 0。
+
+## GATE_BASE=origin/main node tools/check-pr-size/check.mjs
+
+在 `0f4209b5ab7e588b444ff7d0bc17e99ff53e3371` 上退出码 1。计数 659，高于 600。提交说明里没有行数例外理由。本 Draft 不补这个理由，失败保留。现行 CI 的 Check 步骤不读取 PR 正文。
