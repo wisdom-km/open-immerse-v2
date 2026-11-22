@@ -8,6 +8,12 @@ Wisdom 2026-11-23 01:36 原话：「批准仅新增生命周期所有权与菜�
 
 本任务受 UI 与业务核心解耦约束：[ARCHITECTURE.md](../../ARCHITECTURE.md) §2.1 与 [RULES.md](../../RULES.md) §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。本回合任务类型：不适用（纯文档）。五份规格正文不改：[PRD.md](../../PRD.md)、[ARCHITECTURE.md](../../ARCHITECTURE.md)、[RULES.md](../../RULES.md)、[DESIGN.md](../../DESIGN.md)、[docs/design-principles.md](../design-principles.md)。
 
+## 决定状态（2026-11-23 02:42 之后）
+
+[Issue #174 评论 7083807265](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7083807265) 已经回答下面「待 Wisdom 决定」的五项。实施的统一真相源改为 [feature-view-menu-lifecycle-none-174.md](feature-view-menu-lifecycle-none-174.md)。本节只登记决定状态。下文的「待决定」、候选代价和当时行号保持原句，不回写成 01:36 当时已经批准。
+
+合入文本的第 75 行把派发验收写成 L3。同文件验收表里，同为 none 的旧 click 是 L10，未进门的旧代是 L3。该句仍留在下面「待 Wisdom 决定」第 5 项，原文不改。本批计划的交叉引用用 L10。不从历史上抹掉这个笔误。
+
 ## 本笔边界
 
 第一笔只新增本文件。第二笔已追加 [docs/approvals.md](../approvals.md)。这次修订只改本文件。没有新的用户原话，台账不追加空行。不改已合的 [seam](feature-reader-view-menu-seam-174.md)、[S2b 实施计划](feature-view-menu-gate-s2b-implementation-plan-174.md)、[C 计划](feature-view-menu-startup-none-c-plan-174.md)、产品、测试、生成物、CI、依赖、锁文件或环境。`docs/spec-changelog.md` 不适用，因为不改规格。

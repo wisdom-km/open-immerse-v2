@@ -202,3 +202,13 @@ S3：未完成 invoke 始终不超过一个，最新槽始终不超过一个。�
 从当时的 main 另开，Draft。先完整读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md` 和本文件。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。没有点名的笔不开工。不改 ARCH。技术复审通过前不开工。通过后一次只请求点名的一笔，并且不包含 ARCH 正文。
 
 S1 是 seam 变更。估算 198，契约档实际 200。S2a 估算 234。S2b 估算 344。S2c-prep 估算 190，未暴露。S2c-on 估算 252，生成物约 150 未实测；expose 与生产注册同一笔。S3 是 UI 改动，估算 340，`shell.tsx` 从约 161 行续。346 不是门禁，600 才是。R-E13 按 13:41 在 DESKTOP-0GI64S8（32GB）上测，标明硬件，不称 8GB 验证。这不是 PRD §8 里 M2 仍写的 8 GB 真机录屏的豁免，本轮不改 PRD。本文件不跑这项测量。
+
+## 本批限定例外（2026-11-23 02:42）
+
+来源是 [Issue #174 评论 7083807265](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7083807265)。上文「`composition-root.ts` 仍只调用 `startLibrary`，它的 diff 是 0」保持为当时的句子，也仍约束 S2c-on、E2、S3、handler、`expose`、codegen 和其他未点名文件。本批只追加这一处例外，不改那些句子，不改分批顺序。
+
+例外只覆盖 `apps/desktop/src/main/composition-root.ts` 的三件事：接收已经创建的那一个 epoch，类型导入，以及把它作为参数转交给 `startLibrary`。装配职责仍留在 `startLibrary`。不建全局查找、模块单例或第二张代次表。旧的两参数调用保持原行为。
+
+同一批准还允许本批改 `view-menu-gate.ts`：在调用 `ports.dispatch` 之前同步比较 `currentMark` 与 `markAtStart`，比较到调用之间没有 await。公开端口不加参数。门不 import epoch。对应行为落在 `view-menu-gate.test.ts`。`view-menu-wiring.test.ts` 只更新共享 epoch 接通之后必然变化的 `noteNone` 次数和行为；未注入路径、第一次 commit 以前的 0 次断言，以及其他安全断言保留。
+
+实施范围、订阅形状、验收和停点以 [feature-view-menu-lifecycle-none-174.md](feature-view-menu-lifecycle-none-174.md) 为准。本段不把尚未跑过的行为写成通过。
