@@ -4,6 +4,7 @@ import {
   dialog,
   Menu,
   protocol,
+  type MenuItem,
   type MenuItemConstructorOptions,
 } from "electron";
 import { platform } from "node:process";
@@ -27,10 +28,15 @@ import {
 } from "./ipc/library-command-channels.js";
 import {
   applicationMenuTemplate,
-  fileMenu,
   scriptForMenuEvent,
+  type MenuItemSpec,
   type ShellMenuEntry,
 } from "./library-menu.js";
+import {
+  viewSlotDescriptions,
+  type ViewSlotDescription,
+} from "./view-menu-mirror.js";
+import { createViewMenuGate, type ViewMenuGate } from "./view-menu-gate.js";
 import {
   openDocumentChannel,
   openDocumentHandler,
@@ -45,9 +51,11 @@ export function startLibrary(
   app.on("will-quit", () => {
     main.close();
   });
-  installFileMenu();
+  void installApplicationMenu().catch(() => undefined);
   return wiredLibraryCommands(main);
 }
+
+const startupViewMark = "unbound";
 
 export function openWiredLibrary(
   dataRoot: string,
@@ -125,32 +133,139 @@ function pickPdf():
   return { kind: "chosen", filePath };
 }
 
-function installFileMenu(): void {
-  Menu.setApplicationMenu(
-    Menu.buildFromTemplate(applicationMenuTemplate(platform).map(toMenuItem)),
+function installApplicationMenu(): Promise<void> {
+  const held: { menu: Menu | null; gate: ViewMenuGate | null } = {
+    menu: null,
+    gate: null,
+  };
+  const gate = createViewMenuGate({
+    replace(descriptions) {
+      const owner = held.gate;
+      if (owner === null) return;
+      const menu = buildMenu(descriptions, owner);
+      held.menu = menu;
+      Menu.setApplicationMenu(menu);
+    },
+    postCheck() {
+      const installed = held.menu;
+      if (installed === null) return false;
+      return currentMenuIsNone(installed);
+    },
+    dispatch(event) {
+      return dispatchMenu(event);
+    },
+  });
+  held.gate = gate;
+  return gate.submit("none", startupViewMark);
+}
+
+function buildMenu(
+  descriptions: readonly ViewSlotDescription[],
+  gate: ViewMenuGate,
+): Menu {
+  return Menu.buildFromTemplate(
+    applicationMenuTemplate(platform).map((entry) =>
+      toMenuItem(entry, descriptions, gate),
+    ),
   );
 }
 
-function toMenuItem(entry: ShellMenuEntry): MenuItemConstructorOptions {
-  if ("role" in entry) {
-    return { role: entry.role };
-  }
+function toMenuItem(
+  entry: ShellMenuEntry,
+  descriptions: readonly ViewSlotDescription[],
+  gate: ViewMenuGate,
+): MenuItemConstructorOptions {
+  if ("role" in entry) return { role: entry.role };
   return {
     label: entry.label,
-    submenu: entry.items.map((item) => menuEntry(item)),
+    submenu: entry.items.map((item) => menuEntry(item, descriptions, gate)),
   };
 }
 
 function menuEntry(
-  item: (typeof fileMenu.items)[number],
+  item: MenuItemSpec,
+  descriptions: readonly ViewSlotDescription[],
+  gate: ViewMenuGate,
 ): MenuItemConstructorOptions {
+  const slot = descriptions.find(
+    (description) => description.event === item.event,
+  );
+  if (slot === undefined) return commandEntry(item);
+  return viewEntry(item, slot, gate);
+}
+
+function commandEntry(item: MenuItemSpec): MenuItemConstructorOptions {
   const click = () => {
     void dispatchMenu(item.event);
   };
-  if ("accelerator" in item) {
-    return { label: item.label, accelerator: item.accelerator, click };
+  if (item.accelerator === undefined) return { label: item.label, click };
+  return { label: item.label, accelerator: item.accelerator, click };
+}
+
+function viewEntry(
+  item: MenuItemSpec,
+  slot: ViewSlotDescription,
+  gate: ViewMenuGate,
+): MenuItemConstructorOptions {
+  const click = () => gate.click(item.event).catch(() => undefined);
+  const entry = slotEntry({ id: slot.event, label: slot.label, click }, slot);
+  if (item.accelerator === undefined) return entry;
+  return { ...entry, accelerator: item.accelerator };
+}
+
+function slotEntry(
+  entry: MenuItemConstructorOptions,
+  slot: ViewSlotDescription,
+): MenuItemConstructorOptions {
+  if (!("type" in slot)) return entry;
+  return { ...entry, type: slot.type, checked: slot.checked };
+}
+
+function currentMenuIsNone(installed: Menu): boolean {
+  const current = readApplicationMenu();
+  if (current !== installed) return false;
+  return slotsArePlainNone(current);
+}
+
+function readApplicationMenu(): Menu | undefined {
+  try {
+    const api = Menu as { getApplicationMenu?: () => Menu | null };
+    if (typeof api.getApplicationMenu !== "function") return undefined;
+    const current = api.getApplicationMenu();
+    return current === null ? undefined : current;
+  } catch {
+    return undefined;
   }
-  return { label: item.label, click };
+}
+
+function slotsArePlainNone(menu: Menu): boolean {
+  const items = collectItems(menu);
+  for (const slot of viewSlotDescriptions("none")) {
+    if (!onePlainSlot(items, slot)) return false;
+  }
+  return true;
+}
+
+function onePlainSlot(
+  items: readonly MenuItem[],
+  slot: ViewSlotDescription,
+): boolean {
+  const hits = items.filter((item) => item.id === slot.event);
+  const hit = hits.length === 1 ? hits[0] : undefined;
+  if (hit === undefined) return false;
+  return (
+    hit.label === slot.label && hit.type === "normal" && hit.checked === false
+  );
+}
+
+function collectItems(menu: Menu): readonly MenuItem[] {
+  const found: MenuItem[] = [];
+  for (const item of menu.items) {
+    found.push(item);
+    if (item.submenu === undefined) continue;
+    found.push(...collectItems(item.submenu));
+  }
+  return found;
 }
 
 function dispatchMenu(eventName: string): Promise<void> {
