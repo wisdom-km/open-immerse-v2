@@ -37,6 +37,8 @@ import {
   type ViewSlotDescription,
 } from "./view-menu-mirror.js";
 import { createViewMenuGate, type ViewMenuGate } from "./view-menu-gate.js";
+import { bindViewMenuLifecycle } from "./view-menu-lifecycle.js";
+import type { ViewMenuEpoch } from "./view-menu-epoch.js";
 import {
   openDocumentChannel,
   openDocumentHandler,
@@ -44,14 +46,18 @@ import {
 
 export function startLibrary(
   dataRoot: string,
-  register: ReadingAssetRegistrar = registerReadingAsset,
+  register?: ReadingAssetRegistrar,
+  epoch?: ViewMenuEpoch,
 ): ReadonlyMap<string, IpcCommandHandler> {
   const main = openWiredLibrary(dataRoot);
-  handleReadingAssetProtocol(createReadingAssetPath(main, dataRoot), register);
+  handleReadingAssetProtocol(
+    createReadingAssetPath(main, dataRoot),
+    register ?? registerReadingAsset,
+  );
   app.on("will-quit", () => {
     main.close();
   });
-  void installApplicationMenu().catch(() => undefined);
+  void installApplicationMenu(epoch).catch(() => undefined);
   return wiredLibraryCommands(main);
 }
 
@@ -133,7 +139,7 @@ function pickPdf():
   return { kind: "chosen", filePath };
 }
 
-function installApplicationMenu(): Promise<void> {
+function installApplicationMenu(epoch?: ViewMenuEpoch): Promise<void> {
   const held: { menu: Menu | null; gate: ViewMenuGate | null } = {
     menu: null,
     gate: null,
@@ -156,6 +162,7 @@ function installApplicationMenu(): Promise<void> {
     },
   });
   held.gate = gate;
+  if (epoch !== undefined) bindViewMenuLifecycle(epoch, gate);
   return gate.submit("none", startupViewMark);
 }
 
