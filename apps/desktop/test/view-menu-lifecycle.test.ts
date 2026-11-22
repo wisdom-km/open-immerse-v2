@@ -1,9 +1,9 @@
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { stderr } from "node:process";
 
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { viewOriginalEvent } from "../src/main/library-menu.js";
 import {
@@ -21,7 +21,6 @@ const boot = vi.hoisted(() => {
   const ready = new Promise<void>((done) => {
     releaseReady = done;
   });
-  let released = false;
   const state = {
     order: [] as string[],
     notes: [] as string[],
@@ -34,9 +33,14 @@ const boot = vi.hoisted(() => {
     menu: 0,
     loadThrows: false,
     userData: "",
+    released: false,
+    cleanupStarted: false,
+    quits: [] as Array<() => void>,
+    tasks: [] as Array<Promise<unknown>>,
+    outcome: undefined as CloseOutcome | undefined,
     release() {
-      if (released) return;
-      released = true;
+      if (state.released) return;
+      state.released = true;
       releaseReady();
     },
   };
@@ -48,7 +52,9 @@ vi.mock("electron", () => ({
     getPath() {
       return boot.userData;
     },
-    on() {},
+    on(event: string, listener: () => void) {
+      if (event === "will-quit") boot.quits.push(listener);
+    },
     quit() {},
     whenReady() {
       return boot.ready;
@@ -152,11 +158,17 @@ vi.mock("../src/main/view-menu-gate.js", async (importOriginal) => {
         get pendingMark() {
           return gate.pendingMark;
         },
-        submit: gate.submit.bind(gate),
+        submit(shape: Parameters<typeof gate.submit>[0], mark: string) {
+          const task = gate.submit(shape, mark);
+          boot.tasks.push(task);
+          return task;
+        },
         click: gate.click.bind(gate),
         noteNone(mark: string) {
           boot.notes.push(mark);
-          return gate.noteNone(mark);
+          const task = gate.noteNone(mark);
+          boot.tasks.push(task);
+          return task;
         },
         setDestroyed(destroyed: boolean) {
           if (destroyed) boot.destroyed += 1;
@@ -193,10 +205,20 @@ beforeEach(() => {
   boot.destroyed = 0;
   boot.menu = 0;
   boot.loadThrows = false;
+  boot.released = false;
+  boot.cleanupStarted = false;
+  boot.quits.length = 0;
+  boot.tasks.length = 0;
+  boot.outcome = undefined;
   boot.userData = mkdtempSync(path.join(tmpdir(), "oitest-life-"));
 });
 
-it("N1 passes one epoch from startup into the logger and the window", () => {
+afterEach(async () => {
+  if (boot.cleanupStarted) return;
+  await finishStarted();
+});
+
+it("N1 passes one epoch from startup into the logger and the window", async () => {
   startDesktop();
   const epoch = boot.created[0];
   expect(boot.created).toHaveLength(1);
@@ -204,9 +226,10 @@ it("N1 passes one epoch from startup into the logger and the window", () => {
   expect(boot.attached[0]).toBe(epoch);
   expect(boot.subscribed[0]).toBe(epoch);
   expect(epoch?.read(7)).toEqual({ phase: "open", epoch: 1, floor: 0 });
+  await expectStorageClosed();
 });
 
-it("N2 subscribes before loadURL and notes the first open commit", () => {
+it("N2 subscribes before loadURL and notes the first open commit", async () => {
   startDesktop();
   expect(boot.order.indexOf("subscribe")).toBeGreaterThanOrEqual(0);
   expect(boot.order.indexOf("subscribe")).toBeLessThan(
@@ -217,6 +240,7 @@ it("N2 subscribes before loadURL and notes the first open commit", () => {
   );
   expect(boot.created[0]?.read(7)?.epoch).toBe(1);
   expect(boot.notes).toEqual(["7:open:1"]);
+  await expectStorageClosed();
 });
 
 it("reports a synchronous loadURL throw through the ready failure path", async () => {
@@ -231,12 +255,18 @@ it("reports a synchronous loadURL throw through the ready failure path", async (
     unhandled.push(reason);
   };
   process.on("unhandledRejection", onUnhandled);
-  boot.release();
-  await new Promise((resolve) => setImmediate(resolve));
-  process.off("unhandledRejection", onUnhandled);
-  spy.mockRestore();
-  expect(written.join("")).toContain("load failed");
-  expect(unhandled).toEqual([]);
+  try {
+    boot.release();
+    await new Promise((resolve) => setImmediate(resolve));
+    process.off("unhandledRejection", onUnhandled);
+    spy.mockRestore();
+    expect(written.join("")).toContain("load failed");
+    expect(unhandled).toEqual([]);
+    await expectStorageClosed();
+  } finally {
+    process.off("unhandledRejection", onUnhandled);
+    spy.mockRestore();
+  }
 });
 
 it("N4 ignores an unbound foreign id and still binds the next attached id", () => {
@@ -545,3 +575,67 @@ function manualWindow(id: number): {
 }
 
 type On = (name: string, listener: (...args: unknown[]) => void) => void;
+
+type CloseOutcome = {
+  callbacks: number;
+  opened: boolean;
+  removed: boolean;
+};
+
+async function expectStorageClosed(): Promise<void> {
+  const closed = await finishStarted();
+  expect(closed.opened).toBe(true);
+  expect(closed.callbacks).toBe(1);
+  expect(closed.removed).toBe(true);
+}
+
+async function finishStarted(): Promise<CloseOutcome> {
+  if (boot.cleanupStarted) {
+    if (boot.outcome === undefined)
+      throw new Error("fixture close already failed");
+    return boot.outcome;
+  }
+  boot.cleanupStarted = true;
+  await flushReady();
+  await settleTasks();
+  const root = boot.userData;
+  const opened = existsSync(path.join(root, "db", "oi.sqlite"));
+  const callbacks = invokeQuits();
+  rmSync(root, { recursive: true, force: true });
+  const outcome = {
+    callbacks,
+    opened,
+    removed: !existsSync(root),
+  };
+  boot.outcome = outcome;
+  return outcome;
+}
+
+async function flushReady(): Promise<void> {
+  if (!boot.released) return;
+  await boot.ready;
+  await new Promise((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
+async function settleTasks(): Promise<void> {
+  while (boot.tasks.length > 0) {
+    const pending = boot.tasks.splice(0);
+    await Promise.all(pending.map((task) => task.then(settled, settled)));
+  }
+}
+
+function settled(): undefined {
+  return undefined;
+}
+
+function invokeQuits(): number {
+  const pending = boot.quits.splice(0);
+  let invoked = 0;
+  for (const listener of pending) {
+    listener();
+    invoked += 1;
+  }
+  return invoked;
+}
