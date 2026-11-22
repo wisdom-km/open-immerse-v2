@@ -36,9 +36,9 @@ type Mode =
   | "throw-set";
 
 const control = vi.hoisted(() => ({
-  wait: Promise.resolve<void>(),
-  task: Promise.resolve<void>(),
-  clickTask: Promise.resolve<void>(),
+  wait: Promise.resolve(),
+  task: Promise.resolve(),
+  clickTask: Promise.resolve(0),
   clicks: 0,
   noteNone: 0,
   destroyed: 0,
@@ -159,7 +159,7 @@ vi.mock("electron", () => ({
 beforeEach(() => {
   control.wait = Promise.resolve();
   control.task = Promise.resolve();
-  control.clickTask = Promise.resolve();
+  control.clickTask = Promise.resolve(0);
   control.clicks = 0;
   control.noteNone = 0;
   control.destroyed = 0;
@@ -330,9 +330,9 @@ function click(label: string): Promise<void> {
   const found = walk(shell.template).find((item) => item.label === label);
   if (found?.click === undefined) throw new Error(label);
   const seen = control.clicks;
-  found.click();
+  void found.click();
   if (control.clicks === seen) return Promise.resolve();
-  return control.clickTask;
+  return control.clickTask.then(() => undefined);
 }
 
 function plainSlots(menu: FakeMenu): readonly FakeItem[] {

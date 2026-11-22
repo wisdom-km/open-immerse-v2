@@ -35,3 +35,7 @@ Node 是 v22.23.4，PATH 里把 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin` �
 ## 官方 CI 45043252918
 
 head `8941035b642ab55dc84a70c7bfffac63701eec18`。六项里 node 失败，其余五项 success。node 的 Check 退出码 1，随后 Unit tests 被跳过。失败是 ESLint 10 个错误：视图 click 把 Promise 交给了要求 void 的属性，`checked === false` 被标成多余比较，测试里的断言和 `void` 类型不合规则。这不是缺依赖。
+
+## 官方 CI 45043764146
+
+head `728e56478b12b615f34e36362e45e84fd335b81f`。node 的 Check 仍失败，退出码 1，Unit tests 仍被跳过。其余五项 success。剩下 5 个 ESLint 错误：`Promise.resolve<void>()` 把 void 用在调用的类型参数上，`found.click()` 的 Promise 没有接住，`checked === false` 在 boolean 上仍被当成多余比较。没有加行内禁用。

@@ -248,6 +248,10 @@ function slotsArePlainNone(menu: Menu): boolean {
   return true;
 }
 
+function checkedIsFalse(checked: unknown): boolean {
+  return checked === false;
+}
+
 function onePlainSlot(
   items: readonly MenuItem[],
   slot: ViewSlotDescription,
@@ -255,8 +259,11 @@ function onePlainSlot(
   const hits = items.filter((item) => item.id === slot.event);
   const hit = hits.length === 1 ? hits[0] : undefined;
   if (hit === undefined) return false;
-  const checked: boolean | undefined = hit.checked;
-  return hit.label === slot.label && hit.type === "normal" && checked === false;
+  return (
+    hit.label === slot.label &&
+    hit.type === "normal" &&
+    checkedIsFalse(hit.checked)
+  );
 }
 
 function collectItems(menu: Menu): readonly MenuItem[] {
