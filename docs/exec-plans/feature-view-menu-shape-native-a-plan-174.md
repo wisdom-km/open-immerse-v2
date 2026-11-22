@@ -652,3 +652,23 @@ native 文件放在 `apps/desktop/native-windows/`，不要放进 `apps/desktop/
 ### 给 Forge 的交接
 
 本段不是开工指令。Cloud 交上本 Draft 后停。Forge 通过文件职责、分项预算和规格原则之前，不写产品、正式测试、独立 Vitest 配置或 CI。通过之后仍在这一条任务、这一个 Draft 里实施。QA、Ready、合入、发版都不自动成立。
+
+## 2026-11-22 14:42 实施
+
+Forge 对 PR #230 head `f380e849cd88bb000c691fe09f924bf11897df91` 的前置审查是 PASS with nits，必要 BLOCK 为 0。实施授权仍是 14:20 的 7075272271 和 14:22 的 7075291575。14:01 的不推送、不运行，以及机械 600，不继续当作当前阻断。本段不回写上文。
+
+同一分支 `feature/view-menu-native-a-174`、同一 Draft 写了已审的六份产品与正式测试、根 `vitest.windows-native.config.ts`，以及 `desktop-e2e-windows` 里桌面单测之后的 `--config` 一步。没有生产接线，没有新的二进制就绪文件，没有改门禁脚本或分支保护。台账没有新的用户批准，所以不追加批准行。
+
+### N1 与 N2
+
+改门禁脚本或全仓阈值是一类，超出已点名的那一步 Windows `--config`。在提交说明里使用现成的行数理由通道是另一类：不改工作流，但要等 Forge 按当时的实际 diff 审过那一次理由。现行 `ci.yml` 的 Check 步骤只设置 `GATE_BASE`，没有把 PR 正文传进计数脚本。只改 PR 正文不会让这条通道在现行 CI 里生效。
+
+本 Draft 当前不申请行数例外。说明里不写「没有某个标记」这种句子，避免讨论用的字符串被脚本当成已经接受的理由。实际新增加删除若超过现行脚本阈值，保留失败，把全账、每文件职责和理由交给 Forge，不在提交说明或 PR 正文里预先放行。
+
+### 本机已跑与未跑
+
+形状和静态菜单：本机 Vitest 退出码 0，8 个测试通过。见 `docs/evidence/230/commands.md`。
+
+同一父测试在本机 Linux 的 Electron 45.2.1 上退出码 0。这不是 Windows 结果。跑之前包目录没有 `path.txt` 和 `dist/`；跑之后 `path.txt` 为 `electron`，`dist/version` 为 `45.2.1`。捕获到的 Vitest 输出里没有下载提示，不能据此判断 zip 是否走了网络。路径和 exe 已在时，后一次不必下载。
+
+mac、物理键、读屏、菜单截图没有跑。Windows 作业要等这次提交触发的 CI。M2、M8 和通用门禁不删。

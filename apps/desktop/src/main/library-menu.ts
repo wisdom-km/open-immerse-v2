@@ -1,5 +1,8 @@
 export const openFileEvent = "oi-open-file";
 export const returnLibraryEvent = "oi-return-library";
+export const viewOriginalEvent = "oi-view-original";
+export const viewBilingualEvent = "oi-view-bilingual";
+export const viewTranslationEvent = "oi-view-translation";
 
 export type MenuItemSpec = {
   readonly label: string;
@@ -22,9 +25,9 @@ const viewActions = [
   ["后退", "oi-history-back", "Cmd+[", "Alt+Left"],
   ["前进", "oi-history-forward", "Cmd+]", "Alt+Right"],
   ["转到页码…", "oi-go-to-page", "Alt+Cmd+G", "Ctrl+G"],
-  ["原文", "oi-view-original", "Cmd+1", "Ctrl+1"],
-  ["对照", "oi-view-bilingual", "Cmd+2", "Ctrl+2"],
-  ["译文", "oi-view-translation", "Cmd+3", "Ctrl+3"],
+  ["原文", viewOriginalEvent, "Cmd+1", "Ctrl+1"],
+  ["对照", viewBilingualEvent, "Cmd+2", "Ctrl+2"],
+  ["译文", viewTranslationEvent, "Cmd+3", "Ctrl+3"],
   ["放大", "oi-zoom-in", "Cmd+=", "Ctrl+="],
   ["缩小", "oi-zoom-out", "Cmd+-", "Ctrl+-"],
   ["实际大小", "oi-zoom-actual", "Cmd+0", "Ctrl+0"],
