@@ -2,7 +2,7 @@
 
 Node v22.23.4。pnpm 10.34.9。机器是 Linux 6.12.113+ x86_64，工作目录 `/agent/repos/oi-gate-b-plan`。这不是 Windows，不是用户真机，没有启动 Electron。
 
-命令在含门实现和本文件的工作区执行。提交后的 head 与 tree 以该提交的 `git rev-parse` 为准。不把计划提交 `a661e134f5d819c194917fabc5e6b6dceac57f99` 的 CI 当成这次证明。
+命令先在含门实现和本文件的工作区执行。随后在干净提交 `46778b2bf899b5dc3f6c1f3ad68e234f219759b6`、tree `1eba837bbbe196e71cad23edfde5d6c64e2655eb` 上重跑门测试和 `typecheck`，退出码都是 0。不把计划提交 `a661e134f5d819c194917fabc5e6b6dceac57f99` 的 CI 当成这次证明。本段只补上这两个已经重跑过的值。
 
 `corepack pnpm install --frozen-lockfile` 退出码 0。`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`。锁文件没有改。提示只忽略了 `esbuild@0.28.2` 的 build script。
 
