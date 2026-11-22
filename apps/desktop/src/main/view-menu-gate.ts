@@ -190,6 +190,7 @@ async function rebuildAndDispatch(
     state,
     ports,
     shapeAtStart,
+    markAtStart,
     requestedEvent,
     outcome,
   );
@@ -332,10 +333,12 @@ async function dispatchRequested(
   state: GateState,
   ports: ViewMenuGatePorts,
   shapeAtStart: ViewShape,
+  markAtStart: StageMark | null,
   requestedEvent: string,
   outcome: Outcome,
 ): Promise<number> {
   if (!dispatchAllowed(state, shapeAtStart, requestedEvent, outcome)) return 0;
+  if (state.currentMark !== markAtStart) return 0;
   try {
     await ports.dispatch(requestedEvent);
   } catch {
