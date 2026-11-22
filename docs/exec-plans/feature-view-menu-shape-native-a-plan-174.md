@@ -584,3 +584,71 @@ native 文件放在 `apps/desktop/native-windows/`，不要放进 `apps/desktop/
 架构：UI 与业务核心解耦，ARCHITECTURE.md §2.1 与 RULES.md §8。依赖只沿 ARCHITECTURE §5。不进 core，不进 renderer。优先系统原生菜单，不造菜单控件。生产启动仍是 `installFileMenu`。`expose` 保持 false。普通源文件建议 400、硬上限 600，函数建议 50、硬上限 80，测试文件建议 600、硬上限 800。
 
 从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。native 文件放在 `apps/desktop/native-windows/`。收集用 08:31 的独立配置和 `--config`，不用单独的显式路径。形状测试仍留在 `apps/desktop/test/`。模块加载时若缺少可用路径记录或对应 exe，会触发安装流程；安装器可能复用 Electron 资产缓存；已有可用文件时不必下载。二进制或进程起不来就停。不把现有 e2e 的 32 passed 当成 B1、B2。全账超过 600 就停报。纯文档通过不是可实施通过。
+
+## 2026-11-22 14:20 与 14:22：审查顺序和规格原则
+
+上文各段原样保留。本段只说明这两条对**当前 A** 改了什么。14:01 的不提交、不推送、不安装，以及把 600 当作开工前必须先用 numstat 证明的机械条件，由 14:20 替换。14:22 要求把同一原则写进根 `ARCHITECTURE.md` 和 `RULES.md`，不能只留在聊天或 issue。这不是实施放行，也不是另开一份纯文档去求合入。
+
+### 现在的顺序
+
+1. 本 Draft 先交文件职责、分项合理预算和规格原则。Forge 审这一份。
+2. 通过之后，才在同一分支写 A 的产品与正式测试。
+3. 写完再交实际全量 diff、测试和证据，重新审。不再要求编码前先有一份已经落地的 numstat。
+
+超出已审职责、加功能，或需要新的二进制文件，停下来报告，不自动扩大。
+
+### 六文件职责
+
+| 文件 | 职责 | 依赖 |
+| --- | --- | --- |
+| `apps/desktop/src/main/view-menu-mirror.ts` 新建 | 四种形状映射到三个槽位。不创建 Menu，不 import electron，不接线 | 只被本批测试和子进程读 |
+| `apps/desktop/src/main/library-menu.ts` 修改 | 导出现有 `oi-view-original`、`oi-view-bilingual`、`oi-view-translation`。数组使用它们。模板仍无 `checked`。文案不改 | 不改生产接线 |
+| `apps/desktop/test/view-menu-mirror.test.ts` 新建 | 四种形状的 Node 断言。不启动 Electron | 只读镜像 |
+| `apps/desktop/test/library-menu.test.ts` 修改 | 锁文案、快捷键、三个事件、三项、没有 `checked` | 只读菜单模板 |
+| `apps/desktop/native-windows/view-menu-native.test.ts` 新建 | 父进程：编译、启动、回收、读 stdout | 启动下面的子进程 |
+| `apps/desktop/native-windows/view-menu-native-electron.mjs` 新建 | 子进程：加载同一份编译镜像，读真实子菜单 | Electron 45.2.1 的 MenuItem，在 `_menuWillShow` 之后 |
+
+不恢复 `apps/desktop/test/view-menu-native.*`。`.mjs` 子进程文件名不匹配 `*.test.ts`，不能因此说它不是测试入口。
+
+点名但不在本笔创建：根目录 `vitest.windows-native.config.ts`，以及 `ci.yml` 里桌面单测之后的一步 `--config`。生产接线、gate、epoch、`expose`、生成文件、renderer、DESIGN 都不进本批。
+
+### 分项估计，不是 numstat，也不是额度
+
+历史轮廓仍是 261（镜像 62、菜单 9、镜像测试 24、菜单测试 18、父进程约 90–120、子进程约 40–70），区间 243–303。P、L、X 未知，不记 0。E 的 16 行是预留，不是下限。1.73×261=451.53 只是风险说明。
+
+下面是审查用的分项范围，写代码之前不能当成已经发生的行数：
+
+| 项 | 范围 | 为什么可能超过旧轮廓 |
+| --- | --- | --- |
+| 镜像与菜单源 | 60–90 | 职责分开，不把形状和菜单堆进一个文件 |
+| 形状与静态菜单测试 | 40–70 | 四行验收不删 |
+| Windows 父进程与子进程 | 130–220 | 编译失败、缺二进制、缺 `_menuWillShow` 都要停，不跳过 |
+| 独立 Vitest 配置与那一步 CI | 未知，不记 0 | 配置文件现在不存在；显式路径单独不够 |
+| 证据、计划、台账 | 随实际 diff | 不删、不压缩来换行数 |
+
+用户举过几千行或一万行。那不是本批额度。合理规模靠上面的职责表审查：一个文件一种职责，不共享一大块可变状态来假装解耦。
+
+### 技术门禁与原则冲突
+
+审查原则已经写入 ARCHITECTURE §6 和 RULES §1.6、N-23。脚本没有改：
+
+- `tools/check-file-size/check.mjs`：普通源文件 600、入口 150、组件 400、测试 800，超过即失败（G4）。
+- `tools/check-pr-size/check.mjs`：非生成增删合计超过 600 即失败，除非提交说明或 `PR_BODY` 有 `G12:`（G12）。
+- 函数 80 行、圈复杂度 15 仍是现有 ESLint 错误级。本段不把它们改成新的设计硬上限，也不删。
+
+本笔不改这两处脚本，不改全仓阈值，不改分支保护，不把失败标成通过。本 Draft 的文档 diff 若超过 600，停报，不加 `G12:` 去换通过。
+
+将来实施若因测试、证据或配置超过 600：停报实际 numstat。最小兼容只有两条，都还没做，也都超出本批已点名的那一步 CI（Windows 上 `--config`）：
+
+1. 另开一次门禁变更，改脚本或阈值。这超出原 CI 范围，要另审。
+2. 在已经审过的实施 PR 里使用现成的 `G12:` 理由。这不改脚本，但会让这一 PR 在超过 600 时仍通过。没有 Forge 对这一次理由的接受，不写。
+
+不把 600 说回用户的设计硬上限。
+
+### 验收与仍未验证
+
+四种形状、静态标签与事件和快捷键、Windows 上真实 MenuItem 的 B1 与 B2，仍是上文四行，一条不删。失败即停。mac「显示」、Linux 字段、物理键、读屏、菜单截图仍未验证。Windows 绿不能盖过必须的 Linux 失败。M2 仍含 8 GB Windows 和 M1 录屏。M8 仍是两边安装包。12:03 的二进制口径不改：安装器可能复用缓存；路径或 exe 已在就不必下载；只是 version 不匹配时，不承诺 require 必自动重下；32 passed 是现有 `dist/main` e2e，不是 native，也不是真机。
+
+### 给 Forge 的交接
+
+本段不是开工指令。Cloud 交上本 Draft 后停。Forge 通过文件职责、分项预算和规格原则之前，不写产品、正式测试、独立 Vitest 配置或 CI。通过之后仍在这一条任务、这一个 Draft 里实施。QA、Ready、合入、发版都不自动成立。

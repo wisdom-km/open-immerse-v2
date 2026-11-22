@@ -34,7 +34,23 @@
 - Prettier + ESLint（typescript-eslint `strict-type-checked`）；ruff。
 - 关键规则（错误级）：`max-lines-per-function: 80`（domain 纯函数与 Python core 不受此条约束，按「一个不变量一个文件」拆分并受文件上限约束，ARCHITECTURE §6）、`complexity: 15`、`max-params: 4`、`no-restricted-imports`（按层）、`no-restricted-syntax`（顶层 `let`）、`no-restricted-globals`（全局禁用 `chrome`；core 路径另禁 `window`、`document`、`navigator`、`location`、`history`、`localStorage`、`sessionStorage`、`requestAnimationFrame`，ARCHITECTURE G14）。
 - Markdown 与公式渲染（ARCHITECTURE §4.5）：renderer 全局 `react/no-danger` 为错误级；`katex` 只能在 `packages/ui-kit/src/markdown/math.tsx` 与 `packages/features/formula/src/adapters/katex-renderer.ts` 导入，选项只从 `contracts/src/latex-policy.ts` 读取，不得在别处另写一份；Markdown 解析库只能在 `features/markdown/src/domain/parse/` 导入；`features/markdown/src/adapters/**` 禁止导入 `fs` 的写入类 API。
-- 文件行数与依赖方向由 CI 门禁检查（ARCHITECTURE §6、§13），不得在本地关闭后提交。
+- 依赖方向由 CI 门禁检查（ARCHITECTURE §13）。文件行数的设计原则见 §1.6。现行行数脚本仍会失败，不得在本地关闭后提交。
+
+### 1.6 职责、解耦与行数
+
+Wisdom 2026-11-22 14:20、14:22。原话只登记在批准台账，这里不改写成另一句授权。
+
+- 一个功能落在对应的模块和文件里。一个文件只做一种职责。
+- 不同功能不堆进同一个文件。
+- 依赖方向仍是界面 → seam → core（§8、ARCHITECTURE §2.1、§5）。
+- 总 diff、单文件行数、职责是否耦合，分开审查。
+- 600 不是本项目的机械设计约束，也不是开工前必须先有完整 numstat 的条件。
+- 合理规模和可审查性写在 PR 里：这些文件为什么这样分，超出原先轮廓的原因是什么。
+- 用户举过重构时的几千行或一万行。那是举例，不是新的许可额度。
+- 不为每个小函数机械建一个文件。
+- 不把文件拆开后仍共享一大块可变状态，并把它叫作解耦。
+- 不压缩格式、不删测试、不用没有语义的拆分去迎合行数。
+- `tools/check-file-size/check.mjs` 仍把普通源文件卡在 600、入口 150、组件 400、测试 800。`tools/check-pr-size/check.mjs` 仍把非生成增删合计卡在 600，除非提交说明或 `PR_BODY` 里有 `G12:`。本批准不改这些脚本，不改全仓阈值，不改分支保护，不把失败改成通过。冲突和最小处理见当前 A 计划。
 
 ### 1.4 测试命名与组织
 
@@ -129,6 +145,7 @@
 19. 解析规则集两侧一致（ARCHITECTURE §7.10、§7.11）：改阅读顺序、扫描页判定或段落切分的规则时，TS 与 worker 两侧和 `fixtures/parsing-rules/` 的夹具在同一个 PR 里改，夹具只用合成数据；输出变化时规则集版本升一级（`oi-rules/N`），已采用版本不改写；只改一侧即退回。
 20. 积木不写死（ARCHITECTURE §7.12，N-20）：core 与某个积木的实现不得点名另一个积木的具体实现，也不得按「如果是引擎 A / 多模态 / Jev」这种具体实现分支。路线只由声明式配置选出实现；core 只依赖该类积木的端口。新增一种实现（本地、第三方 API、自有托管）不改 core。
 21. 界面与核心解耦（ARCHITECTURE §2.1，N-21，Wisdom 2026-10-30 23:56）：依赖方向只能是界面 → 接口 → core。core、路线层、积木、存储不 import 界面。界面只通过 seam、事件和视图模型调用 core，不直接访问 worker、存储或服务商。CI 用 dependency-cruiser 挡住反向依赖（G13、G15）；eslint 的 import 边界只作同一套规则的编辑器检查。只改界面的 PR 不修改 core 目录。core 测试必须能在没有界面的情况下运行（PRD AC-100）。
+22. 职责与行数（ARCHITECTURE §6，N-23，Wisdom 2026-11-22 14:22）：一个功能落在对应文件，一个文件一种职责，不同功能不堆在一起。总 diff、单文件行数、职责是否耦合分开看。600 不是机械设计约束。不压缩格式，不为迎合行数做没有语义的拆分，不为每个小函数建文件，也不把共享一大块可变状态的拆分叫作解耦。几千行或一万行不是额度。现行行数脚本仍会失败，不得在本地关掉。
 
 ## 6. Agent 绝不能做的事
 
@@ -158,6 +175,7 @@
 | N-20 | 在 core 或某个积木的实现里写死另一个积木：点名它的具体实现，或按具体实现分支。处理路线只由声明式配置选出实现，core 只依赖该类积木的端口（ARCHITECTURE §7.12，Wisdom 2026-10-30 22:45） | review |
 | N-21 | 让核心业务依赖界面，或让界面直接访问 worker、存储、服务商。依赖方向只能是界面 → 接口 → core。禁止绕过 dependency-cruiser / eslint import 边界放行反向依赖（ARCHITECTURE §2.1、G13、G15，Wisdom 2026-10-30 23:56）。只改界面的 PR 不得修改 core 目录（domain、application、`index.ts`、`pure.ts`、`contracts/src/ipc/**`） | G13、G15 |
 | N-22 | 把 G1–G18 全部脚本落地当作新建 `packages/features/**` 业务切片的前提。业务切片的 M1 门禁前提只看已经在 CI 运行的 G6（import-linter）、pyright 与 gitleaks；这三项已满足（2026-11-02）。G1、G3、G5 仍是 M1 交付（Issue #34），缺它们不禁止业务切片。CI 全绿仍不等于 §13 的 G1–G18 全部已有 | review |
+| N-23 | 把不同功能堆进同一个文件；用压缩格式、删测试或没有语义的拆分去迎合行数；为每个小函数机械建文件；拆开文件后仍共享一大块可变状态并称为解耦；把 600 当作本项目的机械设计约束，或把用户举过的几千行、一万行当成额度。现行 `check-file-size` 与 `check-pr-size` 不因此关闭（§1.6，ARCHITECTURE §6，Wisdom 2026-11-22 14:22） | review |
 
 门禁失败时，在工具原有输出后面追加改正说明：编号、问题、改法、规格位置。全文表在 [docs/gate-remediation.md](./docs/gate-remediation.md)，数据只在 `tools/gate-remediation/catalog.json`。不要在各个脚本里再写一份（Wisdom 2026-10-31 14:27）。
 
