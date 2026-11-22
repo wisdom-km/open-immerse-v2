@@ -434,3 +434,32 @@ Windows 全账 = 261 + P + L + E + X。历史公式留在上文，不回写。�
 native 文件放在 `apps/desktop/native-windows/`，不要放进 `apps/desktop/test/**/*.test.ts`，否则 Ubuntu `node` 作业会收集它。收集步骤只加在 `.github/workflows/ci.yml` 的 `desktop-e2e-windows`。不用测试内 skip。子进程加载同一个正式 mirror 的编译结果。编译失败、win32 二进制或进程起不来、没有 `_menuWillShow`，都停。
 
 从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。Windows 全账是 261 + P + L + E + X。开工要同时满足两件：产品、测试、计划、台账、证据和 CI 调整的全账已经证明 ≤ 600，并且另有精确实施批准。否则停报。不删测试，不改 600，不自动拆分。未获实施授权不得开工。纯文档通过不是可实施通过。
+
+## 2026-11-22 08:31 收集入口
+
+上文「最小未来收集候选」写过：根 include 会不会滤掉显式路径，当时没有跑 Vitest，记未核实。那句不回写。08:23 的只读核查读了已安装源码，没有执行 Vitest。本节记下那个静态结论。它不是实测 PASS。本 PR 不创建配置，也不改 CI。
+
+2026-11-22 08:23 Asia/Shanghai，Wisdom 原话只有「按照你的建议推进」。来源是 Issue #174 评论 7071520033。那句只批准只读核查。2026-11-22 08:31 Asia/Shanghai，Wisdom 原话只有「ok 按照你的建议推荐」。来源是 Issue #174 评论 7071604588。承接的建议是把结论和独立配置候选补进计划，不再把已知不够的入口当成当前方案。Forge 的限定解释不是第二句。08:31 不批准实施，也不批准创建配置或改 CI。
+
+锁版本：根 `package.json` 的 `vitest` 是 `5.0.5`。`pnpm-lock.yaml` 有 `vitest@5.0.5`。读过的已安装文件在 `node_modules/.pnpm/vitest@5.0.5_@types+node@22.20.5_happy-dom@21.0.4_vite@8.3.5_@types+node@22.20.5_esbuild@0.28.2_/node_modules/vitest/dist/chunks/`：`defaults.B1FCaFfh.js` 的 `defaultInclude`，`pathe.M-eThtNZ.Ba-7h1rE.js` 的 `deepMerge`，`index.1TqnEahn.js` 的 `globTestFiles`、`filterFiles`、`resolveConfigPath`，`constants.-juJ8b_4.js` 的 `CONFIG_NAMES`，`cli-api.De07GUeT.js` 的 `start`，`cac.CLrZKo1g.js` 的 `config` 选项。08:31 没有重跑这些文件。
+
+`deepMerge` 对数组整段替换。根 `vitest.config.ts` 第 22–32 行的 include 因此替换默认的 `**/*.{test,spec}.?(c|m)[jt]s?(x)`，不会再把默认 glob 并进来。`globTestFiles` 先按 include 与 exclude 做 glob，`filterFiles` 只在这份结果里筛选。CLI 路径，包括绝对路径，都不能把 glob 没拿到的文件加进去。结果为空且不是 watch 时，`start` 抛 `FilesNotFoundError`。这是源码里的分支，没有本回合的退出码。自动加载的配置名只有 `vitest.config` 和 `vite.config`。`--config` 要的是一条路径；给出时 `resolveConfigPath` 只用那一份。
+
+父测试若放在 `apps/desktop/native-windows/view-menu-native.test.ts`，根 include 不匹配。只在 `desktop-e2e-windows` 上对根配置加一步 `vitest run` 指向这个文件，仍然收集不到。上文把这一步写成未核实候选。按已读源码，它单独不够。
+
+既定子进程文件名是 `apps/desktop/native-windows/view-menu-native-electron.mjs`。它不匹配根 include 的 `apps/desktop/test/**/*.test.ts`，也不匹配下面候选 include 的 `**/*.test.ts`。这里只说这个文件名和这两条 glob。
+
+当前候选仍未实跑。本 PR 的 diff 里没有这个文件，也没有 `ci.yml`：
+
+- 文件名用 `vitest.windows-native.config.ts`。它不在 `CONFIG_NAMES` 里，根 `vitest run` 不会自动加载。
+- 它的 `test.include` 只写 `apps/desktop/native-windows/**/*.test.ts`。
+- 将来若另批，Windows 作业在现有 `vitest run apps/desktop/test` 之后加 `corepack pnpm exec vitest run --config vitest.windows-native.config.ts`。
+- 形状测试和 `library-menu.test.ts` 仍留在 `apps/desktop/test/`。Ubuntu `node` 的 `pnpm test` 与 Windows 现有那一步继续收集。不用 skip，不删这些检查。
+
+上文交接里「收集步骤只加在 `desktop-e2e-windows`」若理解成只对根配置加一条显式路径，那就是这条已知不够的入口。以后的收集以本节的独立配置为准。实施仍未授权。
+
+全账仍是 261 + P + L + E + X。P、L、X 不记 0。E 的 16 仍只是预留。本节不给配置或 CI 步骤编行数。不能证明全账 ≤ 600，也没有证明已经超过。HOLD 不变。开工要同时满足两件：全账已经证明 ≤ 600，并且另有精确实施批准。否则停报。不删测试，不改 600，不自动拆分。
+
+### 本 PR 的文档账
+
+与 Windows 全账分开。分支 `feature/view-menu-native-collect-entry-174`，从 live main `e8bbbbc1cd61b32c933079fb0e3ccedaa0ec490e` 另开。相对这个 base 的最终新增+删除：新增 36、删除 1，合计 37。只改本计划和 `docs/approvals.md`。
