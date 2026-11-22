@@ -571,7 +571,7 @@ native 文件放在 `apps/desktop/native-windows/`，不要放进 `apps/desktop/
 
 ### 本 PR 的文档账
 
-与实施全账分开。分支 `feature/view-menu-full-budget-windows-binary-174`，从 live main `8033229cbc9ed18d99a2a8d46c92e2da5ac562c6` 另开。相对这个 base 的最终新增+删除：SIZE_PENDING。只改本计划和 `docs/approvals.md`。
+与实施全账分开。分支 `feature/view-menu-full-budget-windows-binary-174`，从 live main `8033229cbc9ed18d99a2a8d46c92e2da5ac562c6` 另开。相对这个 base 的最终新增+删除：新增 133、删除 5，合计 138。只改本计划和 `docs/approvals.md`。
 
 ### 交接摘要
 
