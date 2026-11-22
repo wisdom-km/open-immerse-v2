@@ -123,7 +123,7 @@ export type ViewMenuEpoch = {
 
 `read` 仍返回带 floor 的槽，供以后的唯一写者使用。终态不是槽，`read` 对已终结的 id 返回 `undefined`。没有 `isSealed`、`ownerId` 或其他公开 getter。通知里没有 floor、generation、`known` 或「已接受」。`attached` 只携带这次 `attach` 拿到的 `webContentsId`，用来建立信任，不是 owner 读取端口。`subscribe` 返回退订函数。监听列表放在 `createViewMenuEpoch` 的同一个闭包里，跟那一张槽 Map 在一起。它不是第二张代次表，不是模块级 singleton，也不保存接受结果。
 
-`attached` 不改 `window.ts`。订阅发生在 `createMainWindow` 之前，窗口 id 要等 `attach` 才存在。`window.ts` 的 diff 必须保持 0，所以 id 不能从窗口模块回传。`attach` 在登记现有监听之后、返回之前，同步发出这一份通知。
+`attached` 不改 `window.ts`。订阅发生在 `createMainWindow` 之前，窗口 id 要等 `attach` 才存在。`window.ts` 的 diff 必须保持 0，所以 id 不能从窗口模块回传。`attach` 在第一次登记监听之后同步发出 `attached`，但要等下面的握手做完才返回。
 
 ### 谁拥有什么
 
@@ -137,20 +137,45 @@ export type ViewMenuEpoch = {
 
 ### 每次 attach 的终态栅栏
 
-栅栏在 `createViewMenuEpoch` 的同一个闭包里，和那一张槽 Map 放在一起。一个 id 只有三种内部情况：没有条目、有槽、已终结。已终结不存 epoch，不存 floor，不是 `ViewMenuSlot`。它不是第二张代次表，也没有公开读取函数。
+栅栏在 `createViewMenuEpoch` 的同一个闭包里，和那一张槽 Map 放在一起。一个 id 只有三种内部情况：没有条目、有槽、已终结。已终结不存 epoch，不存 floor，不是 `ViewMenuSlot`。它不是第二张代次表，也没有公开读取函数。Map 的值是带标签的普通对象，标签只有「槽」和「已终结」。`read` 只在标签是槽时返回槽，否则返回 `undefined`。不用 `any`，也不做两次断言。
 
 `closed` 在调用任何监听之前做完这些事，中间没有 await：
 
-1. 该 id 已经终结：直接返回。不再发第二份 `closed`，也不重建槽。
-2. 先把该 id 标成已终结。
-3. 去掉槽。本来没有槽也一样。
-4. 然后发 `kind: "closed"`。没有槽也发这一份。
+1. 该 id 的哨兵已经在：直接返回。不删哨兵，不重建槽，窗口事件本身不再发通知。握手那一次补投不算在这句里，见下一节。
+2. 先把该 id 写成私有哨兵。禁止 `Map.delete` 把这个 id 删掉。删掉之后 `store` 会把它当成没有条目。
+3. 槽的内容去掉。本来没有槽也一样。哨兵留下。
+4. 然后发 `kind: "closed"`。没有槽也发这一份。若当时正在发 `attached`，还要记下握手欠着一次补投。
 
 `store` 在取出当前槽、使用 blank、reduce、写回和发 `slot` 之前先看终态。已终结就返回。因此下面这些事不会发生：blank 重建、`openNext` 再得到 epoch 1、发 `slot`、生命周期调用 `noteNone`、进入 Menu。
 
 这覆盖三类同一来源的事件：`closed` 通知里排在生命周期前面的监听同步重入导航；`closed` 返回之后才到达的导航、主 frame 失败或 renderer gone；attach 之后 Map 里从来没有槽就收到的 `closed`。只删掉生命周期里的 `read` 判断不够，因为重入的 `slot` 会在外层 `closed` 之前先 `noteNone`。
 
-不调用 `webContents.removeListener` 当作栅栏。窗口已经 `closed` 时拆除监听可能碰到已销毁对象。拒绝发生在 `store` 入口。现有 epoch 测试双已经能在同一个假窗口上发出 `closed` 和 `did-navigate`。重入验收由这份 `closed` 通知里的监听再发导航，不新增公开入口。
+不调用 `webContents.removeListener` 当作栅栏。窗口已经 `closed` 时拆除监听可能碰到已销毁对象。拒绝发生在 `store` 入口。现有 epoch 测试双已经能在同一个假窗口上发出 `closed` 和 `did-navigate`。重入验收由通知里的监听再发这些事件，不新增公开入口。
+
+### attached 与 closed 的握手
+
+`read` 对「还没有槽」和「已终结」都是 `undefined`。桥接分不开这两件事，所以不用 `read` 判断终态，也不假设有 `isSealed`。终态只由 epoch 闭包里的私有哨兵表示。「尚未终结」也只由 epoch 在发出 `attached` 之前检查。
+
+同一 id 再调用 `attach`：
+
+- 哨兵已经在：拒绝。不解封，不删哨兵，不再 `on`，不发 `attached`。
+- 监听已经登记过、哨兵还不在：幂等返回。不再 `on`，不发第二份可绑定的 `attached`。
+- 第一次：每个事件只登记一次，然后进入下面的握手。这些回调里不再调用 `attach`，避免反复登记。
+
+握手在同一次 `attach` 里做完，中间没有 await。`attach` 返回前，欠下的 `closed` 已经交给当时的桥接。
+
+1. 发布侧确认这个 id 还没有哨兵，也还没有登记过监听。
+2. 登记导航和 `closed`。
+3. 复制当前监听列表，同步发 `attached`。这时还没有哨兵。
+4. 这一轮按副本顺序调用，允许重入。先行监听可以在自己的 `attached` 里同步触发同一个窗口的 `closed`。
+5. 那个 `closed` 先写哨兵、去掉槽，再嵌套发一轮 `closed`。`read` 变成 `undefined`。这一轮里桥接往往还没执行到自己的 `attached`，owner 仍是空，所以这轮不销毁、不退订。epoch 同时记下：这份正在发布的 `attached` 已经遇上真实 `closed`。嵌套那一轮不销毁，不等于把这次 `closed` 当成无关过期通知丢掉。
+6. 副本继续。桥接到自己的 `attached` 时只验证两件事：id 是安全整数，当前还没有 owner。通过就绑定。不用 `read() === undefined` 拒绝这份 `attached`，因为那和正常未建槽相同，也和已经嵌套终结相同。`attached` 不调用 `noteNone`。
+7. 这轮 `attached` 全部返回之后、`attach` 返回之前，若第 5 步记下了真实 `closed`，epoch 再开一轮新的 `closed`。新一轮使用返回当时的监听副本。桥接此时已经是 owner，所以 `setDestroyed(true)` 并退订。这发生在后续任何 Menu 调用之前。哨兵只挡住 `store`。门的 `destroyed` 要靠这轮补投才写上。只封印不等于门已经销毁。
+8. 补投只做一次。通知仍是原来的 `kind: "closed"`，不增加字段，也不是 owner 回执。欠投只记在这一次 `attach` 调用的私有状态里，调用结束就不保留。这不是第二张代次表。补投不解封。其后窗口 `closed` 再进已有哨兵的回调，走终态节的第 1 步，不再发第三份。
+
+与这次握手无关的 `slot` 或 `closed`（另一个 id，或这次 `attach` 开始之前就到的通知）仍然不抢 owner，不销毁。
+
+生产上的轨迹是：epoch 上可以已有先行监听 L，桥接 B 后订。`attach` 的 `attached` 副本是 [L, B]。L 在 `attached` 里同步关掉窗口。嵌套 `closed` 时 B 还不是 owner。B 随后在外层 `attached` 里绑定。`attach` 返回前的补投让 B 销毁并退订。若接受外层 `attached` 却没有这轮补投，唯一的 `closed` 已经错过，门不会销毁。若因为 `read` 是 `undefined` 而拒绝外层 `attached`，门同样不会销毁。两头都要靠第 7 步合上。
 
 ### 何时发通知
 
@@ -165,7 +190,7 @@ export type ViewMenuEpoch = {
 - 已经 `retired` 再退役：阶段和 epoch 都没变，不发。
 - 新的 `open`，包括第一次成功的 `oi-app:` commit：发 `kind: "slot"`。epoch 变为 1 时 floor 仍由 `openNext` 在槽内归零，通知不携带 floor。
 - 已经有效 commit 之后离开 `oi-app:`、主 frame provisional failure、renderer gone：阶段变成 `retired` 且 epoch 仍是那次 open 的数字时，发 `kind: "slot"`。
-- `closed`：见上一节。无槽也发。已终结之后不再发第二份。
+- `closed`：见终态节。无槽也发。握手期间嵌套的那一次之外，`attach` 返回前可以再补投一轮，见握手节。哨兵留下之后，窗口事件不再发第三份。
 
 `subscribe` 不重放已经存在的槽。生命周期在 `loadURL` 之前订上。`attached` 在 `attach` 返回前同步到达，仍早于 `loadURL`。第一次有效 commit 是更后面的 `slot`，不是补放。
 
@@ -178,23 +203,24 @@ export type ViewMenuEpoch = {
 - 每个监听放在自己的 `try/catch` 里。抛出不回滚已经写入的槽，不撤销已经写下的终态，不跳过副本里后面的监听，也不变成 `noteNone`、`known` 或一次派发。
 - 接住是为了让同一次 `closed` 里的生命周期仍然执行。不是把失败报成菜单已经恢复。epoch 不记录、不上报、不重试，也不新增诊断通道。测试要看见的是：抛出的监听自己留下的记录、后面的监听仍运行、Menu 与 dispatch 没有因此变成成功。
 
-生产上的生命周期回调本身保持同步，直到调用 `noteNone` 或 `setDestroyed`。`noteNone` 返回的 Promise 要接住，并保持拒绝。拒绝不改成 resolve，不把安装改成 `known`，也不把同一次通知再放进队列。不把 `installApplicationMenu` 现有的空 `catch` 抄成已恢复。测试断言这个 Promise 拒绝，以及 `known` 没有变成成功。
+生产上的生命周期回调本身保持同步，直到调用 `noteNone` 或 `setDestroyed`。只处理 `noteNone` 返回的那个 Promise：在它上面用成功和拒绝两个回调。拒绝回调不把安装改成 `known`，也不把同一次通知再放进队列。不在 `catch` 里再 `throw`，因为那会得到一个没人接的派生拒绝。也不把拒绝吞成空完成来假装恢复。不新造日志框架，不加 getter。测试断言的是这个原始 Promise 拒绝，以及 `known` 没有变成成功。
 
-退订函数从那一个闭包的监听列表里移除自己。已绑定 owner 的 `closed` 处理完 `setDestroyed(true)` 之后退订，放在该处理的 `finally` 里。此后这扇门不再收到通知。测试可以用退订函数被调用，以及之后的通知不再进入这扇门，证明清理发生了。
+退订函数从那一个闭包的监听列表里移除自己。已绑定 owner 的 `closed` 处理完 `setDestroyed(true)` 之后退订，放在该处理的 `finally` 里。当轮副本里还没调用到的位置仍可能再进来一次，所以销毁和退订都要幂等：第二次 `setDestroyed(true)` 保持销毁，第二次退订不做任何事，两次都不调用 `noteNone`，也不再装菜单。下一轮不再包含已退订的监听。测试可以用退订函数被调用，以及之后的新一轮通知不再进入这扇门，证明清理发生了。
 
 ### owner：先验证，再绑定
 
 生产正常路径只 `attach` 一次，应用菜单也只有一份。这只说明正常路径上的 id 来自那一次调用。它不能写成「第一份任意通知一定属于那个窗口」，也不能写成因此能拒绝一切错误的首次 owner。若 `attach` 本身被叫到错误的窗口上，这份 `attached` 会绑定那个窗口。本批不另造识别，也不新增 owner 读取端口。
 
-`ownerId` 从空开始。只有 `kind: "attached"` 可以绑定，而且先验证再写：
+`ownerId` 从空开始。只有 `kind: "attached"` 可以绑定。桥接先验证再写的只有这两件事：
 
 - `webContentsId` 是安全整数，口径与 epoch 现有的整数检查相同，不另造正数范围。
 - 当前还没有 owner。
-- 该 id 还没有进入终态。
 
-验证失败就不写 owner，不调用 `noteNone`，不调用 `setDestroyed`。验证通过才记下 owner。`attached` 本身不调用 `noteNone`。同一个 id 再来一份 `attached`，不重复绑定，也不调用 `noteNone`。
+「还没有进入终态」不在桥接这里查。`read` 看不出来，也没有 `isSealed`。它由 epoch 在发出这份 `attached` 之前用私有哨兵保证。握手里嵌套的 `closed` 发生在发出之后，桥接仍然绑定，随后的补投负责销毁。
 
-尚未绑定时，`slot` 和 `closed` 都不抢 owner：`noteNone` 为 0，`setDestroyed` 为 0，未绑定状态留给后来的 `attached`。retired epoch 0 即使被收成一份 `slot`，也不绑定，也不调用 `noteNone`。
+验证失败就不写 owner，不调用 `noteNone`，不调用 `setDestroyed`。验证通过才记下 owner。`attached` 本身不调用 `noteNone`。同一个 id 再来一份 `attached`，不重复绑定，也不调用 `noteNone`。epoch 对重复 `attach` 也不再发这份通知。
+
+尚未绑定时，与这次握手无关的 `slot` 和 `closed` 都不抢 owner：`noteNone` 为 0，`setDestroyed` 为 0。retired epoch 0 即使被收成一份 `slot`，也不绑定，也不调用 `noteNone`。握手欠下的那次 `closed` 不是这种无关通知，规则在握手节。
 
 已经绑定之后，id 不同的 `slot`、`closed` 和再次 `attached`：`noteNone` 为 0，`setDestroyed` 为 0。未公开导航因为不发通知，不会抢先占掉 owner。
 
@@ -215,9 +241,9 @@ epoch 侧的顺序见「每次 attach 的终态栅栏」：先终结并去掉槽
 
 生命周期收到 `closed`：
 
-- 还没有 owner：不绑定，不销毁，不退订。这是过期通知，不能污染未绑定状态。
+- 还没有 owner，并且这次 `closed` 不是当前 `attached` 握手欠下的补投：不绑定，不销毁，不退订。这是无关的过期通知，不能污染未绑定状态。嵌套在 `attached` 里、发生在桥接绑定之前的那一轮也走这里；欠下的销毁由 `attach` 返回前的补投完成，不靠这轮嵌套。
 - id 不是 owner：不销毁，不退订。
-- id 是 owner：始终 `setDestroyed(true)`，然后在 `finally` 里退订。不读槽来决定是否销毁。`read` 后来又有值也不取消，不调用 `setDestroyed(false)`。
+- id 是 owner，包括握手补投到达时已经绑定的情况：始终 `setDestroyed(true)`，然后在 `finally` 里退订。不读槽来决定是否销毁。`read` 后来又有值也不取消，不调用 `setDestroyed(false)`。补投到达时若已经销毁过，保持销毁，退订保持幂等。
 
 这条路径不调用 `noteNone`，不调用 `Menu.setApplicationMenu`，不调用 `ports.dispatch`。销毁之后，门里已有的 `destroyed` 判断挡住还没进入端口的 `replace` 和 `dispatch`。已经进入 `ports.dispatch` 的那一次不撤回。
 
@@ -253,7 +279,7 @@ createMainWindow(epoch);
 
 `startMainLogger` 增加可选参数，缺省时仍调用今天的 `startLibrary(userData)`。传入时把同一对象转给 `startLibrary`。`startLibrary` 的第三个参数可选，缺省 registrar 保持默认。显式传入 `undefined` 作为第二个参数时，默认 registrar 仍生效，然后第三个参数才是 epoch。
 
-`installApplicationMenu` 在第一次 await 之前同步订阅。`startLibrary` 因此在返回命令表之前已经订上。随后 `createMainWindow` 才 attach，再 `loadURL`。订阅早于 `loadURL`。attach 的现有位置不动。`attach` 返回前同步发出 `attached`，生命周期在验证通过后绑定 owner，此时 `noteNone` 仍是 0。第一次有效 commit 在 `loadURL` 之后的 `oi-app:` 导航。
+`installApplicationMenu` 在第一次 await 之前同步订阅。`startLibrary` 因此在返回命令表之前已经订上。随后 `createMainWindow` 才 attach，再 `loadURL`。订阅早于 `loadURL`。attach 的现有位置不动。`attach` 返回前做完握手：先发 `attached`，若期间发生真实 `closed`，再补投 `closed`。生命周期在 `attached` 上绑定 owner，`noteNone` 仍是 0。补投时才 `setDestroyed`。第一次有效 commit 在 `loadURL` 之后的 `oi-app:` 导航。
 
 没有传入 epoch 时，不订阅，不调用 `noteNone`，不调用 `setDestroyed`。这就是现有装配测试和另外两个 wiring 测试要继续看到的路径。
 
@@ -266,8 +292,8 @@ createMainWindow(epoch);
 | N1 同一实例 | 从 `index` 的那一次 `createViewMenuEpoch` 传到窗口和 `startLibrary`。窗口 attach 产生的槽，能被菜单安装时绑上的那个对象 `read` 到 | 两个分别 `createViewMenuEpoch()` 的对象，或另造的 fake 工厂 | 未跑 |
 | N2 订阅先于 load | 订阅发生在 `loadURL` 之前。第一次成功的 `oi-app:` 导航得到 epoch 1，并发生一次生命周期 none。`window.ts` 的 attach 仍在 `loadURL` 之前，且该文件 diff 为 0 | 只重测已经存在的 attach 顺序，却没有这次 none | 未跑 |
 | N3 换代、退役、renderer gone | 已经有效 commit 之后，这三种都变成生命周期 none。记号含当时的窗口 id、阶段和 epoch。从未有效 commit 的 retired epoch 0 不属于这条，见 N12、N13 | 用全未勾的 radio 表示 none。本批不提交活动三模式。把初始失败也记成一次 `noteNone` | 未跑 |
-| N4 旧 id、owner、epoch | 分两种。未绑定：`slot` 和 `closed` 不写 owner，`noteNone` 与 `setDestroyed` 都是 0，后来的 `attached` 仍能绑定。已绑定：id 不同则这两次调用仍是 0；id 相同才进入复核。复核失败时不写 floor，不派发 | 用「生产只有一个窗口」代替验证。用这一条代替已经停在 await 上的 click。新增 owner 读取端口 | 未跑 |
-| N5 closed | 无槽的 `closed` 也通知，并 `setDestroyed(true)`、调用退订。先行监听在这份通知里同步重入导航：没有新槽，`noteNone` 不增加，Menu 与 `ports.dispatch` 不增加，销毁和退订仍然发生。`closed` 返回后的迟到导航或失败同样不重建、不进 Menu。关闭前是 `open` epoch 1 时，重入不能把记号重用成 `id:open:1` 来派发旧 click：`read` 仍是 `undefined`，该 click 的 dispatch 是 0。`read` 又出现槽也不能取消销毁 | 只删掉 `read` 判断。`setDestroyed(false)`，或同进程重开后又装菜单。用源码字符串代替这些调用次数 | 未跑 |
+| N4 旧 id、owner、epoch | 分两种。与这次握手无关、当时未绑定的 `slot` 和 `closed` 不写 owner，`noteNone` 与 `setDestroyed` 都是 0，后来另一次真正的 `attached` 仍能绑定。已绑定：id 不同则这两次调用仍是 0；id 相同才进入复核。复核失败时不写 floor，不派发。先行监听在 `attached` 里同步 `closed` 时，嵌套那一轮不抢 owner；`attach` 返回前的补投才销毁属于这次 attach 的门 | 用「生产只有一个窗口」代替验证。用 `read() === undefined` 拒绝这份 `attached`。用这一条代替已经停在 await 上的 click。新增 owner 读取端口 | 未跑 |
+| N5 closed | 无槽的 `closed` 也通知，并 `setDestroyed(true)`、调用退订。先行监听在 `closed` 里同步重入导航：没有新槽，`noteNone` 不增加，Menu 与 `ports.dispatch` 不增加，销毁和退订仍然发生。先行监听在 `attached` 里同步 `closed`：原有菜单安装或已有等待结束之后，`setDestroyed(true)` 和退订已经发生，其后 Menu 与 `ports.dispatch` 是 0。`closed` 返回后的迟到导航或失败同样不重建、不进 Menu。关闭前是 `open` epoch 1 时，重入不能把记号重用成 `id:open:1` 来派发旧 click：`read` 仍是 `undefined`，该 click 的 dispatch 是 0。`read` 又出现槽也不能取消销毁。同一 id 再 `attach` 不解封，也不再发可绑定的 `attached` | 只删掉 `read` 判断。只封印而不销毁门。`setDestroyed(false)`，或同进程重开后又装菜单。用源码字符串代替这些调用次数 | 未跑 |
 | N6 A/B | A 的 none click 停在 `postCheck`。B 的 none 到达并被已有的一次额外替换收成 `known`。A 的 `ports.dispatch` 次数是 0，返回 0。B 的 `known` 不回滚。pending 不被丢掉。没有第三次替换 | 只读当前槽，或只看返回 0 | 未跑 |
 | N7 修复中的 C | B 的额外替换还没结束时 C 到达。留下最新 pending。安装是 `unknown`。仍没有第三次替换 | 为了留下 C 而清掉最新 pending，或把失败写成 `known` | 未跑 |
 | N8 已进入 dispatch | 比较已经通过并进入 `ports.dispatch` 之后才换代。那一次端口调用不撤回。返回 1 不当作新代接受。调用次数和返回值分开断言 | 把返回 0 写成「端口从未进入」的通用证明 | 未跑 |
@@ -312,6 +338,7 @@ Forge 对这份计划和台账给出明确继续之前：
 | 4 | 产品与测试、依赖、Electron | 未开始。HOLD | 无。不把本表写成通过 |
 | 5 | 文档检查 | 命令和退出码写入 `docs/evidence/234/commands.md` | 已写入。`check-docs` 与 `check-commits` 退出码 0。产品门禁未跑，不标通过 |
 | 6 | 按 Forge 首轮 BLOCK 改计划：终态栅栏、retired epoch 0、先验证后绑定、通知快照 | 只改本计划和证据。台账不重复追加。行为未跑，不标通过。编码前置仍未满足 | 本文件对应各节。证据文件补本轮命令 |
+| 7 | 按 `cca5ac3` 复审补上 attached 与 closed 的握手 | 只改本计划和证据。R2 保持。台账不重复追加。N1–N13 仍未跑，不标通过。编码前置仍未满足 | 本文件「attached 与 closed 的握手」。证据文件补本轮命令 |
 
 ## 决策记录
 
@@ -331,6 +358,7 @@ Forge 对这份计划和台账给出明确继续之前：
 | 从未有效 commit 的 retired epoch 0 不发菜单 `slot`，桥接也不 `noteNone` | Forge 首轮 R2。N10 的 0 次保持。随后 `closed` 仍终结。不引入 floor、handler 或 renderer | 2026-11-23 | Forge 审查。本计划修订，复审前不开工 |
 | owner 只由 `attached` 在验证通过后绑定 | Forge 首轮 N1。生产单窗不写成能拒绝一切错误的首次 owner。不新增 owner 读取端口，不改 `window.ts` | 2026-11-23 | Forge 审查。本计划修订，复审前不开工 |
 | 通知遍历用当次副本；抛出和 `noteNone` 拒绝保持可观察 | Forge 首轮非阻断 N2。不新增诊断框架，不把接住写成已恢复 | 2026-11-23 | Forge 审查。本计划修订，复审前不开工 |
+| `attached` 握手期间的真实 `closed` 在 `attach` 返回前补投 | `cca5ac3` 复审仍 BLOCK 的 R1。桥接不用 `read` 判断终态。补投后再销毁。重复 attach 不解封。哨兵不被 `delete` 清掉 | 2026-11-23 | Forge 复审。本计划修订，复审前不开工 |
 
 ## 风险与未知
 
@@ -344,7 +372,9 @@ Forge 对这份计划和台账给出明确继续之前：
 - 把 `attached` 收成 owner 读取端口，或为了拿到窗口 id 去改 `window.ts`。当前不改。若复审认为这份通知越出十个文件或公开端口，停。
 - 把生产只有一个窗口写成已经能拒绝一切错误的首次 owner。
 - 初始 retired epoch 0 为了「有一次通知」去调用 `noteNone`，或删掉 N10 的 0 次。
-- 接住监听抛出或 `noteNone` 拒绝之后，把菜单记成已经恢复。
+- 接住监听抛出或 `noteNone` 拒绝之后，把菜单记成已经恢复。`catch` 后再抛出会留下没人接的派生拒绝。
+- 把握手嵌套的 `closed` 当成无关过期通知丢掉，或只写哨兵却不补投，门就一直不销毁。
+- `Map.delete` 把哨兵删掉，终态栅栏消失。
 - `library-wiring.ts` 或 `view-menu-gate.ts` 的语句数或圈复杂度越过现有门禁。不停用规则，不把两份职责并回一个文件。停下来把实际诊断交给 Forge。
 - 可选第三参数若迫使白名单外的测试改签名，停。
 - 本地完整门禁若会下载或启动真实 Electron，留下 HOLD。官方 runner 上的既有 CI 与 Cloud/Box 分账。
@@ -359,12 +389,11 @@ Forge 对这份计划和台账给出明确继续之前：
 
 先读本文件。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
 
-首轮 BLOCK 的两处已改计划，编码前置仍未满足。请复审：
+`cca5ac3` 复审仍是 BLOCK，只剩 R1 的握手重入。R2 保持闭合。编码前置仍未满足。请复审：
 
-- R1：无槽 `closed` 也通知；发布前终态拒绝同一来源重入和迟到事件重建槽或进 Menu；`read` 又有槽不能取消销毁；`closed` 始终 `setDestroyed(true)` 并退订。N5 覆盖无槽、先行重入、迟到、epoch 数字重用。观察 Menu、dispatch、退订的真实调用。没有新的公开 getter，没有第二张代次表，不改 `window.ts`。
-- R2：从未有效 commit 的 retired epoch 0 不发菜单 `slot`，桥接也不 `noteNone`。N10 的 0 次还在。N12、N13 是两类初始失败，随后 `closed` 仍终结。不引入 floor、handler 或 renderer。
-- 审查 N1：owner 只由 `attached` 在验证通过后绑定。未绑定与已绑定分写在验收 N4。不把单窗写成能拒绝一切错误的首次 owner。没有 owner 读取端口。
-- 审查 N2：当次副本、逐个接住、`noteNone` 拒绝保持可观察。不新增框架。
+- R1 握手：先行监听在 `attached` 副本里同步 `closed` 时，嵌套那一轮桥接还不是 owner，不在那里销毁。epoch 记下这是真实 `closed`，在 `attached` 副本结束、`attach` 返回之前再补投一轮。补投时桥接已经绑定，于是 `setDestroyed(true)` 并退订，且在后续 Menu 之前。`read() === undefined` 不能用来拒绝 `attached`，也不能用来判断哨兵。没有 `isSealed`。哨兵留在同一张 Map，禁止 `delete` 清掉。同一 id 再 `attach`：已终结则拒绝并不解封；尚未终结则幂等，不再登记监听，不再发可绑定的 `attached`。N4 保留无关未绑定通知不抢 owner。N5 要求原安装或已有等待结束之后销毁、退订已发生，其后 Menu 与 dispatch 是 0。
+- R2：保持。从未有效 commit 的 retired epoch 0 不发菜单 `slot`，桥接也不 `noteNone`。
+- 非阻断：当轮退订后桥接仍可能再被调用一次，销毁和退订幂等。`noteNone` 只处理它返回的那个 Promise，不 `catch` 再抛，也不空 `catch`。
 
 候选甲、`commitFloor` 延后、派发前同步比较、wiring 只改接通后必然变化的断言，审查没有把这几处列为阻断。行为仍未跑。台账不重复追加。
 
