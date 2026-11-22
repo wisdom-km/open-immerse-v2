@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { stderr } from "node:process";
@@ -237,7 +237,6 @@ it("reports a synchronous loadURL throw through the ready failure path", async (
   spy.mockRestore();
   expect(written.join("")).toContain("load failed");
   expect(unhandled).toEqual([]);
-  rmSync(boot.userData, { recursive: true, force: true });
 });
 
 it("N4 ignores an unbound foreign id and still binds the next attached id", () => {
