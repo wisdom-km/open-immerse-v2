@@ -1,7 +1,5 @@
 import { spawnSync } from "node:child_process";
 
-import { writeRemediation } from "../gate-remediation/format.mjs";
-
 const limit = 600;
 const generated = ["pnpm-lock.yaml", "workers/parser/uv.lock"];
 const generatedPrefixes = ["workers/parser/oi_worker/protocol/"];
@@ -48,15 +46,6 @@ function countedLines(base) {
   return total;
 }
 
-function hasReason() {
-  const fromEnv = process.env.PR_BODY ?? "";
-  if (fromEnv.includes("G12:")) {
-    return true;
-  }
-  const base = option("--base", "main");
-  return git(["log", "--format=%B", `${base}..HEAD`]).includes("G12:");
-}
-
 function contractsOnly(base) {
   const files = git(["diff", "--name-only", `${base}...HEAD`])
     .split("\n")
@@ -69,13 +58,8 @@ function contractsOnly(base) {
 
 const base = option("--base", "main");
 const total = countedLines(base);
-const contractLimit = contractsOnly(base) ? 200 : limit;
-if (total > contractLimit && !hasReason()) {
-  console.error(
-    `check-pr-size: ${total} non-generated lines > ${contractLimit} without a G12: reason (G12)`,
-  );
-  writeRemediation(["G12"]);
-  process.exit(1);
+const hint = contractsOnly(base) ? 200 : limit;
+console.log(`check-pr-size: ${total} non-generated lines ("G12")`);
+if (total > hint) {
+  console.log(`check-pr-size: former hint ${hint}`);
 }
-
-console.log(`check-pr-size: ${total} non-generated lines`);

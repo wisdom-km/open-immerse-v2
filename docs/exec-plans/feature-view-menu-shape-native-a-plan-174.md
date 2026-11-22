@@ -584,3 +584,184 @@ native 文件放在 `apps/desktop/native-windows/`，不要放进 `apps/desktop/
 架构：UI 与业务核心解耦，ARCHITECTURE.md §2.1 与 RULES.md §8。依赖只沿 ARCHITECTURE §5。不进 core，不进 renderer。优先系统原生菜单，不造菜单控件。生产启动仍是 `installFileMenu`。`expose` 保持 false。普通源文件建议 400、硬上限 600，函数建议 50、硬上限 80，测试文件建议 600、硬上限 800。
 
 从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。native 文件放在 `apps/desktop/native-windows/`。收集用 08:31 的独立配置和 `--config`，不用单独的显式路径。形状测试仍留在 `apps/desktop/test/`。模块加载时若缺少可用路径记录或对应 exe，会触发安装流程；安装器可能复用 Electron 资产缓存；已有可用文件时不必下载。二进制或进程起不来就停。不把现有 e2e 的 32 passed 当成 B1、B2。全账超过 600 就停报。纯文档通过不是可实施通过。
+
+## 2026-11-22 14:20 与 14:22：审查顺序和规格原则
+
+上文各段原样保留。本段只说明这两条对**当前 A** 改了什么。14:01 的不提交、不推送、不安装，以及把 600 当作开工前必须先用 numstat 证明的机械条件，由 14:20 替换。14:22 要求把同一原则写进根 `ARCHITECTURE.md` 和 `RULES.md`，不能只留在聊天或 issue。这不是实施放行，也不是另开一份纯文档去求合入。
+
+### 现在的顺序
+
+1. 本 Draft 先交文件职责、分项合理预算和规格原则。Forge 审这一份。
+2. 通过之后，才在同一分支写 A 的产品与正式测试。
+3. 写完再交实际全量 diff、测试和证据，重新审。不再要求编码前先有一份已经落地的 numstat。
+
+超出已审职责、加功能，或需要新的二进制文件，停下来报告，不自动扩大。
+
+### 六文件职责
+
+| 文件 | 职责 | 依赖 |
+| --- | --- | --- |
+| `apps/desktop/src/main/view-menu-mirror.ts` 新建 | 四种形状映射到三个槽位。不创建 Menu，不 import electron，不接线 | 只被本批测试和子进程读 |
+| `apps/desktop/src/main/library-menu.ts` 修改 | 导出现有 `oi-view-original`、`oi-view-bilingual`、`oi-view-translation`。数组使用它们。模板仍无 `checked`。文案不改 | 不改生产接线 |
+| `apps/desktop/test/view-menu-mirror.test.ts` 新建 | 四种形状的 Node 断言。不启动 Electron | 只读镜像 |
+| `apps/desktop/test/library-menu.test.ts` 修改 | 锁文案、快捷键、三个事件、三项、没有 `checked` | 只读菜单模板 |
+| `apps/desktop/native-windows/view-menu-native.test.ts` 新建 | 父进程：编译、启动、回收、读 stdout | 启动下面的子进程 |
+| `apps/desktop/native-windows/view-menu-native-electron.mjs` 新建 | 子进程：加载同一份编译镜像，读真实子菜单 | Electron 45.2.1 的 MenuItem，在 `_menuWillShow` 之后 |
+
+不恢复 `apps/desktop/test/view-menu-native.*`。`.mjs` 子进程文件名不匹配 `*.test.ts`，不能因此说它不是测试入口。
+
+点名但不在本笔创建：根目录 `vitest.windows-native.config.ts`，以及 `ci.yml` 里桌面单测之后的一步 `--config`。生产接线、gate、epoch、`expose`、生成文件、renderer、DESIGN 都不进本批。
+
+### 分项估计，不是 numstat，也不是额度
+
+历史轮廓仍是 261（镜像 62、菜单 9、镜像测试 24、菜单测试 18、父进程约 90–120、子进程约 40–70），区间 243–303。P、L、X 未知，不记 0。E 的 16 行是预留，不是下限。1.73×261=451.53 只是风险说明。
+
+下面是审查用的分项范围，写代码之前不能当成已经发生的行数：
+
+| 项 | 范围 | 为什么可能超过旧轮廓 |
+| --- | --- | --- |
+| 镜像与菜单源 | 60–90 | 职责分开，不把形状和菜单堆进一个文件 |
+| 形状与静态菜单测试 | 40–70 | 四行验收不删 |
+| Windows 父进程与子进程 | 130–220 | 编译失败、缺二进制、缺 `_menuWillShow` 都要停，不跳过 |
+| 独立 Vitest 配置与那一步 CI | 未知，不记 0 | 配置文件现在不存在；显式路径单独不够 |
+| 证据、计划、台账 | 随实际 diff | 不删、不压缩来换行数 |
+
+用户举过几千行或一万行。那不是本批额度。合理规模靠上面的职责表审查：一个文件一种职责，不共享一大块可变状态来假装解耦。
+
+### 技术门禁与原则冲突
+
+审查原则已经写入 ARCHITECTURE §6 和 RULES §1.6、N-23。脚本没有改：
+
+- `tools/check-file-size/check.mjs`：普通源文件 600、入口 150、组件 400、测试 800，超过即失败（G4）。
+- `tools/check-pr-size/check.mjs`：非生成增删合计超过 600 即失败，除非提交说明或 `PR_BODY` 有 `G12:`（G12）。
+- 函数 80 行、圈复杂度 15 仍是现有 ESLint 错误级。本段不把它们改成新的设计硬上限，也不删。
+
+本笔不改这两处脚本，不改全仓阈值，不改分支保护，不把失败标成通过。本 Draft 的文档 diff 若超过 600，停报，不加 `G12:` 去换通过。
+
+将来实施若因测试、证据或配置超过 600：停报实际 numstat。最小兼容只有两条，都还没做，也都超出本批已点名的那一步 CI（Windows 上 `--config`）：
+
+1. 另开一次门禁变更，改脚本或阈值。这超出原 CI 范围，要另审。
+2. 在已经审过的实施 PR 里使用现成的 `G12:` 理由。这不改脚本，但会让这一 PR 在超过 600 时仍通过。没有 Forge 对这一次理由的接受，不写。
+
+不把 600 说回用户的设计硬上限。
+
+### 验收与仍未验证
+
+四种形状、静态标签与事件和快捷键、Windows 上真实 MenuItem 的 B1 与 B2，仍是上文四行，一条不删。失败即停。mac「显示」、Linux 字段、物理键、读屏、菜单截图仍未验证。Windows 绿不能盖过必须的 Linux 失败。M2 仍含 8 GB Windows 和 M1 录屏。M8 仍是两边安装包。12:03 的二进制口径不改：安装器可能复用缓存；路径或 exe 已在就不必下载；只是 version 不匹配时，不承诺 require 必自动重下；32 passed 是现有 `dist/main` e2e，不是 native，也不是真机。
+
+### 给 Forge 的交接
+
+本段不是开工指令。Cloud 交上本 Draft 后停。Forge 通过文件职责、分项预算和规格原则之前，不写产品、正式测试、独立 Vitest 配置或 CI。通过之后仍在这一条任务、这一个 Draft 里实施。QA、Ready、合入、发版都不自动成立。
+
+## 2026-11-22 14:42 实施
+
+Forge 对 PR #230 head `f380e849cd88bb000c691fe09f924bf11897df91` 的前置审查是 PASS with nits，必要 BLOCK 为 0。实施授权仍是 14:20 的 7075272271 和 14:22 的 7075291575。14:01 的不推送、不运行，以及机械 600，不继续当作当前阻断。本段不回写上文。
+
+同一分支 `feature/view-menu-native-a-174`、同一 Draft 写了已审的六份产品与正式测试、根 `vitest.windows-native.config.ts`，以及 `desktop-e2e-windows` 里桌面单测之后的 `--config` 一步。没有生产接线，没有新的二进制就绪文件，没有改门禁脚本或分支保护。台账没有新的用户批准，所以不追加批准行。
+
+### N1 与 N2
+
+改门禁脚本或全仓阈值是一类，超出已点名的那一步 Windows `--config`。在提交说明里使用现成的行数理由通道是另一类：不改工作流，但要等 Forge 按当时的实际 diff 审过那一次理由。现行 `ci.yml` 的 Check 步骤只设置 `GATE_BASE`，没有把 PR 正文传进计数脚本。只改 PR 正文不会让这条通道在现行 CI 里生效。
+
+本 Draft 当前不申请行数例外。说明里不写「没有某个标记」这种句子，避免讨论用的字符串被脚本当成已经接受的理由。实际新增加删除若超过现行脚本阈值，保留失败，把全账、每文件职责和理由交给 Forge，不在提交说明或 PR 正文里预先放行。
+
+### 本机已跑与未跑
+
+形状和静态菜单：本机 Vitest 退出码 0，8 个测试通过。见 `docs/evidence/230/commands.md`。
+
+同一父测试在本机 Linux 的 Electron 45.2.1 上退出码 0。这不是 Windows 结果。跑之前包目录没有 `path.txt` 和 `dist/`；跑之后 `path.txt` 为 `electron`，`dist/version` 为 `45.2.1`。捕获到的 Vitest 输出里没有下载提示，不能据此判断 zip 是否走了网络。路径和 exe 已在时，后一次不必下载。
+
+mac、物理键、读屏、菜单截图没有跑。Windows 作业要等这次提交触发的 CI。M2、M8 和通用门禁不删。
+
+## 2026-11-22 15:01 行数门禁对齐方案
+
+本段是给 Forge 的前置方案。通过之前不改行数脚本、不改 ESLint 或 ruff 的行数规则、不改规格正文。已完成的 A 产品与测试不重做。已经失败的 CI 不改记成通过。
+
+Wisdom 2026-11-22 15:01 Asia/Shanghai 原话：
+
+> 我的意思是，你像之前咱不好像硬性规定代码600行吗？但是我说不要有这个。硬性规定，就是说灵活一点，你比如说代码要求解耦啊，然后对应的功能都要写到一个文件里啊，就不要说同一个文件写入其他的功能。然后该放行的就适当放行，就只要说遵守规则就可以了。
+
+来源是 Forge 主聊天 t3692u。本提交读取时，Issue #174 自 `2026-11-22T07:00:00Z` 起没有新评论，所以台账不编评论号。这句覆盖「总 diff 超过 600 就失败」和「每次用提交说明里的理由字符串换通过」这种常规。它不新开功能，不接生产，不标 Ready，不合入，不发版。几千行或一万行仍不是额度。
+
+### 现状
+
+| 检查 | 现在怎么失败 | 和 600 的关系 |
+| --- | --- | --- |
+| `tools/check-pr-size/check.mjs` | 非生成增删合计超过 600 就退出 1。只改 `packages/contracts` 时超过 200 也退出 1。提交说明或 `PR_BODY` 里有指定理由字符串则退出 0 | 总 diff 的机械上限，外加逐次例外 |
+| `tools/check-file-size/check.mjs` | 普通源文件 600、入口 150、组件 400、测试 800，超过退出 1 | 同一类硬上限，只是改成按文件 |
+| ESLint `max-lines-per-function` 与 ruff `PLR0915` | 函数超过 80 行即 lint 失败 | 若前两项放开而这项仍是错误，80 会变成新的机械上限 |
+| G5、G9、G13–G16、圈复杂度 15、测试、许可证、格式、类型 | 各自的规则 | 不是行数额度。这次不关 |
+
+G11 只数 `composition-root.ts` 和 `slots.ts` 的单文件 diff，上限 30。它不是全仓 600 的替代品。这次方案不动它。
+
+当前 A 的 head `85725187022c915be70dfb43e3077f168a0b4bc4` 上，[run 44996072338](https://github.com/wisdom-km/open-immerse-v2/actions/runs/44996072338) 的 Windows native 1 个测试通过，桌面单测 126 通过。node 的 Check 因 690 行失败，Ubuntu 单测没跑到。该失败保持为那次提交的失败。
+
+### 通过后要改的路径
+
+一个实现提交，仍在这个 Draft。不另开文档 PR。
+
+| 路径 | 职责 |
+| --- | --- |
+| `tools/check-pr-size/check.mjs` | 继续打印非生成增删合计。不再因超过 600 或契约 200 退出 1。不再读取理由字符串 |
+| `tools/check-pr-size/limit.test.ts` | 601 行的 diff 退出码 0，输出里仍有这个数 |
+| `tools/check-file-size/check.mjs` | 继续打印超过原提示数的文件和行数。不再因此退出 1。`allowlist.json` 留着，不再当作放行开关 |
+| `tools/check-file-size/limit.test.ts` | 601 行的源文件退出码 0，输出里仍有路径和行数 |
+| `eslint.config.js` | 关掉 `max-lines-per-function` 的 error。圈复杂度 15 与 `max-params` 保留 |
+| `workers/parser/pyproject.toml` | `PLR0915` 不再作为失败项。`C901` 圈复杂度保留 |
+| `docs/arch/06.md`、`docs/arch/13.md`、根 `ARCHITECTURE.md`、`RULES.md` | 写成审查提示，不再写成 CI 硬失败。依赖方向、密钥、测试不改 |
+| `tools/compare-spec-bytes/manifest.json`、`tools/gate-remediation/catalog.json`、`docs/spec-changelog.md` | 只跟上面的规格句子对齐 |
+
+不改 A 的六份产品与测试、`ci.yml` 的 native 步骤、生产接线、分支保护。
+
+### 验收
+
+1. 超过 600 行且提交说明里没有任何理由字符串的 diff，`check-pr-size` 退出码 0，并打印合计。
+2. 601 行的 `.ts` 源文件，`check-file-size` 退出码 0，并打印该文件的行数。
+3. 超过 80 行的函数不再因函数行数规则失败。圈复杂度超过 15 仍然失败。
+4. 依赖方向、密钥扫描、许可证、格式、类型检查的现有失败用例仍然失败。
+5. 不把 run 44996072338 的 node 失败改写成通过。脚本改完之后的新 run 才是新结果。
+
+Forge 通过本段之前，不实现上表。
+
+## 2026-11-22 15:02 至 15:04：审查条款写入规格
+
+上一段说「通过之前不改规格正文」。15:02 与 15:03 要求把代码数审查规定和公开参考写进项目文档。那句只约束当时的门禁脚本方案，不取消这两句。脚本表仍等 Forge 审过再改。不回写上一段。
+
+15:02 原话：「然后你像咱们这个代码审查，代码数的这个审查规定，你也改到对应的那个项目文档里。」
+
+15:03 原话：「OK，那就把你的建议也补充进去，就是你像大公司他们是怎么做的，然后结合你的建议也补充到咱们的项目文档里。」
+
+15:04 原话：「然后这个项目文档改完之后，你核对完之后，就该合并的合并，然后你就继续推进这个项目进度。」
+
+四句都在 [评论 7075697386](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7075697386)。15:01 的原话已在上一行台账，不重复计批准。
+
+已写入根 `ARCHITECTURE.md`、`docs/arch/06.md` 和 `RULES.md` §1.7、评审第 23 条、N-24。公开参考只作参考：Google 的 Small CLs 鼓励小而完整的变更，写明没有统一的太大门槛，审查者仍可以要求拆分。取消 600 硬阻断是本项目的决定，不是所有大公司的惯例。
+
+本批 A 仍是原来的功能、文件职责和生产禁区。预算仍是分项估计，未知不记 0。不再要求开工前先有完整 numstat，也不因总数超过 600 自动停工。交接仍要附实际 diff、职责、命令和未验证项。Windows native 通过不是生产接线，也不是三视图用户流程、翻译链路或真机验收。M2、M8 和非行数门禁不减。
+
+15:04 批准文档在核对通过后合入，并继续推进。文档和 A 实现在同一个 PR 里。这不是未审实现代码的合入许可。本代理保持 Draft，不标 Ready，不合入，不发版。A 的实施权限不变，等 Forge 下一次精确审查。已经失败的 CI 不改记成通过。
+
+## 2026-11-22 Forge B1：PLR0915 不是函数行数
+
+上一段的现状表把 ESLint `max-lines-per-function` 和 ruff `PLR0915` 并称「函数超过 80 行」，并通过后的路径表拟把 `workers/parser/pyproject.toml` 的 PLR0915 移出失败项。那是误解。不回写那两行。
+
+Forge 对 `22359dfcb23d27250d785c2f9b69da1fcc193326` / tree `2b75f19e30ccd2801a17ee75d16a57b726d5991a` / base `a5a27bf0b3586f337f190a1ab8874dda538ce61d` 的审查：A 六文件、独立配置和 Windows 一步静态 PASS with nits；文档与 Google 引用 PASS with nits；原样执行门禁方案 BLOCK 这一项。Ruff 官方规则 PLR0915 检查的是函数或方法里的语句数量。本仓库 `workers/parser/pyproject.toml` 的 `max-statements` 是 80，`max-complexity` 是 15，select 含 C901 与 PLR0915。该文件不改。语句复杂性以后若要调整，单独论证，不能从取消 600 推导出来。
+
+同一审查还写明两件实施时必须讲清的事：
+
+- G11 的脚本只对文件名是 `composition-root.ts` 或 `slots.ts` 的 diff 做大于 30 的数值判断。它不检查依赖或职责，不能说成解耦已经验证。热点改动的风险仍要评审。同一纯行数对齐里，这项改为打印，超过 30 不失败。不关 G13、G15。
+- 仓库的 `eslint.config.js` 没有 `max-params`。上表写「max-params 保留」不等于已经有这条自动检查。本轮不新增。参数个数仍是评审口径。
+
+ESLint 的 `max-lines-per-function` 改为 off。不能改成 warn：`package.json` 的 lint 是 `eslint . --max-warnings 0`，warn 仍会让 Check 失败。圈复杂度 15、顶层 let、受限 import、许可证、密钥、类型、格式、测试和依赖方向都不关。
+
+本笔按这个更正实现。不改 A 的产品文件，不接生产生命周期，不扩产品范围，不改分支保护，不写理由字符串去换通过，不删测试，不压格式。
+
+[run 44996860301](https://github.com/wisdom-km/open-immerse-v2/actions/runs/44996860301) 是 `22359df` 的官方结果：node 失败，计数 793；另外五项通过，含 Windows native。失败停在 `check-pr-size`。同一条 Check 里，它前面的格式、lint、类型、单文件行数、依赖、许可证、切片、提交说明和热点已经走过；codegen 和 node 的全量单测没有跑到。不能把没跑的步骤记成通过。这次失败保留。
+
+## 2026-11-22 15:08：文档合入后的路线
+
+15:08 原话：「OK，那就按照你的建议去推进吧，等那个文档合入之后就按照你的建议推进。然后你像说可独立的任务最多并行三个PR，就是说这个三个PR里面它的代码不相互影响，你就可以开三个PR。」
+
+来源是 [评论 7075736208](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7075736208)。15:04 已在台账，不重复计批准。
+
+这句批的是文档核对合入之后的顺序：先收当前 A 的验收，再整理三视图接线、基础阅读剩余路径，然后是解析、OCR、任务恢复、翻译和公式保护。同时最多三个代码互不影响、能独立测试审查的 PR。依赖链串行。不为了凑满三个而拆。真机 QA 仍串行。本笔不新开 PR，不把这句当成未审代码的合入许可，不改分支保护，不接生产，不发版。未明确的实现范围仍先写规格。

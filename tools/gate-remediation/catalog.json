@@ -9,8 +9,8 @@
     },
     {
       "id": "G2",
-      "problem": "ESLint 或 ruff 报错，常见是函数超过 80 行、圈复杂度超过 15、顶层 let、受限 import，或 ruff 的 E/F/I/UP/B/C901/PLR0915。",
-      "fix": "按工具点名的规则改。domain 纯函数与 Python core 不受 80 行限制，但仍受圈复杂度和文件上限约束。不要放宽规则或加行内禁用，除非有用户批准的 ADR。",
+      "problem": "ESLint 或 ruff 报错。圈复杂度超过 15、顶层 let 和受限 import 仍失败。ruff 选择含 E、F、I、UP、B、C901 和 PLR0915。PLR0915 统计语句数量，上限 80，不是物理行数。",
+      "fix": "按工具点名的规则改。函数物理行数规则保持 off，不要改成 warn。不要关闭 PLR0915、C901 或圈复杂度，也不要加行内禁用，除非有用户批准的 ADR。",
       "spec": "docs/arch/06.md §6、docs/arch/13.md §13 G2、RULES §1.1、§1.2、§1.3",
       "match": []
     },
@@ -30,8 +30,8 @@
     },
     {
       "id": "G4",
-      "problem": "源文件物理行数超过硬上限。普通源文件 600 行，入口 150 行，React 组件 400 行，测试 800 行。",
-      "fix": "把文件拆到上限以内。豁免只能写入 tools/check-file-size/allowlist.json，并带 ADR 与到期里程碑。不要调高上限。",
+      "problem": "单文件物理行数超过提示时只列出路径和行数，脚本不以这个数字退出。普通源文件提示 600，入口 150，组件 400，测试 800。",
+      "fix": "按职责决定是否拆开。生成文件的 ignore 仍然跳过。豁免名单不再抑制这条提示。坏的名单或缺少字段仍然失败。不要顺手关掉别的门禁。",
       "spec": "docs/arch/06.md §6、docs/arch/13.md §13 G4",
       "match": []
     },
@@ -89,15 +89,15 @@
     },
     {
       "id": "G11",
-      "problem": "单个具名热点文件的 diff 超过 30 行。机器检查目前只数 composition-root.ts 和 slots.ts。",
-      "fix": "把这个 PR 里该文件的增删减到 30 行以内。被多个切片 import 的契约热点等有了 packages/contracts 再按 import 图计算，不要手写名单。",
+      "problem": "composition-root.ts 和 slots.ts 的 diff 行数只打印。超过 30 不以数字失败。这项机器检查不判断依赖方向，也不判断职责。",
+      "fix": "热点文件的修改风险仍写在 PR 描述里。不要把打印结果说成解耦已经验证。依赖方向继续看 G13 和 G15。不要把 30 行设成新的全仓硬上限。",
       "spec": "docs/arch/13.md §13 G11、RULES §3",
       "match": []
     },
     {
       "id": "G12",
-      "problem": "非生成改动超过 600 行，只改 packages/contracts 时超过 200 行，并且提交说明和 PR_BODY 里没有以 G12: 开头的理由。",
-      "fix": "拆开这个 PR，或在提交说明、或环境变量 PR_BODY 里写一行以 G12: 开头的不拆理由。pnpm-lock.yaml、workers/parser/uv.lock、dist/ 和 workers/parser/oi_worker/protocol/ 不计入行数。",
+      "problem": "非生成增删合计只打印。超过 600，或变更文件都在 packages/contracts 下时超过 200，脚本不以这个数字退出，也不再读提交说明。",
+      "fix": "审查职责、解耦和测试是否足够。锁文件、dist 和 workers/parser/oi_worker/protocol 仍不计入。git 本身失败时退出码仍非 0。不要再靠一段理由文字换通过。",
       "spec": "docs/arch/13.md §13 G12、RULES §2",
       "match": []
     },

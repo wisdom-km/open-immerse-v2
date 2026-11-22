@@ -271,6 +271,9 @@ jobs:
       - name: Desktop unit tests
         run: corepack pnpm exec vitest run apps/desktop/test
 
+      - name: Windows native view menu
+        run: corepack pnpm exec vitest run --config vitest.windows-native.config.ts
+
       - name: Playwright Electron smoke
         run: corepack pnpm --filter desktop e2e
         env:

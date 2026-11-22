@@ -74,10 +74,7 @@ export default tseslint.config(
     files: ["**/*.{js,mjs,cjs,ts,tsx}"],
     rules: {
       complexity: ["error", 15],
-      "max-lines-per-function": [
-        "error",
-        { max: 80, skipBlankLines: false, skipComments: false },
-      ],
+      "max-lines-per-function": "off",
       "no-restricted-globals": ["error", "chrome"],
     },
   },

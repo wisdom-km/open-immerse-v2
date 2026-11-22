@@ -8,6 +8,10 @@ import {
   returnLibraryEvent,
   returnLibraryScript,
   scriptForMenuEvent,
+  viewBilingualEvent,
+  viewOriginalEvent,
+  viewTranslationEvent,
+  type MenuItemSpec,
   type ShellMenuEntry,
 } from "../src/main/library-menu.js";
 
@@ -83,6 +87,57 @@ it("registers one view accelerator per platform and the literal events", () => {
     'window.dispatchEvent(new Event("oi-zoom-in"))',
   );
 });
+
+it("reuses the three view events and leaves the template unchecked", () => {
+  expect(viewOriginalEvent).toBe("oi-view-original");
+  expect(viewBilingualEvent).toBe("oi-view-bilingual");
+  expect(viewTranslationEvent).toBe("oi-view-translation");
+  const win = viewItems("win32");
+  const mac = viewItems("darwin");
+  const slots = win.filter(
+    (item) =>
+      item.event === viewOriginalEvent ||
+      item.event === viewBilingualEvent ||
+      item.event === viewTranslationEvent,
+  );
+  expect(slots.map((item) => item.label)).toEqual(["原文", "对照", "译文"]);
+  expect(slots.map((item) => item.event)).toEqual([
+    viewOriginalEvent,
+    viewBilingualEvent,
+    viewTranslationEvent,
+  ]);
+  expect(slots.map((item) => item.accelerator)).toEqual([
+    "Ctrl+1",
+    "Ctrl+2",
+    "Ctrl+3",
+  ]);
+  expect(mac.filter(isViewSlot).map((item) => item.accelerator)).toEqual([
+    "Cmd+1",
+    "Cmd+2",
+    "Cmd+3",
+  ]);
+  for (const item of [...win, ...mac]) {
+    expect(item).not.toHaveProperty("checked");
+    expect(item).not.toHaveProperty("type");
+  }
+});
+
+function isViewSlot(item: MenuItemSpec): boolean {
+  return (
+    item.event === viewOriginalEvent ||
+    item.event === viewBilingualEvent ||
+    item.event === viewTranslationEvent
+  );
+}
+
+function viewItems(platform: string): readonly MenuItemSpec[] {
+  const entry = applicationMenuTemplate(platform).find(
+    (item) =>
+      "label" in item && (item.label === "显示" || item.label === "视图(&V)"),
+  );
+  if (entry === undefined || !("items" in entry)) throw new Error(platform);
+  return entry.items;
+}
 
 function labels(template: readonly ShellMenuEntry[]): string[] {
   return template.map((entry) => ("role" in entry ? entry.role : entry.label));
