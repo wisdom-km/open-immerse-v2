@@ -4,13 +4,13 @@
 
 分支 `feature/view-menu-lifecycle-ownership-plan-174`。从官方 main `e62e0d4207f94f93360a6ffcf9c822c965805f96` 另开，不沿用已合 PR #232 的分支。该 commit 的唯一 parent 是 `a1c91d76401919eae593f3e8a10a605aa0de0970`，tree 是 `48f5bc0e1fcabe6643448332028b9378f16b019f`。本工作区 `git rev-parse` 与这三项一致。不 reset、不 amend、不 rebase 已推提交，不改其他分支，不删分支。
 
-Wisdom 2026-11-23 01:36 原话：「批准仅新增生命周期所有权与菜单桥接计划，并补记已批准事项和PR232合入同步；先审计划，不写产品或测试代码，不改旧架构约束、CI、依赖或环境，不操作真机，不Ready、合入或发版。」来源是 [Issue #174 评论 7082976061](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7082976061)。这是本文件唯一的新授权。它批准先审这份计划，不批准下面任一候选的实施。
+Wisdom 2026-11-23 01:36 原话：「批准仅新增生命周期所有权与菜单桥接计划，并补记已批准事项和PR232合入同步；先审计划，不写产品或测试代码，不改旧架构约束、CI、依赖或环境，不操作真机，不Ready、合入或发版。」来源是 [Issue #174 评论 7082976061](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7082976061)。这是本文件唯一的授权。它批准先审这份计划，不批准下面任一候选的实施。2026-11-23 02:02 的修订仍在这句里面：只修正计划的技术自洽，不新增批准记录，也不改门。
 
 本任务受 UI 与业务核心解耦约束：[ARCHITECTURE.md](../../ARCHITECTURE.md) §2.1 与 [RULES.md](../../RULES.md) §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。本回合任务类型：不适用（纯文档）。五份规格正文不改：[PRD.md](../../PRD.md)、[ARCHITECTURE.md](../../ARCHITECTURE.md)、[RULES.md](../../RULES.md)、[DESIGN.md](../../DESIGN.md)、[docs/design-principles.md](../design-principles.md)。
 
 ## 本笔边界
 
-只新增本文件，并在下一提交追加 [docs/approvals.md](../approvals.md)。不改已合的 [seam](feature-reader-view-menu-seam-174.md)、[S2b 实施计划](feature-view-menu-gate-s2b-implementation-plan-174.md)、[C 计划](feature-view-menu-startup-none-c-plan-174.md)、产品、测试、生成物、CI、依赖、锁文件或环境。`docs/spec-changelog.md` 不适用，因为不改规格。
+第一笔只新增本文件。第二笔已追加 [docs/approvals.md](../approvals.md)。这次修订只改本文件。没有新的用户原话，台账不追加空行。不改已合的 [seam](feature-reader-view-menu-seam-174.md)、[S2b 实施计划](feature-view-menu-gate-s2b-implementation-plan-174.md)、[C 计划](feature-view-menu-startup-none-c-plan-174.md)、产品、测试、生成物、CI、依赖、锁文件或环境。`docs/spec-changelog.md` 不适用，因为不改规格。
 
 seam 的分批顺序仍是 S2c-prep → S2c-on → E2 → S3，每一笔另批。seam 只要求下面四件事在 S2c-on 之前写明，没有要求它们先于 S2c-prep。本文件回答这四件事，不改顺序。Forge 把「先写这份计划」放在前面，是排序，不是业主改序。
 
@@ -27,13 +27,13 @@ seam 的分批顺序仍是 S2c-prep → S2c-on → E2 → S3，每一笔另批�
 - `createMainWindow` 先 `epoch.attach(win)`，再 `loadURL`（`apps/desktop/src/main/window.ts` 第 16–26 行）。第一次 `did-navigate` 因此进得了槽。把 attach 挪到 `loadURL` 之前已经完成，下一笔不要把它再写成未做的任务。起始地址是 `oi-app://app/index.html`。
 - epoch 的公开面只有 `attach` 与 `read`（`apps/desktop/src/main/view-menu-epoch.ts` 第 11–33 行）。唯一槽表在 `createViewMenuEpoch` 的闭包里。成功的 `oi-app:` `did-navigate` 把阶段改成 `open`、epoch 加一、floor 归零。非 `oi-app:` 且已经 `open`、主 frame 的 `did-fail-provisional-load`、`render-process-gone` 都退役。`closed` 删槽。same-document 不换代。没有订阅端口，没有 floor 的提交入口。`openNext` 写的 floor 0 是换代归零，不是后来那次接受提交的地板。
 - 菜单门在 `installApplicationMenu` 的闭包里创建（`apps/desktop/src/main/library-wiring.ts` 第 136–160 行）。生产记号是 `unbound`（第 58 行）。生产调用 `submit("none", startupViewMark)`，生产路径调用 `noteNone` 的次数是 0。`startLibrary` 同步返回命令表，安装是 `void installApplicationMenu().catch(() => undefined)`（第 45–55 行）。三个视图 click 进门，其他栏目仍是 `void dispatchMenu`。
-- 门的公开入口是 `submit`、`noteNone`、`click`、`setDestroyed`（`apps/desktop/src/main/view-menu-gate.ts` 第 19–27 行）。pending 只由 `noteNone` 写下。`noteNone` 会把 `currentMark` 改成这次传入的记号；过期记号若进了门，会把当前记号写回去。销毁之后 `replace` 不再执行。这些是门自己的状态机，不是文档代。
+- 门的公开入口是 `submit`、`noteNone`、`click`、`setDestroyed`（`apps/desktop/src/main/view-menu-gate.ts` 第 19–27 行）。端口是 `replace(descriptions)`、`postCheck()`、`dispatch(event)`（第 11–17 行），都可以返回 Promise，并且都不接收 click 开始时的记号。pending 只由 `noteNone` 写下。`noteNone` 在第 104–108 行把 `currentMark` 和 pending 改成这次传入的记号；忙时直接返回。`click` 在第 155–156 行捕获 `shapeAtStart` 与 `markAtStart`。`clickCandidate` 在第 217–225 行会因为记号变化而拒绝 click 自己的形状。`settle` 在第 256–274 行可以把最新 pending 收成 `none` 且 `known`。`dispatchAllowed` 在第 368–378 行只看形状、`known`、pending 和当初的 `outcome`，不比较 `markAtStart` 与当前记号。`none` 仍有原文、对照、译文三个事件（`view-menu-mirror.ts` 第 23–41 行）。销毁之后 `replace` 不再执行。这些是门自己的状态机，不是文档代。
 - `packages/contracts/src/ipc/shell.ts` 的 `expose` 仍是 `false`。仓库里没有 `view-menu-handler.ts`。生产没有人调用 floor 提交。
 - 装配测试从 `startLibrary` 进入，并期望安装完成前 `noteNone` 为 0（`apps/desktop/test/view-menu-wiring.test.ts`）。`open-document-wiring.test.ts` 与 `reading-asset-protocol.test.ts` 也调用 `startLibrary`，假 Menu 没有 getter。
 
 因此当前 C 只是启动 none、记号 `unbound`、生产 `noteNone` 为 0、`expose` 为 false。不能把它写成产品三视图已经激活，也不能写成 epoch 与门的生命周期已经接通。应用菜单仍是整个应用一份。`window-all-closed` 仍调用 `app.quit()`。
 
-还没有的部分：同一个对象到达门的路径；换代、退役、关闭、renderer gone 对这扇门的通知；进门前丢掉旧代和旧窗口；floor 的唯一条件提交入口；关闭之后怎样保证不再碰 Menu；窗口若在同一进程重开时，已销毁的门是否恢复。
+还没有的部分：同一个对象到达门的路径；换代、退役、关闭、renderer gone 对这扇门的通知；进门前丢掉旧代和旧窗口；已经停在 await 上的旧 click，在派发前核对自己的记号；floor 的唯一条件提交入口；关闭之后怎样保证不再碰 Menu；窗口若在同一进程重开时，已销毁的门是否恢复。
 
 ## 已有与未来候选
 
@@ -48,6 +48,7 @@ seam 的分批顺序仍是 S2c-prep → S2c-on → E2 → S3，每一笔另批�
 | `expose` 与 handler | false，无 handler | 本桥接不加。S2c 另批 |
 | floor 写入 | 只有 `openNext` 归零 | 增加一个条件入口。生产 handler 仍不调用 |
 | `composition-root.ts` | 零 diff 约束仍在 | 候选甲要改它。待决定，本笔不改 |
+| 已进门 click 的派发 | `dispatchAllowed` 不比较起始记号 | 日后另批在调用 `dispatch` 前比较。本笔不改门。零 diff 覆盖不了这条 |
 
 ## 推荐方案与候选代价
 
@@ -71,9 +72,9 @@ seam 的分批顺序仍是 S2c-prep → S2c-on → E2 → S3，每一笔另批�
 2. 下一笔代码是否包含 epoch 上的 `commitFloor` 入口。推荐包含：入口和测试一起落地，生产调用次数保持 0，避免 S2c 以后直接改 Map。若要留到 S2c，本桥接就不提供写入函数，并在 S2c 计划里再次写明唯一入口。两种都尚未批准。
 3. 同一进程里窗口关闭后再开时，已经 `setDestroyed(true)` 的那扇门是否允许绑回。当前 `window-all-closed` 调用 `app.quit()`，进程内重开不是现行路径。未决定之前，关闭不自动复活门，避免关闭之后又碰 Menu。
 4. 实施批准必须点名 `view-menu-wiring.test.ts`。接通后第一次 `oi-app:` commit 会调用 `noteNone`，现有「生产 `noteNone` 为 0」不再描述接通后的行为。未点名就停，不悄悄改这条断言。
-5. 若审查认为过期代次必须由门自己拒绝，而不是由桥接在调用 `noteNone` 之前丢掉，那就要改 `view-menu-gate.ts`。这是范围扩大。未另批就不改门。
+5. 生产接通若要保证「已进门的旧 click 不派发」，必须另批修改 `view-menu-gate.ts` 与 `view-menu-gate.test.ts`：在调用 `ports.dispatch` 之前同步比较 `currentMark` 与 `markAtStart`。公开端口不加参数，门不 import epoch。本文件不授权这次修改。未另批时，这两个文件的计划 diff 是 0，L3 里这条派发验收不能写成可实施。待批本身不是计划失败。拒绝这次修改，就停在不能兑现该验收的状态，不用只读当前槽的外部包装冒充已经拦住。
 
-没有可执行验收的路径不写成已批准。生产同一实例的验收依赖第 1 项。窗口重开的验收依赖第 3 项。
+没有可执行验收的路径不写成已批准。生产同一实例的验收依赖第 1 项。窗口重开的验收依赖第 3 项。旧 click 不派发的验收依赖第 5 项。
 
 ## 所有权与时序
 
@@ -91,16 +92,37 @@ seam 的分批顺序仍是 S2c-prep → S2c-on → E2 → S3，每一笔另批�
 4. 桥接立刻再 `read` 同一个 id。与快照不一致就返回。这次返回不调用 `noteNone`，不写 floor，不派发。
 5. `closed`：先 `setDestroyed(true)`，不调用 `noteNone`。删槽已经在第 2 步完成。之后这扇门的替换、生命周期 none 和 click 都不再碰 Menu。
 6. 新的 `open`（含第一次成功的 `oi-app:` commit，epoch 变为 1，floor 由换代归零）以及退役（离开 `oi-app:`、主 frame provisional failure、renderer gone）：调用 `noteNone`。记号由这份快照的窗口 id、阶段和 epoch 组成，不从 payload 读取。
-7. 门按已合语义处理 busy、至多一次额外替换、最新 pending 和 `unknown`。桥接不再包一层成功标志。
+7. 门按已合语义处理 busy、至多一次额外替换、最新 pending 和 `unknown`。这收的是镜像安装，不是 click 的派发身份。桥接不再包一层成功标志。
 8. floor 不在第 1–7 步写入。
 
 第一次 commit 不丢，靠的是：订阅发生在 `loadURL` 之前，而 attach 已经在 `loadURL` 之前。订阅加在 epoch 对象上，窗口尚未创建时也可以先订上；第一次 `store` 发生时监听已经在。不要把订阅放到 `loadURL` 之后。
 
-旧代和旧窗口：桥接在进门前丢掉。不能依赖门来挽回，因为 `noteNone` 会覆盖 `currentMark`。已经进门的那一次仍由门的记号和 pending 收口；更晚的旧快照不再发起第二次调用。
+还没进门的旧快照：桥接在调用前丢掉。`noteNone` 会覆盖 `currentMark`，所以过期快照不能进入这次调用。这不覆盖已经停在 await 上的 click。
 
-`commitFloor` 若被放进下一笔，是 epoch 上的唯一写入函数。调用前用当时的槽重新核对：窗口 id、阶段 `open`、epoch 相等、generation 是 1 到 `Number.MAX_SAFE_INTEGER` 的整数且严格大于地板。任一失败在写入前返回，槽不变。它不接收「请把地板设成这个数」而不核对。handler 将来只能调用这个函数，不能拿到 Map。生产上的调用者仍不存在；S2c 另批之后，才在门返回且最终结果仍是同一份快照时调用一次。结果不是那份快照，就不调用。
+## 操作身份
 
-失败与恢复沿用已合的门：替换或后置核对抛错，记失败而不是 `known`；busy 时新的生命周期 none 留下最新 pending；额外替换至多一次；那一次期间 pending 再变就停在 `unknown`。桥接不把 Promise 拒绝改成成功，也不吞掉后自己标成已同步。真实平台上的 Menu 失败和 Node 假端口的失败分账。
+下面是对已合端口的静态推导。没有运行探针。生产 `noteNone` 仍是 0，所以这不是 PR #232 的线上故障，也不撤销 C 的启动 none 验收。
+
+1. 门已是 `committed === "none"`、`known`、记号 A、空闲。
+2. 点击原文。`click` 记下 `shapeAtStart === "none"` 与 `markAtStart === A`，随后停在 `postCheck` 的 Promise 上。
+3. 文档换成 B。桥接再读槽，B 仍有效，于是 `noteNone(B)`。忙着的门只改 `currentMark` 和 pending，不另起替换。这一步通过进门前的再读。
+4. A 的 `postCheck` 以 true 结算。`attemptCurrent` 只看尝试序号和未销毁，这次结果仍是 `ok`。`clickCandidate` 看见记号已变，click 自己的形状不能成为镜像。
+5. `settle` 消费匹配的 pending，用掉仅有的一次额外替换，最终仍是 `none` 且 `known`。这份成功属于最新记号 B。不能为了拦住旧 click 丢掉 pending，也不能再加一次替换。
+6. `dispatchAllowed` 看到形状仍是 `none`、安装 `known`、pending 已空、原文事件仍在。它不比较 `markAtStart`。于是派发 A 开始的 click。
+
+形状真正改变时，`committed !== shapeAtStart` 已经不派发。前后都是 `none` 时，这条比较不触发。`dispatch(event)` 没有起始记号。派发当时再读槽，读到的已经是 B 的有效 none，分不出这是 B 的操作还是 A 留下的 click。因此门的零 diff 不能实现「旧 click 不派发」。
+
+日后另批、本文件不授权的门内核对：
+
+- 桥接用窗口 id、阶段和 epoch 组成记号。不同 epoch 不共用同一个字符串。门不 import epoch，不建第二张表。
+- `markAtStart` 是这次 click 的身份。`currentMark` 是最新生命周期身份。两份都在门的闭包里。
+- 每次 await 之后，只核对该副作用自己的身份。click 的 `replaceShape` 返回后，现有 `clickCandidate` 继续决定 click 的形状能不能写入镜像。`settle` 的额外替换属于最新 pending；await 之后仍用 `pendingWrites` 未变来决定这份 `known`。调用 `ports.dispatch` 之前，同步要求 `currentMark === markAtStart`，中间不再 await。不等就返回 0，不调用 `dispatch`，不清除 pending，不再替换。公开端口不加参数。
+- `ports.dispatch` 已经进入之后，后来的换代不撤回那一次调用。返回 1 只表示端口被进入。它不表示新文档接受了旧 click，也不写 floor。
+- floor 仍由 `commitFloor` 在写入前再读槽。调用者还要看到门的当前记号等于那份快照的记号。`known` 加上形状 `none` 不是这份凭证。桥接和门都不改 Map。生产调用次数保持 0。
+
+`commitFloor` 若被放进下一笔，是 epoch 上的唯一写入函数。调用前用当时的槽重新核对：窗口 id、阶段 `open`、epoch 相等、generation 是 1 到 `Number.MAX_SAFE_INTEGER` 的整数且严格大于地板，并且门的当前记号仍是这份快照的记号。任一失败在写入前返回，槽不变。它不接收「请把地板设成这个数」而不核对。handler 将来只能调用这个函数，不能拿到 Map。生产上的调用者仍不存在；S2c 另批之后，才在门返回且上述核对仍成立时调用一次。
+
+失败与恢复沿用已合的门。失败的那次尝试不把自己写成成功。没有一份仍然有效的修复时，安装是 `unknown`。最新 pending none 按已合 B4、B5 修复成功时，最终可以是 `known`，这份 `known` 只属于那个最新记号。busy 时新的生命周期 none 留下最新 pending。额外替换至多一次。那一次期间 pending 再变就停在 `unknown`。桥接不把 Promise 拒绝改成成功。真实平台上的 Menu 失败和 Node 假端口的失败分账。
 
 `startLibrary` 继续同步返回原来的命令表。`postCheck` 仍在 `replace` 的 await 之后。安装完成前的 click 仍返回 0，不排队，不重放。文件、历史和缩放仍走原来的 `void dispatchMenu`。`expose` 保持 false。本桥接不调用 `submit("original" | "contrast" | "translation")`。
 
@@ -118,14 +140,15 @@ seam 的分批顺序仍是 S2c-prep → S2c-on → E2 → S3，每一笔另批�
 | `composition-root.ts` | 27 | 只传递收到的实例。待决定 1 | 8 | 未批准时本文件保持 0 |
 | `library-wiring.ts` | 375 | 可选接收同一实例，在现有闭包里绑定。同步返回不变 | 40 | 调用点若必须改签名，测试 diff 另计，不记 0 |
 | `window.ts` | 27 | 保持 attach 然后 `loadURL` | 0 | 已完成的顺序不估成新工作 |
-| `view-menu-gate.ts` | 427 | 候选实施不改 | 0 | 待决定 5 若成立，另估，不记进本列 |
-| `view-menu-lifecycle.test.ts` | 无 | 同一实例、首 commit、旧代、关闭、renderer gone、floor 入口的行为 | 220 | 重开用例随第 3 项，不记 0 |
+| `view-menu-gate.ts` | 427 | 只在 `dispatch` 前比较两个记号。不加端口参数。待决定 5 | 30 | 决定 5 未批时实际是 0。若还要在别的 await 后拒绝 click 自己的镜像，增量不记 0 |
+| `view-menu-gate.test.ts` | 526 | 同为 none 的跨代 click：B 可 `known`，旧 click 派发 0 且返回 0。保留 B4、B5 | 70 | 夹具长度不记 0。决定 5 未批时实际是 0 |
+| `view-menu-lifecycle.test.ts` | 无 | 同一实例、首 commit、未进门的旧代、关闭、renderer gone、floor 入口 | 220 | 重开用例随第 3 项，不记 0。它不代替门内那条异步派发用例 |
 | `view-menu-epoch.test.ts` | 206 | 补通知与 `commitFloor` 的拒绝。保留原用例 | 90 | 不记 0 |
-| `view-menu-wiring.test.ts` | 468 | 生产路径的同一实例。会改掉现在的 `noteNone === 0`。待决定 4 | 50 | 未点名则不改，实际是 0 |
+| `view-menu-wiring.test.ts` | 468 | 生产路径的同一实例。会改掉接通场景的 `noteNone === 0`。待决定 4 | 50 | 未点名则不改，实际是 0。未传 epoch 的旧调用仍可保持 0 |
 
-候选甲且五项决定都按推荐落地时，上表点估计合计 630。这是统计，不是门禁。未知项在合计之外，不写成 0，也不先加成「已经超过所以停」。生成物、CI、锁文件和规格的计划 diff 是 0；若实施时出现，停下来报告。
+候选甲、决定 1 至 4 按推荐、并且决定 5 日后批准门内核对时，上表点估计合计 730。这是统计，不是门禁。未知项在合计之外，不写成 0，也不先加成「已经超过所以停」。决定 5 未作时，门和它的测试不计入可实施 diff，合计不再把 100 算进去，同时 L10 不能写成可实施。生成物、CI、锁文件和规格的计划 diff 是 0；若实施时出现，停下来报告。
 
-零 diff 的候选清单，在对应决定作出之前：`view-menu-gate.ts`、`view-menu-mirror.ts`、`library-menu.ts`、`window.ts`、renderer、`shell.tsx`、`use-view-mode.ts`、handler、`expose`、三份生成物、`packages/contracts/**`、CI、依赖、环境、DESIGN 与设计原则、已合 seam 与 C 计划。`composition-root.ts` 在决定 1 之前也是零 diff。
+零 diff 的候选清单，在对应决定作出之前：`view-menu-mirror.ts`、`library-menu.ts`、`window.ts`、renderer、`shell.tsx`、`use-view-mode.ts`、handler、`expose`、三份生成物、`packages/contracts/**`、CI、依赖、环境、DESIGN 与设计原则、已合 seam 与 C 计划。`composition-root.ts` 在决定 1 之前是零 diff。`view-menu-gate.ts` 与 `view-menu-gate.test.ts` 在决定 5 之前是零 diff；推荐路径不把这个零 diff 写成已经安全。
 
 ## 未来验收
 
@@ -135,13 +158,14 @@ seam 的分批顺序仍是 S2c-prep → S2c-on → E2 → S3，每一笔另批�
 | --- | --- | --- |
 | L1 同一实例 | 窗口 attach 产生的槽，能被菜单安装时绑上的那个对象 `read` 到。生产路径在决定 1 之后才成立 | 两个分别 `createViewMenuEpoch()` 的对象 |
 | L2 首 commit 不丢 | 订阅早于 `loadURL`。第一次成功的 `oi-app:` 导航得到 epoch 1，并发生一次生命周期 none。attach 仍在 `loadURL` 之前 | 只证明 attach 顺序，却没有这次 none |
-| L3 旧代旧窗口 | 迟到的旧快照不调用替换，不写 floor，不派发 | 进门之后再靠覆盖记号「修回来」 |
+| L3 未进门的旧代 | 迟到的快照不调用 `noteNone`，不写 floor，不派发。这只覆盖还没进门的通知 | 用这一条代替已经停在 await 上的 click |
 | L4 生命周期 none | pending 只来自这次仍有效的生命周期快照。`closed` 之后替换次数不再增加 | 用全未勾的 radio 表示 none |
-| L5 floor | 唯一入口在核对通过且调用者看到的最终结果仍是同一快照时写一次。失败在写入前返回。生产 handler 调用次数是 0 | 入口单测写成生产提交已经写了地板 |
-| L6 门的收口 | busy、至多一次额外替换、最新 pending、`unknown` 仍由已合的门完成。桥接不增加第三轮替换 | 重跑整份 B 来代替桥接用例 |
-| L7 真实拒绝 | 端口拒绝或后置核对失败后，安装不是 `known`，也不报告同步成功 | `catch` 之后自己标成功 |
+| L5 floor | 唯一入口在槽核对通过、且门的当前记号仍等于该快照时写一次。失败在写入前返回。生产 handler 调用次数是 0 | 入口单测写成生产提交已经写了地板。`known` 加形状 `none` 单独证明某个 generation |
+| L6 门的收口 | busy、至多一次额外替换、最新 pending、`unknown` 仍由已合的门完成。桥接不增加第三轮替换。镜像收口不等于 click 的派发身份 | 重跑整份 B 来代替桥接用例 |
+| L7 失败与修复 | 失败尝试不写成成功。没有仍然有效的修复时，安装是 `unknown`。最新 pending none 修复成功时可以 `known`，且只属于那个最新记号 | 为了让一句「失败后不是 known」去改掉已合的 B4、B5 |
 | L8 原入口 | `startLibrary` 同步返回命令表；`postCheck` 在 await 之后；早到 click 为 0 且不重放；其他栏目不进门 | 为了绑定 epoch 改掉这些观察 |
 | L9 分账 | 纯桩与 CI 只证明自己跑到的层。真实菜单、真机、Alt、F10、访问键、读屏仍未验 | 源码里有 `setApplicationMenu` 就写成画面已验 |
+| L10 同为 none 的旧 click | 决定 5 另批之后：A 的 click 停在 `postCheck`，B 的 none 到达并被合法消费。最终 B 是 `none` 且 `known`。旧 click 的 `dispatch` 次数是 0，返回 0，floor 不写。最新 pending 被保留或在这一次额外替换里消费。`ports.dispatch` 已经进入之后才换代的那一次调用不撤回 | 决定 5 未批时把这条写成已经可测；或用形状不同的那条旧路径代替同为 none |
 
 none 的可观察结果仍是三个普通项、没有勾。活动三模式仍是三个 radio 且恰一勾。本桥接不提交活动模式。换代和退役请求 none。`closed` 删槽并且不再碰 Menu。旧提交不写入新镜像。
 
@@ -154,7 +178,8 @@ C 已经证明的启动 none、早到 click 和负向 fail-closed 可以沿用�
 - 决定 1 尚未作出，却要改 `composition-root.ts`，或用单例、第二张表绕过它。
 - 决定 3 尚未作出，却要在关闭之后清除 `destroyed`。
 - 决定 4 尚未点名，却要改 `view-menu-wiring.test.ts` 的 `noteNone` 预期，或接通后测试仍要求生产次数为 0 而导致无法验收。
-- 决定 5 尚未作出，却要改门的公开入口或内部 Map。
+- 决定 5 尚未作出，却要改 `view-menu-gate.ts`，或把 L10 写成零 diff 已经可实施。
+- 为了拦住旧 click 而丢掉最新 pending，或让一次公开操作超过一次额外替换。
 - 需要 handler、`expose: true`、codegen、renderer 上报、E2 或 S3 才能把本桥接说成完成。
 - 失败路径只能靠阅读源码证明，没有菜单次数、floor 或派发次数可断言。
 - 工具或依赖缺失。不安装、不改环境、不下载 Electron。
@@ -177,8 +202,9 @@ Loom 2026-11-23 01:39 的最小只读原则核查，随本任务作为设计输�
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
 | 1 | 核对 main 的 SHA、parent、tree，并重读 epoch、窗口、装配和门 | 与文首一致。attach 已在 `loadURL` 之前。生产门与 epoch 不是同一对象 | 本文件 |
-| 2 | 只新增本计划 | 本提交 | 本文件 |
-| 3 | 只追加尚未入仓的四笔批准、PR #232 合入同步、本笔授权，并重算页脚 | 下一提交 | `docs/approvals.md` |
+| 2 | 只新增本计划 | 本 PR 第一笔提交 | 本文件 |
+| 3 | 只追加尚未入仓的四笔批准、PR #232 合入同步、本笔授权，并重算页脚 | 本 PR 第二笔提交已完成。页脚 267 / 1 / 8 / 35 | `docs/approvals.md` |
+| 4 | 按已合端口修正旧 click 的派发身份。不新增批准行，不改门 | 本 PR 这一笔只改本文件 | 本文件「操作身份」 |
 
 ## 决策记录
 
@@ -186,7 +212,8 @@ Loom 2026-11-23 01:39 的最小只读原则核查，随本任务作为设计输�
 | --- | --- | --- | --- |
 | 本轮只写计划和台账 | 原话只批准新增计划和补记，先审计划 | 2026-11-23 01:36 | Wisdom，[7082976061](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7082976061) |
 | 推荐候选甲，零 diff 仍待决定 | 同一个实例要穿过现有装配边界。seam 的零 diff 未被本句放开 | 2026-11-23 | 本计划。待 Wisdom 决定 1 |
-| 过期快照在进门前丢掉 | `noteNone` 会改写当前记号。门不增加识代接口 | 2026-11-23 | 本计划。待决定 5 可以推翻 |
+| 未进门的过期快照在调用前丢掉 | `noteNone` 会改写当前记号 | 2026-11-23 | 本计划 |
+| 已进门的旧 click 由门在 `dispatch` 前比较记号 | 现有 `dispatchAllowed` 在同为 `none` 时仍会派发。端口不携带起始记号，外部再读当前槽分不出 A 与 B。这次比较是决定 5，不是本文件的实施授权 | 2026-11-23 | 本计划。待 Wisdom 决定 5 |
 | `commitFloor` 默认放在下一笔但生产不调用 | 避免以后 handler 改 Map。S2c 仍另批 | 2026-11-23 | 本计划。待决定 2 |
 | 关闭不自动复活门 | 现行路径是 `app.quit()`。未决定的重开不碰 Menu | 2026-11-23 | 本计划。待决定 3 |
 | 不改 seam 分批顺序 | seam 没有要求本桥接先于 S2c-prep | 2026-11-23 | 本计划。Forge 排序，非业主决定 |
@@ -198,6 +225,8 @@ Loom 2026-11-23 01:39 的最小只读原则核查，随本任务作为设计输�
 - 把已经完成的 attach 顺序再实现一遍，或把 C 的启动 none 写成完整生命周期。
 - 接通后仍保留「生产 `noteNone` 永远为 0」，使第一条真实导航无法验收。
 - 让 payload 自报代次，或让 handler 改槽 Map。
+- 把进门前的一次 `read` 加上现有 `settle` 写成旧 click 已经不会派发。
+- 为了拦住旧 click 丢掉最新 pending，或增加第三次替换。
 - 用源码字符串、B 的 fake 或 A 的 native 冒充生产接通和真实菜单。
 - 把 PR #232 的 head CI 与合入后的 main push CI 记成同一次，或把历史失败改写成首次全绿。
 - 为了行数删用例、压格式，或关掉 PLR0915 与圈复杂度。
@@ -211,8 +240,8 @@ Loom 2026-11-23 01:39 的最小只读原则核查，随本任务作为设计输�
 
 先读本文件。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
 
-Forge 审过这份计划，并且 Wisdom 另写实施范围、同时回答上面的待决定项之后，才从当时的官方 main 开新的 `feature/` 分支。本文件的存在不是实施批准。未点名的文件不改。决定 1 未放开时不改 `composition-root.ts`。不改门，除非决定 5 另批。不写 handler，不改 `expose`，不跑 codegen，不做 E2 或 S3，不激活产品三视图。
+Forge 审过这份计划，并且 Wisdom 另写实施范围、同时回答上面的待决定项之后，才从当时的官方 main 开新的 `feature/` 分支。本文件的存在不是实施批准。未点名的文件不改。决定 1 未放开时不改 `composition-root.ts`。决定 5 未另批时不改 `view-menu-gate.ts`，也不把 L10 写成已经可实施。不写 handler，不改 `expose`，不跑 codegen，不做 E2 或 S3，不激活产品三视图。
 
-保持 attach 先于 `loadURL`。保持 `startLibrary` 同步返回、异步 `postCheck`、早到 click 为 0 且不重放。none 仍是三个普通项且无勾。关闭删槽且不再碰 Menu。floor 只从唯一入口、在最终仍有效的同一快照上写。旧代旧窗口不提交镜像、不写 floor、不派发。
+保持 attach 先于 `loadURL`。保持 `startLibrary` 同步返回、异步 `postCheck`、早到 click 为 0 且不重放。none 仍是三个普通项且无勾。关闭删槽且不再碰 Menu。floor 只从唯一入口、在最终仍有效的同一快照上写，并核对门的当前记号。未进门的旧快照不调用 `noteNone`。已进门的旧 click 只有在决定 5 的比较落地后才承诺不派发。
 
 纯行数只统计。不写 `G12:` 换通过。不压格式，不删测试。PLR0915、圈复杂度、C901、依赖和安全门禁不关闭。缺工具就停，不补环境。不操作真机，不标 Ready，不合入，不发版。
