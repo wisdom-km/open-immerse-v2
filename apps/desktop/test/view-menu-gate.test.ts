@@ -26,6 +26,11 @@ type ReplaceScript = {
     descriptions: readonly ViewSlotDescription[],
     index: number,
   ) => boolean;
+  onPostCheck?: (
+    descriptions: readonly ViewSlotDescription[],
+    index: number,
+  ) => void | Promise<void>;
+  onDispatch?: (event: string) => void | Promise<void>;
 };
 
 type Opened = {
@@ -46,16 +51,19 @@ function openGate(script: ReplaceScript = {}): Opened {
       const mode = script.fail?.(copy, index);
       if (mode === "throw") throw new Error("replace failed");
       if (mode === "reject") {
-        await Promise.reject(new Error("executeJavaScript rejected"));
+        await Promise.reject(new Error("replace rejected"));
       }
     },
-    postCheck: () => {
+    postCheck: async () => {
       const last = calls.at(-1);
+      const index = calls.length;
+      if (last && script.onPostCheck) await script.onPostCheck(last, index);
       if (!last || !script.postCheck) return true;
-      return script.postCheck(last, calls.length);
+      return script.postCheck(last, index);
     },
-    dispatch: (event) => {
+    dispatch: async (event) => {
       dispatches.push(event);
+      if (script.onDispatch) await script.onDispatch(event);
     },
   });
   return { gate, calls, dispatches };
@@ -215,7 +223,7 @@ it("B9 does not replace when the window is already destroyed", async () => {
   opened.gate.setDestroyed(true);
   await opened.gate.submit("contrast", "s");
   await opened.gate.noteNone("s");
-  expect(await opened.gate.click()).toBe(0);
+  expect(await opened.gate.click(checkedEvent("original"))).toBe(0);
   expect(opened.calls.length).toBe(calls);
   expect(opened.dispatches).toEqual([]);
   expect(opened.gate.committed).toBe(committed);
@@ -228,7 +236,7 @@ it("B10 dispatches nothing while the gate is busy and does not cover pending", a
     onReplace: async (descriptions) => {
       if (!same(descriptions, "contrast")) return;
       await opened.gate.noteNone("s");
-      clickResult = await opened.gate.click();
+      clickResult = await opened.gate.click(checkedEvent("translation"));
       expect(opened.gate.pendingMark).toBe("s");
     },
   });
@@ -242,7 +250,7 @@ it("B10 dispatches the checked event once when an idle rebuild succeeds", async 
   const opened = openGate();
   await acceptShape(opened, "contrast", "s");
   const before = opened.calls.length;
-  expect(await opened.gate.click()).toBe(1);
+  expect(await opened.gate.click(checkedEvent("contrast"))).toBe(1);
   expect(opened.calls.length - before).toBe(1);
   expect(opened.calls.at(-1)).toEqual(viewSlotDescriptions("contrast"));
   expect(opened.dispatches).toEqual([checkedEvent("contrast")]);
@@ -259,7 +267,7 @@ it("B10 dispatches nothing when the idle rebuild throws", async () => {
   await acceptShape(opened, "contrast", "s");
   armed = true;
   const before = opened.calls.length;
-  expect(await opened.gate.click()).toBe(0);
+  expect(await opened.gate.click(checkedEvent("contrast"))).toBe(0);
   expect(opened.calls.length - before).toBe(1);
   expect(opened.dispatches).toEqual([]);
   expect(opened.gate.committed).toBe("contrast");
@@ -273,7 +281,7 @@ it("B10 dispatches nothing when the idle rebuild post-check fails", async () => 
   });
   await acceptShape(opened, "contrast", "s");
   armed = true;
-  expect(await opened.gate.click()).toBe(0);
+  expect(await opened.gate.click(checkedEvent("contrast"))).toBe(0);
   expect(opened.dispatches).toEqual([]);
   expect(opened.gate.committed).toBe("contrast");
   expect(opened.gate.install).toBe("unknown");
@@ -291,7 +299,7 @@ it("B10 dispatches nothing when pending changes the mirror during rebuild", asyn
   await acceptShape(opened, "contrast", "s");
   armed = true;
   const before = opened.calls.length;
-  expect(await opened.gate.click()).toBe(0);
+  expect(await opened.gate.click(checkedEvent("translation"))).toBe(0);
   expect(opened.calls.length - before).toBe(2);
   expect(opened.calls.at(-1)).toEqual(viewSlotDescriptions("none"));
   expect(opened.dispatches).toEqual([]);
@@ -307,10 +315,195 @@ it("B10 catches a rejected replace promise from an idle rebuild", async () => {
   });
   await acceptShape(opened, "contrast", "s");
   armed = true;
-  await expect(opened.gate.click()).resolves.toBe(0);
+  await expect(opened.gate.click(checkedEvent("contrast"))).resolves.toBe(0);
   expect(opened.dispatches).toEqual([]);
   expect(opened.gate.committed).toBe("contrast");
   expect(opened.gate.install).toBe("unknown");
+});
+
+it("dispatches the requested event when it differs from the committed mirror", async () => {
+  const opened = openGate();
+  await acceptShape(opened, "original", "s");
+  const requested = checkedEvent("translation");
+  const before = opened.calls.length;
+  expect(await opened.gate.click(requested)).toBe(1);
+  expect(opened.calls.length - before).toBe(1);
+  expect(opened.calls.at(-1)).toEqual(viewSlotDescriptions("original"));
+  expect(opened.dispatches).toEqual([requested]);
+  expect(requested).not.toBe(checkedEvent("original"));
+  expect(opened.gate.committed).toBe("original");
+  expect(opened.gate.install).toBe("known");
+});
+
+it("does not dispatch the requested event when the idle rebuild throws", async () => {
+  let armed = false;
+  const opened = openGate({
+    fail: (descriptions) =>
+      armed && same(descriptions, "original") ? "throw" : undefined,
+  });
+  await acceptShape(opened, "original", "s");
+  armed = true;
+  expect(await opened.gate.click(checkedEvent("translation"))).toBe(0);
+  expect(opened.dispatches).toEqual([]);
+  expect(opened.gate.committed).toBe("original");
+  expect(opened.gate.install).toBe("unknown");
+});
+
+it("does not dispatch an event that is absent from the committed mirror", async () => {
+  const opened = openGate();
+  await acceptShape(opened, "original", "s");
+  const before = opened.calls.length;
+  expect(await opened.gate.click("not-a-view-event")).toBe(0);
+  expect(opened.calls.length).toBe(before);
+  expect(opened.dispatches).toEqual([]);
+  expect(opened.gate.committed).toBe("original");
+  expect(opened.gate.install).toBe("known");
+});
+
+it("installs none noted while a resolved dispatch is still waiting", async () => {
+  const opened = openGate({
+    onDispatch: async (event) => {
+      expect(event).toBe(checkedEvent("translation"));
+      await opened.gate.noteNone("next");
+    },
+  });
+  await acceptShape(opened, "original", "s");
+  const before = opened.calls.length;
+  expect(await opened.gate.click(checkedEvent("translation"))).toBe(1);
+  expect(opened.calls.length - before).toBe(2);
+  expect(opened.calls.at(-1)).toEqual(viewSlotDescriptions("none"));
+  expect(opened.dispatches).toEqual([checkedEvent("translation")]);
+  expect(opened.gate.committed).toBe("none");
+  expect(opened.gate.install).toBe("known");
+  expect(opened.gate.pendingMark).toBeNull();
+});
+
+it("installs none noted while a rejected dispatch is still waiting", async () => {
+  const opened = openGate({
+    onDispatch: async () => {
+      await opened.gate.noteNone("next");
+      await Promise.reject(new Error("executeJavaScript rejected"));
+    },
+  });
+  await acceptShape(opened, "original", "s");
+  const before = opened.calls.length;
+  await expect(opened.gate.click(checkedEvent("translation"))).resolves.toBe(0);
+  expect(opened.calls.length - before).toBe(2);
+  expect(opened.calls.at(-1)).toEqual(viewSlotDescriptions("none"));
+  expect(opened.dispatches).toEqual([checkedEvent("translation")]);
+  expect(opened.gate.committed).toBe("none");
+  expect(opened.gate.install).toBe("known");
+  expect(opened.gate.pendingMark).toBeNull();
+  await acceptShape(opened, "contrast", "later");
+});
+
+it("keeps the newest pending unknown when none changes again during dispatch closeout", async () => {
+  let sawNone = false;
+  const opened = openGate({
+    onReplace: async (descriptions) => {
+      if (same(descriptions, "none") && !sawNone) {
+        sawNone = true;
+        await opened.gate.noteNone("s2");
+      }
+    },
+    onDispatch: async () => {
+      await opened.gate.noteNone("s");
+    },
+  });
+  await acceptShape(opened, "original", "s");
+  const before = opened.calls.length;
+  expect(await opened.gate.click(checkedEvent("translation"))).toBe(0);
+  expect(opened.calls.length - before).toBe(2);
+  expect(opened.dispatches).toEqual([checkedEvent("translation")]);
+  expect(opened.gate.committed).toBe("original");
+  expect(opened.gate.install).toBe("unknown");
+  expect(opened.gate.pendingMark).toBe("s2");
+  const held = opened.calls.length;
+  await opened.gate.noteNone("s2");
+  expect(opened.calls.length - held).toBe(1);
+  expect(opened.calls.at(-1)).toEqual(viewSlotDescriptions("none"));
+  expect(opened.gate.committed).toBe("none");
+  expect(opened.gate.install).toBe("known");
+  expect(opened.gate.pendingMark).toBeNull();
+});
+
+it("does not dispatch when the window is destroyed during the rebuild post-check", async () => {
+  let arm = false;
+  const opened = openGate({
+    onPostCheck: (descriptions) => {
+      if (arm && same(descriptions, "original")) opened.gate.setDestroyed(true);
+    },
+  });
+  await acceptShape(opened, "original", "s");
+  arm = true;
+  const before = opened.calls.length;
+  expect(await opened.gate.click(checkedEvent("translation"))).toBe(0);
+  expect(opened.calls.length - before).toBe(1);
+  expect(opened.dispatches).toEqual([]);
+  expect(opened.gate.committed).toBe("original");
+  expect(opened.gate.install).toBe("known");
+  opened.gate.setDestroyed(false);
+  await acceptShape(opened, "contrast", "later");
+});
+
+it("does not dispatch when the window is destroyed during the extra none post-check", async () => {
+  let arm = false;
+  const opened = openGate({
+    onReplace: async (descriptions) => {
+      if (arm && same(descriptions, "contrast"))
+        await opened.gate.noteNone("s");
+    },
+    onPostCheck: (descriptions) => {
+      if (arm && same(descriptions, "none")) opened.gate.setDestroyed(true);
+    },
+  });
+  await acceptShape(opened, "contrast", "s");
+  arm = true;
+  const before = opened.calls.length;
+  expect(await opened.gate.click(checkedEvent("translation"))).toBe(0);
+  expect(opened.calls.length - before).toBe(2);
+  expect(opened.dispatches).toEqual([]);
+  expect(opened.gate.committed).toBe("contrast");
+  expect(opened.gate.install).toBe("known");
+  opened.gate.setDestroyed(false);
+  await acceptShape(opened, "original", "later");
+});
+
+it("B10 catches a rejected dispatch promise and accepts the next snapshot", async () => {
+  const opened = openGate({
+    onDispatch: async () => {
+      await Promise.reject(new Error("executeJavaScript rejected"));
+    },
+  });
+  await acceptShape(opened, "original", "s");
+  await expect(opened.gate.click(checkedEvent("translation"))).resolves.toBe(0);
+  expect(opened.dispatches).toEqual([checkedEvent("translation")]);
+  expect(opened.gate.committed).toBe("original");
+  expect(opened.gate.install).toBe("known");
+  await acceptShape(opened, "contrast", "later");
+});
+
+it("keeps the observation fields readonly from the outside", () => {
+  const opened = openGate();
+  expect(() => {
+    (opened.gate as { committed: ViewShape | null }).committed = "none";
+  }).toThrow(TypeError);
+  expect(opened.gate.committed).toBeNull();
+  expect(opened.gate.install).toBe("unknown");
+});
+
+it("B10 catches a synchronous dispatch throw and accepts the next snapshot", async () => {
+  const opened = openGate({
+    onDispatch: () => {
+      throw new Error("dispatch threw");
+    },
+  });
+  await acceptShape(opened, "contrast", "s");
+  await expect(opened.gate.click(checkedEvent("original"))).resolves.toBe(0);
+  expect(opened.dispatches).toEqual([checkedEvent("original")]);
+  expect(opened.gate.committed).toBe("contrast");
+  expect(opened.gate.install).toBe("known");
+  await acceptShape(opened, "translation", "later");
 });
 
 async function leavePending(): Promise<Opened> {

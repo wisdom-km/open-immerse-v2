@@ -17,12 +17,12 @@ export type ViewMenuGatePorts = {
 };
 
 export type ViewMenuGate = {
-  committed: ViewShape | null;
-  install: InstallStatus;
-  pendingMark: StageMark | null;
+  readonly committed: ViewShape | null;
+  readonly install: InstallStatus;
+  readonly pendingMark: StageMark | null;
   submit(shape: ViewShape, mark: StageMark): Promise<void>;
   noteNone(mark: StageMark): Promise<void>;
-  click(): Promise<number>;
+  click(requestedEvent: string): Promise<number>;
   setDestroyed(destroyed: boolean): void;
 };
 
@@ -44,6 +44,19 @@ type GateState = {
   attempts: AttemptCounter;
   /** Bumps when pending is written. Not a lifecycle owner. */
   pendingWrites: AttemptCounter;
+  /** Readonly observation copy. Not a second lifecycle owner. */
+  published: Published;
+};
+
+type Published = {
+  committed: ViewShape | null;
+  install: InstallStatus;
+  pendingMark: StageMark | null;
+};
+
+/** One extra native replace is allowed for the whole public operation. */
+type RepairBudget = {
+  used: boolean;
 };
 
 export function createViewMenuGate(ports: ViewMenuGatePorts): ViewMenuGate {
@@ -56,25 +69,30 @@ export function createViewMenuGate(ports: ViewMenuGatePorts): ViewMenuGate {
     busyAttempt: 0,
     attempts: new AttemptCounter(),
     pendingWrites: new AttemptCounter(),
+    published: {
+      committed: null,
+      install: "unknown",
+      pendingMark: null,
+    },
   };
   const gate: ViewMenuGate = {
-    committed: null,
-    install: "unknown",
-    pendingMark: null,
+    get committed() {
+      return state.published.committed;
+    },
+    get install() {
+      return state.published.install;
+    },
+    get pendingMark() {
+      return state.published.pendingMark;
+    },
     submit: (shape, mark) => submit(state, gate, ports, shape, mark),
     noteNone: (mark) => noteNone(state, gate, ports, mark),
-    click: () => click(state, gate, ports),
+    click: (requestedEvent) => click(state, gate, ports, requestedEvent),
     setDestroyed: (destroyed) => {
       state.destroyed = destroyed;
     },
   };
-  return gate;
-}
-
-function publish(state: GateState, gate: ViewMenuGate): void {
-  gate.committed = state.committed;
-  gate.install = state.install;
-  gate.pendingMark = state.pending?.mark ?? null;
+  return sync(state, gate);
 }
 
 async function noteNone(
@@ -86,10 +104,11 @@ async function noteNone(
   if (state.destroyed) return;
   state.currentMark = mark;
   rememberPending(state, mark);
-  publish(state, gate);
+  sync(state, gate);
   if (state.busyAttempt !== 0) return;
+  const budget = repairBudget();
   await operate(state, gate, async (committedBeforeOperation) => {
-    await settle(state, gate, ports, null, committedBeforeOperation);
+    await settle(state, gate, ports, null, committedBeforeOperation, budget);
   });
 }
 
@@ -103,11 +122,19 @@ async function submit(
   if (state.destroyed || state.busyAttempt !== 0) return;
   if (state.pending?.mark === mark) state.pending = null;
   state.currentMark = mark;
-  publish(state, gate);
+  sync(state, gate);
+  const budget = repairBudget();
   await operate(state, gate, async (committedBeforeOperation) => {
     const outcome = await replaceShape(state, ports, shape);
     const candidate = snapshotCandidate(state, shape, mark, outcome);
-    await settle(state, gate, ports, candidate, committedBeforeOperation);
+    await settle(
+      state,
+      gate,
+      ports,
+      candidate,
+      committedBeforeOperation,
+      budget,
+    );
   });
 }
 
@@ -115,25 +142,65 @@ async function click(
   state: GateState,
   gate: ViewMenuGate,
   ports: ViewMenuGatePorts,
+  requestedEvent: string,
 ): Promise<number> {
   if (state.destroyed || state.busyAttempt !== 0) return 0;
+  const budget = repairBudget();
   if (matchingPending(state)) {
     await operate(state, gate, async (committedBeforeOperation) => {
-      await settle(state, gate, ports, null, committedBeforeOperation);
+      await settle(state, gate, ports, null, committedBeforeOperation, budget);
     });
     return 0;
   }
   const shapeAtStart = state.committed;
   const markAtStart = state.currentMark;
-  if (shapeAtStart === null) return 0;
+  if (shapeAtStart === null || !slotHasEvent(shapeAtStart, requestedEvent)) {
+    return 0;
+  }
   let dispatched = 0;
   await operate(state, gate, async (committedBeforeOperation) => {
-    const outcome = await replaceShape(state, ports, shapeAtStart);
-    const candidate = clickCandidate(state, shapeAtStart, markAtStart, outcome);
-    await settle(state, gate, ports, candidate, committedBeforeOperation);
-    dispatched = await dispatchIfFinal(state, ports, shapeAtStart, outcome);
+    dispatched = await rebuildAndDispatch(
+      state,
+      gate,
+      ports,
+      shapeAtStart,
+      markAtStart,
+      requestedEvent,
+      committedBeforeOperation,
+      budget,
+    );
   });
   return dispatched;
+}
+
+async function rebuildAndDispatch(
+  state: GateState,
+  gate: ViewMenuGate,
+  ports: ViewMenuGatePorts,
+  shapeAtStart: ViewShape,
+  markAtStart: StageMark | null,
+  requestedEvent: string,
+  committedBeforeOperation: ViewShape | null,
+  budget: RepairBudget,
+): Promise<number> {
+  const outcome = await replaceShape(state, ports, shapeAtStart);
+  const candidate = clickCandidate(state, shapeAtStart, markAtStart, outcome);
+  await settle(state, gate, ports, candidate, committedBeforeOperation, budget);
+  const dispatched = await dispatchRequested(
+    state,
+    ports,
+    shapeAtStart,
+    requestedEvent,
+    outcome,
+  );
+  return closePendingAfterDispatch(
+    state,
+    gate,
+    ports,
+    committedBeforeOperation,
+    budget,
+    dispatched,
+  );
 }
 
 function snapshotCandidate(
@@ -169,7 +236,7 @@ async function operate(
     await work(committedBeforeOperation);
   } finally {
     state.busyAttempt = 0;
-    publish(state, gate);
+    sync(state, gate);
   }
 }
 
@@ -179,24 +246,31 @@ async function settle(
   ports: ViewMenuGatePorts,
   candidate: ViewShape | null,
   committedBeforeOperation: ViewShape | null,
+  budget: RepairBudget,
 ): Promise<void> {
-  if (state.destroyed) return;
+  if (destroyedNow(state)) return;
   if (!matchingPending(state)) {
     commitCandidate(state, gate, candidate, committedBeforeOperation);
     return;
   }
+  if (budget.used) {
+    keepUnknown(state, gate, committedBeforeOperation);
+    return;
+  }
+  budget.used = true;
   const pendingWrite = state.pendingWrites.current();
   state.pending = null;
-  publish(state, gate);
+  sync(state, gate);
   const outcome = await replaceShape(state, ports, "none");
+  if (destroyedNow(state)) return;
   if (state.pendingWrites.current() !== pendingWrite || pendingNow(state)) {
     keepUnknown(state, gate, committedBeforeOperation);
     return;
   }
-  if (outcome === "ok" && !destroyedNow(state)) {
+  if (outcome === "ok") {
     state.committed = "none";
     state.install = "known";
-    publish(state, gate);
+    sync(state, gate);
     return;
   }
   keepUnknown(state, gate, committedBeforeOperation);
@@ -219,7 +293,7 @@ function commitCandidate(
     state.committed = committedBeforeOperation;
     state.install = "unknown";
   }
-  publish(state, gate);
+  sync(state, gate);
 }
 
 function keepUnknown(
@@ -229,7 +303,7 @@ function keepUnknown(
 ): void {
   state.committed = committedBeforeOperation;
   state.install = "unknown";
-  publish(state, gate);
+  sync(state, gate);
 }
 
 async function replaceShape(
@@ -244,34 +318,71 @@ async function replaceShape(
   } catch {
     return "failed";
   }
-  if (destroyedNow(state) || state.attempts.current() !== attempt) {
-    return "failed";
-  }
+  if (!attemptCurrent(state, attempt)) return "failed";
   try {
     const passed = await ports.postCheck();
+    if (!attemptCurrent(state, attempt)) return "failed";
     return passed ? "ok" : "failed";
   } catch {
     return "failed";
   }
 }
 
-async function dispatchIfFinal(
+async function dispatchRequested(
   state: GateState,
   ports: ViewMenuGatePorts,
   shapeAtStart: ViewShape,
+  requestedEvent: string,
   outcome: Outcome,
 ): Promise<number> {
-  if (outcome !== "ok") return 0;
-  if (state.committed !== shapeAtStart || state.install !== "known") return 0;
-  if (state.pending !== null) return 0;
-  const event = checkedEvent(shapeAtStart);
-  if (event === null) return 0;
+  if (!dispatchAllowed(state, shapeAtStart, requestedEvent, outcome)) return 0;
   try {
-    await ports.dispatch(event);
+    await ports.dispatch(requestedEvent);
   } catch {
     return 0;
   }
+  if (destroyedNow(state)) return 0;
   return 1;
+}
+
+async function closePendingAfterDispatch(
+  state: GateState,
+  gate: ViewMenuGate,
+  ports: ViewMenuGatePorts,
+  committedBeforeOperation: ViewShape | null,
+  budget: RepairBudget,
+  dispatched: number,
+): Promise<number> {
+  if (!matchingPending(state)) return dispatched;
+  if (destroyedNow(state)) return 0;
+  if (budget.used) {
+    keepUnknown(state, gate, committedBeforeOperation);
+    return 0;
+  }
+  await settle(state, gate, ports, null, committedBeforeOperation, budget);
+  if (destroyedNow(state)) return 0;
+  if (matchingPending(state) || state.install !== "known") return 0;
+  return dispatched;
+}
+
+function dispatchAllowed(
+  state: GateState,
+  shapeAtStart: ViewShape,
+  requestedEvent: string,
+  outcome: Outcome,
+): boolean {
+  if (destroyedNow(state) || outcome !== "ok") return false;
+  if (state.committed !== shapeAtStart || state.install !== "known")
+    return false;
+  if (pendingNow(state)) return false;
+  return slotHasEvent(shapeAtStart, requestedEvent);
+}
+
+function slotHasEvent(shape: ViewShape, event: string): boolean {
+  for (const slot of viewSlotDescriptions(shape)) {
+    if (slot.event === event) return true;
+  }
+  return false;
 }
 
 class AttemptCounter {
@@ -287,6 +398,10 @@ class AttemptCounter {
   }
 }
 
+function repairBudget(): RepairBudget {
+  return { used: false };
+}
+
 function rememberPending(state: GateState, mark: StageMark): void {
   state.pending = { mark };
   state.pendingWrites.next();
@@ -300,9 +415,13 @@ function destroyedNow(state: GateState): boolean {
   return state.destroyed;
 }
 
-function checkedEvent(shape: ViewShape): string | null {
-  for (const slot of viewSlotDescriptions(shape)) {
-    if ("checked" in slot && slot.checked) return slot.event;
-  }
-  return null;
+function attemptCurrent(state: GateState, attempt: number): boolean {
+  return !destroyedNow(state) && state.attempts.current() === attempt;
+}
+
+function sync(state: GateState, gate: ViewMenuGate): ViewMenuGate {
+  state.published.committed = state.committed;
+  state.published.install = state.install;
+  state.published.pendingMark = state.pending?.mark ?? null;
+  return gate;
 }
