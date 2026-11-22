@@ -60,3 +60,17 @@ commit `ceae876f3846e40b656f4af708820d67b385bc0b`，tree `b405a1bd675d8fd3776209
 退出码 0。
 
 行为验收仍是未跑，不标通过。
+
+## cca5ac3 复审后的握手修订
+
+commit `1bb9177ada0385c5fcf97dfc5cc028953712a4cb`，tree `20b56b3479f9b67ba25ddd18bb9fb8d8297974b0`。只改 `docs/exec-plans/feature-view-menu-lifecycle-none-174.md`，54 行新增、25 行删除。没有改 `docs/approvals.md`。没有产品或测试代码。没有安装依赖，没有跑产品测试，没有启动 Electron 或 native。
+
+命令：`node tools/check-docs/check.mjs`
+
+退出码 0。findings 0。
+
+命令：`node tools/check-commits/check.mjs --base e70ec91a673cb2784491bb02924d77b96a05b147`
+
+退出码 0。
+
+N1–N13 仍是未跑，不标通过。
