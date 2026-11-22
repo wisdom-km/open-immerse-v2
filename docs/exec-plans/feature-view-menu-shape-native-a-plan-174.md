@@ -463,3 +463,122 @@ native 文件放在 `apps/desktop/native-windows/`，不要放进 `apps/desktop/
 ### 本 PR 的文档账
 
 与 Windows 全账分开。分支 `feature/view-menu-native-collect-entry-174`，从 live main `e8bbbbc1cd61b32c933079fb0e3ccedaa0ec490e` 另开。相对这个 base 的最终新增+删除：新增 36、删除 1，合计 37。只改本计划和 `docs/approvals.md`。
+
+## 2026-11-22 09:26 集中预算与 Windows 二进制就绪
+
+上文账 2、23:43 的 `261 + P + L + E + X`、以及 08:31 的 HOLD 都不回写。本节是对照之后的新账。它仍不是 numstat。没有为了量行去写产品、测试或配置。
+
+2026-11-22 09:26 Asia/Shanghai，Wisdom 原话只有「ok，按照你的建议推进」。来源是 Issue #174 评论 7072210186。承接的建议是集中补齐完整预算和 Windows 二进制就绪方案，而不是继续零散补文档。Forge 的限定解释不是第二句。这句不批准实施，不批准创建配置或改 CI，也不推导下一步的实施权限。
+
+本次不改 UI。菜单仍用系统原生 `Menu`。DESIGN §4.10 的 11.1 不改：mac「显示」，Windows「视图(V)」。`library-menu.ts` 的非 mac 标签仍是「视图(&V)」。PRD 的产品句子仍是 Windows / macOS。M2 的 8 GB Windows 与 M1 录屏、M8 的双安装包都不删。通用门禁不删。
+
+### 对照
+
+| 历史 | 本节放在哪 | 不做什么 |
+| --- | --- | --- |
+| 261，区间 243–303 | 仍是六份产品与测试文件的轮廓。加法仍是 62+9+24+18+98+50 | 不把它写成已经量过的 diff，不改区间 |
+| P | 将来实施 PR 对已在 main 上的计划的增量 | 不把已合计划整份再加一次，也不把本轮文档账算进 P |
+| L | 实施 PR 新写的台账行 | 本轮追加的四行是文档账，不是 L |
+| E 的 16 | 仍只是 `commands.md` 的预留 | 不把它当下限，也不用它闭合真机文本 |
+| X | 拆成独立配置、`ci.yml` 一步、二进制就绪是否改文件 | 不把旧的「个位数到数十行」升级成数 |
+
+全账 = 产品与测试轮廓 + 计划增量 + 台账 + 文本证据 + 独立配置 + CI 步骤 + 二进制就绪的文件改动。七项都要在场。缺的不记 0。估计不能相加后写成已经 ≤ 600。
+
+### 分项
+
+口径与 `tools/check-pr-size/check.mjs` 相同：非生成文件的新增+删除。该脚本第 44–46 行把 numstat 的 `-` 当成 0。二进制附件因此不增加这 600。文本证据会增加。这是脚本的规则，不是证据已经写完。
+
+今天能点名的基线，不是未来 diff：`library-menu.ts` 94 行，`library-menu.test.ts` 100 行，与上文表里的现长一致。`vitest.config.ts` 49 行。`ci.yml` 第 271–272 行的桌面单测步骤是两行。
+
+| 项 | 增/删口径 | 已知 | 估计界限 | 未知 | 依赖 |
+| --- | --- | --- | --- | --- | --- |
+| `view-menu-mirror.ts` | 新文件 | 轮廓 62/0 | 上文写不另放宽。那不是测量出的上限 | 真实 diff | 不导入 `electron` |
+| `library-menu.ts` | 改现文件 | 轮廓 6/3，合计 9。现长 94 | 区间固定为 9。仍是按三处导出和三处数组改写数的形状 | 格式化之后的 diff | 标签不改 |
+| `view-menu-mirror.test.ts` | 新文件，留在 `apps/desktop/test/` | 轮廓 24/0 | 不另放宽 | 真实 diff | 不导入 Electron |
+| `library-menu.test.ts` | 改现文件 | 轮廓 18/0。现长 100 | 不另放宽 | 真实 diff | 不断言 |
+| 父测试 `native-windows/view-menu-native.test.ts` | 新文件 | 轮廓 98/0 | 90–120。120 不是已证明的帽 | 真实 diff | 编译失败即停 |
+| 子进程 `view-menu-native-electron.mjs` | 新文件 | 轮廓 50/0 | 40–70。70 不是已证明的帽 | 真实 diff | 同一个 mirror 的编译结果 |
+| 六份合计 |  | 258/3，合计 261，区间 243–303 | 243 与 303 是区间算术，不是 numstat | 六份真实合计 | 路径改名不新测行数 |
+| 计划增量 | 实施 PR 里对计划的增删 | 已合正文已在 main，不整份重计 | 没有上限 | 实际改了多少行 | 超过 300 行的任务规则不因此消失 |
+| 台账 | 一行一条，再改合计行 | 格式已知 | 行数随批准条数变。不能先定成 1 | 实施当时有几条 | 旧行不回写 |
+| 文本证据 | `docs/evidence/<PR号>/` 里的文本 | 16 只是预留 | 没有下限，也没有上限 | 实际文本行数。真机录屏若是二进制，按上面的 `-` 不计行，内容仍未验证 | 不把 CI 字段输出当成录屏 |
+| 独立配置 | 新文件，删除 0 | 文件还不存在。现有根配置 49 行，只作形状基线 | 短于 49 或照抄后再改，都只是估计。可以写得更长，所以没有可证明的帽 | 真实行数 | 08:31 的候选。名字不在 `CONFIG_NAMES`。本轮不创建 |
+| CI 步骤 | 只加在 `desktop-e2e-windows`，在第 272 行之后 | 现有那一步是两行。`ci.yml` 本轮 diff 为 0 | 两行只说明现有步骤的形状。新步骤可以更长 | 真实增删 | 命令是 `--config` 指向那份未创建的配置。显式路径单独不够 |
+| 二进制就绪的文件改动 | 见下一节 | 已观察的那次成功路径没有改 `package.json`、锁文件或缓存步骤 | 不把「也许再加一段缓存」算进必改 | 若将来改了这些文件，这项重开 | 不选额外缓存 |
+
+六份轮廓的高位 303，加上没有帽的计划增量、台账、文本证据、配置和 CI 步骤，加不出一个已经证明的总数。低位同样不能把未知写成 0 再去减。所以不能写 ≤ 600，也不能写已经超过。1.73×261=451.53 仍只是上文的风险披露，不是开工线，本节不新乘。
+
+**HOLD。** 开工仍要同时满足两件：上面这本全账已经用 numstat 证明 ≤ 600，并且另有精确实施批准。否则停报。不删测试，不改 600，不自动拆分。不增加「另批接受超出再开工」。
+
+### 一次列齐的缺口
+
+行数上还缺的，都要是同一次实施 diff 的 numstat，而不是再开一份只写「仍未知」的文档：
+
+- 六份产品与测试文件的新增+删除。
+- 该 PR 对计划的新增+删除。
+- 该 PR 台账的新增+删除。
+- 入库文本证据的新增+删除。
+- 独立配置文件的新增+删除。
+- `ci.yml` 那一步的新增+删除。
+- 以上合计的 `check-pr-size`。
+
+行为上还缺的，不能用行数代替：
+
+- native 子进程在 `windows-latest` 上真的起过。
+- `_menuWillShow` 之后的 `MenuItem` 字段。
+- 真机的 Alt、F10、访问键、读屏、菜单截图。
+- Linux 与 macOS 的 native。后置仍是未验证，不是删除。
+
+最小的后续决定只留这一条，本文档不执行，也不把它写成已经批准：若要让全账从轮廓变成 numstat，需要另一次精确实施批准，允许按白名单把文件写进一个 Draft，并用该 PR 的 numstat 对账；超过 600 就停。在那之前不再拆零散文档。
+
+### Windows 二进制就绪
+
+静态方案不是 Windows 实跑。本轮没有下载、安装、编译或启动。下面的「已观察」只指已经跑完的日志。
+
+锁版本：`apps/desktop/package.json` 的 `electron` 是 `45.2.1`。`pnpm-lock.yaml` 有 `electron@45.2.1`。根 `package.json` 的 `packageManager` 是 `pnpm@10.34.9`。本机已安装的那份 `electron@45.2.1` 的 `package.json` 没有 `scripts`。`install.js` 在 `isInstalled()` 为假时调用 `@electron/get` 的 `downloadArtifact`；失败则 `process.exit(1)`。`getPlatformPath` 在 `win32` 返回 `electron.exe`。`index.js` 在没有 `path.txt` 或 `dist` 里的可执行文件时打印 `Downloading Electron binary...`，再跑 `install.js`。包的入口就是 `getElectronPath()`。`@electron/get` 的 README 写 Windows 缓存目录是 `%LOCALAPPDATA%/electron/Cache`。工作流缓存的是 pnpm store，不是这个目录。
+
+本机这份 Linux 树没有 `dist/`，也没有 `path.txt`。这只说明这份 Linux 树。不能用它推断 Windows 上有或没有二进制。
+
+`ci.yml` 的 `desktop-e2e-windows` 在 `windows-latest`。安装是 `corepack pnpm install --frozen-lockfile`，环境只有 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`。这个变量不代替 Electron。pnpm store 的 key 含 `runner.os` 和 `pnpm-lock.yaml` 的哈希。仓库里没有 `onlyBuiltDependencies`。Electron 包没有安装脚本，所以「Ignored build scripts」不会靠它去下载二进制。
+
+已有日志是 run `44967306971`、job `137039144918`，PR #228 的 `desktop-e2e-windows`。该 PR 只改文档，锁文件与当时 main 相同。日志里的事实：
+
+- Node `v22.23.4`，pnpm `v10.34.9`。
+- pnpm store 缓存命中，路径 `D:\.pnpm-store\v10`，key `Windows-pnpm-store-59272443a5b89f45c2c5fcf87bfaa8410ab9dc74c7a4e68ad4378666d2dec330`。
+- 安装结果是 reused 274、downloaded 0。Ignored build scripts 只点名 `esbuild@0.28.2`。
+- 安装步没有 `Downloading Electron binary...`。
+- 其后的 Playwright 步骤里，`require("electron")` 的现有夹具第一次出现这句 `Downloading Electron binary...`，然后打印 `electron launch ms`。32 passed。
+- 桌面单测是 25 个文件、121 个测试。那一步的路径是 `apps/desktop/test`。
+
+成功路径，只对这一次作业：缓存命中的 pnpm store 不包含可用的 `dist`。安装完成时二进制还不在。第一次 `require("electron")` 走到 `getElectronPath()`，下载并解压，然后现有 e2e 用 `dist/main/index.js` 起了进程。后几次 launch 不再打印下载那句。
+
+缓存缺失路径：pnpm store 未命中时，安装会重新取包，仍然不会因为一个不存在的安装脚本去下 zip。Electron zip 的缓存不在工作流的 cache 步骤里。这一次日志即使 store 命中，仍然下载了。不能把 store 命中写成二进制已经在。
+
+失败停点，这一次日志没有走到：`downloadArtifact` 失败时 `install.js` 以 1 退出；`index.js` 随之抛错。`dist/version`、`path.txt` 或 `electron.exe` 对不上时，`isInstalled()` 为假，会再下载。将来的 native 子进程另有停点：编译失败、进程起不来、没有 `_menuWillShow`。
+
+四件事分开：
+
+| 问题 | 这一次日志能说的 | 不能说的 |
+| --- | --- | --- |
+| 二进制在不在 | 安装结束到第一次 require 之前，下载函数跑了，所以当时 `path.txt` 或 exe 还不在。随后进程起来了 | 不能说 `pnpm install` 已经放好 win32 二进制。不能说下一次 runner 一定下得成 |
+| 能不能启动 | 现有夹具启动了 `dist/main/index.js`，32 passed | 这不是 native 子进程，也不是 B1、B2 |
+| native 收集 | 单测步骤只跑 `apps/desktop/test` | 独立配置仍未创建、未实跑。08:31 的结论不变 |
+| Menu 字段、生命周期、真机 | 日志没有 `_menuWillShow`，也没有这些用例名 | CI 全绿和这一次启动都不能代替 |
+
+将来若另批实跑，验证标准是：日志要么在 require 之前已经有匹配 45.2.1 的 `dist/version`、`path.txt` 为 `electron.exe`、exe 存在，要么出现下载那句并且 `install.js` 不是非 0；然后才谈子进程和 `_menuWillShow`。缺二进制、下载失败或进程起不来，都停。不把现有 e2e 的 32 passed 填进这一格。
+
+### 本 PR 的文档账
+
+与实施全账分开。分支 `feature/view-menu-full-budget-windows-binary-174`，从 live main `8033229cbc9ed18d99a2a8d46c92e2da5ac562c6` 另开。相对这个 base 的最终新增+删除：SIZE_PENDING。只改本计划和 `docs/approvals.md`。
+
+### 交接摘要
+
+未批准，不是开工指令。现在不要按这段做。只在全账已经用 numstat 证明 ≤ 600，并且另有精确实施批准之后，才把它交给当时的 Cloud。
+
+开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、`docs/evidence/a-linux-probe-94e6a9d.md`，以及台账里 23:42、23:43、23:55、08:31、09:26 的原话。23:42 不改产品句子。23:55 删掉了接受超出再开工。08:31 只把收集结论写进计划。09:26 只批准本轮这份预算和就绪方案。
+
+目标：四种形状的 Node 断言、静态标签与事件和快捷键、Windows 进程上的真实 native B1 与 B2。验收是上文四行，一条不删。mac「显示」、mac 菜单栏、Linux 字段、物理键、读屏、菜单截图都还没验证。
+
+架构：UI 与业务核心解耦，ARCHITECTURE.md §2.1 与 RULES.md §8。依赖只沿 ARCHITECTURE §5。不进 core，不进 renderer。优先系统原生菜单，不造菜单控件。生产启动仍是 `installFileMenu`。`expose` 保持 false。普通源文件建议 400、硬上限 600，函数建议 50、硬上限 80，测试文件建议 600、硬上限 800。
+
+从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。native 文件放在 `apps/desktop/native-windows/`。收集用 08:31 的独立配置和 `--config`，不用单独的显式路径。形状测试仍留在 `apps/desktop/test/`。第一次 `require("electron")` 才会下载；二进制或进程起不来就停。不把现有 e2e 当成 B1、B2。全账超过 600 就停报。纯文档通过不是可实施通过。
