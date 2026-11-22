@@ -39,3 +39,9 @@ head `8941035b642ab55dc84a70c7bfffac63701eec18`。六项里 node 失败，其余
 ## 官方 CI 45043764146
 
 head `728e56478b12b615f34e36362e45e84fd335b81f`。node 的 Check 仍失败，退出码 1，Unit tests 仍被跳过。其余五项 success。剩下 5 个 ESLint 错误：`Promise.resolve<void>()` 把 void 用在调用的类型参数上，`found.click()` 的 Promise 没有接住，`checked === false` 在 boolean 上仍被当成多余比较。没有加行内禁用。
+
+## 00:30 修正时没有跑的类型检查
+
+开工时工作区已经是 `5b0c6f1`，不是复审固定的 `728e564`。`5b0c6f1` 是同一分支上针对那 5 个 ESLint 错误的提交，没有其他文件。没有回退它。
+
+这次没有再跑 eslint、vitest 或 tsc。本 worktree 仍没有 `node_modules`，那三条命令上次已经因找不到包失败。门的 `click` 返回 `Promise<number>` 是读 `view-menu-gate.ts` 的类型声明，不是 tsc 的输出。测试改为直接返回这个 Promise，早到 click 和首次失败断言结果是 0。生产回调仍是 `void gate.click(...).catch(...)`。`checked === false` 的比较对象是 `unknown`，不是把 false 放宽成任意 falsy。这是按 ESLint 规则源码的静态判断，不是新的编译诊断。

@@ -201,9 +201,9 @@ it("sends the three view clicks through the gate and leaves other items on dispa
   const started = boot();
   try {
     await control.task;
-    await click("原文");
-    await click("对照");
-    await click("译文");
+    expect(await pressView("原文")).toBe(1);
+    expect(await pressView("对照")).toBe(1);
+    expect(await pressView("译文")).toBe(1);
     expect(shell.scripts).toEqual([
       scriptFor(viewOriginalEvent),
       scriptFor(viewBilingualEvent),
@@ -213,8 +213,8 @@ it("sends the three view clicks through the gate and leaves other items on dispa
       plainSlots(shell.current).every((item) => item.checked === false),
     ).toBe(true);
     const sets = shell.sets;
-    await click("打开…");
-    await click("后退");
+    pressCommand("打开…");
+    pressCommand("后退");
     expect(shell.sets).toBe(sets);
     expect(shell.scripts.at(-2)).toBe(scriptFor(openFileEvent));
     expect(shell.scripts.at(-1)).toContain("oi-history-back");
@@ -229,12 +229,12 @@ it("does not dispatch an early click and does not replay it", async () => {
   const started = boot();
   try {
     expect(shell.sets).toBe(1);
-    await click("对照");
+    expect(await pressView("对照")).toBe(0);
     expect(shell.scripts).toEqual([]);
     hold.resolve();
     await control.task;
     expect(shell.scripts).toEqual([]);
-    await click("对照");
+    expect(await pressView("对照")).toBe(1);
     expect(shell.scripts).toEqual([scriptFor(viewBilingualEvent)]);
   } finally {
     started.close();
@@ -259,7 +259,7 @@ it("does not treat a failed startup menu as known", async () => {
     try {
       await expectHandled();
       await control.task;
-      await click("原文");
+      expect(await pressView("原文")).toBe(0);
       expect(shell.scripts).toEqual([]);
     } finally {
       started.close();
@@ -284,12 +284,12 @@ it("keeps a view click quiet when executeJavaScript rejects and when no window e
   try {
     await control.task;
     shell.rejectScript = true;
-    await click("译文");
+    expect(await pressView("译文")).toBe(0);
     expect(shell.scripts).toEqual([scriptFor(viewTranslationEvent)]);
     shell.windows = false;
     shell.scripts = [];
     const sets = shell.sets;
-    await click("原文");
+    expect(await pressView("原文")).toBe(1);
     expect(shell.sets).toBe(sets + 1);
     expect(shell.scripts).toEqual([]);
   } finally {
@@ -304,7 +304,7 @@ it("does not push the gate when the library quit listener runs", async () => {
     const quits = shell.quits.splice(0);
     for (const quit of quits) quit();
     expect(control.destroyed).toBe(0);
-    await click("对照");
+    expect(await pressView("对照")).toBe(1);
     expect(shell.scripts).toEqual([scriptFor(viewBilingualEvent)]);
   } finally {
     started.close();
@@ -326,13 +326,25 @@ function boot(): {
   };
 }
 
-function click(label: string): Promise<void> {
+function pressView(label: string): Promise<number> {
+  const found = menuClick(label);
+  const seen = control.clicks;
+  void found();
+  if (control.clicks === seen) throw new Error(label);
+  return control.clickTask;
+}
+
+function pressCommand(label: string): void {
+  const found = menuClick(label);
+  const seen = control.clicks;
+  void found();
+  if (control.clicks !== seen) throw new Error(label);
+}
+
+function menuClick(label: string): () => void | Promise<void> {
   const found = walk(shell.template).find((item) => item.label === label);
   if (found?.click === undefined) throw new Error(label);
-  const seen = control.clicks;
-  void found.click();
-  if (control.clicks === seen) return Promise.resolve();
-  return control.clickTask.then(() => undefined);
+  return found.click;
 }
 
 function plainSlots(menu: FakeMenu): readonly FakeItem[] {

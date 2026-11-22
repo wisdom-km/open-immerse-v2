@@ -1,6 +1,6 @@
 # 执行计划
 
-C「生产启动 none 装配」的精确计划。本文件只准备下一笔实施，不写生产代码，也不写测试代码。
+C「生产启动 none 装配」的精确计划。本文件在 d825ea9 送审时只准备下一笔实施，不写生产代码，也不写测试代码。00:07 之后同一 Draft 已写入启动装配。00:30 只修正 lint 和测试对 click 结果的类型，不改菜单语义。
 
 分支 `feature/view-menu-startup-none-c-plan-174`。从官方 main `a1c91d76401919eae593f3e8a10a605aa0de0970` 另开，独立 worktree。该 commit 的唯一 parent 是 `f9725cac9eec23f08d08506ae592116c5dc876b2`，tree 是 `2759ba975098643f420a404eaa5fb291abb57bdf`。`git fetch origin main` 之后，这个 SHA、parent 和 tree 与官方 main 一致。不改已经合入的分支，不 force，不 rebase。
 
@@ -10,7 +10,7 @@ PR #231 已由 Jone 按 [评论 7080646410](https://github.com/wisdom-km/open-im
 
 2026-11-22 23:57 的原话是「OK，那就按照你的建议去推进吧。」[评论 7081703621](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7081703621) 只批准修正本计划的两处验收，然后复审。不批准实现。Forge 复审通过，并且用户另行写出具体实施范围之后，才写代码。可以留在这个 Draft，不把先合入纯文档或无故另开分支写成开工条件。
 
-本任务受 UI 与业务核心解耦约束：[ARCHITECTURE.md](../../ARCHITECTURE.md) §2.1 与 [RULES.md](../../RULES.md) §8。本轮任务类型是不适用（纯文档）。五份规格的正文不改：[PRD.md](../../PRD.md)、[ARCHITECTURE.md](../../ARCHITECTURE.md)、[RULES.md](../../RULES.md)、[DESIGN.md](../../DESIGN.md)、[docs/design-principles.md](../design-principles.md)。Loom 的原则前置已经完成：mirror、gate 和内部装配不增加控件或弹窗，沿系统原生菜单。本计划不新增 UI 决策。
+本任务受 UI 与业务核心解耦约束：[ARCHITECTURE.md](../../ARCHITECTURE.md) §2.1 与 [RULES.md](../../RULES.md) §8。送审时的任务类型是不适用（纯文档）。00:07 之后的代码任务是 desktop main 菜单装配，不改 core，不改 renderer。五份规格的正文不改：[PRD.md](../../PRD.md)、[ARCHITECTURE.md](../../ARCHITECTURE.md)、[RULES.md](../../RULES.md)、[DESIGN.md](../../DESIGN.md)、[docs/design-principles.md](../design-principles.md)。Loom 的原则前置已经完成：mirror、gate 和内部装配不增加控件或弹窗，沿系统原生菜单。本计划不新增 UI 决策。
 
 ## 现状理解
 
@@ -123,6 +123,7 @@ Node 先把 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin` 放在 PATH 前面。
 | 4 | 23:57 只修正 R1、R2 的计划口径 | 本提交只改本文件 | 本文件 |
 | 5 | 只追加 23:57 批准 | 下一提交 | `docs/approvals.md` |
 | 6 | 00:07 批准后在这个 Draft 写启动 none | 已改 `library-wiring.ts` 和 `view-menu-wiring.test.ts`。本 worktree 没有 `node_modules`，没有安装或做依赖链接。官方 run 45043252918 与 45043764146 的 node Check 都因 ESLint 失败，单测被跳过 | `docs/evidence/232/commands.md` |
+| 7 | 00:30 只修正 lint 和 click 结果的类型 | 视图 click 仍是 void 回调，里面保留 `.catch`。`checked === false` 放在 `unknown` 上，不改成 falsy。测试直接返回门的 `Promise<number>`，早到 click 断言 0。没有跑 tsc | `docs/evidence/232/commands.md` |
 
 ## 决策记录
 
@@ -154,7 +155,7 @@ Node 先把 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin` 放在 PATH 前面。
 ## 自检
 
 - [x] 影响 arch / prd 吗？不影响。五份规格正文保持不变。
-- [x] 本轮没有生产代码和测试代码。
+- [x] 送审时没有生产代码和测试代码。00:07 之后已有启动装配和装配测试。
 
 ## 给下一笔 Cloud 的交接
 
