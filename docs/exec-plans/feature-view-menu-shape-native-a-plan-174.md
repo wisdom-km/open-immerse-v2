@@ -109,7 +109,7 @@ B1、B2 读的是视图子菜单在原生将要显示的处理返回之后的真
 
 ### 类型声明里有什么，没有什么
 
-本机已安装的 `electron@45.2.1` 包内有 `electron.d.ts`，没有 `dist/`，也没有 `path.txt`。类型是静态文件，二进制没有装上。
+本机已安装的 `electron@45.2.1` 包内有 `electron.d.ts`，没有 `dist/`，也没有 `path.txt`。类型是静态文件。这只是这份目录，不描述 Windows 作业。
 
 `MenuItemConstructorOptions` 有 `type` 和 `checked`。`checked` 的说明写着只应用于 checkbox 或 radio。`MenuItem` 有 `type` 和 `checked`。`Menu.buildFromTemplate`、`Menu.setApplicationMenu`、`Menu.items` 都在。`Menu` 上有公开事件 `menu-will-show`，说明文字是在调用 `popup()` 时发出。
 
@@ -125,9 +125,9 @@ B1、B2 读的是视图子菜单在原生将要显示的处理返回之后的真
 | `desktop-e2e-windows` 在 `windows-latest`。Playwright 启动的是 `dist/main/index.js` | 同一工作流，以及 `apps/desktop/e2e/fixtures/electron-app.ts` | 它会启动完整应用。它不调用 mirror，也不调用 `_menuWillShow`。不能把它写成 B1、B2 已经有宿主 |
 | 没有 Linux 或 macOS 的 Electron 作业 | `docs/ci-and-environment.md` 的门禁表 | mac 菜单栏没有 CI 宿主。Linux 也没有专门的 Electron 作业 |
 | 本工作区环境变量 `DISPLAY` 是 `:1` | 本回合读取环境变量，没有启动程序 | 只说明这台机器有这个变量。不说明 CI，也不说明 Electron 窗口能画出来 |
-| 本机 `electron@45.2.1` 没有 `dist/` 和 `path.txt` | 包目录列表。`install.js` 的 `isInstalled()` 读这两处，缺了就返回假 | `pnpm install --frozen-lockfile` 之后二进制仍可以不在。`package.json` 没有 `postinstall` |
-| `index.js` 的 `getElectronPath()` 在二进制缺失时调用 `downloadElectron()`，再跑 `install.js` | 该文件 | 将来第一次向这个包要路径，可能下载锁定版本的二进制。那不是新 npm 依赖，也不是系统库。本回合不调用，所以没有证实下载成功 |
-| `install.js` 使用 `@electron/get` 的 `downloadArtifact` | 该文件前 50 行 | 下载依赖网络和缓存。CI 能否下完，未知 |
+| 本机 `electron@45.2.1` 没有 `dist/` 和 `path.txt` | 包目录列表 | 这只是这份 Linux 树。不能写成 Windows 安装结束时的文件状态。`package.json` 没有 `scripts` |
+| `index.js` 的 `getElectronPath()` 在缺少路径记录或对应 exe 时调用 `downloadElectron()`，再跑 `install.js` | 该文件 | 已有可用文件时不必下载。仅 version 不匹配时，不承诺 require 必自动重下。本回合不调用，所以没有证实下载成功 |
+| `install.js` 使用 `@electron/get` 的 `downloadArtifact` | 该文件。注释写明缓存里没有才下载 | 安装器可能复用 Electron 资产缓存。不能把调用写成 zip 一定走了网络 |
 
 现有 `node` 作业不能被写成已经能承载 B1、B2。缺的是三件未测的事：二进制是否能在该作业里出现、进程能否在没有 `DISPLAY` 和没有额外系统库时启动、`_menuWillShow` 是否存在。三件都不记 0，也不记通过。
 
@@ -533,52 +533,54 @@ native 文件放在 `apps/desktop/native-windows/`，不要放进 `apps/desktop/
 
 ### Windows 二进制就绪
 
-静态方案不是 Windows 实跑。本轮没有下载、安装、编译或启动。下面的「已观察」只指已经跑完的日志。
+静态方案不是 Windows 实跑。本轮没有下载、安装、编译或启动。12:03 只收紧本节的证据口径。
 
-锁版本：`apps/desktop/package.json` 的 `electron` 是 `45.2.1`。`pnpm-lock.yaml` 有 `electron@45.2.1`。根 `package.json` 的 `packageManager` 是 `pnpm@10.34.9`。本机已安装的那份 `electron@45.2.1` 的 `package.json` 没有 `scripts`。`install.js` 在 `isInstalled()` 为假时调用 `@electron/get` 的 `downloadArtifact`；失败则 `process.exit(1)`。`getPlatformPath` 在 `win32` 返回 `electron.exe`。`index.js` 在没有 `path.txt` 或 `dist` 里的可执行文件时打印 `Downloading Electron binary...`，再跑 `install.js`。包的入口就是 `getElectronPath()`。`@electron/get` 的 README 写 Windows 缓存目录是 `%LOCALAPPDATA%/electron/Cache`。工作流缓存的是 pnpm store，不是这个目录。
+2026-11-22 12:03 Asia/Shanghai，Wisdom 原话只有「OK，按照你的建议推进吧。」。来源是 Issue #174 评论 7073951889。这句只批准收紧计划、交接和 PR 说明里的 Windows 就绪证据。Forge 的限定解释不是第二句。不批准实施，也不新做实验。
 
-本机这份 Linux 树没有 `dist/`，也没有 `path.txt`。这只说明这份 Linux 树。不能用它推断 Windows 上有或没有二进制。
+锁版本：`apps/desktop/package.json` 的 `electron` 是 `45.2.1`。`pnpm-lock.yaml` 有 `electron@45.2.1`。根 `package.json` 的 `packageManager` 是 `pnpm@10.34.9`。已安装的那份包没有 `scripts`。`getPlatformPath` 在 `win32` 返回 `electron.exe`。`@electron/get` 的 README 写 Windows 缓存目录是 `%LOCALAPPDATA%/electron/Cache`。工作流的 cache 步骤写的是 pnpm store。
 
-`ci.yml` 的 `desktop-e2e-windows` 在 `windows-latest`。安装是 `corepack pnpm install --frozen-lockfile`，环境只有 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`。这个变量不代替 Electron。pnpm store 的 key 含 `runner.os` 和 `pnpm-lock.yaml` 的哈希。仓库里没有 `onlyBuiltDependencies`。Electron 包没有安装脚本，所以「Ignored build scripts」不会靠它去下载二进制。
+夹具 `apps/desktop/e2e/fixtures/electron-app.ts` 在启动时加载 `electron`。Electron 45.2.1 的入口在模块加载时调用 `getElectronPath()`。没有可用的 `path.txt`，或其中的路径对不上现存 exe 时，它打印 `Downloading Electron binary...` 并调用 `install.js`。已有可用的路径记录和对应 exe 时，这个函数不调用安装器，不必下载。仅 `dist/version` 不匹配、但 path 与 exe 仍在时，不承诺这次 require 必自动重下。安装器被调用之后，`isInstalled()` 为假才进入 `downloadArtifact`；源码注释写明缓存里没有才下载，所以安装器可能复用 Electron 资产缓存。version 对不上也只在这条已被调用的分支里才重下。`downloadArtifact` 失败则 `install.js` 以 1 退出。
 
-已有日志是 run `44967306971`、job `137039144918`，PR #228 的 `desktop-e2e-windows`。该 PR 只改文档，锁文件与当时 main 相同。日志里的事实：
+本机这份 Linux 树没有 `dist/`，也没有 `path.txt`。这只说明这份 Linux 树。不能用它推断那次 Windows 作业的文件状态。
+
+`ci.yml` 的 `desktop-e2e-windows` 在 `windows-latest`。安装命令是 `corepack pnpm install --frozen-lockfile`，环境只有 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`。这个变量不代替 Electron。仓库里没有 `onlyBuiltDependencies`。
+
+已有日志是 run `44967306971`、job `137039144918`，PR #228 的 `desktop-e2e-windows`。该 PR 只改文档，锁文件与当时 main 相同。日志直接记下的是：
 
 - Node `v22.23.4`，pnpm `v10.34.9`。
-- pnpm store 缓存命中，路径 `D:\.pnpm-store\v10`，key `Windows-pnpm-store-59272443a5b89f45c2c5fcf87bfaa8410ab9dc74c7a4e68ad4378666d2dec330`。
-- 安装结果是 reused 274、downloaded 0。Ignored build scripts 只点名 `esbuild@0.28.2`。
-- 安装步没有 `Downloading Electron binary...`。
-- 其后的 Playwright 步骤里，`require("electron")` 的现有夹具第一次出现这句 `Downloading Electron binary...`，然后打印 `electron launch ms`。32 passed。
-- 桌面单测是 25 个文件、121 个测试。那一步的路径是 `apps/desktop/test`。
+- pnpm store 的缓存步骤命中，路径 `D:\.pnpm-store\v10`，key `Windows-pnpm-store-59272443a5b89f45c2c5fcf87bfaa8410ab9dc74c7a4e68ad4378666d2dec330`。
+- 安装结果原文是 reused 274、downloaded 0。Ignored build scripts 只点名 `esbuild@0.28.2`。
+- 安装步没有下载提示。
+- 下载提示首次出现在首个 e2e 夹具启动期间。随后现有 `dist/main/index.js` 的 e2e 打印了 `electron launch ms`。32 passed。
+- 桌面单测是 25 个文件、121 个测试，路径是 `apps/desktop/test`。
 
-成功路径，只对这一次作业：缓存命中的 pnpm store 不包含可用的 `dist`。安装完成时二进制还不在。第一次 `require("electron")` 走到 `getElectronPath()`，下载并解压，然后现有 e2e 用 `dist/main/index.js` 起了进程。后几次 launch 不再打印下载那句。
+安装结束时的精确文件状态、pnpm store 内部内容、以及 zip 是否发生网络传输，日志未直接记录，不作更强结论。
 
-缓存缺失路径：pnpm store 未命中时，安装会重新取包，仍然不会因为一个不存在的安装脚本去下 zip。Electron zip 的缓存不在工作流的 cache 步骤里。这一次日志即使 store 命中，仍然下载了。不能把 store 命中写成二进制已经在。
-
-失败停点，这一次日志没有走到：`downloadArtifact` 失败时 `install.js` 以 1 退出；`index.js` 随之抛错。`dist/version`、`path.txt` 或 `electron.exe` 对不上时，`isInstalled()` 为假，会再下载。将来的 native 子进程另有停点：编译失败、进程起不来、没有 `_menuWillShow`。
+失败停点，这一次日志没有走到：安装器被调用后 `downloadArtifact` 失败，`install.js` 以 1 退出，`index.js` 随之抛错。将来的 native 子进程另有停点：编译失败、进程起不来、没有 `_menuWillShow`。
 
 四件事分开：
 
-| 问题 | 这一次日志能说的 | 不能说的 |
+| 问题 | 能说的 | 不能说的 |
 | --- | --- | --- |
-| 二进制在不在 | 安装结束到第一次 require 之前，下载函数跑了，所以当时 `path.txt` 或 exe 还不在。随后进程起来了 | 不能说 `pnpm install` 已经放好 win32 二进制。不能说下一次 runner 一定下得成 |
-| 能不能启动 | 现有夹具启动了 `dist/main/index.js`，32 passed | 这不是 native 子进程，也不是 B1、B2 |
+| 二进制 | 该次作业在首个 e2e 夹具启动期间首次出现下载提示。入口支持：模块加载时若缺少可用路径记录或对应 exe，会触发安装流程。安装器可能复用 Electron 资产缓存。已有可用文件时不必下载 | 不把提示写成必定发生了网络传输。不写安装结束时的文件状态，不写 store 里有什么。仅 version 不匹配时，不承诺 require 必自动重下 |
+| 能不能启动 | 随后现有 `dist/main` e2e 启动成功，32 passed | 这不是 native 子进程，也不是 B1、B2 |
 | native 收集 | 单测步骤只跑 `apps/desktop/test` | 独立配置仍未创建、未实跑。08:31 的结论不变 |
 | Menu 字段、生命周期、真机 | 日志没有 `_menuWillShow`，也没有这些用例名 | CI 全绿和这一次启动都不能代替 |
 
-将来若另批实跑，验证标准是：日志要么在 require 之前已经有匹配 45.2.1 的 `dist/version`、`path.txt` 为 `electron.exe`、exe 存在，要么出现下载那句并且 `install.js` 不是非 0；然后才谈子进程和 `_menuWillShow`。缺二进制、下载失败或进程起不来，都停。不把现有 e2e 的 32 passed 填进这一格。
+将来若另批实跑，要直接核对 `dist/version`、`path.txt` 和 exe，不能只凭下载提示推断文件状态或网络传输。安装器被调用后下载失败、进程起不来、或没有 `_menuWillShow`，都停。不把现有 e2e 的 32 passed 填进这一格。
 
 ### 本 PR 的文档账
 
-与实施全账分开。分支 `feature/view-menu-full-budget-windows-binary-174`，从 live main `8033229cbc9ed18d99a2a8d46c92e2da5ac562c6` 另开。相对这个 base 的最终新增+删除：新增 125、删除 1，合计 126。只改本计划和 `docs/approvals.md`。
+与实施全账分开。分支 `feature/view-menu-full-budget-windows-binary-174`，从 live main `8033229cbc9ed18d99a2a8d46c92e2da5ac562c6` 另开。相对这个 base 的最终新增+删除：SIZE_PENDING。只改本计划和 `docs/approvals.md`。
 
 ### 交接摘要
 
 未批准，不是开工指令。现在不要按这段做。只在全账已经用 numstat 证明 ≤ 600，并且另有精确实施批准之后，才把它交给当时的 Cloud。
 
-开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、`docs/evidence/a-linux-probe-94e6a9d.md`，以及台账里 23:42、23:43、23:55、08:31、09:26 的原话。23:42 不改产品句子。23:55 删掉了接受超出再开工。08:31 只把收集结论写进计划。09:26 只批准本轮这份预算和就绪方案。
+开工前完整阅读 `PRD.md`、`ARCHITECTURE.md`、`RULES.md`、`DESIGN.md`、`docs/design-principles.md`、本计划、`docs/evidence/a-linux-probe-94e6a9d.md`，以及台账里 23:42、23:43、23:55、08:31、09:26、12:03 的原话。23:42 不改产品句子。23:55 删掉了接受超出再开工。08:31 只把收集结论写进计划。09:26 只批准预算和就绪方案。12:03 只收紧 Windows 就绪证据的口径。
 
 目标：四种形状的 Node 断言、静态标签与事件和快捷键、Windows 进程上的真实 native B1 与 B2。验收是上文四行，一条不删。mac「显示」、mac 菜单栏、Linux 字段、物理键、读屏、菜单截图都还没验证。
 
 架构：UI 与业务核心解耦，ARCHITECTURE.md §2.1 与 RULES.md §8。依赖只沿 ARCHITECTURE §5。不进 core，不进 renderer。优先系统原生菜单，不造菜单控件。生产启动仍是 `installFileMenu`。`expose` 保持 false。普通源文件建议 400、硬上限 600，函数建议 50、硬上限 80，测试文件建议 600、硬上限 800。
 
-从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。native 文件放在 `apps/desktop/native-windows/`。收集用 08:31 的独立配置和 `--config`，不用单独的显式路径。形状测试仍留在 `apps/desktop/test/`。第一次 `require("electron")` 才会下载；二进制或进程起不来就停。不把现有 e2e 当成 B1、B2。全账超过 600 就停报。纯文档通过不是可实施通过。
+从当时的 main 另开 `feature/` 分支和独立 worktree。PR 保持 Draft。作者不自行标成 Ready。native 文件放在 `apps/desktop/native-windows/`。收集用 08:31 的独立配置和 `--config`，不用单独的显式路径。形状测试仍留在 `apps/desktop/test/`。模块加载时若缺少可用路径记录或对应 exe，会触发安装流程；安装器可能复用 Electron 资产缓存；已有可用文件时不必下载。二进制或进程起不来就停。不把现有 e2e 的 32 passed 当成 B1、B2。全账超过 600 就停报。纯文档通过不是可实施通过。
