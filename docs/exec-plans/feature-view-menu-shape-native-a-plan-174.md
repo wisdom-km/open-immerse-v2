@@ -740,3 +740,28 @@ Forge 通过本段之前，不实现上表。
 本批 A 仍是原来的功能、文件职责和生产禁区。预算仍是分项估计，未知不记 0。不再要求开工前先有完整 numstat，也不因总数超过 600 自动停工。交接仍要附实际 diff、职责、命令和未验证项。Windows native 通过不是生产接线，也不是三视图用户流程、翻译链路或真机验收。M2、M8 和非行数门禁不减。
 
 15:04 批准文档在核对通过后合入，并继续推进。文档和 A 实现在同一个 PR 里。这不是未审实现代码的合入许可。本代理保持 Draft，不标 Ready，不合入，不发版。A 的实施权限不变，等 Forge 下一次精确审查。已经失败的 CI 不改记成通过。
+
+## 2026-11-22 Forge B1：PLR0915 不是函数行数
+
+上一段的现状表把 ESLint `max-lines-per-function` 和 ruff `PLR0915` 并称「函数超过 80 行」，并通过后的路径表拟把 `workers/parser/pyproject.toml` 的 PLR0915 移出失败项。那是误解。不回写那两行。
+
+Forge 对 `22359dfcb23d27250d785c2f9b69da1fcc193326` / tree `2b75f19e30ccd2801a17ee75d16a57b726d5991a` / base `a5a27bf0b3586f337f190a1ab8874dda538ce61d` 的审查：A 六文件、独立配置和 Windows 一步静态 PASS with nits；文档与 Google 引用 PASS with nits；原样执行门禁方案 BLOCK 这一项。Ruff 官方规则 PLR0915 检查的是函数或方法里的语句数量。本仓库 `workers/parser/pyproject.toml` 的 `max-statements` 是 80，`max-complexity` 是 15，select 含 C901 与 PLR0915。该文件不改。语句复杂性以后若要调整，单独论证，不能从取消 600 推导出来。
+
+同一审查还写明两件实施时必须讲清的事：
+
+- G11 的脚本只对文件名是 `composition-root.ts` 或 `slots.ts` 的 diff 做大于 30 的数值判断。它不检查依赖或职责，不能说成解耦已经验证。热点改动的风险仍要评审。同一纯行数对齐里，这项改为打印，超过 30 不失败。不关 G13、G15。
+- 仓库的 `eslint.config.js` 没有 `max-params`。上表写「max-params 保留」不等于已经有这条自动检查。本轮不新增。参数个数仍是评审口径。
+
+ESLint 的 `max-lines-per-function` 改为 off。不能改成 warn：`package.json` 的 lint 是 `eslint . --max-warnings 0`，warn 仍会让 Check 失败。圈复杂度 15、顶层 let、受限 import、许可证、密钥、类型、格式、测试和依赖方向都不关。
+
+下一笔按这个更正实现。不改 A 的产品文件，不接生产生命周期，不扩产品范围，不改分支保护，不写理由字符串去换通过，不删测试，不压格式。
+
+[run 44996860301](https://github.com/wisdom-km/open-immerse-v2/actions/runs/44996860301) 是 `22359df` 的官方结果：node 失败，计数 793；另外五项通过，含 Windows native。失败停在 `check-pr-size`。同一条 Check 里，它前面的格式、lint、类型、单文件行数、依赖、许可证、切片、提交说明和热点已经走过；codegen 和 node 的全量单测没有跑到。不能把没跑的步骤记成通过。这次失败保留。
+
+## 2026-11-22 15:08：文档合入后的路线
+
+15:08 原话：「OK，那就按照你的建议去推进吧，等那个文档合入之后就按照你的建议推进。然后你像说可独立的任务最多并行三个PR，就是说这个三个PR里面它的代码不相互影响，你就可以开三个PR。」
+
+来源是 [评论 7075736208](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7075736208)。15:04 已在台账，不重复计批准。
+
+这句批的是文档核对合入之后的顺序：先收当前 A 的验收，再整理三视图接线、基础阅读剩余路径，然后是解析、OCR、任务恢复、翻译和公式保护。同时最多三个代码互不影响、能独立测试审查的 PR。依赖链串行。不为了凑满三个而拆。真机 QA 仍串行。本笔不新开 PR，不把这句当成未审代码的合入许可，不改分支保护，不接生产，不发版。未明确的实现范围仍先写规格。
