@@ -462,4 +462,4 @@ native 文件放在 `apps/desktop/native-windows/`，不要放进 `apps/desktop/
 
 ### 本 PR 的文档账
 
-与 Windows 全账分开。分支 `feature/view-menu-native-collect-entry-174`，从 live main `e8bbbbc1cd61b32c933079fb0e3ccedaa0ec490e` 另开。相对这个 base 的最终新增+删除：SIZE_PENDING。只改本计划和 `docs/approvals.md`。
+与 Windows 全账分开。分支 `feature/view-menu-native-collect-entry-174`，从 live main `e8bbbbc1cd61b32c933079fb0e3ccedaa0ec490e` 另开。相对这个 base 的最终新增+删除：新增 36、删除 1，合计 37。只改本计划和 `docs/approvals.md`。
