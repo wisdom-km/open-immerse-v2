@@ -672,3 +672,53 @@ Forge 对 PR #230 head `f380e849cd88bb000c691fe09f924bf11897df91` 的前置审�
 同一父测试在本机 Linux 的 Electron 45.2.1 上退出码 0。这不是 Windows 结果。跑之前包目录没有 `path.txt` 和 `dist/`；跑之后 `path.txt` 为 `electron`，`dist/version` 为 `45.2.1`。捕获到的 Vitest 输出里没有下载提示，不能据此判断 zip 是否走了网络。路径和 exe 已在时，后一次不必下载。
 
 mac、物理键、读屏、菜单截图没有跑。Windows 作业要等这次提交触发的 CI。M2、M8 和通用门禁不删。
+
+## 2026-11-22 15:01 行数门禁对齐方案
+
+本段是给 Forge 的前置方案。通过之前不改行数脚本、不改 ESLint 或 ruff 的行数规则、不改规格正文。已完成的 A 产品与测试不重做。已经失败的 CI 不改记成通过。
+
+Wisdom 2026-11-22 15:01 Asia/Shanghai 原话：
+
+> 我的意思是，你像之前咱不好像硬性规定代码600行吗？但是我说不要有这个。硬性规定，就是说灵活一点，你比如说代码要求解耦啊，然后对应的功能都要写到一个文件里啊，就不要说同一个文件写入其他的功能。然后该放行的就适当放行，就只要说遵守规则就可以了。
+
+来源是 Forge 主聊天 t3692u。本提交读取时，Issue #174 自 `2026-11-22T07:00:00Z` 起没有新评论，所以台账不编评论号。这句覆盖「总 diff 超过 600 就失败」和「每次用提交说明里的理由字符串换通过」这种常规。它不新开功能，不接生产，不标 Ready，不合入，不发版。几千行或一万行仍不是额度。
+
+### 现状
+
+| 检查 | 现在怎么失败 | 和 600 的关系 |
+| --- | --- | --- |
+| `tools/check-pr-size/check.mjs` | 非生成增删合计超过 600 就退出 1。只改 `packages/contracts` 时超过 200 也退出 1。提交说明或 `PR_BODY` 里有指定理由字符串则退出 0 | 总 diff 的机械上限，外加逐次例外 |
+| `tools/check-file-size/check.mjs` | 普通源文件 600、入口 150、组件 400、测试 800，超过退出 1 | 同一类硬上限，只是改成按文件 |
+| ESLint `max-lines-per-function` 与 ruff `PLR0915` | 函数超过 80 行即 lint 失败 | 若前两项放开而这项仍是错误，80 会变成新的机械上限 |
+| G5、G9、G13–G16、圈复杂度 15、测试、许可证、格式、类型 | 各自的规则 | 不是行数额度。这次不关 |
+
+G11 只数 `composition-root.ts` 和 `slots.ts` 的单文件 diff，上限 30。它不是全仓 600 的替代品。这次方案不动它。
+
+当前 A 的 head `85725187022c915be70dfb43e3077f168a0b4bc4` 上，[run 44996072338](https://github.com/wisdom-km/open-immerse-v2/actions/runs/44996072338) 的 Windows native 1 个测试通过，桌面单测 126 通过。node 的 Check 因 690 行失败，Ubuntu 单测没跑到。该失败保持为那次提交的失败。
+
+### 通过后要改的路径
+
+一个实现提交，仍在这个 Draft。不另开文档 PR。
+
+| 路径 | 职责 |
+| --- | --- |
+| `tools/check-pr-size/check.mjs` | 继续打印非生成增删合计。不再因超过 600 或契约 200 退出 1。不再读取理由字符串 |
+| `tools/check-pr-size/limit.test.ts` | 601 行的 diff 退出码 0，输出里仍有这个数 |
+| `tools/check-file-size/check.mjs` | 继续打印超过原提示数的文件和行数。不再因此退出 1。`allowlist.json` 留着，不再当作放行开关 |
+| `tools/check-file-size/limit.test.ts` | 601 行的源文件退出码 0，输出里仍有路径和行数 |
+| `eslint.config.js` | 关掉 `max-lines-per-function` 的 error。圈复杂度 15 与 `max-params` 保留 |
+| `workers/parser/pyproject.toml` | `PLR0915` 不再作为失败项。`C901` 圈复杂度保留 |
+| `docs/arch/06.md`、`docs/arch/13.md`、根 `ARCHITECTURE.md`、`RULES.md` | 写成审查提示，不再写成 CI 硬失败。依赖方向、密钥、测试不改 |
+| `tools/compare-spec-bytes/manifest.json`、`tools/gate-remediation/catalog.json`、`docs/spec-changelog.md` | 只跟上面的规格句子对齐 |
+
+不改 A 的六份产品与测试、`ci.yml` 的 native 步骤、生产接线、分支保护。
+
+### 验收
+
+1. 超过 600 行且提交说明里没有任何理由字符串的 diff，`check-pr-size` 退出码 0，并打印合计。
+2. 601 行的 `.ts` 源文件，`check-file-size` 退出码 0，并打印该文件的行数。
+3. 超过 80 行的函数不再因函数行数规则失败。圈复杂度超过 15 仍然失败。
+4. 依赖方向、密钥扫描、许可证、格式、类型检查的现有失败用例仍然失败。
+5. 不把 run 44996072338 的 node 失败改写成通过。脚本改完之后的新 run 才是新结果。
+
+Forge 通过本段之前，不实现上表。
