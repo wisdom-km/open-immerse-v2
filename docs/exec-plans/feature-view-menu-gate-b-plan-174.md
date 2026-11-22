@@ -6,13 +6,13 @@ B「纯替换门」的精确实施计划。20:17 批准之后，同一 Draft 新
 
 PR #230 已由 Jone 按 [评论 7077002282](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7077002282) 合入。合入同步是 [评论 7077050649](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7077050649)。合入的是 A 的形状、原生读取和纯行数报告。不是生产三视图接线，也不是本计划的实施批准。
 
-本任务受 UI 与业务核心解耦约束：[ARCHITECTURE.md](../../ARCHITECTURE.md) §2.1 与 [RULES.md](../../RULES.md) §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。本回合任务类型：不适用（纯文档）。
+本任务受 UI 与业务核心解耦约束：[ARCHITECTURE.md](../../ARCHITECTURE.md) §2.1 与 [RULES.md](../../RULES.md) §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。写计划当时（2026-11-22，20:17 批准之前）的任务类型是不适用（纯文档）。20:17 之后，同一文件记录已经落地的门。21:31 的修正仍只动这扇门和它的测试。
 
 ## 现状理解
 
 - 已有：`apps/desktop/src/main/view-menu-mirror.ts` 导出 `ViewShape` 和 `viewSlotDescriptions`。`none` 只返回原文、对照、译文的 `label` 与 `event`，不写 `type` 或 `checked`。三种活动值返回 `type: "radio"`，且恰有一项 `checked: true`。事件来自已导出的 `oi-view-original`、`oi-view-bilingual`、`oi-view-translation`。
 - 已有：Windows CI 在桌面单测之后用 `vitest.windows-native.config.ts` 跑真实 Electron 45.2.1 的菜单形状。那是 A 的 B1、B2。fake 不能代替它，它也不能代替产品菜单画面、物理键或读屏。
-- 还没有：`view-menu-gate.ts`。生产 `library-wiring.ts` 仍走原来的 `installFileMenu`，不引用门。`index.ts` 里的 epoch 和菜单装配不是同一个生命周期所有者。commit、退役、关闭和 floor 的唯一写者没有进 A，也不进 B 或 C。
+- 写计划当时还没有 `view-menu-gate.ts`。这句是 20:17 之前的现状。20:17 实施后，本分支已经有这个文件和 `view-menu-gate.test.ts`。生产 `library-wiring.ts` 仍走原来的 `installFileMenu`，不引用门。`index.ts` 里的 epoch 和菜单装配不是同一个生命周期所有者。commit、退役、关闭和 floor 的唯一写者没有进 A，也不进 B 或 C。
 - 相关的节：[docs/arch/02-01.md](../arch/02-01.md#21-ui-与业务核心解耦q3wisdom-2026-10-30-原文)、[docs/arch/05.md](../arch/05.md#5-依赖方向与禁止事项)、[docs/arch/06.md](../arch/06.md#6-文件与函数大小)；[RULES.md](../../RULES.md#16-职责解耦与行数) §1.6、[§1.7](../../RULES.md#17-代码规模与审查)、[§8](../../RULES.md#8-ui-与业务核心解耦q3)；[DESIGN.md](../../DESIGN.md#410-hig-基础补齐来源hig-gap-auditmd必须补10-项wisdom-2026-11-04-0308-拍板三项) §4.10 的 11.1；[docs/design-principles.md](../design-principles.md#1-原则7-条) §1。这些正文本轮不改，正式约束和设计源保持一致。
 - 行为来源不改写：[seam](feature-reader-view-menu-seam-174.md) 的「[仍然成立](feature-reader-view-menu-seam-174.md#仍然成立)」「[替换门](feature-reader-view-menu-seam-174.md#替换门)」「[轨迹](feature-reader-view-menu-seam-174.md#轨迹)」「[验收](feature-reader-view-menu-seam-174.md#验收)」。旧实施总计划里的 B 段是历史轮廓，见 [feature-view-menu-gate-s2b-implementation-plan-174.md](feature-view-menu-gate-s2b-implementation-plan-174.md)。本文件不回写那份已合计划。那里的 600 停报是当时的句子，不是现行硬阻断。
 
@@ -74,7 +74,7 @@ fake 不能代替 A 已经做过的真实 `_menuWillShow`，也不能代替产�
 
 ## 命令和证据
 
-本回合只跑文档检查。不跑门的测试，因为那两个文件还不存在。不启动 Electron，不操作真机，不外发消息。
+写计划当时（20:17 之前）只跑文档检查，不跑门的测试，因为那两个文件当时还不存在。不启动 Electron，不操作真机，不外发消息。20:17 实施后的命令、第一次全量超时和单独重跑留在 `docs/evidence/231/commands.md`，不改写成后来的结果。cbc11f8 的官方 CI 六项成功只证明那个 tip，不继承为 21:31 修正的绿灯。
 
 将来实施获批后，在那一支 PR 里跑：
 
@@ -113,6 +113,7 @@ C 只启动 none 装配：常量记号，`noteNone` 次数是 0，三个栏位 c
 | 1 | 只写本计划和台账，开 Draft | 本回合。不写两个产品文件 | 文档检查见 PR 说明 |
 | 2 | Forge 审本计划，用户再批具体实施范围 | 2026-11-22 20:17 已批。评论 7079006557。已审 head `a661e134f5d819c194917fabc5e6b6dceac57f99`。本行提交时两个产品文件还没有写 | 台账 20:17 |
 | 3 | 获批后才新增门和 B3–B10 测试 | 已新增两个文件。13 条 fake：B3–B9 各一条，B10 六条。门 308 行，测试 333 行。不把 166 的旧轮廓当成额度 | `docs/evidence/231/commands.md` |
+| 4 | 21:31 按审查在原两个文件里修正 R1–R4 并补行为测试 | 本行提交时只登记来源和边界。门和测试还没有按这四条改 | 台账 21:31 |
 
 ## 决策记录（Decision Log）
 
@@ -122,8 +123,20 @@ C 只启动 none 装配：常量记号，`noteNone` 次数是 0，三个栏位 c
 | 本文件不改 PRD、ARCHITECTURE、RULES、DESIGN、设计原则 | 正式约束和设计源没有新的冲突。行数规则已在已合规格里 | 2026-11-22 | 本计划 |
 | 不把 16:56 的只读收口补成实施批准 | Issue #174 自 15:08 的评论到合入同步之间，官方评论只有 7076269523、7077002282、7077050649。没有一条 16:56 实施批准 | 2026-11-22 | 本计划 |
 | 在同一 Draft 实施 B | 原话在 [台账 20:17](../approvals.md)。范围是两个新文件、B3–B10、计划、台账和证据。不接生产，不改界面、CI、依赖、环境，不操作真机 | 2026-11-22 | Wisdom |
+| 按 21:31 在原两个文件里修正 R1–R4 | 原话在 [台账 21:31](../approvals.md)。只修正派发目标、派发等待期间的生命周期收口、异步销毁后的派发，以及 dispatch 拒绝的行为证明。不接生产 | 2026-11-22 | Wisdom |
 
-Wisdom 2026-11-22 15:08 原话已经在台账，这里不改写。16:01、17:12 和 17:16 的原话也不改。20:17 的原话在台账，不在这里改写成更宽的范围。
+Wisdom 2026-11-22 15:08 原话已经在台账，这里不改写。16:01、17:12 和 17:16 的原话也不改。20:17 的原话在台账，不在这里改写成更宽的范围。21:31 的原话只有「OK，就按照你的建议推进。」建议原文在台账，不在这里加宽。
+
+## 21:31 修正边界
+
+2026-11-22 21:31 的批准只覆盖 PR #231 审查 cbc11f8 时指出的四个缺口。范围仍是 `view-menu-gate.ts` 与 `view-menu-gate.test.ts`，加上本计划、台账和证据。本段随批准先写下。写下这段时，门的代码还没有按这四条改。
+
+- R1：click 保留这次请求的既有事件。重建用当前已接受镜像，成功后派发请求事件。已接受镜像和请求目标不同时，仍派发请求。不复制 mirror 表。
+- R2：派发等待期间到达的生命周期 none，按已经批准的有界语义收口。没有收口时不能继续标 `known`。不无限 drain，不增加第三次 replace。
+- R3：后置检查或额外替换的等待期间如果销毁，不能再派发。busy 仍要释放。
+- R4：用 dispatch 自己返回的 rejected Promise 证明拒绝处理。不能把 replace 的拒绝改个名字来顶替。
+
+B3–B10 一条不删。不接生产，不改界面、CI、依赖、环境，不操作真机。不 Ready，不合入，不发版。
 
 ## 自检
 
