@@ -104,3 +104,37 @@ N1–N13 仍是未跑，不标通过。
 ## Windows desktop-e2e
 
 run `45063027149`，commit `133470a93d49107bfbe70022459af134e03161f0`，merge-ref `8d28a2db950b18a8809f008c7dbb9e75d17aa503`。`desktop-e2e-windows` 的 Desktop unit tests 失败。其余五项通过。失败用例是 `reports a synchronous loadURL throw through the ready failure path`。Windows 报 `EBUSY: resource busy or locked, unlink ...\oi.sqlite`。`loadURL` 抛出前 `startLibrary` 已经打开数据库，测试末尾的 `rmSync` 在 Windows 上删不掉仍被占用的文件。Linux 上同一次删除成功，所以本地 92 个用例没有暴露。随后去掉这次删除。断言仍是 stderr 含 `load failed`，以及没有未处理的 rejection。本地重跑该用例退出码 0。没有启动 Electron。
+
+## 07c58fe 官方六绿
+
+run `45063351227`，commit `07c58feb187d1b3ea5bc5e755327f26cf7356959`，tree `1f1a58e00d4ffe7fd41586bf5f5622d2ca3fb596`。六项成功。`desktop-e2e-windows` 的 Desktop unit tests、Windows native view menu、Playwright Electron smoke 和截图上传都是 success。这是去掉 `rmSync` 之后的历史结果。它不证明夹具已经关闭自己打开的数据库。
+
+## B1 夹具收尾
+
+Forge 对 `07c58fe` 的必要阻断是新集成测试的资源收尾。只改 `apps/desktop/test/view-menu-lifecycle.test.ts`。没有新增生产 close、getter 或其他文件接口。`view-menu-wiring.test.ts` 没有改。
+
+假 `app.on` 只收集 `will-quit`。`startDesktop` 留下的 `submit` 和 `noteNone` Promise 先排空。然后调用收集到的回调。这个回调就是 `startLibrary` 注册的 `main.close()`。回调返回之后才 `rmSync` 本次 `mkdtemp` 目录。`rmSync` 没有 try/catch，没有延时，也没有循环重试。断言失败时，监听和 stderr spy 走 `finally`，目录收尾走 `afterEach`。已经开始收尾的失败不会再删第二次。
+
+N1、N2 和 `loadURL` 同步抛错这三条在监听外面断言：关闭前 `db/oi.sqlite` 存在，调用了 1 个 `will-quit` 回调，目录随后不存在。stderr 仍要含 `load failed`，未处理 rejection 仍是空。这次 Linux 运行不能证明 Windows 文件锁；能证明的是回调被调用，并且目录在回调之后删除。没有把生产泄漏或跨测试污染写成已经证实的事实。
+
+命令：`corepack pnpm exec eslint --max-warnings 0 apps/desktop/test/view-menu-lifecycle.test.ts`。退出码 0。
+
+命令：`corepack pnpm exec prettier --check apps/desktop/test/view-menu-lifecycle.test.ts`。退出码 0。
+
+命令：
+
+`corepack pnpm exec vitest run apps/desktop/test/view-menu-epoch.test.ts apps/desktop/test/view-menu-gate.test.ts apps/desktop/test/view-menu-wiring.test.ts apps/desktop/test/view-menu-lifecycle.test.ts apps/desktop/test/open-document-wiring.test.ts apps/desktop/test/reading-asset-protocol.test.ts --reporter=verbose`
+
+退出码 0。6 个文件，92 通过，0 失败，0 跳过。原始输出在 `docs/evidence/234/view-menu-close.txt`。stderr 有 Node 的 SQLite ExperimentalWarning。这不是首次全绿。此前同一组 92 通过、run `45063027149` 的 Windows `EBUSY` 和后续 skip、run `45063351227` 的六绿都还是各自的历史。
+
+另一次只跑 N1，并在 `startDesktop()` 之后临时加上 `expect(boot.created).toHaveLength(99)`。vitest 退出码 1。断言失败后 `afterEach` 仍收尾。跑完时 `${TMPDIR:-/tmp}` 下 `oitest-life-*` 的目录数仍是 41，没有留下新的 `oitest-life-*/db/oi.sqlite`。这 41 个是更早运行留下的，本轮没有清理它们，也不把它们写成这次修复前的生产泄漏。临时断言已经从文件里去掉，随后的 92 通过不包含它。
+
+安装复用的符号链接：
+
+- `node_modules` → `/agent/repos/open-immerse-v2/node_modules`
+- `apps/desktop/node_modules` → `/agent/repos/open-immerse-v2/apps/desktop/node_modules`
+- `packages/features/library/node_modules` → `/agent/repos/open-immerse-v2/packages/features/library/node_modules`
+- `packages/platform-node/node_modules` → `/agent/repos/open-immerse-v2/packages/platform-node/node_modules`
+- `apps/desktop/node_modules/electron` → `/agent/repos/open-immerse-v2/node_modules/.pnpm/electron@45.2.1/node_modules/electron`
+
+`electron/dist` 与 `path.txt` 都不存在。没有运行 `electron/install.js`。没有启动 Electron 或 native。`pnpm run check` 仍未跑。完整门禁保持 HOLD。
