@@ -19,12 +19,16 @@ async function observeShapes() {
       `${JSON.stringify(observe(mirror, menuMod, shape))}\n`,
     );
   }
-  app.exit(0);
+  process.exit(0);
 }
 
 function compiledDir() {
-  const outDir = process.argv[2];
-  if (outDir === undefined || outDir.length === 0) {
+  const outDir = process.argv.at(-1);
+  if (
+    outDir === undefined ||
+    outDir.length === 0 ||
+    outDir.endsWith("view-menu-native-electron.mjs")
+  ) {
     fail(new Error("compiled directory missing"));
   }
   return outDir;

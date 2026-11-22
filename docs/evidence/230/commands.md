@@ -53,3 +53,11 @@ head `fd2263c328fb3f68a0a8242d1078336e5f5f8ab4`。https://github.com/wisdom-km/o
 `desktop-e2e-windows` 通过。Desktop unit tests：26 个文件，126 个测试通过。随后 Windows native view menu 跑的是 `corepack pnpm exec vitest run --config vitest.windows-native.config.ts`。该测试的 stdout 出现 `Downloading Electron binary...`。1 个测试通过，6382ms。这句提示不能写成 zip 一定走了网络，日志也没有写出安装结束时的 path.txt 或 exe。测试能启动，说明当时进程拿到了可用二进制。Playwright 随后 32 passed，那是现有 `dist/main` e2e，不是这次 native。
 
 `docs-report`、`python-worker`、`worker-health-macos`、`worker-health-windows` 通过。
+
+## CI run 44995789348
+
+head 仍是上面的 `fd2263c` 之后的证据提交。https://github.com/wisdom-km/open-immerse-v2/actions/runs/44995789348
+
+`desktop-e2e-windows` 失败。同一测试 stdout 先打出四行形状，字段与 B1、B2 一致，然后进程退出码 `3221225477`。父测试按非 0 失败，没有把这行输出记成通过。`Downloading Electron binary...` 再次出现。node 作业仍停在行数门禁，Ubuntu 单测没有跑到。
+
+随后把成功退出从 `app.exit(0)` 改成 `process.exit(0)`，并给子进程加上 `--disable-gpu` 与 `--disable-software-rasterizer`。这次本机 Linux 再跑，退出码 0。Windows 要看这次提交之后的 CI。

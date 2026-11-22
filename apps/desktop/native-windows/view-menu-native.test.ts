@@ -84,7 +84,12 @@ function electronBinary(): string {
 }
 
 async function runElectron(outDir: string): Promise<string> {
-  const result = await run(electronBinary(), [childScript, outDir]);
+  const result = await run(electronBinary(), [
+    "--disable-gpu",
+    "--disable-software-rasterizer",
+    childScript,
+    outDir,
+  ]);
   if (result.code !== 0) {
     throw new Error(
       `electron exit ${String(result.code)}\n${result.stderr}\n${result.stdout}`,
