@@ -574,6 +574,71 @@
       "source": "ARCHITECTURE.md",
       "old": "- 行数落在阈值里不等于职责单一。评审仍按 RULES.md 检查职责数量与依赖扇出。",
       "new": "- 行数落在阈值里不等于职责单一。评审仍按 RULES.md 检查职责数量与依赖扇出。\n- 行数继续统计，用来看规模和审查注意力，不单独否决。同一功能可以按领域、编排、适配、界面和测试分成多个文件。不把整项功能塞进一个文件，也不为每个小函数建文件。可分开交付的功能可以分 PR。不为了行数拆成不能独立工作的碎片。\n- 公开参考是 Google Engineering Practices 的 Small CLs（https://google.github.io/eng-practices/review/developer/small-cls.html）与 What to look for in a code review（https://google.github.io/eng-practices/review/reviewer/looking-for.html）。原文鼓励小而完整的变更，写明没有统一的太大门槛，审查者仍可以因为变更太大要求拆分。那两页的行数例子不是本项目门槛。取消 600 的硬阻断是本项目的决定，不是所有大公司的惯例。Wisdom 2026-11-22 15:02、15:03。\n- 自动检查与这段对齐的方案在 A 计划。脚本还没改，所以上面的失败仍然发生。失败不改记成通过。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "| 对象 | 建议上限 | 现行脚本阈值 |",
+      "new": "| 对象 | 建议上限 | 提示数（不因此失败） |"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "| 函数 / 方法 | 50 行 | **80 行**（ESLint `max-lines-per-function` / ruff `PLR0915` 等价配置） |",
+      "new": "| 函数 / 方法 | 50 行 | 物理行数不再单独失败。ESLint `max-lines-per-function` 为 off。ruff PLR0915 是语句数 80，不是行数，仍失败 |"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "| 函数参数 | 3 个 | 4 个（更多用对象参数） |",
+      "new": "| 函数参数 | 3 个 | 4 个（评审口径。eslint 没有 `max-params`，本轮不新增自动检查） |"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "不受函数 50 / 80 行的限制，只受文件上限与圈复杂度约束",
+      "new": "不受函数物理行数限制，仍受圈复杂度约束。文件行数只作提示"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "这是 ESLint / ruff 按路径的配置，不是 allowlist 豁免。adapters、application、UI 与入口仍受函数上限约束。",
+      "new": "函数物理行数的 ESLint 规则现为 off，不是 warn，因为 lint 使用 `--max-warnings 0`。domain 路径上的 off 仍然留着。ruff PLR0915 计语句数量，`max-statements` 为 80，不是物理行数。`workers/parser/pyproject.toml` 本轮不改，已有的 per-file-ignores 不扩大也不删除。圈复杂度仍约束这些函数。adapters、application、UI 与入口不再因函数物理行数失败，仍受圈复杂度和职责审查约束。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "- 上表的数是现行脚本仍会拿来失败的阈值，不是本项目的机械设计约束。`check-file-size` 仍按普通源文件 600、入口 150、组件 400、测试 800 失败。`check-pr-size` 仍按非生成增删合计 600 失败，除非提交说明或 `PR_BODY` 已有 `G12:`。这两处脚本、全仓阈值和分支保护，本条不改。失败不能记成通过。",
+      "new": "- 上表的数是提示，不是单独否决的条件。`check-file-size` 打印普通源文件 600、入口 150、组件 400、测试 800 的超过项，不因此失败。`check-pr-size` 打印非生成增删合计，超过 600 或只改 contracts 时超过 200 都不因此失败，也不再读取理由字符串。git 失败仍然非 0。分支保护不改。改这些脚本之前的 CI 失败不能记成通过。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "- 超过建议上限时，PR 描述写明为什么这样分。豁免进 allowlist 仍只能经过 ADR，并写**到期里程碑**；到期未处理，现行脚本仍失败。",
+      "new": "- 超过建议上限时，PR 描述写明为什么这样分。豁免进 allowlist 仍只能经过 ADR，并写**到期里程碑**。名单不再当作行数放行开关。生成文件的 ignore 仍然跳过。坏的名单仍然失败。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "- 自动检查与这段对齐的方案在 A 计划。脚本还没改，所以上面的失败仍然发生。失败不改记成通过。",
+      "new": "- `check-hotspots` 只打印 `composition-root.ts` 与 `slots.ts` 的 diff 行数。超过 30 不失败，也不检查职责或依赖。热点改动的风险仍要在 PR 里说明。依赖方向仍由 G13 与 G15 拦。\n- 2026-11-22 Forge 审查 `22359df` 之后，纯行数脚本改为打印。[run 44996860301](https://github.com/wisdom-km/open-immerse-v2/actions/runs/44996860301) 的 node 失败是改脚本之前的失败，保留。那次 Check 停在总行数，后面的 codegen 和 node 单测没有跑，不能记成通过。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "含 F-06、F-08、F-12、`max-lines-per-function`、`complexity`、`no-restricted-imports`",
+      "new": "含 F-06、F-08、F-12、`complexity`、`no-restricted-imports`。`max-lines-per-function` 为 off，不改为 warn。ruff 的 PLR0915 仍是语句数量 80，不是函数行数"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "| G4 行数 | `tools/check-file-size` | §6 的硬上限；allowlist 必须有 ADR 与到期里程碑 |",
+      "new": "| G4 行数 | `tools/check-file-size` | 打印普通 600、入口 150、组件 400、测试 800 的超过项，不因此失败。ignore 仍跳过生成文件。exemptions 不再当作放行开关。allowlist 缺字段或坏 JSON 仍失败 |"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "改动热点的 PR 必须在描述中声明，且单 PR 对每个热点文件的改动 ≤ 30 行。",
+      "new": "改动热点的 PR 仍要在描述中说明修改风险。机器只打印 `composition-root.ts` 与 `slots.ts` 的 diff 行数，超过 30 不因此失败，也不检查职责或依赖。被两个以上切片 import 的契约文件仍是评审上的热点；脚本尚未按 import 图计算，本轮不手写名单。"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "| G12 PR 体量 | 脚本 | 非生成代码改动 > 600 行时要求拆分或写明理由；只改 `packages/contracts` 的契约 PR，非生成代码 > 200 行时要求写明不拆的理由 |",
+      "new": "| G12 PR 体量 | `tools/check-pr-size` | 打印非生成增删合计。超过 600，或只改 `packages/contracts` 时超过 200，都不因此失败，也不再读取理由字符串。git 失败仍是非 0。锁文件、`dist/` 与 `workers/parser/oi_worker/protocol/` 不计 |"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "（如 `ids.ts`、`errors.ts`；清单由脚本按 import 图算出，不手写）",
+      "new": "（如 `ids.ts`、`errors.ts`）。机器目前只认前两个文件名，不按 import 图计算"
     }
   ]
 }

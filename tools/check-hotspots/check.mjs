@@ -1,7 +1,5 @@
 import { spawnSync } from "node:child_process";
 
-import { writeRemediation } from "../gate-remediation/format.mjs";
-
 const namedHotspots = new Set(["composition-root.ts", "slots.ts"]);
 const lineLimit = 30;
 
@@ -57,13 +55,14 @@ for (const file of files) {
   }
 }
 
+console.log(
+  'check-hotspots: line count only, not a dependency or duty check ("G11")',
+);
 if (failures.length > 0) {
-  console.error("check-hotspots: hotspot diff exceeds 30 lines (G11)");
+  console.log(
+    `check-hotspots: ${failures.length} named files over the line hint`,
+  );
   for (const line of failures) {
-    console.error(`  ${line}`);
+    console.log(`  ${line}`);
   }
-  writeRemediation(["G11"]);
-  process.exit(1);
 }
-
-console.log("check-hotspots: named hotspot diffs are within 30 lines");

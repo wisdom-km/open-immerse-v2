@@ -61,3 +61,19 @@ head 仍是上面的 `fd2263c` 之后的证据提交。https://github.com/wisdom
 `desktop-e2e-windows` 失败。同一测试 stdout 先打出四行形状，字段与 B1、B2 一致，然后进程退出码 `3221225477`。父测试按非 0 失败，没有把这行输出记成通过。`Downloading Electron binary...` 再次出现。node 作业仍停在行数门禁，Ubuntu 单测没有跑到。
 
 随后把成功退出从 `app.exit(0)` 改成 `process.exit(0)`，并给子进程加上 `--disable-gpu` 与 `--disable-software-rasterizer`。这次本机 Linux 再跑，退出码 0。Windows 要看这次提交之后的 CI。
+
+## 纯行数门禁的本地分类
+
+工作目录是仓库根。Node 是 22.23.4。
+
+`corepack pnpm exec vitest run tools/check-pr-size/limit.test.ts tools/check-file-size/limit.test.ts tools/check-hotspots/hotspot.test.ts tools/eslint/limits.test.ts tools/gate-remediation/catalog.test.ts tools/gate-remediation/run.test.ts`
+
+退出码 0。6 个文件，18 个测试通过。
+
+覆盖：601 行与 contracts-only 201 行都退出码 0，并打印合计和原先的提示数。带理由字符串的空提交不改变退出码。打不开的 git base 仍是非 0。普通 601、入口 151、组件 401、测试 801 都打印路径和行数且退出码 0。正好 600 和 10 行不打印超过项。生成文件仍跳过。豁免名单里的文件仍被打印。坏 JSON 和缺少理由字段的名单仍是非 0。`composition-root.ts` 与 `slots.ts` 超过 30 只打印，不相关文件不打印，不超过 30 不打印超过项。圈复杂度超过 15 仍失败。约 90 行的函数退出码 0，输出里没有函数行数规则。
+
+`corepack pnpm exec vitest run tools/gate-remediation/ruff.test.ts tools/check-deps/boundaries.test.ts tools/check-secrets/leak.test.ts tools/check-license/reject.test.ts tools/check-commits/message.test.ts`
+
+退出码 0。5 个文件，14 个测试通过，3 个跳过。ruff 的 C901 与 PLR0915 仍失败。一百行注释、两条语句的函数不触发 PLR0915。依赖方向、密钥和许可证的既有失败样例仍失败。`workers/parser/pyproject.toml` 没有改动。
+
+未提交时跑过一次 `corepack pnpm run check`。它在 codegen 之后的 `git diff --exit-code` 失败，因为工作区还有未提交改动。这不是生成物漂移。本地 `main` 是 `94e6a9d847f6e5fc3c3ebbe2e089f535e31f5ed3`，不是 PR 的 base。那次 `check-pr-size` 因此打印 1261，不是相对 `origin/main` 的数。提交后再用 `GATE_BASE=origin/main` 重跑。

@@ -29,7 +29,7 @@ function branchy(name: string) {
   return lines.join("\n");
 }
 
-it("rejects complexity over 15 and functions over 80 lines (G2)", () => {
+it("rejects complexity over 15 and accepts a long function (G2)", () => {
   mkdirSync(scratch, { recursive: true });
   try {
     writeFileSync(path.join(scratch, "complex.mjs"), branchy("tooComplex"));
@@ -38,18 +38,16 @@ it("rejects complexity over 15 and functions over 80 lines (G2)", () => {
     expect(commandOutput(complexity)).toContain("complexity");
     expect(commandOutput(complexity)).toContain(remediationBlock("G2"));
 
-    const body = Array.from({ length: 90 }, (_, index) => {
-      const label = String(index);
-      return `  const n${label} = 1;`;
-    }).join("\n");
+    const names = Array.from({ length: 90 }, (_, index) => `n${String(index)}`);
+    const body = names.map((name) => `  const ${name} = 1;`).join("\n");
     writeFileSync(
       path.join(scratch, "long.mjs"),
-      `export function tooLong() {\n${body}\n}\n`,
+      `export function tooLong() {\n${body}\n  return ${names.join(" + ")};\n}\n`,
     );
     const longFile = lint("tools/.gate-scratch/long.mjs");
-    expect(longFile.status).not.toBe(0);
-    expect(commandOutput(longFile)).toContain("max-lines-per-function");
-    expect(commandOutput(longFile)).toContain(remediationBlock("G2"));
+    expect(longFile.status).toBe(0);
+    expect(commandOutput(longFile)).not.toContain("max-lines-per-function");
+    expect(commandOutput(longFile)).not.toContain("gate-remediation:");
 
     writeFileSync(
       path.join(scratch, "let.mjs"),

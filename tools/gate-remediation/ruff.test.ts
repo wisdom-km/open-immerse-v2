@@ -46,6 +46,45 @@ it("prints G2 remediation when ruff complexity is too high", () => {
   }
 });
 
+it("still rejects too many statements and ignores blank lines", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "oi-ruff-"));
+  const many = path.join(root, "too_many.py");
+  const padded = path.join(root, "padded.py");
+  try {
+    const lines = ["def too_many() -> int:"];
+    for (let index = 0; index < 81; index += 1) {
+      lines.push(`    a${String(index)} = ${String(index)}`);
+    }
+    lines.push("    return a0");
+    writeFileSync(many, `${lines.join("\n")}\n`);
+    const statements = ruff("G2", [
+      "check",
+      "--config",
+      "pyproject.toml",
+      many,
+    ]);
+    expect(statements.status).not.toBe(0);
+    expect(commandOutput(statements)).toContain("PLR0915");
+
+    const comments = ["def padded() -> int:", "    value = 1"];
+    for (let index = 0; index < 100; index += 1) {
+      comments.push("    # padding");
+    }
+    comments.push("    return value");
+    writeFileSync(padded, `${comments.join("\n")}\n`);
+    const linesOnly = ruff("G2", [
+      "check",
+      "--config",
+      "pyproject.toml",
+      padded,
+    ]);
+    expect(linesOnly.status).toBe(0);
+    expect(commandOutput(linesOnly)).not.toContain("PLR0915");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 it("prints G1 remediation when ruff format finds a diff", () => {
   const root = mkdtempSync(path.join(tmpdir(), "oi-fmt-"));
   const source = path.join(root, "compact.py");

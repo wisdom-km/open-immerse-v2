@@ -754,7 +754,7 @@ Forge 对 `22359dfcb23d27250d785c2f9b69da1fcc193326` / tree `2b75f19e30ccd2801a1
 
 ESLint 的 `max-lines-per-function` 改为 off。不能改成 warn：`package.json` 的 lint 是 `eslint . --max-warnings 0`，warn 仍会让 Check 失败。圈复杂度 15、顶层 let、受限 import、许可证、密钥、类型、格式、测试和依赖方向都不关。
 
-下一笔按这个更正实现。不改 A 的产品文件，不接生产生命周期，不扩产品范围，不改分支保护，不写理由字符串去换通过，不删测试，不压格式。
+本笔按这个更正实现。不改 A 的产品文件，不接生产生命周期，不扩产品范围，不改分支保护，不写理由字符串去换通过，不删测试，不压格式。
 
 [run 44996860301](https://github.com/wisdom-km/open-immerse-v2/actions/runs/44996860301) 是 `22359df` 的官方结果：node 失败，计数 793；另外五项通过，含 Windows native。失败停在 `check-pr-size`。同一条 Check 里，它前面的格式、lint、类型、单文件行数、依赖、许可证、切片、提交说明和热点已经走过；codegen 和 node 的全量单测没有跑到。不能把没跑的步骤记成通过。这次失败保留。
 
