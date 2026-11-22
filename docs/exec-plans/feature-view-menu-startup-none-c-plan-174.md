@@ -122,7 +122,7 @@ Node 先把 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin` 放在 PATH 前面。
 | 3 | 只追加台账 | 下一提交 | `docs/approvals.md` |
 | 4 | 23:57 只修正 R1、R2 的计划口径 | 本提交只改本文件 | 本文件 |
 | 5 | 只追加 23:57 批准 | 下一提交 | `docs/approvals.md` |
-| 6 | 00:07 批准后在这个 Draft 写启动 none | 已改 `library-wiring.ts` 和 `view-menu-wiring.test.ts`。本 worktree 没有 `node_modules`，没有安装或做依赖链接。类型检查、装配测试、相关回归和全仓门禁因此没有跑完 | `docs/evidence/232/commands.md` |
+| 6 | 00:07 批准后在这个 Draft 写启动 none | 已改 `library-wiring.ts` 和 `view-menu-wiring.test.ts`。本 worktree 没有 `node_modules`，没有安装或做依赖链接。官方 run 45043252918 的 node Check 因 ESLint 失败，单测被跳过 | `docs/evidence/232/commands.md` |
 
 ## 决策记录
 

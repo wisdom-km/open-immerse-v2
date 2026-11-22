@@ -31,3 +31,7 @@ Node 是 v22.23.4，PATH 里把 `/home/ubuntu/.nvm/versions/node/v22.23.4/bin` �
 ## 没有跑的命令
 
 `open-document-wiring.test.ts`、`reading-asset-protocol.test.ts`、`parse-capabilities-wiring.test.ts`、`pnpm run typecheck`、`pnpm run check`、Windows native、Electron。缺的是本 worktree 的依赖，不是这些命令的断言结果。官方 CI 不能填上这次未跑。
+
+## 官方 CI 45043252918
+
+head `8941035b642ab55dc84a70c7bfffac63701eec18`。六项里 node 失败，其余五项 success。node 的 Check 退出码 1，随后 Unit tests 被跳过。失败是 ESLint 10 个错误：视图 click 把 Promise 交给了要求 void 的属性，`checked === false` 被标成多余比较，测试里的断言和 `void` 类型不合规则。这不是缺依赖。

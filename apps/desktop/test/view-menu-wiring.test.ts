@@ -36,25 +36,39 @@ type Mode =
   | "throw-set";
 
 const control = vi.hoisted(() => ({
-  wait: Promise.resolve() as Promise<void>,
-  task: Promise.resolve() as Promise<void>,
+  wait: Promise.resolve<void>(),
+  task: Promise.resolve<void>(),
+  clickTask: Promise.resolve<void>(),
+  clicks: 0,
   noteNone: 0,
   destroyed: 0,
   postChecks: 0,
   rejectWith: null as Error | null,
 }));
 
-const shell = vi.hoisted(() => ({
-  mode: "live" as Mode,
-  template: { items: [] } as FakeMenu,
-  built: { items: [] } as FakeMenu,
-  current: { items: [] } as FakeMenu,
-  scripts: [] as string[],
-  quits: [] as Array<() => void>,
-  windows: true,
-  rejectScript: false,
-  sets: 0,
-}));
+const shell = vi.hoisted(
+  (): {
+    mode: Mode;
+    template: FakeMenu;
+    built: FakeMenu;
+    current: FakeMenu;
+    scripts: string[];
+    quits: Array<() => void>;
+    windows: boolean;
+    rejectScript: boolean;
+    sets: number;
+  } => ({
+    mode: "live",
+    template: { items: [] },
+    built: { items: [] },
+    current: { items: [] },
+    scripts: [],
+    quits: [],
+    windows: true,
+    rejectScript: false,
+    sets: 0,
+  }),
+);
 
 vi.mock("../src/main/view-menu-gate.js", async (importOriginal) => {
   const actual =
@@ -94,7 +108,12 @@ vi.mock("../src/main/view-menu-gate.js", async (importOriginal) => {
           control.noteNone += 1;
           return gate.noteNone(mark);
         },
-        click: (event: string) => gate.click(event),
+        click(event: string) {
+          const task = gate.click(event);
+          control.clickTask = task;
+          control.clicks += 1;
+          return task;
+        },
         setDestroyed(destroyed: boolean) {
           control.destroyed += 1;
           gate.setDestroyed(destroyed);
@@ -140,6 +159,8 @@ vi.mock("electron", () => ({
 beforeEach(() => {
   control.wait = Promise.resolve();
   control.task = Promise.resolve();
+  control.clickTask = Promise.resolve();
+  control.clicks = 0;
   control.noteNone = 0;
   control.destroyed = 0;
   control.postChecks = 0;
@@ -308,7 +329,10 @@ function boot(): {
 function click(label: string): Promise<void> {
   const found = walk(shell.template).find((item) => item.label === label);
   if (found?.click === undefined) throw new Error(label);
-  return Promise.resolve(found.click());
+  const seen = control.clicks;
+  found.click();
+  if (control.clicks === seen) return Promise.resolve();
+  return control.clickTask;
 }
 
 function plainSlots(menu: FakeMenu): readonly FakeItem[] {
@@ -340,11 +364,18 @@ async function expectHandled(): Promise<void> {
 }
 
 function deferred(): { promise: Promise<void>; resolve: () => void } {
-  let resolve: (value?: void) => void = () => undefined;
+  let finish = (): void => undefined;
   const promise = new Promise<void>((done) => {
-    resolve = done;
+    finish = () => {
+      done();
+    };
   });
-  return { promise, resolve: () => resolve() };
+  return {
+    promise,
+    resolve() {
+      finish();
+    },
+  };
 }
 
 function windowStub(): {

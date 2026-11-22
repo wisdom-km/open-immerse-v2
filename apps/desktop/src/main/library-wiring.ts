@@ -207,7 +207,9 @@ function viewEntry(
   slot: ViewSlotDescription,
   gate: ViewMenuGate,
 ): MenuItemConstructorOptions {
-  const click = () => gate.click(item.event).catch(() => undefined);
+  const click = (): void => {
+    void gate.click(item.event).catch(() => undefined);
+  };
   const entry = slotEntry({ id: slot.event, label: slot.label, click }, slot);
   if (item.accelerator === undefined) return entry;
   return { ...entry, accelerator: item.accelerator };
@@ -253,9 +255,8 @@ function onePlainSlot(
   const hits = items.filter((item) => item.id === slot.event);
   const hit = hits.length === 1 ? hits[0] : undefined;
   if (hit === undefined) return false;
-  return (
-    hit.label === slot.label && hit.type === "normal" && hit.checked === false
-  );
+  const checked: boolean | undefined = hit.checked;
+  return hit.label === slot.label && hit.type === "normal" && checked === false;
 }
 
 function collectItems(menu: Menu): readonly MenuItem[] {
