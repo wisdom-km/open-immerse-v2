@@ -74,3 +74,29 @@ commit `1bb9177ada0385c5fcf97dfc5cc028953712a4cb`，tree `20b56b3479f9b67ba25ddd
 退出码 0。
 
 N1–N13 仍是未跑，不标通过。
+
+## 实现后的 Node 纯桩
+
+实现提交停在 `5b6e04401ddf59073542fb0d0c58cda5a89b545c`，tree `cfc24c6df52f79ed747c8a5dfd00b18f501729b2`。这三笔是 `9bd7f8a`、`347ac15`、`5b6e044`。工作目录都是 `/home/ubuntu/worktrees/feature-view-menu-lifecycle-none-174`。Node 是 v22.23.4。
+
+没有执行 `pnpm install`。工作区里没有自己的 `node_modules`，测试通过符号链接用了已经存在的安装。读过 `electron/install.js`：它会调用 `@electron/get` 的 `downloadArtifact`。没有运行这个脚本。检查时 `electron/dist` 和 `path.txt` 都不存在，跑完测试之后仍然不存在。没有启动 Electron 或 native。
+
+命令：
+
+`corepack pnpm exec eslint --max-warnings 0 apps/desktop/src/main/view-menu-epoch.ts apps/desktop/src/main/view-menu-lifecycle.ts apps/desktop/src/main/view-menu-gate.ts apps/desktop/src/main/index.ts apps/desktop/src/main/composition-root.ts apps/desktop/src/main/library-wiring.ts apps/desktop/test/view-menu-epoch.test.ts apps/desktop/test/view-menu-lifecycle.test.ts apps/desktop/test/view-menu-wiring.test.ts apps/desktop/test/view-menu-gate.test.ts`
+
+退出码 0。
+
+命令：
+
+`corepack pnpm exec tsc -p apps/desktop/tsconfig.main.json --noEmit --pretty false`
+
+退出码 0。
+
+命令：
+
+`corepack pnpm exec vitest run apps/desktop/test/view-menu-epoch.test.ts apps/desktop/test/view-menu-gate.test.ts apps/desktop/test/view-menu-wiring.test.ts apps/desktop/test/view-menu-lifecycle.test.ts apps/desktop/test/open-document-wiring.test.ts apps/desktop/test/reading-asset-protocol.test.ts --reporter=verbose`
+
+退出码 0。6 个文件，92 个用例通过，0 失败，0 跳过。原始输出在 `docs/evidence/234/view-menu-node.log`。
+
+`pnpm run check` 没有跑。完整门禁保持 HOLD。这次纯桩通过不写成真实 Electron、真机或首次全绿。历史里的 PR #232 启动失败、意外 zip、纯桩 7 通过 / 1 定位失败、六条负向 6 通过、lint、skip 和 HOLD 都还在。

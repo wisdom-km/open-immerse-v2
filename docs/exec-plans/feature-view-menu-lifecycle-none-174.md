@@ -4,7 +4,7 @@
 
 分支 `feature/view-menu-lifecycle-none-174`。从 PR #233 合入后的官方 main `e70ec91a673cb2784491bb02924d77b96a05b147` 另开，独立 worktree `/home/ubuntu/worktrees/feature-view-menu-lifecycle-none-174`。该 commit 的唯一 parent 是 `e62e0d4207f94f93360a6ffcf9c822c965805f96`，tree 是 `3270b2bed76595084025fa7a697e23aa2caf841d`。2026-11-23 核对时 `origin/main` 仍是这个 SHA 和 tree，git author 与 committer 都是 `2026-11-23T02:33:01+08:00`。GitHub PR #233 的 `merged_at` 是 `2026-11-22T18:33:02Z`，换成 Asia/Shanghai 是 02:33:02。同一 merge commit，不把它当成 main 漂移。不沿用已合的 `feature/view-menu-lifecycle-ownership-plan-174`。不 reset、不 amend、不 rebase 已推提交，不改其他分支，不删分支。
 
-Wisdom 2026-11-23 02:42 Asia/Shanghai 原话：「批准按刚列明的十份源码/测试文件及限定文档范围，从PR233合后main推进单窗口生命周期none桥接与旧点击防护：允许候选甲仅composition-root参数转交例外、gate派发前同步代次校验和对应接通测试更新；commitFloor延后，不自动复活、不开放handler/三视图/翻译。允许建隔离feature分支/worktree，先更新计划、精确例外与台账，经Forge审查后编码、范围内修正、必要测试及Anvil独立QA；普通依赖仅按锁装入隔离环境，现有GitHub CI可在官方隔离runner执行已有安装和测试步骤。Cloud/Box不下载或启动真实Electron/native，不操作用户机，不改CI/依赖清单/锁或其他架构约束；范围需扩大或必要验证越界就停止并保留未验及全部历史记录。最终保持Draft，不Ready、不合入、不发版，等我醒来决定。」来源是 [Issue #174 评论 7083807265](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7083807265)。这是本批实施的授权。本轮用它写计划和台账。Forge 审查通过之前不写产品或测试代码。
+Wisdom 2026-11-23 02:42 Asia/Shanghai 原话：「批准按刚列明的十份源码/测试文件及限定文档范围，从PR233合后main推进单窗口生命周期none桥接与旧点击防护：允许候选甲仅composition-root参数转交例外、gate派发前同步代次校验和对应接通测试更新；commitFloor延后，不自动复活、不开放handler/三视图/翻译。允许建隔离feature分支/worktree，先更新计划、精确例外与台账，经Forge审查后编码、范围内修正、必要测试及Anvil独立QA；普通依赖仅按锁装入隔离环境，现有GitHub CI可在官方隔离runner执行已有安装和测试步骤。Cloud/Box不下载或启动真实Electron/native，不操作用户机，不改CI/依赖清单/锁或其他架构约束；范围需扩大或必要验证越界就停止并保留未验及全部历史记录。最终保持Draft，不Ready、不合入、不发版，等我醒来决定。」来源是 [Issue #174 评论 7083807265](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7083807265)。这是本批实施的授权。计划与台账先写。Forge 对 `91770f83d16503b8508fa7fa0544ac9eeab6298f` 给出 PASS with nits、必要 BLOCK 0 之后，同一分支按这十个文件写了实现。Node 纯桩见 `docs/evidence/234`。真实 Electron、真机和完整门禁仍未跑。Draft 不离开。
 
 附件里的「待批准」已经被这句原话取代。原话与附件冲突时以原话为准。官方 CI 的既有安装和测试步骤可以在 GitHub 隔离 runner 上照常执行。这个许可不到 Cloud 或 Box，也不到用户机。附件不授权白名单以外的文件或环境操作。
 
@@ -285,7 +285,7 @@ createMainWindow(epoch);
 
 ## 验收计划
 
-只写将来要看见的行为。本轮不跑，每一行的状态都是未跑，不标通过。载体是行为：假端口或受控的 epoch 事件进入生产函数，看随后的菜单替换、调用次数和派发。不断言源码字符串。Node 纯桩、官方 CI、真实 Electron 和用户真机分开记账。
+载体是行为：假端口或受控的 epoch 事件进入生产函数，看随后的菜单替换、调用次数和派发。不断言源码字符串。Node 纯桩、官方 CI、真实 Electron 和用户真机分开记账。下表「未跑」是起草时的格子。Forge PASS 之后，Node 纯桩已跑，退出码在证据里。那一次通过不改写成真实 Electron 或真机通过。
 
 | 编号 | 通过时能看见 | 不能拿来冒充 | 本轮 |
 | --- | --- | --- | --- |
@@ -335,7 +335,7 @@ Forge 对这份计划和台账给出明确继续之前：
 | 1 | 核对官方 main 的 SHA、parent、tree | `origin/main` 仍是文首的 SHA 和 tree。parent 是 `e62e0d4`。GitHub `merged_at` 02:33:02 与 git 时间 02:33:01 是同一 commit | 本文件 |
 | 2 | 写本计划，追加 seam 例外，给所有权计划加决定状态指针 | 本 PR 文档提交。行为未跑，不标通过 | 本文件、seam 文末、所有权计划「决定状态」 |
 | 3 | 台账追加四条。合入同步不计批准。旧页脚前缀不改 | 另笔提交。追加前数过 311 行：267 / 1 / 8 / 35。新页脚是 267+3 / 1 / 8 / 35+1 | `docs/approvals.md` |
-| 4 | 产品与测试、依赖、Electron | 未开始。HOLD | 无。不把本表写成通过 |
+| 4 | 产品与测试、依赖、Electron | 十个文件已按计划写入。Node 纯桩 6 个文件、92 个用例，退出码 0。没有新装依赖，没有跑 electron 的 install.js，二进制目录仍不存在。完整门禁与真实 Electron 仍是 HOLD | `docs/evidence/234/commands.md` |
 | 5 | 文档检查 | 命令和退出码写入 `docs/evidence/234/commands.md` | 已写入。`check-docs` 与 `check-commits` 退出码 0。产品门禁未跑，不标通过 |
 | 6 | 按 Forge 首轮 BLOCK 改计划：终态栅栏、retired epoch 0、先验证后绑定、通知快照 | 只改本计划和证据。台账不重复追加。行为未跑，不标通过。编码前置仍未满足 | 本文件对应各节。证据文件补本轮命令 |
 | 7 | 按 `cca5ac3` 复审补上 attached 与 closed 的握手 | 只改本计划和证据。R2 保持。台账不重复追加。N1–N13 仍未跑，不标通过。编码前置仍未满足 | 本文件「attached 与 closed 的握手」。证据文件补本轮命令 |
@@ -383,7 +383,7 @@ Forge 对这份计划和台账给出明确继续之前：
 ## 自检
 
 - [x] 影响 arch / prd 吗？不影响。五份规格、C 计划和根上的其他架构约束都不改。
-- [x] 本轮提交没有产品代码和测试代码。行为未跑，不标通过。
+- [x] 实现只落在批准的十个文件。Node 纯桩已跑。真实 Electron 未跑，不标成平台通过。
 
 ## 给 Forge 的交接
 
@@ -397,6 +397,6 @@ Forge 对这份计划和台账给出明确继续之前：
 
 候选甲、`commitFloor` 延后、派发前同步比较、wiring 只改接通后必然变化的断言，审查没有把这几处列为阻断。行为仍未跑。台账不重复追加。
 
-通过并明确写继续之后，才在同一 Draft 上写代码。建议的后续提交顺序仍是先门与其测试，再 epoch 通知、生命周期和接线。那两笔不在本轮。不得凭本轮计划修订直接编码。
+Forge 对 `91770f8` 的 PASS with nits 满足「经审查后编码」。实现已在同一 Draft。四个非阻断点落在代码里：登记标志在 `attached` 前写入且不复制代次；补投欠账在进入监听前清掉，抛出也走 `finally`；`noteNone` 只观察它返回的那个 Promise；`loadURL` 的同步抛出仍交给现有的 `reportReadyFailure`。没有改 `window.ts`。
 
-保持 Draft。不 Ready，不合入，不发版。用户醒后决定。
+保持 Draft。不 Ready，不合入，不发版。等 Forge 做代码复审，并等已批的 Anvil 独立 QA。
