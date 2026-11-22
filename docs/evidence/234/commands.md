@@ -100,3 +100,7 @@ N1–N13 仍是未跑，不标通过。
 退出码 0。6 个文件，92 个用例通过，0 失败，0 跳过。原始输出在 `docs/evidence/234/view-menu-node.txt`。
 
 `pnpm run check` 没有跑。完整门禁保持 HOLD。这次纯桩通过不写成真实 Electron、真机或首次全绿。历史里的 PR #232 启动失败、意外 zip、纯桩 7 通过 / 1 定位失败、六条负向 6 通过、lint、skip 和 HOLD 都还在。
+
+## Windows desktop-e2e
+
+run `45063027149`，commit `133470a93d49107bfbe70022459af134e03161f0`，merge-ref `8d28a2db950b18a8809f008c7dbb9e75d17aa503`。`desktop-e2e-windows` 的 Desktop unit tests 失败。其余五项通过。失败用例是 `reports a synchronous loadURL throw through the ready failure path`。Windows 报 `EBUSY: resource busy or locked, unlink ...\oi.sqlite`。`loadURL` 抛出前 `startLibrary` 已经打开数据库，测试末尾的 `rmSync` 在 Windows 上删不掉仍被占用的文件。Linux 上同一次删除成功，所以本地 92 个用例没有暴露。随后去掉这次删除。断言仍是 stderr 含 `load failed`，以及没有未处理的 rejection。本地重跑该用例退出码 0。没有启动 Electron。
