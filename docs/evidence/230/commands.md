@@ -43,3 +43,13 @@ Node v22.23.4。工作目录是仓库根。下面的退出码是本机这次跑�
 ## GATE_BASE=origin/main node tools/check-pr-size/check.mjs
 
 在 `0f4209b5ab7e588b444ff7d0bc17e99ff53e3371` 上退出码 1。计数 659，高于 600。提交说明里没有行数例外理由。本 Draft 不补这个理由，失败保留。现行 CI 的 Check 步骤不读取 PR 正文。
+
+## CI run 44995561367
+
+head `fd2263c328fb3f68a0a8242d1078336e5f5f8ab4`。https://github.com/wisdom-km/open-immerse-v2/actions/runs/44995561367
+
+`node` 的 Check 步骤失败，计数 663。该作业没有跑到后面的 Unit tests。这不是 Ubuntu 单测失败，是单测没跑到。
+
+`desktop-e2e-windows` 通过。Desktop unit tests：26 个文件，126 个测试通过。随后 Windows native view menu 跑的是 `corepack pnpm exec vitest run --config vitest.windows-native.config.ts`。该测试的 stdout 出现 `Downloading Electron binary...`。1 个测试通过，6382ms。这句提示不能写成 zip 一定走了网络，日志也没有写出安装结束时的 path.txt 或 exe。测试能启动，说明当时进程拿到了可用二进制。Playwright 随后 32 passed，那是现有 `dist/main` e2e，不是这次 native。
+
+`docs-report`、`python-worker`、`worker-health-macos`、`worker-health-windows` 通过。
