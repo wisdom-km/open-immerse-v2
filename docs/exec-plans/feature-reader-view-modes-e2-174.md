@@ -280,3 +280,40 @@ E2-2，合计 109。只在 E2-1 合入之后另开。`forced-colors` 只给新�
 任务类型：UI 改动。涉及切片：reader 的 `src/ui`，desktop 的 renderer。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
 
 从当时的 main 开工，不从本计划分支写产品代码。先读本文件的 H1–H12。临时默认原文来自 1A / 6658666956。6-1 A 只定空态文案。6-3 A 是文献库里不置灰，置灰缺口本批不修。E2-0 只移离开接线。E2-1 的组容器用 `getByRole('radiogroup', { name: '栏位' })` 能够找到，可访问名称是「栏位」。`<fieldset>` 的默认角色是 `group`，不能只靠 fieldset 充数。放在空 chip 右边。三个栏位共用同一 `ReaderScreen`、同一 session、同一历史、同一 zoom。对照只缩容器，不调用适合宽度。译文用 `inert` 隐藏这一份 `PageColumn`，不卸载、不复制、不重新打开文档。回到原文保留页码、历史和缩放。加载和错误页不被空态替换。焦点在即将消失的节点上时落到对应 radio。组内方向键用浏览器自己的 radio 行为，不复制 `keepClosed` 的 8 键拦截，不另写全局 `keydown`。Ctrl / ⌘+1/2/3 只订阅已有菜单事件。估算超过 346 就重算；实际非生成行超过 600 才是 `check-pr-size` 的停点。两种情况都不删测试，也不把 346 写成 G12。路径甲不改 main，并在验收里把菜单勾选写成未完成。路径乙不进入 E2-1。顺序是 S1、S2a、S2b、S2c-prep、S2c-on、然后这三笔、最后 S3。R-E13 按 13:41 在 DESKTOP-0GI64S8（32GB）上测，标明硬件，不称 8GB 验证，不限制启动内存。第 4 点的显示缩放已由 13:55 批准，尚未实跑，测完恢复 100%。这不是 PRD §8 的 M2 整体豁免。原则通过不等于实现通过。
+
+## 2026-11-23 23:25 实施更正
+
+上面的历史原句保留。本段取代文首基线 `dc35b82`、停止点里的 346 / 600 / 250 / 函数 80 硬停，以及交接里「不要开工 E2-0」那句。不改写更早的段落。
+
+Wisdom 原话是「OK，那就按照你的建议推进吧。」登记在 [评论 7105575675](https://github.com/wisdom-km/open-immerse-v2/pull/236#issuecomment-7105575675)。范围是已交付的 E2 提案：E2-0 与 E2-1 同一分支、同一 Draft。E2-2 等 E2-1 获批合入后另开。S3 不在本次。
+
+开工基线是官方 main `6f23e38da65d10f0a54d144c7cdff06e769f355d`，tree `64b69361b63fe08fc18db31b8d8f85fd7cd18caf`。S2c 已随 PR #236 合入。`shell.reportViewMenu` 已经 expose。这次不调用它，不上报勾选。路径甲只订阅已有 `oi-view-original`、`oi-view-bilingual`、`oi-view-translation`。菜单仍是普通项。勾选仍未完成。
+
+`check-pr-size` 与 `check-file-size` 只打印，不因行数退出 1，也不读 `G12:`。这次不把 600、函数 80、估算 346 或单文件 250 当硬停，不为此拆 PR，也不写豁免行。一文件一职责仍然有效。取消机械行数否决，不是把无关逻辑堆进同一个文件。
+
+分支是 `feature/reader-view-modes-e2-174`。E2-0 是离开接线的行为保持抽出，是这一支上的提交，不是单独的计划 PR。E2-1 是最小完整栏位。E2-2 本次不写 `forced-colors`，不改 `reader-nav.spec.ts`。
+
+### 这次的文件
+
+E2-0：新建 `packages/features/reader/src/ui/use-reader-leave.ts`。`reader-screen.tsx` 改为调用它。
+
+E2-1：新建 `use-view-mode.ts`、`view-mode-switch.tsx`、`view-mode-empty.tsx`、`view-mode-panes.tsx`，以及 `view-mode-switch.test.tsx`、`view-mode-empty.test.tsx`、`view-mode-panes.test.tsx`。改 `copy.ts`、`use-bound-nav.ts`、`reader-screen.tsx`、`reader-screen.test.tsx`、`apps/desktop/src/renderer/shell.tsx`、`apps/desktop/src/renderer/reader.css`。`apps/desktop/test/shell.test.ts` 归 E2-1。两平台空态句都在 `view-mode-empty.test.tsx`。
+
+文档只追加本文件和 `docs/approvals.md`。有 PR 号之后，证据写入 `docs/evidence/<PR号>/`。那一笔在 check 之后，不因此再跑整链。
+
+不改 `shell-events.ts`、`library-menu.ts`、`library-wiring.ts`、`view-menu-*`、preload、生成物、contracts、core、CI、锁、DESIGN、PRD、ARCHITECTURE、RULES。reader UI 不 import desktop，不订阅全局 `window`。shell 把已有事件接到现有 `onBindNav`。系统原生 radio，不另写 `keydown`。
+
+### 这次的命令与额度
+
+额度属于这一次分配，不随每个 tip 重置，也不借用 PR #236 的额度。源码和文档完成并做完静态审查之后才跑。不在每次提交时跑。
+
+| 命令 | 次数 |
+| --- | --- |
+| E2-0 三文件：`corepack pnpm exec vitest run packages/features/reader/test/ui/reader-screen.test.tsx packages/features/reader/test/ui/failed-read-leave.test.tsx packages/features/reader/test/ui/page-column.test.tsx` | 最多 1。七文件那次已经包含这三份时，这一次可以不另跑 |
+| E2-1 七文件：上面三份，加上 `view-mode-switch.test.tsx`、`view-mode-empty.test.tsx`、`view-mode-panes.test.tsx`、`apps/desktop/test/shell.test.ts` | 最多 1 |
+| `corepack pnpm run check` | 整链最多 1。本地基线 ref 若仍停在更早的 main，用 `GATE_BASE` 指向 `6f23e38da65d10f0a54d144c7cdff06e769f355d`，与 CI 的 `origin/main` 对齐 |
+| 真实失败的原子项，或真实失败的文件集合 | 总共再最多 1。不补整链。没有失败文件的环境问题不算失败子集 |
+
+不跑全库 `pnpm test`。不另跑 lint 或 typecheck。不跑 G9、Python suite、Electron、e2e、浏览器、用户机或 native 构建。check 里原有的 codegen 与 license pip 可以随整链走。不新装、不下载。uv 若要拉依赖就停。PATH 把 Node 22.23.4 的目录放在前面。不用 `pnpm test --`。
+
+happy-dom 的 `HTMLInputElement` 没有 radio 方向键默认行为。不自造键盘实现。E2-04 的方向键保持未验证，交给合入前的真实 UI。其余能在这七个文件里钉住的行为，以那一次运行的退出码为准。没有通过证据的条目仍写未验证。原则通过和 CI 都不代替上手验收。
