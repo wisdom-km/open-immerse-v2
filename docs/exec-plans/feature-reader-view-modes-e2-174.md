@@ -317,3 +317,13 @@ E2-1：新建 `use-view-mode.ts`、`view-mode-switch.tsx`、`view-mode-empty.tsx
 不跑全库 `pnpm test`。不另跑 lint 或 typecheck。不跑 G9、Python suite、Electron、e2e、浏览器、用户机或 native 构建。check 里原有的 codegen 与 license pip 可以随整链走。不新装、不下载。uv 若要拉依赖就停。PATH 把 Node 22.23.4 的目录放在前面。不用 `pnpm test --`。
 
 happy-dom 的 `HTMLInputElement` 没有 radio 方向键默认行为。不自造键盘实现。E2-04 的方向键保持未验证，交给合入前的真实 UI。其余能在这七个文件里钉住的行为，以那一次运行的退出码为准。没有通过证据的条目仍写未验证。原则通过和 CI 都不代替上手验收。
+
+## 2026-11-24 00:18 测试登记
+
+上面的句子保留。Wisdom 原话是「OK，按照你的建议推进吧。」登记在 [评论 7106946089](https://github.com/wisdom-km/open-immerse-v2/pull/236#issuecomment-7106946089)。只补一处精确文件，沿 `apps/desktop/test/reading-command-surface.test.ts` 的现有写法，不加通配，不放宽检查，不改其他配置语义：
+
+- `tsconfig.json` 的 `exclude` 追加 `apps/desktop/test/shell.test.ts`
+- `tsconfig.ui.json` 的 `include` 追加同一路径
+- `eslint.config.js` 的 `allowDefaultProject` 追加同一路径
+
+这次额度不新增、不重置。E2-0 三文件仍是最多 1，而且这次保持未跑：工作树里已经有 E2-1 的未提交改动，不能为了单独回到 `13964cacd790d24597e839be822f6b2df6911721` 去破坏工作树。后面那一次七文件跑的是最终源码，不写成 E2-0 的独立验证。方向键未验保留，不加第二套 `keydown`。E2-2 与 S3 仍不在本次。
