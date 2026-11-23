@@ -2,12 +2,11 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 
-import {
-  VIEW_EMPTY_COPY,
-  VIEW_ORIGINAL_LINK_MAC,
-  VIEW_ORIGINAL_LINK_WIN,
-} from "../../src/ui/copy.js";
 import { ViewModeEmpty } from "../../src/ui/view-mode-empty.js";
+
+const APPROVED_EMPTY = "本阶段暂不提供译文，请先阅读原文。";
+const APPROVED_WIN = "切到原文（Ctrl+1）";
+const APPROVED_MAC = "切到原文（⌘1）";
 
 afterEach(() => {
   cleanup();
@@ -19,27 +18,33 @@ it("uses the approved Windows sentence and a text link", () => {
   const onOriginal = vi.fn();
   render(<ViewModeEmpty onOriginal={onOriginal} />);
   const region = emptyRegion();
-  expect(region.textContent).toContain(VIEW_EMPTY_COPY);
+  expect(copyText(region)).toBe(APPROVED_EMPTY);
   expect(
     region.querySelector("[data-slot='view-mode-empty-degrade']")?.textContent,
   ).toBe("");
   expect(region.querySelectorAll("button")).toHaveLength(0);
   expect(screen.queryByRole("button", { name: "开始翻译" })).toBeNull();
   expect(screen.queryByText("去设置")).toBeNull();
-  fireEvent.click(screen.getByRole("link", { name: VIEW_ORIGINAL_LINK_WIN }));
+  const link = screen.getByRole("link", { name: APPROVED_WIN });
+  expect(link.textContent).toBe(APPROVED_WIN);
+  fireEvent.click(link);
   expect(onOriginal).toHaveBeenCalledTimes(1);
 });
 
 it("uses the approved mac link sentence", () => {
   setAgent("Mac");
   render(<ViewModeEmpty onOriginal={() => undefined} />);
-  expect(
-    screen.getByRole("link", { name: VIEW_ORIGINAL_LINK_MAC }),
-  ).toBeTruthy();
-  expect(
-    screen.queryByRole("link", { name: VIEW_ORIGINAL_LINK_WIN }),
-  ).toBeNull();
+  const region = emptyRegion();
+  expect(copyText(region)).toBe(APPROVED_EMPTY);
+  const link = screen.getByRole("link", { name: APPROVED_MAC });
+  expect(link.textContent).toBe(APPROVED_MAC);
+  expect(screen.queryByRole("link", { name: APPROVED_WIN })).toBeNull();
 });
+
+function copyText(region: HTMLElement): string | null | undefined {
+  return region.querySelector("[data-slot='view-mode-empty-copy']")
+    ?.textContent;
+}
 
 function emptyRegion(): HTMLElement {
   const node = document.querySelector(".oi-reader-view-empty");
