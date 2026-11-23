@@ -33,7 +33,11 @@ import {
   type ShellMenuEntry,
 } from "./library-menu.js";
 import type { ViewSlotDescription } from "./view-menu-mirror.js";
-import { createViewMenuGate, type ViewMenuGate } from "./view-menu-gate.js";
+import {
+  createViewMenuGate,
+  type ViewMenuCandidateGate,
+  type ViewMenuGate,
+} from "./view-menu-gate.js";
 import { bindViewMenuLifecycle } from "./view-menu-lifecycle.js";
 import { createViewMenuHandler } from "./view-menu-handler.js";
 import type { ViewMenuEpoch, ViewMenuFloorWriter } from "./view-menu-epoch.js";
@@ -147,7 +151,7 @@ type InstalledMenu = {
 
 function installApplicationMenu(epoch?: ViewMenuEpoch): {
   readonly ready: Promise<void>;
-  readonly gate: ViewMenuGate;
+  readonly gate: ViewMenuCandidateGate;
 } {
   const held: { gate: ViewMenuGate | null; current: InstalledMenu | null } = {
     gate: null,
@@ -178,7 +182,7 @@ function installApplicationMenu(epoch?: ViewMenuEpoch): {
 function withViewMenu(
   commands: ReadonlyMap<string, IpcCommandHandler>,
   epoch: ViewMenuEpoch,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
 ): ReadonlyMap<string, IpcCommandHandler> {
   const merged = new Map(commands);
   merged.set(

@@ -4,7 +4,7 @@ import { viewOriginalEvent } from "../src/main/library-menu.js";
 import {
   createViewMenuGate,
   type StageMark,
-  type ViewMenuGate,
+  type ViewMenuCandidateGate,
 } from "../src/main/view-menu-gate.js";
 import {
   viewSlotDescriptions,
@@ -35,7 +35,7 @@ type ReplaceScript = {
 };
 
 type Opened = {
-  readonly gate: ViewMenuGate;
+  readonly gate: ViewMenuCandidateGate;
   readonly calls: ViewSlotDescription[][];
   readonly dispatches: string[];
 };

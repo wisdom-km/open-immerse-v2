@@ -35,10 +35,14 @@ export type ViewMenuGate = {
   readonly install: InstallStatus;
   readonly pendingMark: StageMark | null;
   submit(shape: ViewShape, mark: StageMark): Promise<void>;
-  submitCandidate<T>(input: SubmitCandidateInput<T>): Promise<T | undefined>;
+  submitCandidate?<T>(input: SubmitCandidateInput<T>): Promise<T | undefined>;
   noteNone(mark: StageMark): Promise<void>;
   click(requestedEvent: string): Promise<number>;
   setDestroyed(destroyed: boolean): void;
+};
+
+export type ViewMenuCandidateGate = ViewMenuGate & {
+  submitCandidate<T>(input: SubmitCandidateInput<T>): Promise<T | undefined>;
 };
 
 type Outcome = "ok" | "failed";
@@ -82,7 +86,9 @@ type RepairBudget = {
   used: boolean;
 };
 
-export function createViewMenuGate(ports: ViewMenuGatePorts): ViewMenuGate {
+export function createViewMenuGate(
+  ports: ViewMenuGatePorts,
+): ViewMenuCandidateGate {
   const state: GateState = {
     committed: null,
     install: "unknown",
@@ -99,7 +105,7 @@ export function createViewMenuGate(ports: ViewMenuGatePorts): ViewMenuGate {
       pendingMark: null,
     },
   };
-  const gate: ViewMenuGate = {
+  const gate: ViewMenuCandidateGate = {
     get committed() {
       return state.published.committed;
     },
@@ -123,7 +129,7 @@ export function createViewMenuGate(ports: ViewMenuGatePorts): ViewMenuGate {
 
 async function noteNone(
   state: GateState,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
   ports: ViewMenuGatePorts,
   mark: StageMark,
 ): Promise<void> {
@@ -141,7 +147,7 @@ async function noteNone(
 
 async function submit(
   state: GateState,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
   ports: ViewMenuGatePorts,
   shape: ViewShape,
   mark: StageMark,
@@ -168,7 +174,7 @@ async function submit(
 
 async function click(
   state: GateState,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
   ports: ViewMenuGatePorts,
   requestedEvent: string,
 ): Promise<number> {
@@ -204,7 +210,7 @@ async function click(
 
 async function rebuildAndDispatch(
   state: GateState,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
   ports: ViewMenuGatePorts,
   shapeAtStart: ViewShape,
   markAtStart: StageMark | null,
@@ -257,7 +263,7 @@ function clickCandidate(
 
 async function operate(
   state: GateState,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
   work: (committedBeforeOperation: ViewShape | null) => Promise<void>,
 ): Promise<void> {
   const committedBeforeOperation = state.committed;
@@ -272,7 +278,7 @@ async function operate(
 
 async function settle(
   state: GateState,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
   ports: ViewMenuGatePorts,
   candidate: ViewShape | null,
   committedBeforeOperation: ViewShape | null,
@@ -313,7 +319,7 @@ function matchingPending(state: GateState): boolean {
 
 function commitCandidate(
   state: GateState,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
   candidate: ViewShape | null,
   committedBeforeOperation: ViewShape | null,
 ): void {
@@ -329,7 +335,7 @@ function commitCandidate(
 
 function keepUnknown(
   state: GateState,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
   committedBeforeOperation: ViewShape | null,
 ): void {
   clearSeal(state);
@@ -340,7 +346,7 @@ function keepUnknown(
 
 async function runSubmitCandidate<T>(
   state: GateState,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
   ports: ViewMenuGatePorts,
   input: SubmitCandidateInput<T>,
 ): Promise<T | undefined> {
@@ -387,7 +393,7 @@ function readEligibility<T>(input: SubmitCandidateInput<T>): boolean {
 
 function acceptOwned<T>(
   state: GateState,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
   input: SubmitCandidateInput<T>,
   token: object,
   candidate: ViewShape | null,
@@ -510,7 +516,7 @@ async function dispatchRequested(
 
 async function closePendingAfterDispatch(
   state: GateState,
-  gate: ViewMenuGate,
+  gate: ViewMenuCandidateGate,
   ports: ViewMenuGatePorts,
   committedBeforeOperation: ViewShape | null,
   budget: RepairBudget,
@@ -582,7 +588,10 @@ function attemptCurrent(state: GateState, attempt: number): boolean {
   return !destroyedNow(state) && state.attempts.current() === attempt;
 }
 
-function sync(state: GateState, gate: ViewMenuGate): ViewMenuGate {
+function sync(
+  state: GateState,
+  gate: ViewMenuCandidateGate,
+): ViewMenuCandidateGate {
   state.published.committed = state.committed;
   state.published.install = state.install;
   state.published.pendingMark = state.pending?.mark ?? null;

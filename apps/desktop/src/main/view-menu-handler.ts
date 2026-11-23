@@ -1,5 +1,5 @@
 import type { IpcCommandContext, IpcCommandHandler } from "./ipc/ipc-router.js";
-import type { ViewMenuGate } from "./view-menu-gate.js";
+import type { ViewMenuCandidateGate } from "./view-menu-gate.js";
 import type { ViewShape } from "./view-menu-mirror.js";
 import type {
   ViewMenuAcceptance,
@@ -9,7 +9,7 @@ import type {
 
 type ViewMenuDeps = {
   readonly epoch: ViewMenuEpoch & ViewMenuFloorWriter;
-  readonly gate: ViewMenuGate;
+  readonly gate: ViewMenuCandidateGate;
   readonly soleWindow: () => number | undefined;
 };
 
