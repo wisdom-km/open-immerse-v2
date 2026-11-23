@@ -16,6 +16,9 @@ import {
   historyForwardEvent,
   openFileEvent,
   returnLibraryEvent,
+  viewBilingualEvent,
+  viewOriginalEvent,
+  viewTranslationEvent,
   zoomActualEvent,
   zoomFitWidthEvent,
   zoomInEvent,
@@ -32,6 +35,9 @@ type MenuNav = {
   readonly zoomOut: () => void;
   readonly zoomActual: () => void;
   readonly zoomFitWidth: () => void;
+  readonly viewOriginal: () => void;
+  readonly viewContrast: () => void;
+  readonly viewTranslation: () => void;
 };
 
 export function Shell(): ReactElement {
@@ -61,6 +67,9 @@ export function Shell(): ReactElement {
       zoomOutEvent,
       zoomActualEvent,
       zoomFitWidthEvent,
+      viewOriginalEvent,
+      viewBilingualEvent,
+      viewTranslationEvent,
     ];
     for (const name of names) window.addEventListener(name, onEvent);
     return () => {
@@ -111,7 +120,21 @@ function menuAction(
   if (type === historyBackEvent) return nav?.back;
   if (type === historyForwardEvent) return nav?.forward;
   if (type === goToPageEvent) return nav?.openGoTo;
-  return zoomCommand(type, nav);
+  return viewCommand(type, nav) ?? zoomCommand(type, nav);
+}
+
+const viewActions = {
+  [viewOriginalEvent]: "viewOriginal",
+  [viewBilingualEvent]: "viewContrast",
+  [viewTranslationEvent]: "viewTranslation",
+} as const;
+
+function viewCommand(
+  type: string,
+  nav: MenuNav | undefined,
+): (() => void) | undefined {
+  if (!Object.hasOwn(viewActions, type)) return undefined;
+  return nav?.[viewActions[type as keyof typeof viewActions]];
 }
 
 function zoomCommand(

@@ -16,3 +16,7 @@ export function pageCountNote(pageCount: number): string {
 export function zoomSpoken(percent: number): string {
   return `${String(percent)}%`;
 }
+
+export const VIEW_EMPTY_COPY = "本阶段暂不提供译文，请先阅读原文。";
+export const VIEW_ORIGINAL_LINK_WIN = "切到原文（Ctrl+1）";
+export const VIEW_ORIGINAL_LINK_MAC = "切到原文（⌘1）";
