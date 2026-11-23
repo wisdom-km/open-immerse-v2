@@ -1,6 +1,4 @@
 // @vitest-environment happy-dom
-import { writeSync } from "node:fs";
-
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createElement, useEffect, type ComponentProps } from "react";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
@@ -183,10 +181,8 @@ it("changes the open reader once per view event and ignores events after leave",
 });
 
 function shellStage(stage: string, startedAt: number): void {
-  writeSync(
-    2,
-    `oi-shell-stage ${stage} ${Math.round(performance.now() - startedAt)}\n`,
-  );
+  const elapsed = String(Math.round(performance.now() - startedAt));
+  console.error(`oi-shell-stage ${stage} ${elapsed}`);
 }
 
 function callCount(): readonly [number, number, number] {
