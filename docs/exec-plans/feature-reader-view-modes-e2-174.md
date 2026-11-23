@@ -333,3 +333,15 @@ happy-dom 的 `HTMLInputElement` 没有 radio 方向键默认行为。不自造�
 上面的句子保留。Wisdom 原话是「按照你的建议推进。」登记在 [评论 7107433987](https://github.com/wisdom-km/open-immerse-v2/pull/236#issuecomment-7107433987)。只把 `eslint.config.js` 的 `maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING` 从 64 改成 70。不是更高的任意上限。不加通配，不关规则，不改其余语义。
 
 原完整 check 在 `8f90c540c2614e5af192a0b4674e53fbaf278bd9` 上退出码 1。G1 格式已打印通过。G2 失败，原因是默认项目匹配超过 64。从 typecheck 起的 14 个原子项当时没有启动。七文件 vitest 仍是 1/1 且退出码 1。shell 失败文件补验仍是 1/1 且退出码 0。这些次数不重置。新的许可只是：在含 70 的提交上用 `corepack pnpm run lint` 补 G2 一次；成功后再按脚本顺序把未启动的 14 项各跑最多一次。不重跑整链 check，不重跑 G1，不再跑 Vitest。某一项失败或要下载就停，没有新的失败补验。
+
+## 2026-11-24 00:44 夜间连续推进
+
+上面的句子保留。00:35 的「G2 再失败即停」不改写成已经允许。本段是后一次直接批准。
+
+Wisdom 原话一是「OK，按照你的建议推进就行。」对应只改 `view-mode-panes.test.tsx` 里 `checked()` 的返回表达式，去掉 `textContent` 上多余的可选链，改成 `(chosen[0]?.parentElement?.textContent ?? "").trim()`。长度断言和「返回这一项父节点文本」不变。不关规则。
+
+Wisdom 原话二是「我记得昨天跟你说了，我晚上休息的时候，你就按照你的建议去推进就行。只有需要合并的，等我醒了之后我再合。」登记在 [评论 7107620601](https://github.com/wisdom-km/open-immerse-v2/pull/236#issuecomment-7107620601)。
+
+执行边界：已批 E2-0 / E2-1 目标和白名单里的普通实现或测试修正，以及只针对失败原子项的补验，可以连续做。范围外缺口、环境不足、要下载、codegen 白名单外 diff，仍然停下，不提交生成物。不重跑完整 `pnpm run check`，不重跑已通过的无关项，不跑无差别全库测试。分项结果不写成第二次完整 check 退出码 0。旧次数和失败不重置，不追认历史。合入留给 Wisdom 醒后决定。保持 Draft。
+
+`2243996ffbae0527eda86edd769e6eb188608a6b` 上那一次 `corepack pnpm run lint` 仍是退出码 1，报 `no-unnecessary-condition`。那次不改记成通过。本段之后的 lint 是这一条新开的一次原子补验。通过后再按原顺序跑此前从未启动的 14 项。
