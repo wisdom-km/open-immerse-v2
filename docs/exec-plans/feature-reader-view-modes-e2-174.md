@@ -361,3 +361,15 @@ N1：空态句、Windows 链接、mac 链接写在测试文件自己的常量里
 `170070c7f536b0046e22024f784fad6be4d03a3c` 的远端 `desktop-e2e-windows` 在「Desktop unit tests」失败。失败的是 `shell.test.ts` 超时 5000ms，Playwright 步骤没有启动。同一授权下只改这一份测试：不再替换 `window.addEventListener`，改用 `vi.spyOn` 计数，并把这一条的时限放到 20 秒。调用次数、离开后不重开、卸载后添加次数等于移除次数这些断言还在。本地只补跑了 `apps/desktop/test/shell.test.ts`。没有手动重跑 CI。
 
 上面那句「放到 20 秒」是当时的改动，不改写成已经定位。官方失败日志 [job 137873296797](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45226216313/job/137873296797) 的栈停在 `shell.test.ts:114`，下一行是 `watchViewListeners()`，它在 `import` 之前替换了 `window.addEventListener`。日志没有给出具体 `await`。随后自然 CI [run 45227957478](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45227957478) 的 Windows 桌面单测里，同一用例在 spy 版本上打印 `3354ms` 并通过，31 文件 208 项都过。3354ms 低于默认 5000ms，所以 20 秒时限没有参与这次通过。这一笔把它去掉，观察仍放在 `import` 之后。`170070c` 的失败保留。
+
+## 2026-11-24 阶段诊断
+
+上面两段保留。把「下一行就是挂起点」或「改观察器即已解决」读成已证实原因，是错的。栈不是执行跟踪。`1ff89e5` 仍用导入后的 `vi.spyOn` 和默认时限，Windows 再次超时，所以那次观察器改动没有被证明为原因。
+
+偏差：`0e3eb2a` 把这条用例的时限写成 20 秒。这和当时「不得直接加 timeout」不符。`53d1628` 撤掉了它。不追认这 20 秒，不把它写成批准的修复。`9591169` 的六项 success 只属于那个 tip，不继承到后面的 tip。`170070c` 与 `1ff89e5` 的 Windows 失败都保留，不倒改。
+
+import 移到观察之前发生在 `0e3eb2a`，同一笔还加了 20 秒。不是 `53d1628` 才移动 import。`53d1628` 只删时限并加了一句后来已删的注释。
+
+`1ff89e5` 的自然 CI [run 45229208678](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45229208678)，失败 job [137883857395](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45229208678/job/137883857395)。checkout 是 merge `66efb7bdbc966f8a2ac920d3a52670f778027271`，合入的是这个 tip。`shell.test.ts` 再次 Test timed out in 5000ms。31 文件 30 过 1 败，208 项 207 过 1 败。展示的下一行是 `await import`。png 缺失在超时之后。旧 `9591169` 六绿不继承。
+
+这一轮只在 `apps/desktop/test/shell.test.ts` 加阶段行：`oi-shell-stage` 加上阶段名和毫秒。阶段是 import 前后、渲染前后、文献库等待前后、进入 Reader 前后、三个事件前后、leave 前后、unmount 前后。断言、真实 Reader 接线和默认时限不动。产品代码不动。`node:fs` 的 `writeSync` 在这份测试的类型项目里报 `no-unsafe-call`，两次 lint 失败保留。推上去的行改用 `console.error`。Windows 上最后到达哪一阶段，等这次推送的自然 CI。在那份日志出现之前，不再改测试行为。
