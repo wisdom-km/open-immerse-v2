@@ -121,6 +121,7 @@ vi.mock("../src/main/view-menu-gate.js", async (importOriginal) => {
           control.destroyed += 1;
           gate.setDestroyed(destroyed);
         },
+        submitCandidate: gate.submitCandidate.bind(gate),
       };
     },
   };
@@ -363,6 +364,62 @@ it("N3 notes open, retire, and renderer gone after a real commit", async () => {
   }
 });
 
+it("accepts the submitted radio and rejects the same object checked on another mode", async () => {
+  const epoch = createViewMenuEpoch();
+  const page = manualWindow(4);
+  epoch.attach(page.win as never);
+  page.emit("did-navigate", {}, "oi-app://app/index.html");
+  const started = boot(epoch);
+  try {
+    await control.task;
+    const accepted = await report(started.handlers, "original", 1);
+    expect(accepted).toEqual({ ok: true, value: { epoch: 1 } });
+    expect(epoch.read(4)?.floor).toBe(1);
+    expect(checkedId(shell.current)).toBe(viewOriginalEvent);
+    const hold = deferred();
+    control.wait = hold.promise;
+    const pending = report(started.handlers, "contrast", 2);
+    for (const item of plainSlots(shell.current)) {
+      item.checked = item.id === viewOriginalEvent;
+    }
+    hold.resolve();
+    await expect(pending).resolves.toEqual({
+      ok: false,
+      error: { code: "rejected", retryable: false },
+    });
+    expect(epoch.read(4)?.floor).toBe(1);
+    expect(shell.current).toBe(shell.built);
+  } finally {
+    started.close();
+  }
+});
+
+it("rejects a legal none shape when the submit asked for an active mode", async () => {
+  const epoch = createViewMenuEpoch();
+  const page = manualWindow(4);
+  epoch.attach(page.win as never);
+  page.emit("did-navigate", {}, "oi-app://app/index.html");
+  const started = boot(epoch);
+  try {
+    await control.task;
+    const hold = deferred();
+    control.wait = hold.promise;
+    const pending = report(started.handlers, "translation", 1);
+    for (const item of plainSlots(shell.current)) {
+      item.type = "normal";
+      item.checked = false;
+    }
+    hold.resolve();
+    await expect(pending).resolves.toEqual({
+      ok: false,
+      error: { code: "rejected", retryable: false },
+    });
+    expect(epoch.read(4)?.floor).toBe(0);
+  } finally {
+    started.close();
+  }
+});
+
 it("N5 destroys after a leading listener closes during attached", async () => {
   const hold = deferred();
   control.wait = hold.promise;
@@ -406,6 +463,23 @@ function boot(epoch?: ReturnType<typeof createViewMenuEpoch>): {
       rmSync(root, { recursive: true, force: true });
     },
   };
+}
+
+function report(
+  handlers: ReturnType<typeof startLibrary>,
+  mode: string,
+  generation: number,
+): Promise<unknown> {
+  const handler = handlers.get("shell.reportViewMenu");
+  if (handler === undefined) throw new Error("shell.reportViewMenu");
+  return handler(
+    { op: "submit", mode, epoch: 1, generation },
+    { requestId: "r", senderWebContentsId: 4 },
+  );
+}
+
+function checkedId(menu: FakeMenu): string | undefined {
+  return plainSlots(menu).find((item) => item.checked === true)?.id;
 }
 
 function pressView(label: string): Promise<number> {
@@ -491,10 +565,16 @@ function manualWindow(id: number): {
 type On = (name: string, listener: (...args: unknown[]) => void) => void;
 
 function windowStub(): {
-  webContents: { executeJavaScript: (script: string) => Promise<void> };
+  isDestroyed: () => boolean;
+  webContents: {
+    id: number;
+    executeJavaScript: (script: string) => Promise<void>;
+  };
 } {
   return {
+    isDestroyed: () => false,
     webContents: {
+      id: 4,
       executeJavaScript(script: string) {
         shell.scripts.push(script);
         if (shell.rejectScript) return Promise.reject(new Error("js rejected"));

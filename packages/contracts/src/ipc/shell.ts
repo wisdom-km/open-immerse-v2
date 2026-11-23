@@ -46,8 +46,8 @@ const reportViewMenuResponse = Type.Object(
 );
 
 /**
- * 未暴露。read 只有 op。submit 带四值 mode 与两个代际整数。
- * 成功体只有 epoch。不查地板，不写菜单。
+ * 已暴露。read 只有 op。submit 带四值 mode 与两个代际整数。
+ * 成功体只有 epoch。不新增字段。
  */
 export const reportViewMenu = {
   channel: "shell.reportViewMenu" as const,
@@ -56,7 +56,7 @@ export const reportViewMenu = {
   response: reportViewMenuResponse,
   errors: [rejected, ...ipcTransportErrors] as const,
   idempotent: false as const,
-  expose: false as const,
+  expose: true as const,
   transport: "invoke" as const,
 };
 

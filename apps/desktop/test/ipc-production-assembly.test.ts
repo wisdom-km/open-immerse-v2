@@ -17,6 +17,7 @@ it("covers the generated registry with the production command list", () => {
   );
   handlers.set(openDocumentChannel, unusedHandler);
   handlers.set("parsing.getParseCapabilities", unusedHandler);
+  handlers.set("shell.reportViewMenu", unusedHandler);
   const count = registerIpcRouter({
     registry: ipcRegistry,
     handlers,
@@ -39,6 +40,36 @@ it("covers the generated registry with the production command list", () => {
   expect(commands.every((channel) => handlers.has(channel))).toBe(true);
   expect(count).toBe(commands.length);
   expect(commands).toContain("parsing.getParseCapabilities");
+  expect(commands).toContain("shell.reportViewMenu");
+});
+
+it("rejects a production command list that omits the view menu", () => {
+  const handlers = new Map<string, IpcCommandHandler>(
+    libraryCommandChannels.map((channel) => [channel, unusedHandler]),
+  );
+  handlers.set(openDocumentChannel, unusedHandler);
+  handlers.set("parsing.getParseCapabilities", unusedHandler);
+  expect(() =>
+    registerIpcRouter({
+      registry: ipcRegistry,
+      handlers,
+      bind() {
+        return undefined;
+      },
+      acceptsSender() {
+        return true;
+      },
+      logOversize() {
+        return undefined;
+      },
+      logHandlerThrew() {
+        return undefined;
+      },
+      nowIso() {
+        return "2026-11-09T00:00:00.000Z";
+      },
+    }),
+  ).toThrow(/missing ipc handler/u);
 });
 
 function unusedHandler(): Promise<unknown> {

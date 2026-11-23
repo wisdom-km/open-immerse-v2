@@ -32,13 +32,11 @@ import {
   type MenuItemSpec,
   type ShellMenuEntry,
 } from "./library-menu.js";
-import {
-  viewSlotDescriptions,
-  type ViewSlotDescription,
-} from "./view-menu-mirror.js";
+import type { ViewSlotDescription } from "./view-menu-mirror.js";
 import { createViewMenuGate, type ViewMenuGate } from "./view-menu-gate.js";
 import { bindViewMenuLifecycle } from "./view-menu-lifecycle.js";
-import type { ViewMenuEpoch } from "./view-menu-epoch.js";
+import { createViewMenuHandler } from "./view-menu-handler.js";
+import type { ViewMenuEpoch, ViewMenuFloorWriter } from "./view-menu-epoch.js";
 import {
   openDocumentChannel,
   openDocumentHandler,
@@ -57,8 +55,11 @@ export function startLibrary(
   app.on("will-quit", () => {
     main.close();
   });
-  void installApplicationMenu(epoch).catch(() => undefined);
-  return wiredLibraryCommands(main);
+  const installed = installApplicationMenu(epoch);
+  void installed.ready.catch(() => undefined);
+  const commands = wiredLibraryCommands(main);
+  if (epoch === undefined) return commands;
+  return withViewMenu(commands, epoch, installed.gate);
 }
 
 const startupViewMark = "unbound";
@@ -139,23 +140,31 @@ function pickPdf():
   return { kind: "chosen", filePath };
 }
 
-function installApplicationMenu(epoch?: ViewMenuEpoch): Promise<void> {
-  const held: { menu: Menu | null; gate: ViewMenuGate | null } = {
-    menu: null,
+type InstalledMenu = {
+  readonly menu: Menu;
+  readonly descriptions: readonly ViewSlotDescription[];
+};
+
+function installApplicationMenu(epoch?: ViewMenuEpoch): {
+  readonly ready: Promise<void>;
+  readonly gate: ViewMenuGate;
+} {
+  const held: { gate: ViewMenuGate | null; current: InstalledMenu | null } = {
     gate: null,
+    current: null,
   };
   const gate = createViewMenuGate({
     replace(descriptions) {
       const owner = held.gate;
       if (owner === null) return;
       const menu = buildMenu(descriptions, owner);
-      held.menu = menu;
+      held.current = { menu, descriptions };
       Menu.setApplicationMenu(menu);
     },
     postCheck() {
-      const installed = held.menu;
-      if (installed === null) return false;
-      return currentMenuIsNone(installed);
+      const current = held.current;
+      if (current === null) return false;
+      return currentMenuMatches(current.menu, current.descriptions);
     },
     dispatch(event) {
       return dispatchMenu(event);
@@ -163,7 +172,67 @@ function installApplicationMenu(epoch?: ViewMenuEpoch): Promise<void> {
   });
   held.gate = gate;
   if (epoch !== undefined) bindViewMenuLifecycle(epoch, gate);
-  return gate.submit("none", startupViewMark);
+  return { ready: gate.submit("none", startupViewMark), gate };
+}
+
+function withViewMenu(
+  commands: ReadonlyMap<string, IpcCommandHandler>,
+  epoch: ViewMenuEpoch,
+  gate: ViewMenuGate,
+): ReadonlyMap<string, IpcCommandHandler> {
+  const merged = new Map(commands);
+  merged.set(
+    "shell.reportViewMenu",
+    createViewMenuHandler({
+      epoch: floorWriter(epoch),
+      gate,
+      soleWindow,
+    }),
+  );
+  return merged;
+}
+
+function floorWriter(
+  epoch: ViewMenuEpoch,
+): ViewMenuEpoch & ViewMenuFloorWriter {
+  if (isFloorWriter(epoch)) return epoch;
+  return {
+    attach: (win) => {
+      epoch.attach(win);
+    },
+    read: (id) => epoch.read(id),
+    subscribe: (listener) => epoch.subscribe(listener),
+    commitFloor: () => undefined,
+  };
+}
+
+function isFloorWriter(
+  epoch: ViewMenuEpoch,
+): epoch is ViewMenuEpoch & ViewMenuFloorWriter {
+  const candidate = epoch as ViewMenuEpoch & { commitFloor?: unknown };
+  return typeof candidate.commitFloor === "function";
+}
+
+function soleWindow(): number | undefined {
+  let windows: readonly BrowserWindow[];
+  try {
+    windows = BrowserWindow.getAllWindows();
+  } catch {
+    return undefined;
+  }
+  const live = windows.filter((win) => windowIsLive(win));
+  if (live.length !== 1) return undefined;
+  const id = live[0]?.webContents.id;
+  return typeof id === "number" ? id : undefined;
+}
+
+function windowIsLive(win: BrowserWindow): boolean {
+  if (typeof win.isDestroyed !== "function") return true;
+  try {
+    return !win.isDestroyed();
+  } catch {
+    return false;
+  }
 }
 
 function buildMenu(
@@ -230,10 +299,17 @@ function slotEntry(
   return { ...entry, type: slot.type, checked: slot.checked };
 }
 
-function currentMenuIsNone(installed: Menu): boolean {
+function currentMenuMatches(
+  menu: Menu,
+  descriptions: readonly ViewSlotDescription[],
+): boolean {
   const current = readApplicationMenu();
-  if (current !== installed) return false;
-  return slotsArePlainNone(current);
+  if (current !== menu) return false;
+  const items = collectItems(current);
+  for (const slot of descriptions) {
+    if (!oneDescribedSlot(items, slot)) return false;
+  }
+  return true;
 }
 
 function readApplicationMenu(): Menu | undefined {
@@ -247,30 +323,20 @@ function readApplicationMenu(): Menu | undefined {
   }
 }
 
-function slotsArePlainNone(menu: Menu): boolean {
-  const items = collectItems(menu);
-  for (const slot of viewSlotDescriptions("none")) {
-    if (!onePlainSlot(items, slot)) return false;
-  }
-  return true;
-}
-
-function checkedIsFalse(checked: unknown): boolean {
-  return checked === false;
-}
-
-function onePlainSlot(
+function oneDescribedSlot(
   items: readonly MenuItem[],
   slot: ViewSlotDescription,
 ): boolean {
   const hits = items.filter((item) => item.id === slot.event);
   const hit = hits.length === 1 ? hits[0] : undefined;
-  if (hit === undefined) return false;
-  return (
-    hit.label === slot.label &&
-    hit.type === "normal" &&
-    checkedIsFalse(hit.checked)
-  );
+  if (hit === undefined || hit.label !== slot.label) return false;
+  if (!("type" in slot))
+    return hit.type === "normal" && sameChecked(hit.checked, false);
+  return hit.type === slot.type && sameChecked(hit.checked, slot.checked);
+}
+
+function sameChecked(actual: unknown, expected: unknown): boolean {
+  return actual === expected;
 }
 
 function collectItems(menu: Menu): readonly MenuItem[] {

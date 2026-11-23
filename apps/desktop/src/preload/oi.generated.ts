@@ -240,5 +240,29 @@ export function createOi(bridge: IpcBridge) {
         return call(bridge, "parsing.getParseCapabilities", input);
       },
     },
+    shell: {
+      /** idempotent: false */
+      reportViewMenu(
+        input: Readonly<
+          | Readonly<{ op: "read" }>
+          | Readonly<{
+              epoch: number;
+              generation: number;
+              mode: "none" | "original" | "contrast" | "translation";
+              op: "submit";
+            }>
+        >,
+      ): Promise<
+        Result<
+          Readonly<{ epoch: number }>,
+          | { readonly code: "rejected"; readonly retryable: false }
+          | { readonly code: "sender_rejected"; readonly retryable: false }
+          | { readonly code: "invalid_payload"; readonly retryable: false }
+          | { readonly code: "handler_threw"; readonly retryable: true }
+        >
+      > {
+        return call(bridge, "shell.reportViewMenu", input);
+      },
+    },
   };
 }
