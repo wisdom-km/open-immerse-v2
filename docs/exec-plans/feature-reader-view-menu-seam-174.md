@@ -363,3 +363,178 @@ prep 保持不 expose、不跑 codegen、不改生产表。on 才把这四件一
 | 1 | 只改本文件和 `docs/approvals.md`。保留上文 | 文档已按 13:44 原话追加。产品、测试、CI、锁未改 | `7e12983` 的 diff 只有这两份文件 |
 | 2 | Draft，交 Forge 只读复审。不自动实施 | `7e12983` 的只读复审是 FAIL。B1、B2 保留。N1–N3 不扩进本次 | 复审报告时间 2026-11-23 14:12:18 Asia/Shanghai |
 | 3 | 14:29 只改 B1、B2 的相关句子。原 FAIL 不擦掉 | 写前印章与写后接受记录已分开。窗口 id 改为可信 context。签名未选。`7e12983` 的 FAIL 保留 | 本提交相对 `7e12983` 的 diff |
+
+## 接口核定（2026-11-23 15:16，待 Forge 只读）
+
+来源是 [Issue #174 评论 7094166437](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7094166437)。开工时 `git fetch origin main` 后的官方 main 是 `c1265a1a15ab8b4825a121179153285c923fbea3`，tree `cbb57b3e430aef7d7d9118e87e6fd9c156b46d42`，唯一 parent `564804f06ccb35998e592f86f808dc9060cfdca6`。与 PR #235 的 `merged_at` `2026-11-23T07:10:20Z` 一致。本段只追加。上文「待用户批准」「不选函数签名」「两笔实施都未批」保持当时的句子。15:16 把下面这些文件纳入本批白名单，并授权按这个签名编码。Forge 对本段只读通过之前，不写这些函数。
+
+本段没有跑安装、codegen、产品测试或 Electron。行数不重新估算，也不恢复 600 硬限。
+
+### 核定结论
+
+在现有公开面上做得到，而且不超出白名单。`createViewMenuEpoch()` 仍是零参数，`index.ts` 不用改。`commandContext` 已经写入 `senderWebContentsId`，`ipc-router.ts` 不用改。`composition-root.ts` 已经把同一个 epoch 传入 `startLibrary`。`library-menu.ts` 已有三项 accelerator。`view-menu-mirror.ts` 已能给出 none 的三个普通项，以及活动形状的三个 radio 且恰一项 `checked`。`view-menu-lifecycle.ts` 只调用 `noteNone` 与 `setDestroyed`；印章的清除放在这两个已有函数内部，该文件保持 0 diff。做不到的时候停，不把 lifecycle、router、index、composition-root、library-menu、mirror 加进 diff。
+
+`payload-schema.ts` 的 integer 分支只判断 `Number.isInteger`，不执行 minimum / maximum。handler 仍要自己拒绝越界。生成 registry 只收 `expose: true`。今天三份生成物里没有 `shell.reportViewMenu`。prep 不暴露时，`assertHandlers` 不会找这条通道。on 把 expose 改成 true 之后，通道会进入 registry；生产表必须同一笔带上 handler，否则启动抛 `missing ipc handler`。
+
+### 依赖方向
+
+单向：handler 调用 epoch 与门；`library-wiring.ts` 在 on 才调用 handler，并继续持有现有的 epoch、门和 lifecycle。epoch 不 import 门、mirror 或 handler。门不 import epoch 或 handler。lifecycle 的 import 保持现状。没有第二张代次表。印章是门闭包里的一个可选对象，不是代次表，也不是新的公开 getter。`committed`、`install`、`pendingMark` 与 `read()` 的形状都不加字段。
+
+### 具体签名
+
+记号沿用 lifecycle 已有的 `` `${webContentsId}:${phase}:${epoch}` ``。handler 提交时使用 `` `${senderWebContentsId}:open:${epoch}` ``。
+
+epoch 在现有对象上增加一个方法。`createViewMenuEpoch()` 的参数保持为空。
+
+```ts
+export type ViewMenuAcceptance = {
+  readonly mode: "none" | "original" | "contrast" | "translation";
+  readonly epoch: number;
+  readonly generation: number;
+  readonly mark: string;
+};
+
+commitFloor(input: {
+  readonly senderWebContentsId: number;
+  readonly epoch: number;
+  readonly generation: number;
+  readonly mode: ViewMenuAcceptance["mode"];
+  readonly soleWindow: () => number | undefined;
+  readonly seal: () =>
+    | {
+        readonly mode: string;
+        readonly generation: number;
+        readonly mark: string;
+      }
+    | undefined;
+}): ViewMenuAcceptance | undefined
+```
+
+`commitFloor` 全程同步，中间没有 await。它按这个顺序读，任一步失败就在写入前返回 `undefined`，槽保持调用前的内容，并且不产生接受记录：
+
+1. `soleWindow()` 等于 `senderWebContentsId`，且该 id 是 0 到 `Number.MAX_SAFE_INTEGER` 的整数。探针抛错视作失败。
+2. `read` 得到槽，阶段是 `open`。
+3. `input.epoch` 等于槽的 epoch。
+4. `input.generation` 是 1 到 `Number.MAX_SAFE_INTEGER` 的整数，并且严格大于槽的 floor。
+5. 紧挨写入之前调用 `seal()`。它必须返回与 `input.mode`、`input.generation` 相同的值，并且 `mark` 等于 `` `${senderWebContentsId}:open:${slot.epoch}` ``。探针抛错或返回空，都失败。
+
+通过后只替换该槽的 floor 为这次 generation，阶段与 epoch 不动，不通知 listener，不调用 Menu。然后返回接受记录。成功后再调用 `seal()` 也不会补写。相等或更小的 generation、换代后的旧 epoch、退役、closed、错误窗口，都走失败返回。`openNext` 继续把 floor 写成 0，那次赋值不经过 `commitFloor`，也不产生接受记录。
+
+门保留今天的 `submit(shape, mark)`，两参数路径的已有行为不变，也不武装印章。新增：
+
+```ts
+submitCandidate(input: {
+  readonly shape: ViewShape;
+  readonly mark: StageMark;
+  readonly generation: number;
+  readonly stillEligible: () => boolean;
+}): Promise<void>
+
+finishAcceptance<T>(
+  write: (
+    probe: () =>
+      | {
+          readonly mode: ViewShape;
+          readonly generation: number;
+          readonly mark: string;
+        }
+      | undefined,
+  ) => T | undefined,
+): T | undefined
+```
+
+`submitCandidate` 与 `submit` 共用同一套替换、postCheck、pending 和至多一次额外替换。`stillEligible` 只在 `replaceShape` 返回之后、`snapshotCandidate` 之前同步调用一次。它返回 false 或抛错时，这次候选按失败处理。只有 `commitCandidate` 收下这份非空候选，并且 `currentMark` 仍是这次的 mark、形状仍是这次的 shape，才把印章指到 `{ mode, generation, mark }`。`noteNone`、`setDestroyed`、click 的 `commitCandidate`、两参数 `submit` 的 `commitCandidate`、失败候选、pending 修复和 pending 再更新都清掉印章。这些清除发生在已有函数内部，不给 lifecycle 加调用。
+
+`finishAcceptance` 同步调用 `write(probe)`。`probe` 只在这次调用期间读取闭包里的印章，不成为对象上的 getter。`write` 返回接受记录时，消费印章并把它交回。`write` 返回 `undefined` 且进入时印章仍指向这次 `submitCandidate` 时，把 `committed` 恢复成这次提交开始前的形状，`install` 改为 `unknown`，清掉印章，不再调用 `ports.replace`。进入时印章已经空着，就保持门当时的 `committed`、`install` 和 pending，这样已经胜出的 pending none 修复不会被盖掉。
+
+handler：
+
+```ts
+export function createViewMenuHandler(deps: {
+  readonly epoch: ViewMenuEpoch;
+  readonly gate: ViewMenuGate;
+  readonly soleWindow: () => number | undefined;
+}): IpcCommandHandler
+```
+
+handler 模块不 import electron。生产用的 `soleWindow` 到 on 才在 `library-wiring.ts` 里用 `BrowserWindow.getAllWindows()` 实现：恰有一个未销毁窗口时返回它的 `webContents.id`，否则返回 `undefined`。
+
+`read` 只核对：`senderWebContentsId` 是安全整数、`soleWindow()` 等于它、槽阶段是 `open`。通过则返回 `{ ok: true, value: { epoch } }`。不调用门，不改 floor。
+
+`submit` 在任何 `ports.replace` 之前同步核对：epoch 与 generation 都是 1 到 `Number.MAX_SAFE_INTEGER` 的整数，否则 `invalid_payload`；然后是窗口、阶段 `open`、载荷 epoch 等于槽 epoch、generation 严格大于 floor，否则 `rejected`。通过后才 `submitCandidate`。`stillEligible` 再读一次窗口、槽、epoch 和 floor。门返回后立刻：
+
+```ts
+gate.finishAcceptance((probe) =>
+  epoch.commitFloor({
+    senderWebContentsId,
+    epoch,
+    generation,
+    mode,
+    soleWindow,
+    seal: probe,
+  }),
+)
+```
+
+只有这里返回接受记录时，IPC 成功体才是 `{ ok: true, value: { epoch: record.epoch } }`。记录本身留在 `commitFloor` 的返回值里，不进入 IPC。没有记录就返回 `rejected`，floor 保持写入前的值。忙、销毁、替换抛错、postCheck 失败、印章被清掉，都是这条失败路径。
+
+### active postCheck
+
+门的 `postCheck` 端口保持 `() => boolean | Promise<boolean>`，不增加参数。生产实现仍在 `library-wiring.ts`。今天 `currentMenuIsNone` 只接受三个 `normal` 且 `checked === false`，活动 radio 会失败，所以生产路径现在接不住原文、对照或译文。on 把它扩成：当前 `Menu.getApplicationMenu()` 必须就是这次 `held.menu`；在这个对象上，要么仍是三个普通项且无勾，要么是 `original`、`contrast`、`translation` 之一的三个 radio 且恰一项勾选，标签和事件与 `viewSlotDescriptions` 一致。对象不符、缺项、checkbox、零勾或两勾都返回 false。返回 false 时门已有的失败路径不武装印章，handler 不写 floor。none 的现有回归保留。
+
+### prep 与 on
+
+同一分支 `feature/s2c-acceptance-chain-174`，两笔提交，强依赖串行。prep 先落地 epoch 的 `commitFloor`、门的 `submitCandidate` 与 `finishAcceptance`、handler，以及这三份行为测试。prep 不改 `expose`，不跑 codegen，不改 `wiredLibraryCommands`，不改 `ipc-shell.test.ts`。on 同一笔改 `shell.ts` 的 `expose` 为 true、正式 `pnpm run codegen` 只提交白名单里的三份生成物、把 handler 放进 `startLibrary` 返回的生产表、扩 postCheck，并改 `ipc-shell.test.ts`、`view-menu-wiring.test.ts`、`ipc-production-assembly.test.ts`。
+
+`view-menu-wiring.test.ts` 已有的 `vi.mock` 会换成一个手写门对象，两参数 `submit` 不会自动带上新方法。on 必须把 `submitCandidate` 与 `finishAcceptance` 原样转给真实门。这是转发已有测试替身，不新增 mock 框架，也不把失败改成跳过。
+
+`pnpm run codegen` 的 manifest 只把 preload 生成物写成上述三文件。同一命令还会在 `packages/contracts/src/worker/schemas.ts` 存在时跑 worker protocol 生成。本批不改那份 schema。若那一步让 `workers/parser/**` 或其他白名单外文件出现 diff，停，不提交那些文件。
+
+G18 只拦 `packages/features` 下多个切片的 src。本批按 15:16 把契约 expose 与生产注册放在同一笔，不改 RULES，也不改 CI。
+
+### 验收映射
+
+断言只看可观察结果：`ports.replace` 次数、`ports.dispatch` 次数、`epoch.read` 的 floor、`commitFloor` 的返回值、IPC 的 `ok` 与 `value`、菜单项的 type 与 checked、当前菜单对象。不断言源码文本。`click` 的 0 或 1、`known` 加 `none`、换代 floor 0、pending none 修复、写前印章本身，都不能当作这次接受记录。
+
+| 轨迹 | 可观察结果 | 落在 |
+| --- | --- | --- |
+| 最终候选仍指向这次 submit | `commitFloor` 返回含这次 mode、epoch、generation、mark 的记录；floor 变成这次 generation；IPC 成功体只有这个 epoch | epoch 测试与 handler 测试 |
+| 替换抛错或 postCheck 失败 | replace 已发生或被拒绝都算进次数；floor 不变；`commitFloor` 返回 `undefined`；install 为 `unknown`；没有这次记录 | gate 测试、handler 测试 |
+| pending none 修复胜出 | 可以是 `known` 且形状 `none`；被盖掉的 submit 没有记录，floor 不变 | gate 测试 |
+| 修复期间 pending 再更新 | 停在 `unknown`，留下最新 pending，不再进入下一轮；旧 submit 零写入、零记录 | 保留现有 B 用例，并补印章已清 |
+| 换代 | floor 为 0；旧 generation 的 `commitFloor` 返回 `undefined` | epoch 测试 |
+| 退役 | 阶段 `retired`，原 floor 保留；旧 submit 零写入、零记录 | epoch 测试 |
+| closed 或槽已终结 | `read` 为 `undefined`；零写入、零记录 | epoch 测试 |
+| 零个或两个窗口、窗口已销毁、context id 对不上 | 副作用前 `rejected`；零写入、零记录 | handler 测试、epoch 测试 |
+| generation 相等或更小 | 副作用前 `rejected`；零写入、零记录 | handler 测试、epoch 测试 |
+| 越界 epoch 或 generation | 副作用前 `invalid_payload` | handler 测试 |
+| 最新 pending、至多一次额外替换 | 现有次数不增加第三轮 | 现有 gate 测试保持通过 |
+| 旧 click 派发前校验，进入 dispatch 后不撤回 | dispatch 次数与返回值保持现有用例 | 现有 gate 测试保持通过 |
+| none 三个普通项无勾 | 当前菜单对象上三项 `normal` 且 `checked === false` | wiring 测试 |
+| 活动三 radio 恰一勾 | 当前菜单对象上恰一项 checked，另外两项未勾 | wiring 测试，on |
+| 当前安装对象及失败恢复 | 对象不是 `held.menu`、checkbox、零勾或两勾时 postCheck 失败；floor 不变，install 不是这次的 `known` | wiring 测试，on |
+| 生产注册 | 表里有 `shell.reportViewMenu` 时 `registerIpcRouter` 不抛；缺这条就抛 | assembly 测试，on |
+| expose | 请求、响应、错误码、幂等不变；`expose` 为 true | ipc-shell 测试，on |
+
+E2 的三视图、标题栏分段、空态句、翻译、配置 chip、Aa、侧栏和菜单置灰都不在本批。物理键、读屏、菜单展开画面、Windows 与 macOS 真机继续未验。`7e12983` 的 FAIL、PR #234 的执行偏差、完整性限制、PR #232 的意外下载和真实平台未验都保留，不追认，也不写成 M2 退出。
+
+### 实施时的环境与命令
+
+本段不执行。Forge 通过后，按 7094166437 在私有隔离环境准备：`corepack pnpm install --frozen-lockfile` 且安装脚本全部禁用；electron 的 npm 包只留 JS 与类型，不下载、不启动可执行文件。Vitest / Vite 锁定的 rolldown、lightningcss、esbuild 平台组件和 Node 内置 SQLite 允许。锁定的 `@napi-rs/canvas` 1.1.0 及本平台绑定允许用于依赖枚举；原生运行只在正式合成夹具单测需要时发生，先记下用途。`workers/parser` 用 uv 0.13.6、Python 3.11.18 和现有 `uv.lock` 的 dev 质量依赖，含锁定的 pypdfium2；项目纯 Python 的 editable 元数据与 wheel 允许准备。gitleaks 8.30.1 只核官方钉版归档。禁止 native 源码构建、额外系统库和清单外原生运行。完整性对不上就停。
+
+正式命令以 `package.json` 为准：`corepack pnpm run check` 在每个验收 tip 完整跑一次，它已经包含 `pnpm run codegen` 和 G7 的 `git diff --exit-code`。全库 Node 是 `corepack pnpm test`。Python 在 `workers/parser` 用现有 G8 包裹的 `uv run pytest`。定向用 `corepack pnpm exec vitest run <白名单测试>`。`package.json` 没有 `test:failed`。失败后的 Node 重跑用 `vitest run` 指向失败文件，Python 用 `uv run pytest --lf`。不把没跑的结果写成通过。本地不跑真实 Electron、浏览器、Playwright、用户机、真实模型或付费 API。远端既有 CI 可以因推送自己运行，与本地分账。
+
+### 本段决策
+
+| 决定 | 理由 | 日期 | 谁定的 |
+| --- | --- | --- | --- |
+| 采用上面的 `commitFloor`、`submitCandidate`、`finishAcceptance` | 15:16 已把 epoch 与门纳入白名单。探针参数避免 gate 与 epoch 互相 import，也避免新的 getter | 2026-11-23 | 本段核定，待 Forge 只读。不是新的用户审批 |
+| prep 与 on 同一分支分两笔提交 | expose 为 false 时 registry 不含这条通道。on 必须把 expose、codegen、生产表和装配验收放在同一笔 | 2026-11-23 | 同上 |
+| lifecycle 保持 0 diff | 印章在 `noteNone` 与 `setDestroyed` 内部清除 | 2026-11-23 | 同上。若实现时做不到，停 |
+
+### 本段计划 / 实际
+
+| 步骤 | 计划 | 实际 | 证据 |
+| --- | --- | --- | --- |
+| 1 | 只核定签名并追加本文件与台账 | 本提交只有这两份文档。未编码，未安装，未跑测试 | 本段 |
+| 2 | Forge 只读这些签名。通过前不写函数 | 尚未发生 |  |
