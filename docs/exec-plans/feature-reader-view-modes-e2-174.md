@@ -345,3 +345,15 @@ Wisdom 原话二是「我记得昨天跟你说了，我晚上休息的时候，�
 执行边界：已批 E2-0 / E2-1 目标和白名单里的普通实现或测试修正，以及只针对失败原子项的补验，可以连续做。范围外缺口、环境不足、要下载、codegen 白名单外 diff，仍然停下，不提交生成物。不重跑完整 `pnpm run check`，不重跑已通过的无关项，不跑无差别全库测试。分项结果不写成第二次完整 check 退出码 0。旧次数和失败不重置，不追认历史。合入留给 Wisdom 醒后决定。保持 Draft。
 
 `2243996ffbae0527eda86edd769e6eb188608a6b` 上那一次 `corepack pnpm run lint` 仍是退出码 1，报 `no-unnecessary-condition`。那次不改记成通过。本段之后的 lint 是这一条新开的一次原子补验。通过后再按原顺序跑此前从未启动的 14 项。
+
+## 2026-11-24 测试证明补强
+
+上面的句子保留。这一轮没有新的 Wisdom 原话。授权仍是已记录的 [评论 7107620601](https://github.com/wisdom-km/open-immerse-v2/pull/236#issuecomment-7107620601)。Forge 在 `97343064878b799a223031d8d01984c00e4923f6` 的只读审查不是新授权。产品实现没有改。只改三份已在白名单里的测试：`view-mode-panes.test.tsx`、`apps/desktop/test/shell.test.ts`、`view-mode-empty.test.tsx`。
+
+S1：先点「放大」，选中项文本从默认变成 `110%`，并且这个文本不是 `select.textContent`。再跳到第 3 页，使后退可动、前进不可动。对照、译文、原文各点一次，同一 `PageColumn`、同一个 `.oi-reader-main`、页码、选中缩放、历史可动性和 `writePage` 次数都保持。随后后退到第 2 页、前进回第 3 页，`writePage` 仍不增加。
+
+S2：三个事件各使对应导航方法加一，计数是 `[1, 1, 1]`。点标题栏返回后栏位消失、Reader 挂载数回到 0，再派发三次计数仍是 `[1, 1, 1]`，阅读屏不重开。`view.unmount()` 之后，三个事件名的移除次数各自等于添加次数。不用 `not.toThrow`，不读源码文本，不另写 `keydown`。
+
+N1：空态句、Windows 链接、mac 链接写在测试文件自己的常量里。不断言从 `copy.ts` 导入的同一常量。
+
+旧次数不重置。E2-0 仍是 0/1。七文件首跑仍是退出码 1。shell 单文件补验仍记在 `8f90c54`。完整 check 仍是退出码 1。`2243996` 的 lint 仍是退出码 1。`352cf89` 的 15 个分项仍不是第二次完整 check。本轮命令见 `docs/evidence/237/s1-s2-n1.md`。方向键、真实界面、高对比、读屏、R-E13 仍未验。E2-2 与 S3 仍不做。保持 Draft。
