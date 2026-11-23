@@ -219,6 +219,8 @@ S1 是 seam 变更。估算 198，契约档实际 200。S2a 估算 234。S2b 估
 
 来源是 Wisdom 的原话，全文在 [Issue #174 评论 7092677446](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7092677446)。本段只追加。它不批准 handler、expose、codegen、生产接线、三视图或 E2 编码。实施、Ready、合入、发版仍要另批。
 
+2026-11-23 14:29 的 [评论 7093393948](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7093393948) 只纠正下面 B1、B2 的相关句子。`7e12983e1a63a1214f430acef500dd4be0c59000` 的 Forge 只读复审仍是 FAIL，保留，不改写成通过。非阻断的文件全路径、PR 模板勾选和未来 `postCheck` 不在这次修正里。不选函数签名，不改契约，不转实施。
+
 开工时再核过 `origin/main`。提交 `564804f06ccb35998e592f86f808dc9060cfdca6`，tree `b11d0e999daf45bc56743e8bfa19b8b612dc0985`，唯一 parent `e70ec91a673cb2784491bb02924d77b96a05b147`。与 Forge 在 [评论 7092475121](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7092475121) 写下的合入结果一致，也与本批读取的 PR #234 API（`merged_at` `2026-11-23T05:30:07Z`，head `19529ac752d9738a01e5f234dc0a99710304a0a8`）一致。没有漂移，所以没有改起点。
 
 Loom 原则核查与 Forge 只读依赖核查，批准评论写明已经完成。现行顺序仍是 S2c-prep → S2c-on → E2-0 → E2-1 → E2-2 → S3。本批停在文档，不跳到 E2。
@@ -233,17 +235,24 @@ PR #234 已合入的只是单窗口 none 生命周期桥接，以及旧 click �
 
 要证明的是：最终被接受的，就是这一次快照里的这一次 `submit`。失败的那一次尝试不能留下它。后来居上的 pending none 修复也不能冒充它。
 
-凭证是 main 内部的一份接受记录。它只在唯一 floor 写入口真正写入的同一轮里产生，并且只描述这一次提交的 mode、epoch、generation，以及当时这扇门的阶段记号。失败的写入口不产生它。渲染端看不到它。`shell.reportViewMenu` 的成功体继续只回 `{ epoch }`，这句回声沿用上文「一条命令」：它是刚接受的那一代的回声，不是新的授权，也不据此把 generation 归零。回声本身不是这份内部凭证。
+本节把两个词分开。它们不是同义词，也不能互相当前置。
 
-下面三样现在就能在源码里看见，它们都不是这份凭证：
+- 最终候选印章是写前身份。它留在门的闭包里。只有 `commitCandidate` 提交了这一次 submit 的候选，印章才指向这一次。它证明的是「这一次仍是最终候选」，不是「地板已经写下」。调用写入口时，接受记录还不存在。
+- 接受记录是写后产物。唯一 floor 写入口只有在本轮复核通过并且真正写入之后，才产生它。它只描述这一次提交的 mode、epoch、generation，以及当时这扇门的阶段记号。失败、零写入、印章已失效，都不产生它。渲染端看不到它。
+
+顺序只有这一条：最终候选印章仍指向这一次 → 唯一写入口在同一次同步调用里复核并写 floor → 只有写入成功才产生这一次的接受记录。写前不可能已经持有这次接受记录，所以不能把「先有接受记录」写成写入条件。印章失效就停在写入之前：零写入，零接受记录。
+
+`shell.reportViewMenu` 的成功体继续只回 `{ epoch }`。这句回声沿用上文「一条命令」：它是刚接受的那一代的回声，不是新的授权，也不据此把 generation 归零。回声不是接受记录，也不是最终候选印章。13:44 决策表里的「内部凭证」，从 14:29 起只指这份写后的接受记录。
+
+下面三样现在就能在源码里看见。它们不是接受记录，也不能代替写前的最终候选印章：
 
 - `click` 的返回值。`dispatchRequested` 进入 `ports.dispatch` 后若抛错，或返回前窗口已销毁，自己返回 0，否则返回 1。`click` 的最终数字还要经过 `closePendingAfterDispatch`：当时仍有对得上的 pending 时，它再走修复；修复后若不是 `known`，或者 pending 还在，外层把这次返回改成 0。所以返回 1 不能证明这次 click 的形状被接受，修复成功时菜单可以已经是 none。返回 0 也不能单独证明 `ports.dispatch` 完全没被进入。`submit` 与 `noteNone` 的返回类型是 `Promise<void>`，没有接受记录。
 - `known` 加上形状 `none`。`settle` 在仍有对得上的 pending 时，修复路径可以把 `committed` 写成 `none`、把 `install` 写成 `known`。那是最新 pending none 的修复结果。启动时 `installApplicationMenu` 还会用记号 `unbound` 提交一次 `none`。这两种 `known` + `none` 都不携带某一次阅读提交的 generation。
 - 换代时的 floor 0。`openNext` 在成功的 `oi-app:` 导航上把阶段改成 `open`、epoch 加一，并把 floor 写成 0。这是换代复位。`retire` 保留原来的 floor。仓库源码里没有 `commitFloor`。读到 0，不能证明某一次 submit 已被接受。
 
-只看门上现有的三个公开字段，分不开「这次 none 提交被接受」和「同阶段记号上的 pending none 修复写成了 known」。记号是 `webContentsId:phase:epoch`，里面没有 generation。修复和同代 none 提交可以留下同样的 `committed`、`install` 和 `pendingMark`。`currentMark` 没有公开 getter。所以上文点名的两个 handler 文件，按今天的公开面，写不出这份凭证。
+只看门上现有的三个公开字段，分不开「这次 none 提交被接受」和「同阶段记号上的 pending none 修复写成了 known」。记号是 `webContentsId:phase:epoch`，里面没有 generation。修复和同代 none 提交可以留下同样的 `committed`、`install` 和 `pendingMark`。`currentMark` 没有公开 getter。所以上文点名的两个 handler 文件，按今天的公开面，既看不到写前印章，也产生不了写后的接受记录。
 
-未来若要做，印章留在门的闭包里：只有 `commitCandidate` 提交了这一次 submit 的候选，才记下；修复路径、失败路径、换代、退役、关闭和更新的 pending 都清掉它。不新增 getter，不放进 IPC，不加 ack。这会改 `view-menu-gate.ts`。该文件不在旧的 S2c 点名里。本段把它列为待用户批准，不在这里选定函数签名，也不把它当成已经可以编码的接口。
+未来若要做，印章留在门的闭包里：只有 `commitCandidate` 提交了这一次 submit 的候选，才把印章指向这一次；修复路径、失败路径、换代、退役、关闭和更新的 pending 都清掉印章。印章被清掉之后，不得再写这一次的地板，也不得补产这一次的接受记录。不新增 getter，不放进 IPC，不加 ack。这会改 `view-menu-gate.ts`。该文件不在旧的 S2c 点名里。本段把它列为待用户批准，不在这里选定函数签名，也不把它当成已经可以编码的接口。
 
 ### 唯一 floor 条件写入口
 
@@ -251,13 +260,13 @@ floor 今天只活在 `createViewMenuEpoch` 的那张私有表里。写它的现
 
 写入前，在同一次同步调用里重新核对，中间不插入 await。任一项失败就在写入前返回，槽保持调用前的内容：
 
-1. 窗口仍在，且是唯一未销毁窗口；载荷里的 webContents id 等于这扇窗。
+1. 窗口仍在，且是唯一未销毁窗口。用来比较的 id 只来自 router 在 `acceptsSender` 通过后写入的 `context.senderWebContentsId`，也就是当时的 `event.sender.id`。它必须等于这扇窗的 `webContents.id`。这沿用上文「一条命令」：载荷里没有这个 id。`submit` 的闭合请求只有 `op`、`mode`、`epoch`、`generation`。不读取、不相信请求 payload 里的窗口 id，也不给契约加窗口字段。若这次核对用的是 main 内部快照，快照里的窗口 id 只能从这份可信 context 派生。
 2. 槽还在，阶段是 `open`。未公开、退役、已终结和 `closed` 都不写。
-3. 载荷 epoch 等于槽的 epoch。
+3. 载荷里的 epoch 等于槽的 epoch。epoch 与 generation 仍是闭合请求里的字段。
 4. generation 是 1 到 `Number.MAX_SAFE_INTEGER` 的整数，并且严格大于当前 floor。相等也拒绝。
-5. 门的身份对得上这一次快照：同一扇门、尚未销毁，内部印章仍是这一次 submit，而不是 pending none 修复。
+5. 同一扇门、尚未销毁，写前的最终候选印章仍指向这一次 submit，而不是 pending none 修复。此时接受记录还不存在。印章已经不指向这一次，就在写入前返回。
 
-这个函数不接收「请把地板设成这个数」而不核对。它自己不定义新的错误码，也不把 IPC 的 `invalid_payload` 或 `rejected` 收成自己的返回值。上文已经规定 handler 的分类：范围失败是 `invalid_payload`，窗口、阶段、epoch 或 generation 不符是 `rejected`，并且发生在菜单副作用之前。写入口失败时槽不变。不公开 `currentMark`、终态、印章或单独的 floor getter。已有的 `read` 继续返回整份槽，形状不改。写入口在同一闭包里看私有表，不另加 getter。若要收窄 `read`，那是接口变更，停在待决定。
+这个函数不接收「请把地板设成这个数」而不核对。它自己不定义新的错误码，也不把 IPC 的 `invalid_payload` 或 `rejected` 收成自己的返回值。上文已经规定 handler 的分类：范围失败是 `invalid_payload`，窗口、阶段、epoch 或 generation 不符是 `rejected`，并且发生在菜单副作用之前。写入口失败时槽不变，也不产生接受记录。不公开 `currentMark`、终态、印章或单独的 floor getter。已有的 `read` 继续返回整份槽，形状不改。写入口在同一闭包里看私有表，不另加 getter。若要收窄 `read`，那是接口变更，停在待决定。写入成功之后，才产生这一次的接受记录。
 
 不新增 IPC，不加 ack，不增加取消通道。成功响应仍是 `{ epoch }`。
 
@@ -265,19 +274,19 @@ floor 今天只活在 `createViewMenuEpoch` 的那张私有表里。写它的现
 
 ### 异步轨迹的可观察验收
 
-下面每条都要能用行为看见：地板变没变、有没有这一次的内部凭证、菜单替换次数、`ports.dispatch` 次数。不断言源码文本。不把 `click` 的返回值、`known` + `none` 或 floor 0 写成已经接受。未来测试归实施那一笔，本批不运行，也不把未跑写成通过。Node 纯桩、官方 CI、真实 Electron 和用户机分开记账。A 的 `_menuWillShow` 与 B 的门状态机不能代替这些断言。
+下面每条都要能用行为看见：地板变没变、写前印章是否仍指向这一次、有没有这一次的接受记录、菜单替换次数、`ports.dispatch` 次数。不断言源码文本。不把 `click` 的返回值、`known` + `none`、floor 0、pending none 修复或写前印章写成已经接受。未来测试归实施那一笔，本批不运行，也不把未跑写成通过。Node 纯桩、官方 CI、真实 Electron 和用户机分开记账。A 的 `_menuWillShow` 与 B 的门状态机不能代替这些断言。
 
 | 轨迹 | 观察 | 未来测试要挡住的误判 |
 | --- | --- | --- |
-| 这次 submit 仍是最终候选 | 地板变成这次 generation。凭证只描述这次 mode、epoch、generation 和门记号 | 用 dispatch 返回 1，或只用 `known`，宣布接受 |
-| 替换抛错或后置核对失败 | 地板不变。没有这次凭证。这次尝试不被标成 `known` | 把失败 payload 写成地板或镜像 |
-| pending none 修复胜出 | 菜单可以是 none 且 `known`。被盖掉的那次 submit 不写地板，也没有凭证 | 把这份 `known` + `none` 当成那次 submit |
-| 修复期间 pending 再更新 | 停在 `unknown`，留下最新 pending，不再进入下一轮。旧 submit 不写地板 | 再装旧镜像，或递归修下去 |
-| 换代 | `openNext` 把 floor 复位为 0。旧 generation 的写入失败，零写入 | 把 0 当成接受凭证，或提交旧镜像 |
-| 退役 | 阶段变为 `retired`。`retire` 保留原 floor。旧 submit 零写入 | 用退役前的镜像覆盖 |
-| `closed` 或槽已终结 | `read` 得不到槽。零写入，不碰 Menu | 关闭后补写旧 floor |
-| 零个或两个未销毁窗口，或窗口已销毁 | 零写入 | 写到另一扇窗 |
-| generation 相等或更小 | 副作用前拒绝，零写入 | 把同一次地板再写一遍当成新的接受 |
+| 最终候选印章仍指向这次 submit | 先按印章进入写入口。复核通过后地板变成这次 generation。只有这次写入成功才产生接受记录，记录只描述这次 mode、epoch、generation 和门记号 | 用 dispatch 返回 1、只用 `known`，或把写前印章当成已经接受 |
+| 替换抛错或后置核对失败 | 地板不变。印章不再指向这一次。没有这次接受记录。这次尝试不被标成 `known` | 把失败 payload 写成地板或镜像 |
+| pending none 修复胜出 | 菜单可以是 none 且 `known`。被盖掉的那次 submit 印章已清，不写它的地板，也没有它的接受记录 | 把这份 `known` + `none` 当成那次 submit |
+| 修复期间 pending 再更新 | 停在 `unknown`，留下最新 pending，不再进入下一轮。旧 submit 零写入，零接受记录 | 再装旧镜像，或递归修下去 |
+| 换代 | `openNext` 把 floor 复位为 0。旧 generation 的写入失败，零写入，零接受记录 | 把 0 当成接受记录，或提交旧镜像 |
+| 退役 | 阶段变为 `retired`。`retire` 保留原 floor。旧 submit 零写入，零接受记录 | 用退役前的镜像覆盖 |
+| `closed` 或槽已终结 | `read` 得不到槽。零写入，零接受记录，不碰 Menu | 关闭后补写旧 floor |
+| 零个或两个未销毁窗口，或窗口已销毁，或可信 context 的 id 对不上 | 零写入，零接受记录 | 改用 payload 里的窗口 id，或写到另一扇窗 |
+| generation 相等或更小 | 副作用前拒绝，零写入，零接受记录 | 把同一次地板再写一遍当成新的接受 |
 
 测试职责停在这些可观察结果。不要求本批测量物理键、读屏、菜单仍开着的画面或 mac。那些继续未验证。
 
@@ -291,7 +300,7 @@ floor 今天只活在 `createViewMenuEpoch` 的那张私有表里。写它的现
 
 | 笔 | 文件 | 当前行数 | 这一笔的职责 |
 | --- | --- | --- | --- |
-| S2c-prep | 新建 `apps/desktop/src/main/view-menu-handler.ts` | 不存在。成本未核实 | 校验载荷、窗口、阶段、epoch、generation。调用门的 `submit`。没有内部凭证就不写地板。不改 `expose`，不进生产表 |
+| S2c-prep | 新建 `apps/desktop/src/main/view-menu-handler.ts` | 不存在。成本未核实 | 校验载荷里的 epoch 与 generation。窗口身份只用 `context.senderWebContentsId`。调用门的 `submit`。写前核验最终候选印章仍指向这一次；印章仍有效才进入唯一写入口。只有写入成功才产生接受记录。没有仍有效的印章就不写地板，也不产生接受记录。不改 `expose`，不进生产表 |
 | S2c-prep | 新建 `apps/desktop/test/view-menu-handler.test.ts` | 不存在。成本未核实 | 只断言可观察行为：越界、相等 generation、窗口数量、阶段或 epoch 不符都发生在菜单副作用之前 |
 | S2c-on | `packages/contracts/src/ipc/shell.ts` | 83 | 只把 `expose` 从 false 改为 true。请求、响应、错误码、幂等保持上文 |
 | S2c-on | `apps/desktop/src/main/ipc/registry.generated.ts` | 547 | codegen 产物。增量未跑，未核实 |
@@ -345,10 +354,12 @@ prep 保持不 expose、不跑 codegen、不改生产表。on 才把这四件一
 | 内部凭证与 IPC 回声分开 | 回声仍是 `{ epoch }`。dispatch 返回值、`known` + `none`、floor 0 都证明不了这一次 submit | 2026-11-23 | 按现行源码归纳。不是实施批准 |
 | epoch 写入口和门内印章列入待批准 | 私有表和现有公开字段都写不出凭证。超出旧的 handler 点名 | 2026-11-23 | 本段列出，不采纳 |
 | 不改规格变更记录 | 规格正文未改。审查若要求第三文件则停 | 2026-11-23 | 本段 |
+| 写前印章与写后接受记录分开；窗口 id 只用可信 context | 7e12983 的 B1、B2。不选签名，不改契约，不扩到 postCheck | 2026-11-23 14:29 | Wisdom，[7093393948](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7093393948) |
 
 ### 本段计划 / 实际
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 只改本文件和 `docs/approvals.md`。保留上文 | 文档已按 13:44 原话追加。产品、测试、CI、锁未改 | 本提交的 diff 只有这两份文件 |
-| 2 | Draft，交 Forge 只读复审。不自动实施 |  |  |
+| 1 | 只改本文件和 `docs/approvals.md`。保留上文 | 文档已按 13:44 原话追加。产品、测试、CI、锁未改 | `7e12983` 的 diff 只有这两份文件 |
+| 2 | Draft，交 Forge 只读复审。不自动实施 | `7e12983` 的只读复审是 FAIL。B1、B2 保留。N1–N3 不扩进本次 | 复审报告时间 2026-11-23 14:12:18 Asia/Shanghai |
+| 3 | 14:29 只改 B1、B2 的相关句子。原 FAIL 不擦掉 | 写前印章与写后接受记录已分开。窗口 id 改为可信 context。签名未选。`7e12983` 的 FAIL 保留 | 本提交相对 `7e12983` 的 diff |
