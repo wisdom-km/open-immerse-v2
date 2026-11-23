@@ -589,3 +589,15 @@ Forge 对 `b314e4291cfd82daa8fbcae9be240d91c5983ff6` 的代码复审是 PASS，�
 - `7e12983` 的 FAIL、PR #234 的执行偏差与完整性限制、PR #232 的下载历史都保留。不用它们证明本批环境合规或违规。
 
 19:26 只批准准备仓外检查和最小修复或补验提案，当时不改根规格。19:27 才批准把执行防错要求写入 RULES §4.1，并在本文件与台账登记。两句原话各计一次。仓外 guard 仍是准备，本提交没有脚本、没有实证拦截。执行者仍不得绕过 §4.1。不把现有偏差追认成等价验收。PR #236 在上述 head 仍是验收 FAIL，保持 Draft。不含 Ready、合入或发版。`docs/spec-changelog.md` 与 `tools/compare-spec-bytes/manifest.json` 不在这次文件名单里，未改。§4.1 不改动变更记录里那段 Q1–Q12 对照原文。
+
+### 21:16 伴生清单
+
+本段只追加。来源是 [Issue #174 评论 7102317939](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7102317939) 和所附收口提案。19:27 的 7099687090 与该评论之间有 20:16 的 7100803211。20:16 当时写明 `isolation.spec.ts` 的额外白名单还没有具体确认。21:16 才确认这一处。本段不把 20:16 再计成一次批准，也不扩开发 guard。
+
+开工时官方身份是 head `83b745acd2df648a7f847179182abb5593b64359`，tree `d35aa5148235f13b32b4bf367db87b0d99edcdcc`，parent `9fb5b8d65fbf724d05ccb5dcad8e9d98ca969272`，base `c1265a1a15ab8b4825a121179153285c923fbea3`。这次只改 `apps/desktop/e2e/isolation.spec.ts` 第 18 行的期望 JSON：根 keys 在 `parsing` 后追加 `shell`。`parsingKeys`、`library`、`import`、`getParseCapabilities` 以及 contextIsolation、sandbox、nodeIntegration、webSecurity 四条断言不动。不改产品、CI、依赖、锁或根规格。这是已暴露命令的伴生清单，不制造新的系统行为。
+
+实际 CI 原失败已核，不是别的根因。run [45166518488](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45166518488) 的 job `137664761398`（desktop-e2e-windows）checkout 是 merge `568d9a3`，把 `83b745a` 合入 `c1265a1`。唯一失败是 `isolation.spec.ts:17`。Expected 的根 keys 是 `ingest`、`library`、`parsing`。Received 是 `ingest`、`library`、`parsing`、`shell`。parsingKeys、library、import、getParseCapabilities 两边相同。同 job 里 1 failed / 31 passed。四条安全测试在失败之后仍被执行，没有出现在失败名单里。本段没有在本地重跑这条 e2e。
+
+guard 观察限制：评论写明真实 inspect 在 21:06 Asia/Shanghai 完成，16/16 只读探针成功，`inspection_complete=true`。观察结论是 HOLD，`project_acceptance=NOT_ASSESSED`，`launch_enabled=false`。这不是项目验收 PASS。执行树 `9fb5b8d` 与官方 `83b745a` 分账。本提交不新增 guard 文件，不把这次观察写成强制拦截已落地。Box 约 1153 inode 的观察不作为这台 Cloud 的资源结论，也不在这里跑 Box 的项目测试。
+
+预算不随换 tip 重置。Cloud 这次至多跑一次冻结后的 `pnpm run check`，不另开全库 Node、Python、Vitest 或本地 e2e。Anvil 的九文件一批和一次 G9 官方 wrapper 不在本提交执行。`1d0607a` 的代码 FAIL、Node 24、误全库、G9 的 169 与 166 之差、真实平台未验都保留，不追认。保持 Draft。不含 Ready、合入、发版、E2 或 S3。
