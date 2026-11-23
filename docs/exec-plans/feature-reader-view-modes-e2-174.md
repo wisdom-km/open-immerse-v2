@@ -327,3 +327,9 @@ happy-dom 的 `HTMLInputElement` 没有 radio 方向键默认行为。不自造�
 - `eslint.config.js` 的 `allowDefaultProject` 追加同一路径
 
 这次额度不新增、不重置。E2-0 三文件仍是最多 1，而且这次保持未跑：工作树里已经有 E2-1 的未提交改动，不能为了单独回到 `13964cacd790d24597e839be822f6b2df6911721` 去破坏工作树。后面那一次七文件跑的是最终源码，不写成 E2-0 的独立验证。方向键未验保留，不加第二套 `keydown`。E2-2 与 S3 仍不在本次。
+
+## 2026-11-24 00:35 数量上限
+
+上面的句子保留。Wisdom 原话是「按照你的建议推进。」登记在 [评论 7107433987](https://github.com/wisdom-km/open-immerse-v2/pull/236#issuecomment-7107433987)。只把 `eslint.config.js` 的 `maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING` 从 64 改成 70。不是更高的任意上限。不加通配，不关规则，不改其余语义。
+
+原完整 check 在 `8f90c540c2614e5af192a0b4674e53fbaf278bd9` 上退出码 1。G1 格式已打印通过。G2 失败，原因是默认项目匹配超过 64。从 typecheck 起的 14 个原子项当时没有启动。七文件 vitest 仍是 1/1 且退出码 1。shell 失败文件补验仍是 1/1 且退出码 0。这些次数不重置。新的许可只是：在含 70 的提交上用 `corepack pnpm run lint` 补 G2 一次；成功后再按脚本顺序把未启动的 14 项各跑最多一次。不重跑整链 check，不重跑 G1，不再跑 Vitest。某一项失败或要下载就停，没有新的失败补验。
