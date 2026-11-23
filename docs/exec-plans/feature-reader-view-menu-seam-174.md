@@ -559,3 +559,13 @@ E2 的三视图、标题栏分段、空态句、翻译、配置 chip、Aa、侧�
 | 1 | 只核定签名并追加本文件与台账 | `370e2cc` 只有这两份文档。未编码，未安装，未跑测试 | `370e2cc` |
 | 2 | Forge 只读这些签名。通过前不写函数 | 2026-11-23 15:39:33 Asia/Shanghai 的结论是 FAIL。必要 BLOCK 是调用身份和目标形状。不是产品测试失败。该 FAIL 保留 | 该次只读复核 |
 | 3 | 只改这两处接口和台账里被抄错的引文。仍不编码、不安装、不测试 | 撤掉分开的 `finishAcceptance`。postCheck 改为匹配这次安装描述。引文恢复「三生成物」 | 本提交相对 `370e2cc` 的 diff |
+
+### 17:49 表面清单
+
+本段只追加。上面 15:16 的十四份源码、测试、生成物不改写。来源是 [Issue #174 评论 7097151220](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7097151220)。17:49 只把下面三份测试加入同一 PR #236，用来对齐已经暴露的 `shell.reportViewMenu`：registry 通道顺序、preload 键路径，以及 `Window["oi"]` 的顶层键和 `shell` 上的唯一方法名。隐藏通道仍排除。`invoke` 与 `invokeDropped` 仍不出现在公开对象上。缺 handler 的负向断言不动。不增加产品能力。
+
+- `apps/desktop/test/reading-command-surface.test.ts`
+- `apps/desktop/test/oi-keys.test.ts`
+- `apps/desktop/test/ipc-router.test.ts`
+
+Forge 对 `b314e4291cfd82daa8fbcae9be240d91c5983ff6` 的代码复审是 PASS，必要代码 BLOCK 0。那只关闭同形 none 冒领，不是完整 check，也不是独立 QA 通过。`1d0607a` 的代码 FAIL、该 tip 的 typecheck 退出码 2、三份表面测试失败，以及 run 45137091192 的失败，都留在原处。
