@@ -366,7 +366,7 @@ prep 保持不 expose、不跑 codegen、不改生产表。on 才把这四件一
 
 ## 接口核定（2026-11-23 15:16，待 Forge 只读）
 
-来源是 [Issue #174 评论 7094166437](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7094166437)。开工时 `git fetch origin main` 后的官方 main 是 `c1265a1a15ab8b4825a121179153285c923fbea3`，tree `cbb57b3e430aef7d7d9118e87e6fd9c156b46d42`，唯一 parent `564804f06ccb35998e592f86f808dc9060cfdca6`。与 PR #235 的 `merged_at` `2026-11-23T07:10:20Z` 一致。本段只追加。上文「待用户批准」「不选函数签名」「两笔实施都未批」保持当时的句子。15:16 把下面这些文件纳入本批白名单，并授权按这个签名编码。Forge 对本段只读通过之前，不写这些函数。
+来源是 [Issue #174 评论 7094166437](https://github.com/wisdom-km/open-immerse-v2/issues/174#issuecomment-7094166437)。开工时 `git fetch origin main` 后的官方 main 是 `c1265a1a15ab8b4825a121179153285c923fbea3`，tree `cbb57b3e430aef7d7d9118e87e6fd9c156b46d42`，唯一 parent `564804f06ccb35998e592f86f808dc9060cfdca6`。与 PR #235 的 `merged_at` `2026-11-23T07:10:20Z` 一致。本段只追加。上文「待用户批准」「不选函数签名」「两笔实施都未批」保持当时的句子。15:16 把下面这些文件纳入本批白名单，并授权按核定后的签名编码。`370e2cc0ab1a9c5d0eaaedfc8dac997979b6dada` 的 Forge 只读（2026-11-23 15:39:33 Asia/Shanghai）是 FAIL，必要 BLOCK 是该次的 B1、B2，保留，不改写成通过，也不是 14:29 那一对 B1、B2。下面只修正这两处。这次复核通过之前，仍不写这些函数。
 
 本段没有跑安装、codegen、产品测试或 Electron。行数不重新估算，也不恢复 600 硬限。
 
@@ -378,7 +378,7 @@ prep 保持不 expose、不跑 codegen、不改生产表。on 才把这四件一
 
 ### 依赖方向
 
-单向：handler 调用 epoch 与门；`library-wiring.ts` 在 on 才调用 handler，并继续持有现有的 epoch、门和 lifecycle。epoch 不 import 门、mirror 或 handler。门不 import epoch 或 handler。lifecycle 的 import 保持现状。没有第二张代次表。印章是门闭包里的一个可选对象，不是代次表，也不是新的公开 getter。`committed`、`install`、`pendingMark` 与 `read()` 的形状都不加字段。
+单向：handler 调用 epoch 与门；`library-wiring.ts` 在 on 才调用 handler，并继续持有现有的 epoch、门和 lifecycle。epoch 不 import 门、mirror 或 handler。门不 import epoch 或 handler。lifecycle 的 import 保持现状。没有第二张代次表。印章是门闭包里的一个可选对象，不是代次表，也不是新的公开 getter。调用身份是该次 `submitCandidate` 闭包里新建的对象令牌，只做引用比较，不放进公开字段，不返回给 handler，也不进入 IPC。`committed`、`install`、`pendingMark` 与 `read()` 的形状都不加字段。
 
 ### 具体签名
 
@@ -416,22 +416,21 @@ commitFloor(input: {
 2. `read` 得到槽，阶段是 `open`。
 3. `input.epoch` 等于槽的 epoch。
 4. `input.generation` 是 1 到 `Number.MAX_SAFE_INTEGER` 的整数，并且严格大于槽的 floor。
-5. 紧挨写入之前调用 `seal()`。它必须返回与 `input.mode`、`input.generation` 相同的值，并且 `mark` 等于 `` `${senderWebContentsId}:open:${slot.epoch}` ``。探针抛错或返回空，都失败。
+5. 紧挨写入之前调用 `seal()`。它必须返回与 `input.mode`、`input.generation` 相同的值，并且 `mark` 等于 `` `${senderWebContentsId}:open:${slot.epoch}` ``。探针抛错或返回空，都失败。epoch 不保存令牌，也不按这三项在别处再找一枚印章。探针返回空就是失败，即使另一处有相同的 mode、generation 和 mark。
 
 通过后只替换该槽的 floor 为这次 generation，阶段与 epoch 不动，不通知 listener，不调用 Menu。然后返回接受记录。成功后再调用 `seal()` 也不会补写。相等或更小的 generation、换代后的旧 epoch、退役、closed、错误窗口，都走失败返回。`openNext` 继续把 floor 写成 0，那次赋值不经过 `commitFloor`，也不产生接受记录。
 
-门保留今天的 `submit(shape, mark)`，两参数路径的已有行为不变，也不武装印章。新增：
+门保留今天的 `submit(shape, mark)`，两参数路径的已有行为不变，也不武装印章。不增加 `finishAcceptance`。`370e2cc` 那个无参数的结算入口撤掉：它和 `submitCandidate` 之间没有调用身份，忙调用可以在另一调用的公开 Promise 结算前按相同的 mode、generation、mark 读到并消费那一枚印章。现行 `submit` 在 `destroyed` 或 `busyAttempt !== 0` 时于第一次 await 之前返回，返回的 Promise 仍要等微任务才结算；`operate` 又在 `finally` 里把 `busyAttempt` 置 0。只在结算时检查忙标志，挡不住「忙调用的续接先跑」或「busy 已释放、外层 await 尚未续接」。不复用 `attempts` 计数当身份：那是替换次数，click 和 pending 修复也会递增，忙调用自己也拿不到一个编号。
+
+新增的只有这一个方法。门不 import epoch。`T` 由调用方的 `accept` 决定，公开字段不增加接受记录。
 
 ```ts
-submitCandidate(input: {
+submitCandidate<T>(input: {
   readonly shape: ViewShape;
   readonly mark: StageMark;
   readonly generation: number;
   readonly stillEligible: () => boolean;
-}): Promise<void>
-
-finishAcceptance<T>(
-  write: (
+  readonly accept: (
     probe: () =>
       | {
           readonly mode: ViewShape;
@@ -439,13 +438,17 @@ finishAcceptance<T>(
           readonly mark: string;
         }
       | undefined,
-  ) => T | undefined,
-): T | undefined
+  ) => T | undefined;
+}): Promise<T | undefined>
 ```
 
-`submitCandidate` 与 `submit` 共用同一套替换、postCheck、pending 和至多一次额外替换。`stillEligible` 只在 `replaceShape` 返回之后、`snapshotCandidate` 之前同步调用一次。它返回 false 或抛错时，这次候选按失败处理。只有 `commitCandidate` 收下这份非空候选，并且 `currentMark` 仍是这次的 mark、形状仍是这次的 shape，才把印章指到 `{ mode, generation, mark }`。`noteNone`、`setDestroyed`、click 的 `commitCandidate`、两参数 `submit` 的 `commitCandidate`、失败候选、pending 修复和 pending 再更新都清掉印章。这些清除发生在已有函数内部，不给 lifecycle 加调用。
+一次 `submitCandidate` 的身份是进入忙检查通过之后、任何 await 之前，在该次闭包里新建的一个对象令牌。比较只用引用相等。mode、generation、mark 相等不是同一次调用。忙或已销毁在第一次 await 之前就返回 `undefined`：不建令牌，不读不写印章，不调用 `stillEligible`、`ports.replace`、`postCheck` 或 `accept`。门的 Promise 在失败时也以 `undefined` 兑现，不拒绝；IPC 的 `rejected` 由 handler 根据这个返回值给出。这样忙调用没有一个会去跑别人印章收尾的拒绝续接。
 
-`finishAcceptance` 同步调用 `write(probe)`。`probe` 只在这次调用期间读取闭包里的印章，不成为对象上的 getter。`write` 返回接受记录时，消费印章并把它交回。`write` 返回 `undefined` 且进入时印章仍指向这次 `submitCandidate` 时，把 `committed` 恢复成这次提交开始前的形状，`install` 改为 `unknown`，清掉印章，不再调用 `ports.replace`。进入时印章已经空着，就保持门当时的 `committed`、`install` 和 pending，这样已经胜出的 pending none 修复不会被盖掉。
+通过忙检查的调用与两参数 `submit` 共用同一套替换、postCheck、pending 和至多一次额外替换。`stillEligible` 只在 `replaceShape` 返回之后、`snapshotCandidate` 之前同步调用一次。它返回 false 或抛错时，这次候选按失败处理，不调用 `accept`。只有这次 `settle` 里的 `commitCandidate` 收下这份非空候选，并且 `currentMark` 仍是这次的 mark、形状仍是这次的 shape、阶段未销毁、没有对得上的 pending，才把印章写成 `{ token, mode, generation, mark }`。紧接着、在任何新的 await 之前，同步调用这次参数里的 `accept(probe)`。`probe` 只有在当前印章的令牌与这次闭包里的对象是同一个时，才返回那三项；否则返回 `undefined`。它不成为对象上的 getter，令牌本身不返回。
+
+`accept` 只同步调用这一次的 `commitFloor`，并原样返回它的结果；返回之后不再改门，也不把 `probe` 留到这次调用之外。`commitFloor` 在 `seal()` 通过之后不再调用回调，所以非空结果返回时令牌仍是这次。这时清掉这枚印章，并把该返回值作为 `submitCandidate` 的结果。返回空或抛错时，也只有令牌仍是这次，才把 `committed` 恢复成这次操作开始前的形状，把 `install` 改为 `unknown`，清掉这枚印章，并且不再调用 `ports.replace`。令牌已经对不上，包括印章已被清掉或换成别的对象时，结果是 `undefined`，不改当时的 `committed`、`install`、pending，也不清那枚别的印章。`operate` 的 `finally` 把 `busyAttempt` 置 0 发生在上述结算之后，公开 Promise 的兑现更在其后。因此另一调用要等到这次印章已经消费或按本次令牌回滚之后，才能进入自己的替换。
+
+`noteNone`、`setDestroyed`、click 的 `commitCandidate`、两参数 `submit` 的 `commitCandidate`、pending 修复和 pending 再更新仍然清掉当前印章。那是候选被取代，不是另一次 `submitCandidate` 的失败收尾。这些清除仍在已有函数内部，不给 lifecycle 加调用。失败候选只有在印章令牌就是这次时才清；这次还没写上自己的令牌时，不清当前印章。已经胜出的 pending none 不会被另一次失败调用盖掉。
 
 handler：
 
@@ -461,47 +464,60 @@ handler 模块不 import electron。生产用的 `soleWindow` 到 on 才在 `lib
 
 `read` 只核对：`senderWebContentsId` 是安全整数、`soleWindow()` 等于它、槽阶段是 `open`。通过则返回 `{ ok: true, value: { epoch } }`。不调用门，不改 floor。
 
-`submit` 在任何 `ports.replace` 之前同步核对：epoch 与 generation 都是 1 到 `Number.MAX_SAFE_INTEGER` 的整数，否则 `invalid_payload`；然后是窗口、阶段 `open`、载荷 epoch 等于槽 epoch、generation 严格大于 floor，否则 `rejected`。通过后才 `submitCandidate`。`stillEligible` 再读一次窗口、槽、epoch 和 floor。门返回后立刻：
+`submit` 在任何 `ports.replace` 之前同步核对：epoch 与 generation 都是 1 到 `Number.MAX_SAFE_INTEGER` 的整数，否则 `invalid_payload`；然后是窗口、阶段 `open`、载荷 epoch 等于槽 epoch、generation 严格大于 floor，否则 `rejected`。通过后，这一次 IPC 只调用一次 `submitCandidate`，不再有第二个结算入口。`stillEligible` 再读一次窗口、槽、epoch 和 floor。`accept` 只调用这一次的 `commitFloor`：
 
 ```ts
-gate.finishAcceptance((probe) =>
-  epoch.commitFloor({
-    senderWebContentsId,
-    epoch,
-    generation,
-    mode,
-    soleWindow,
-    seal: probe,
-  }),
-)
+const record = await gate.submitCandidate({
+  shape: mode,
+  mark: `${senderWebContentsId}:open:${epoch}`,
+  generation,
+  stillEligible,
+  accept: (probe) =>
+    epoch.commitFloor({
+      senderWebContentsId,
+      epoch,
+      generation,
+      mode,
+      soleWindow,
+      seal: probe,
+    }),
+});
 ```
 
-只有这里返回接受记录时，IPC 成功体才是 `{ ok: true, value: { epoch: record.epoch } }`。记录本身留在 `commitFloor` 的返回值里，不进入 IPC。没有记录就返回 `rejected`，floor 保持写入前的值。忙、销毁、替换抛错、postCheck 失败、印章被清掉，都是这条失败路径。
+只有 `record` 不是 `undefined` 时，IPC 成功体才是 `{ ok: true, value: { epoch: record.epoch } }`。记录本身留在这次返回值里，不进入 IPC。返回 `undefined` 就是 `rejected`，floor 保持写入前的值。忙、销毁、替换抛错、postCheck 失败、印章被清掉，都是这条失败路径，而且都发生在这次调用内部。生产用的 `soleWindow` 只读窗口列表，不回调门。
 
 ### active postCheck
 
-门的 `postCheck` 端口保持 `() => boolean | Promise<boolean>`，不增加参数。生产实现仍在 `library-wiring.ts`。今天 `currentMenuIsNone` 只接受三个 `normal` 且 `checked === false`，活动 radio 会失败，所以生产路径现在接不住原文、对照或译文。on 把它扩成：当前 `Menu.getApplicationMenu()` 必须就是这次 `held.menu`；在这个对象上，要么仍是三个普通项且无勾，要么是 `original`、`contrast`、`translation` 之一的三个 radio 且恰一项勾选，标签和事件与 `viewSlotDescriptions` 一致。对象不符、缺项、checkbox、零勾或两勾都返回 false。返回 false 时门已有的失败路径不武装印章，handler 不写 floor。none 的现有回归保留。
+门的 `postCheck` 端口保持 `() => boolean | Promise<boolean>`，不增加参数，也不改 mirror。生产实现仍在 `library-wiring.ts`。今天 `currentMenuIsNone` 只接受三个 `normal` 且 `checked === false`，活动 radio 会失败，所以生产路径现在接不住原文、对照或译文。
+
+on 不把条件放宽成「任一合法形状」。`replace` 收到的描述就是门为这一次 shape 取出的那一份。wiring 在调用 `Menu.setApplicationMenu` 之前，用同一次同步赋值记下刚建好的菜单对象和这一份描述。之后的 `postCheck` 只读这份当前安装记录，不再调用 `viewSlotDescriptions` 去寻找另一种也能对上的勾选。
+
+`Menu.getApplicationMenu()` 必须就是记录里的那个菜单对象。在这个对象上，记录里的每一项描述都恰有一个 `id === event` 的菜单项，`label` 相同，类型和勾选与该描述严格一致。描述没有 `type` 时，项必须是 `normal`，并且 `checked === false`。描述的 `type` 是 `radio` 时，项必须是 `radio`，并且 `checked` 与描述里的布尔值用 `===` 相同。少一项、多一项、id 不唯一、对象不是这份菜单、checkbox，以及勾选与描述不一致，都返回 false。
+
+因此本次描述是 original 时，同一菜单对象上即使三项 id、label 都对、也都是 radio、并且恰有一项勾选，只要勾在 contrast 或 translation，就是 false。本次描述是活动形状而该对象仍是合法的三个普通项，也是 false。返回 false 时不武装这次印章，不调用这次 `accept`，不写 floor。none 的现有回归保留：只有这次描述就是 none 时，三个 `normal` 且 `checked === false` 才通过。
 
 ### prep 与 on
 
-同一分支 `feature/s2c-acceptance-chain-174`，两笔提交，强依赖串行。prep 先落地 epoch 的 `commitFloor`、门的 `submitCandidate` 与 `finishAcceptance`、handler，以及这三份行为测试。prep 不改 `expose`，不跑 codegen，不改 `wiredLibraryCommands`，不改 `ipc-shell.test.ts`。on 同一笔改 `shell.ts` 的 `expose` 为 true、正式 `pnpm run codegen` 只提交白名单里的三份生成物、把 handler 放进 `startLibrary` 返回的生产表、扩 postCheck，并改 `ipc-shell.test.ts`、`view-menu-wiring.test.ts`、`ipc-production-assembly.test.ts`。
+同一分支 `feature/s2c-acceptance-chain-174`，两笔提交，强依赖串行。prep 先落地 epoch 的 `commitFloor`、门的 `submitCandidate`、handler，以及这三份行为测试。prep 不改 `expose`，不跑 codegen，不改 `wiredLibraryCommands`，不改 `ipc-shell.test.ts`。on 同一笔改 `shell.ts` 的 `expose` 为 true、正式 `pnpm run codegen` 只提交白名单里的三份生成物、把 handler 放进 `startLibrary` 返回的生产表、扩 postCheck，并改 `ipc-shell.test.ts`、`view-menu-wiring.test.ts`、`ipc-production-assembly.test.ts`。15:16 原话写的是「正式codegen三生成物」；同一原话后文的「生成上述三文件」就是这三份，不另指别的文件。
 
-`view-menu-wiring.test.ts` 已有的 `vi.mock` 会换成一个手写门对象，两参数 `submit` 不会自动带上新方法。on 必须把 `submitCandidate` 与 `finishAcceptance` 原样转给真实门。这是转发已有测试替身，不新增 mock 框架，也不把失败改成跳过。
+`view-menu-wiring.test.ts` 已有的 `vi.mock` 会换成一个手写门对象，两参数 `submit` 不会自动带上新方法。on 必须把 `submitCandidate` 原样转给真实门。这是转发已有测试替身，不新增 mock 框架，也不把失败改成跳过。
 
-`pnpm run codegen` 的 manifest 只把 preload 生成物写成上述三文件。同一命令还会在 `packages/contracts/src/worker/schemas.ts` 存在时跑 worker protocol 生成。本批不改那份 schema。若那一步让 `workers/parser/**` 或其他白名单外文件出现 diff，停，不提交那些文件。
+`pnpm run codegen` 的 manifest 只把 preload 生成物写成上述三份生成物。同一命令还会在 `packages/contracts/src/worker/schemas.ts` 存在时跑 worker protocol 生成。本批不改那份 schema。若那一步让 `workers/parser/**` 或其他白名单外文件出现 diff，停，不提交那些文件。
 
 G18 只拦 `packages/features` 下多个切片的 src。本批按 15:16 把契约 expose 与生产注册放在同一笔，不改 RULES，也不改 CI。
 
 ### 验收映射
 
-断言只看可观察结果：`ports.replace` 次数、`ports.dispatch` 次数、`epoch.read` 的 floor、`commitFloor` 的返回值、IPC 的 `ok` 与 `value`、菜单项的 type 与 checked、当前菜单对象。不断言源码文本。`click` 的 0 或 1、`known` 加 `none`、换代 floor 0、pending none 修复、写前印章本身，都不能当作这次接受记录。
+断言只看可观察结果：`ports.replace` 次数、`ports.dispatch` 次数、`accept` 被调用的次数、`epoch.read` 的 floor、`submitCandidate` 的返回值、IPC 的 `ok` 与 `value`、菜单项的 type 与 checked、当前菜单对象是不是这一次安装的那一个。不断言源码文本。`click` 的 0 或 1、`known` 加 `none`、换代 floor 0、pending none 修复、写前印章本身，都不能当作这次接受记录。相同的 mode、generation、mark 也不能当作同一次调用。
 
 | 轨迹 | 可观察结果 | 落在 |
 | --- | --- | --- |
-| 最终候选仍指向这次 submit | `commitFloor` 返回含这次 mode、epoch、generation、mark 的记录；floor 变成这次 generation；IPC 成功体只有这个 epoch | epoch 测试与 handler 测试 |
-| 替换抛错或 postCheck 失败 | replace 已发生或被拒绝都算进次数；floor 不变；`commitFloor` 返回 `undefined`；install 为 `unknown`；没有这次记录 | gate 测试、handler 测试 |
+| 最终候选仍指向这次 submit | 这次 `submitCandidate` 返回含这次 mode、epoch、generation、mark 的记录；floor 变成这次 generation；IPC 成功体只有这个 epoch | epoch 测试与 handler 测试 |
+| 同值并发的忙调用 | A 的 `ports.replace` 尚未结算时，B 用相同 shape、mark、generation 进入。B 的 Promise 兑现为 `undefined`，handler 给出 `rejected`；B 的 `accept` 次数是 0，B 不加替换次数。A 随后得到记录，floor 是 A 的 generation。B 拿不到这份记录，也不把 A 的 `committed`、install 或印章改掉 | gate 测试与 handler 测试 |
+| 替换抛错或 postCheck 失败 | replace 已发生或被拒绝都算进次数；floor 不变；这次返回 `undefined`；`accept` 不被调用；install 为 `unknown`；没有这次记录 | gate 测试、handler 测试 |
+| 迟到失败不盖住已胜出的修复 | A 等待替换时 pending none 胜出，菜单成为 none 且 install 为 `known`。A 的 `accept` 不被调用，返回 `undefined`，不把 `committed` 改回进入前的形状；floor 不变。A 已经以 `undefined` 结算之后，另一次成功提交的记录和 floor 保持原样 | gate 测试 |
 | pending none 修复胜出 | 可以是 `known` 且形状 `none`；被盖掉的 submit 没有记录，floor 不变 | gate 测试 |
-| 修复期间 pending 再更新 | 停在 `unknown`，留下最新 pending，不再进入下一轮；旧 submit 零写入、零记录 | 保留现有 B 用例，并补印章已清 |
+| 修复期间 pending 再更新 | 停在 `unknown`，留下最新 pending，不再进入下一轮；旧 submit 零写入、零记录 | 保留现有 B 用例，并补这次 `accept` 不被调用 |
 | 换代 | floor 为 0；旧 generation 的 `commitFloor` 返回 `undefined` | epoch 测试 |
 | 退役 | 阶段 `retired`，原 floor 保留；旧 submit 零写入、零记录 | epoch 测试 |
 | closed 或槽已终结 | `read` 为 `undefined`；零写入、零记录 | epoch 测试 |
@@ -510,9 +526,11 @@ G18 只拦 `packages/features` 下多个切片的 src。本批按 15:16 把契�
 | 越界 epoch 或 generation | 副作用前 `invalid_payload` | handler 测试 |
 | 最新 pending、至多一次额外替换 | 现有次数不增加第三轮 | 现有 gate 测试保持通过 |
 | 旧 click 派发前校验，进入 dispatch 后不撤回 | dispatch 次数与返回值保持现有用例 | 现有 gate 测试保持通过 |
-| none 三个普通项无勾 | 当前菜单对象上三项 `normal` 且 `checked === false` | wiring 测试 |
-| 活动三 radio 恰一勾 | 当前菜单对象上恰一项 checked，另外两项未勾 | wiring 测试，on |
-| 当前安装对象及失败恢复 | 对象不是 `held.menu`、checkbox、零勾或两勾时 postCheck 失败；floor 不变，install 不是这次的 `known` | wiring 测试，on |
+| none 三个普通项无勾 | 这次描述就是 none 时，当前这份菜单对象上三项 `normal` 且 `checked === false` | wiring 测试 |
+| 活动目标恰一勾在该模式 | 当前这份菜单对象上，三项 id、label 与这次描述一致，type 都是 `radio`，`checked` 与这次描述逐项相同，所以只有目标模式为 true | wiring 测试，on |
+| 同对象但勾错模式 | 菜单对象仍是这次安装的对象，三项 id、label 都对，都是 radio，恰一项勾选，但勾在另一个模式。postCheck 为 false；这次 `accept` 不被调用；floor 不变；install 不是这次的 `known` | wiring 测试，on；无印章由 gate 测试在 prep 覆盖 |
+| 同对象但不是这次目标形状 | 同一菜单对象仍是合法 none，或合法的另一种活动形状，与这次保存的描述不一致。postCheck 为 false；不武装这次印章；不写 floor | wiring 测试，on |
+| 当前安装对象及失败恢复 | 对象不是这次安装的菜单、checkbox、零勾或两勾时 postCheck 失败；floor 不变，install 不是这次的 `known` | wiring 测试，on |
 | 生产注册 | 表里有 `shell.reportViewMenu` 时 `registerIpcRouter` 不抛；缺这条就抛 | assembly 测试，on |
 | expose | 请求、响应、错误码、幂等不变；`expose` 为 true | ipc-shell 测试，on |
 
@@ -528,13 +546,16 @@ E2 的三视图、标题栏分段、空态句、翻译、配置 chip、Aa、侧�
 
 | 决定 | 理由 | 日期 | 谁定的 |
 | --- | --- | --- | --- |
-| 采用上面的 `commitFloor`、`submitCandidate`、`finishAcceptance` | 15:16 已把 epoch 与门纳入白名单。探针参数避免 gate 与 epoch 互相 import，也避免新的 getter | 2026-11-23 | 本段核定，待 Forge 只读。不是新的用户审批 |
-| prep 与 on 同一分支分两笔提交 | expose 为 false 时 registry 不含这条通道。on 必须把 expose、codegen、生产表和装配验收放在同一笔 | 2026-11-23 | 同上 |
+| `370e2cc` 曾把 `finishAcceptance` 放在 `submitCandidate` 之外 | 当时用探针避免环依赖。该提交的 Forge 只读是 FAIL，这一行不作为实现签名 | 2026-11-23 | 保留的旧决定。由下面两行取代，不删除 |
+| 结算放进 `submitCandidate` 的 `accept`，身份是该次闭包里的对象令牌 | Forge 对 `370e2cc` 的 B1。按值相同挡不住忙调用交错。不新增 IPC、getter 或第二张代次表 | 2026-11-23 | 本段修正，待 Forge 复核。不是新的用户审批 |
+| postCheck 只匹配这次安装记录里的描述 | Forge 对 `370e2cc` 的 B2。同一对象上另一种合法勾选不是这次目标 | 2026-11-23 | 同上 |
+| prep 与 on 同一分支分两笔提交 | expose 为 false 时 registry 不含这条通道。on 必须把 expose、codegen、生产表和装配验收放在同一笔 | 2026-11-23 | 15:16 已批。不是新的用户审批 |
 | lifecycle 保持 0 diff | 印章在 `noteNone` 与 `setDestroyed` 内部清除 | 2026-11-23 | 同上。若实现时做不到，停 |
 
 ### 本段计划 / 实际
 
 | 步骤 | 计划 | 实际 | 证据 |
 | --- | --- | --- | --- |
-| 1 | 只核定签名并追加本文件与台账 | 本提交只有这两份文档。未编码，未安装，未跑测试 | 本段 |
-| 2 | Forge 只读这些签名。通过前不写函数 | 尚未发生 |  |
+| 1 | 只核定签名并追加本文件与台账 | `370e2cc` 只有这两份文档。未编码，未安装，未跑测试 | `370e2cc` |
+| 2 | Forge 只读这些签名。通过前不写函数 | 2026-11-23 15:39:33 Asia/Shanghai 的结论是 FAIL。必要 BLOCK 是调用身份和目标形状。不是产品测试失败。该 FAIL 保留 | 该次只读复核 |
+| 3 | 只改这两处接口和台账里被抄错的引文。仍不编码、不安装、不测试 | 撤掉分开的 `finishAcceptance`。postCheck 改为匹配这次安装描述。引文恢复「三生成物」 | 本提交相对 `370e2cc` 的 diff |
