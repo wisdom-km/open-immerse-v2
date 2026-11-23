@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 
+import { viewOriginalEvent } from "../src/main/library-menu.js";
 import {
   createViewMenuGate,
   type StageMark,
@@ -504,6 +505,60 @@ it("B10 catches a synchronous dispatch throw and accepts the next snapshot", asy
   expect(opened.gate.committed).toBe("contrast");
   expect(opened.gate.install).toBe("known");
   await acceptShape(opened, "translation", "later");
+});
+
+it("N6 returns 0 when a newer none becomes known during the click post-check", async () => {
+  let phase = "install";
+  const opened = openGate({
+    onPostCheck: () => {
+      if (phase !== "click") return;
+      phase = "repair";
+      void opened.gate.noteNone("B");
+    },
+  });
+  await opened.gate.noteNone("A");
+  expect(opened.gate.committed).toBe("none");
+  expect(opened.gate.install).toBe("known");
+  phase = "click";
+  const before = opened.calls.length;
+  await expect(opened.gate.click(viewOriginalEvent)).resolves.toBe(0);
+  expect(opened.dispatches).toEqual([]);
+  expect(opened.calls.length - before).toBe(2);
+  expect(opened.gate.committed).toBe("none");
+  expect(opened.gate.install).toBe("known");
+  expect(opened.gate.pendingMark).toBeNull();
+});
+
+it("N7 keeps the newest pending unknown when none changes during the repair", async () => {
+  let posts = 0;
+  const opened = openGate({
+    onPostCheck: () => {
+      posts += 1;
+      if (posts === 2) void opened.gate.noteNone("B");
+      if (posts === 3) void opened.gate.noteNone("C");
+    },
+  });
+  await opened.gate.noteNone("A");
+  const before = opened.calls.length;
+  await expect(opened.gate.click(viewOriginalEvent)).resolves.toBe(0);
+  expect(opened.dispatches).toEqual([]);
+  expect(opened.calls.length - before).toBe(2);
+  expect(opened.gate.committed).toBe("none");
+  expect(opened.gate.install).toBe("unknown");
+  expect(opened.gate.pendingMark).toBe("C");
+});
+
+it("N8 keeps the port call when the mark changes after dispatch has started", async () => {
+  const opened = openGate({
+    onDispatch: () => {
+      void opened.gate.noteNone("B");
+    },
+  });
+  await opened.gate.noteNone("A");
+  await expect(opened.gate.click(viewOriginalEvent)).resolves.toBe(1);
+  expect(opened.dispatches).toEqual([viewOriginalEvent]);
+  expect(opened.gate.install).toBe("known");
+  expect(opened.gate.pendingMark).toBeNull();
 });
 
 async function leavePending(): Promise<Opened> {

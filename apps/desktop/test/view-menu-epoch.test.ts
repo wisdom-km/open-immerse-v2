@@ -187,14 +187,133 @@ it.each([-1, 0.5, Number.MAX_SAFE_INTEGER + 1])(
   },
 );
 
-it("deletes the slot on closed and does not touch the menu", () => {
+it("drops the readable slot on closed and does not rebuild it", () => {
   const epoch = createViewMenuEpoch();
   const page = host();
   epoch.attach(page.win as never);
   emit(page.map, "did-navigate", {}, appUrl);
   emit(page.map, "closed");
   expect(epoch.read(4)).toBeUndefined();
+  emit(page.map, "did-navigate", {}, appUrl);
+  expect(epoch.read(4)).toBeUndefined();
   expect(probe.menu).toBe(0);
+});
+
+it("registers handlers before attached and ignores a duplicate attach", () => {
+  const epoch = createViewMenuEpoch();
+  const page = host();
+  const seen: string[] = [];
+  epoch.subscribe(() => {
+    seen.push("attached");
+    expect(page.names).toContain("did-navigate");
+    expect(page.names).toContain("closed");
+  });
+  epoch.attach(page.win as never);
+  epoch.attach(page.win as never);
+  expect(seen).toEqual(["attached"]);
+  expect(page.names.filter((name) => name === "did-navigate")).toHaveLength(1);
+  expect(page.names.filter((name) => name === "closed")).toHaveLength(1);
+});
+
+it("rejects a sealed reattach without another attached notice", () => {
+  const epoch = createViewMenuEpoch();
+  const page = host();
+  const seen: string[] = [];
+  epoch.subscribe((notice) => {
+    seen.push(notice.kind);
+  });
+  epoch.attach(page.win as never);
+  const names = page.names.length;
+  emit(page.map, "closed");
+  epoch.attach(page.win as never);
+  expect(epoch.read(4)).toBeUndefined();
+  expect(page.names).toHaveLength(names);
+  expect(seen.filter((kind) => kind === "attached")).toEqual(["attached"]);
+});
+
+it("flushes one closed notice when close happens during attached", () => {
+  const epoch = createViewMenuEpoch();
+  const page = host();
+  let windowClosed = 0;
+  const seen: string[] = [];
+  epoch.subscribe((notice) => {
+    seen.push(notice.kind);
+    if (notice.kind !== "attached") return;
+    windowClosed += 1;
+    emit(page.map, "closed");
+  });
+  epoch.attach(page.win as never);
+  expect(windowClosed).toBe(1);
+  expect(seen.filter((kind) => kind === "closed")).toHaveLength(2);
+  emit(page.map, "closed");
+  expect(seen.filter((kind) => kind === "closed")).toHaveLength(2);
+  expect(epoch.read(4)).toBeUndefined();
+});
+
+it("still flushes closed when an attached listener throws", () => {
+  const epoch = createViewMenuEpoch();
+  const page = host();
+  const seen: string[] = [];
+  epoch.subscribe((notice) => {
+    if (notice.kind === "attached") {
+      emit(page.map, "closed");
+      throw new Error("listener failed");
+    }
+    seen.push(notice.kind);
+  });
+  epoch.subscribe((notice) => {
+    seen.push(notice.kind);
+  });
+  expect(() => {
+    epoch.attach(page.win as never);
+  }).not.toThrow();
+  expect(seen.filter((kind) => kind === "attached")).toEqual(["attached"]);
+  expect(
+    seen.filter((kind) => kind === "closed").length,
+  ).toBeGreaterThanOrEqual(2);
+  expect(probe.menu).toBe(0);
+});
+
+it("does not announce a menu slot for the initial provisional failure", () => {
+  const epoch = createViewMenuEpoch();
+  const page = host();
+  const seen: string[] = [];
+  epoch.subscribe((notice) => {
+    seen.push(notice.kind);
+  });
+  epoch.attach(page.win as never);
+  emit(page.map, "did-fail-provisional-load", {}, -3, "err", appUrl, true);
+  expect(epoch.read(4)).toEqual({ phase: "retired", epoch: 0, floor: 0 });
+  expect(seen).toEqual(["attached"]);
+});
+
+it("does not announce a menu slot for the initial renderer gone", () => {
+  const epoch = createViewMenuEpoch();
+  const page = host();
+  const seen: string[] = [];
+  epoch.subscribe((notice) => {
+    seen.push(notice.kind);
+  });
+  epoch.attach(page.win as never);
+  emit(page.map, "render-process-gone", {}, { reason: "crashed" });
+  expect(epoch.read(4)).toEqual({ phase: "retired", epoch: 0, floor: 0 });
+  expect(seen).toEqual(["attached"]);
+});
+
+it("announces open and later retired slots", () => {
+  const epoch = createViewMenuEpoch();
+  const page = host();
+  const seen: string[] = [];
+  epoch.subscribe((notice) => {
+    if (notice.kind === "slot") {
+      seen.push(`${notice.phase}:${String(notice.epoch)}`);
+    }
+  });
+  epoch.attach(page.win as never);
+  emit(page.map, "did-navigate", {}, appUrl);
+  emit(page.map, "did-navigate-in-page", {}, appUrl, true);
+  emit(page.map, "did-navigate", {}, "about:blank");
+  expect(seen).toEqual(["open:1", "retired:1"]);
 });
 
 it("attaches before loadURL so the first commit is open", () => {

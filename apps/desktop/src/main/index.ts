@@ -31,11 +31,12 @@ app.on("web-contents-created", (_event, contents) => {
 
 runWhenReady(app.whenReady(), startDesktop, reportReadyFailure);
 
-function startDesktop(): void {
+export function startDesktop(): void {
   handleAppProtocol(rendererRoot(fileURLToPath(import.meta.url)));
   denyPermissions();
-  startMainLogger();
-  createMainWindow(createViewMenuEpoch());
+  const epoch = createViewMenuEpoch();
+  startMainLogger(epoch);
+  createMainWindow(epoch);
 }
 
 function reportReadyFailure(error: unknown): void {

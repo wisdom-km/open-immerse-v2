@@ -11,6 +11,7 @@ import {
   viewTranslationEvent,
 } from "../src/main/library-menu.js";
 import { startLibrary } from "../src/main/library-wiring.js";
+import { createViewMenuEpoch } from "../src/main/view-menu-epoch.js";
 
 type FakeItem = {
   id?: string;
@@ -41,6 +42,7 @@ const control = vi.hoisted(() => ({
   clickTask: Promise.resolve(0),
   clicks: 0,
   noteNone: 0,
+  marks: [] as string[],
   destroyed: 0,
   postChecks: 0,
   rejectWith: null as Error | null,
@@ -106,6 +108,7 @@ vi.mock("../src/main/view-menu-gate.js", async (importOriginal) => {
         },
         noteNone(mark: string) {
           control.noteNone += 1;
+          control.marks.push(mark);
           return gate.noteNone(mark);
         },
         click(event: string) {
@@ -162,6 +165,7 @@ beforeEach(() => {
   control.clickTask = Promise.resolve(0);
   control.clicks = 0;
   control.noteNone = 0;
+  control.marks = [];
   control.destroyed = 0;
   control.postChecks = 0;
   control.rejectWith = null;
@@ -210,7 +214,9 @@ it("sends the three view clicks through the gate and leaves other items on dispa
       scriptFor(viewTranslationEvent),
     ]);
     expect(
-      plainSlots(shell.current).every((item) => item.checked === false),
+      plainSlots(shell.current).every(
+        (item) => item.type === "normal" && item.checked === false,
+      ),
     ).toBe(true);
     const sets = shell.sets;
     pressCommand("打开…");
@@ -311,12 +317,88 @@ it("does not push the gate when the library quit listener runs", async () => {
   }
 });
 
-function boot(): {
+it("N10 keeps noteNone at 0 before the first open commit", async () => {
+  const epoch = createViewMenuEpoch();
+  const page = manualWindow(4);
+  const started = boot(epoch);
+  try {
+    expect(control.noteNone).toBe(0);
+    epoch.attach(page.win as never);
+    expect(control.noteNone).toBe(0);
+    expect(control.marks).toEqual([]);
+    page.emit("did-navigate", {}, "about:blank");
+    page.emit("did-fail-provisional-load", {}, -3, "err", "about:blank", true);
+    expect(epoch.read(4)).toEqual({ phase: "retired", epoch: 0, floor: 0 });
+    await control.task;
+    expect(control.noteNone).toBe(0);
+    expect(control.destroyed).toBe(0);
+    page.emit("closed");
+    expect(control.destroyed).toBeGreaterThan(0);
+    expect(control.noteNone).toBe(0);
+    expect(epoch.read(4)).toBeUndefined();
+  } finally {
+    started.close();
+  }
+});
+
+it("N3 notes open, retire, and renderer gone after a real commit", async () => {
+  const epoch = createViewMenuEpoch();
+  const page = manualWindow(4);
+  const started = boot(epoch);
+  try {
+    await control.task;
+    epoch.attach(page.win as never);
+    page.emit("did-navigate", {}, "oi-app://app/index.html");
+    page.emit("did-navigate", {}, "about:blank");
+    page.emit("did-navigate", {}, "oi-app://app/index.html");
+    page.emit("render-process-gone", {}, { reason: "crashed" });
+    expect(control.marks).toEqual([
+      "4:open:1",
+      "4:retired:1",
+      "4:open:2",
+      "4:retired:2",
+    ]);
+  } finally {
+    started.close();
+  }
+});
+
+it("N5 destroys after a leading listener closes during attached", async () => {
+  const hold = deferred();
+  control.wait = hold.promise;
+  const epoch = createViewMenuEpoch();
+  const page = manualWindow(4);
+  epoch.subscribe((notice) => {
+    if (notice.kind === "attached") page.emit("closed");
+  });
+  const started = boot(epoch);
+  try {
+    const sets = shell.sets;
+    epoch.attach(page.win as never);
+    expect(control.destroyed).toBeGreaterThan(0);
+    expect(control.noteNone).toBe(0);
+    hold.resolve();
+    await control.task;
+    expect(shell.sets).toBe(sets);
+    expect(await pressView("原文")).toBe(0);
+    expect(shell.scripts).toEqual([]);
+    expect(
+      plainSlots(shell.current).every((item) => item.type === "normal"),
+    ).toBe(true);
+  } finally {
+    started.close();
+  }
+});
+
+function boot(epoch?: ReturnType<typeof createViewMenuEpoch>): {
   handlers: ReturnType<typeof startLibrary>;
   close: () => void;
 } {
   const root = mkdtempSync(path.join(tmpdir(), "oitest-view-menu-"));
-  const handlers = startLibrary(path.join(root, "data"));
+  const handlers =
+    epoch === undefined
+      ? startLibrary(path.join(root, "data"))
+      : startLibrary(path.join(root, "data"), undefined, epoch);
   return {
     handlers,
     close() {
@@ -389,6 +471,24 @@ function deferred(): { promise: Promise<void>; resolve: () => void } {
     },
   };
 }
+
+function manualWindow(id: number): {
+  win: { webContents: { id: number; on: On }; on: On };
+  emit: (name: string, ...args: unknown[]) => void;
+} {
+  const map = new Map<string, (...args: unknown[]) => void>();
+  const on = (name: string, listener: (...args: unknown[]) => void) => {
+    map.set(name, listener);
+  };
+  return {
+    win: { webContents: { id, on }, on },
+    emit(name, ...args) {
+      map.get(name)?.(...args);
+    },
+  };
+}
+
+type On = (name: string, listener: (...args: unknown[]) => void) => void;
 
 function windowStub(): {
   webContents: { executeJavaScript: (script: string) => Promise<void> };
