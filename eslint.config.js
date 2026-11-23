@@ -56,7 +56,7 @@ export default tseslint.config(
             "apps/desktop/test/reading-command-surface.test.ts",
             "apps/desktop/test/shell.test.ts",
           ],
-          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 64,
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 70,
         },
         tsconfigRootDir: import.meta.dirname,
       },
