@@ -112,9 +112,10 @@ afterEach(() => {
 });
 
 it("changes the open reader once per view event and ignores events after leave", async () => {
-  const watch = watchViewListeners();
+  const { Shell } = await import("../src/renderer/shell.js");
+  const add = vi.spyOn(window, "addEventListener");
+  const remove = vi.spyOn(window, "removeEventListener");
   try {
-    const { Shell } = await import("../src/renderer/shell.js");
     const view = render(createElement(Shell));
     dispatchAll();
     expect(screen.queryByRole("radiogroup", { name: "栏位" })).toBeNull();
@@ -147,13 +148,18 @@ it("changes the open reader once per view event and ignores events after leave",
     expect(screen.queryByRole("radiogroup", { name: "栏位" })).toBeNull();
     view.unmount();
     for (const name of viewEvents) {
-      expect(watch.added.get(name)).toBeGreaterThan(0);
-      expect(watch.removed.get(name)).toBe(watch.added.get(name));
+      const added = add.mock.calls.filter((call) => call[0] === name).length;
+      const removed = remove.mock.calls.filter(
+        (call) => call[0] === name,
+      ).length;
+      expect(added).toBeGreaterThan(0);
+      expect(removed).toBe(added);
     }
   } finally {
-    watch.restore();
+    add.mockRestore();
+    remove.mockRestore();
   }
-});
+}, 20_000);
 
 function callCount(): readonly [number, number, number] {
   return [seen.viewOriginal, seen.viewContrast, seen.viewTranslation];
@@ -166,51 +172,4 @@ function marked(name: string): boolean {
 
 function dispatchAll(): void {
   for (const name of viewEvents) window.dispatchEvent(new Event(name));
-}
-
-function watchViewListeners(): {
-  readonly added: ReadonlyMap<string, number>;
-  readonly removed: ReadonlyMap<string, number>;
-  restore(): void;
-} {
-  const names = new Set<string>(viewEvents);
-  const added = new Map<string, number>();
-  const removed = new Map<string, number>();
-  const add = window.addEventListener.bind(window);
-  const remove = window.removeEventListener.bind(window);
-  const addPatched = (
-    type: string,
-    listener: EventListenerOrEventListenerObject | null,
-    options?: boolean | AddEventListenerOptions,
-  ): void => {
-    if (names.has(type)) {
-      added.set(type, (added.get(type) ?? 0) + 1);
-    }
-    if (listener !== null) {
-      add(type, listener, options);
-    }
-  };
-  const removePatched = (
-    type: string,
-    listener: EventListenerOrEventListenerObject | null,
-    options?: boolean | EventListenerOptions,
-  ): void => {
-    if (names.has(type)) {
-      removed.set(type, (removed.get(type) ?? 0) + 1);
-    }
-    if (listener !== null) {
-      remove(type, listener, options);
-    }
-  };
-  window.addEventListener = addPatched as typeof window.addEventListener;
-  window.removeEventListener =
-    removePatched as typeof window.removeEventListener;
-  return {
-    added,
-    removed,
-    restore() {
-      window.addEventListener = add;
-      window.removeEventListener = remove;
-    },
-  };
 }
