@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type ReactElement,
@@ -20,6 +19,7 @@ import { PageColumn } from "./page-column.js";
 import type { PdfPaint, ReaderClient } from "./reader-client.js";
 import { navCommands, useBoundNav, type ReaderNav } from "./use-bound-nav.js";
 import { usePositionHistory } from "./use-position-history.js";
+import { useReaderLeave } from "./use-reader-leave.js";
 import { useReaderSession } from "./use-reader-session.js";
 import { useZoom } from "./use-zoom.js";
 import { ZoomControls } from "./zoom-controls.js";
@@ -36,14 +36,7 @@ export function ReaderScreen(props: {
   readonly onBindNav?: ((nav: ReaderNav | undefined) => void) | undefined;
 }): ReactElement {
   const session = useReaderSession(props.client, props.id, props.onLeave);
-  const releasePixels = useRef(true);
-  const leave = useCallback(() => {
-    releasePixels.current = false;
-    session.leave();
-    queueMicrotask(() => {
-      releasePixels.current = true;
-    });
-  }, [session.leave]);
+  const leaving = useReaderLeave(session.leave, props.onBindLeave);
   const reading =
     session.phase.kind === "view" ? session.phase.reading : undefined;
   const viewing =
@@ -61,19 +54,13 @@ export function ReaderScreen(props: {
   }, []);
   useBoundNav(
     props.onBindNav,
-    navCommands(nav, leave, openGoTo, zoom.commands),
+    navCommands(nav, leaving.leave, openGoTo, zoom.commands),
   );
-  useLayoutEffect(() => {
-    props.onBindLeave?.(leave);
-    return () => {
-      props.onBindLeave?.(undefined);
-    };
-  }, [props.onBindLeave, leave]);
   return (
     <section className="oi-reader" aria-label={props.title}>
       <ReaderBar
         title={props.title}
-        leave={leave}
+        leave={leaving.leave}
         viewing={viewing}
         pageCount={reading?.pageCount}
         lostPlace={session.lostPlace}
@@ -97,8 +84,8 @@ export function ReaderScreen(props: {
         cancel={reading?.cancel}
         boxes={reading?.boxes}
         zoom={zoom.ratio}
-        releasePixels={releasePixels}
-        onLeave={leave}
+        releasePixels={leaving.releasePixels}
+        onLeave={leaving.leave}
       />
     </section>
   );
