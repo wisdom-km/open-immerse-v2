@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { writeSync } from "node:fs";
+
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createElement, useEffect, type ComponentProps } from "react";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
@@ -112,24 +114,38 @@ afterEach(() => {
 });
 
 it("changes the open reader once per view event and ignores events after leave", async () => {
+  const startedAt = performance.now();
+  shellStage("before-import", startedAt);
   const { Shell } = await import("../src/renderer/shell.js");
-  // Count after import. Replacing addEventListener first left this test pending on Windows.
+  shellStage("after-import", startedAt);
   const add = vi.spyOn(window, "addEventListener");
   const remove = vi.spyOn(window, "removeEventListener");
   try {
+    shellStage("before-render", startedAt);
     const view = render(createElement(Shell));
+    shellStage("after-render", startedAt);
     dispatchAll();
     expect(screen.queryByRole("radiogroup", { name: "栏位" })).toBeNull();
     expect(callCount()).toEqual([0, 0, 0]);
+    shellStage("before-library", startedAt);
     const row = await screen.findByText("Paper");
+    shellStage("after-library", startedAt);
     fireEvent.click(row);
     fireEvent.dblClick(row);
+    shellStage("before-reader", startedAt);
     await screen.findByRole("radio", { name: "原文" });
+    shellStage("after-reader", startedAt);
     expect(seen.mounts).toBe(1);
     expect(marked("原文")).toBe(true);
+    shellStage("before-event-original", startedAt);
     window.dispatchEvent(new Event(viewOriginalEvent));
+    shellStage("after-event-original", startedAt);
+    shellStage("before-event-bilingual", startedAt);
     window.dispatchEvent(new Event(viewBilingualEvent));
+    shellStage("after-event-bilingual", startedAt);
+    shellStage("before-event-translation", startedAt);
     window.dispatchEvent(new Event(viewTranslationEvent));
+    shellStage("after-event-translation", startedAt);
     expect(callCount()).toEqual([1, 1, 1]);
     expect(marked("译文")).toBe(true);
     expect(marked("原文")).toBe(false);
@@ -138,7 +154,9 @@ it("changes the open reader once per view event and ignores events after leave",
     if (!(back instanceof HTMLElement)) {
       throw new Error("back");
     }
+    shellStage("before-leave", startedAt);
     fireEvent.click(back);
+    shellStage("after-leave", startedAt);
     expect(screen.queryByRole("radiogroup", { name: "栏位" })).toBeNull();
     expect(seen.mounts).toBe(0);
     window.dispatchEvent(new Event(viewOriginalEvent));
@@ -147,7 +165,9 @@ it("changes the open reader once per view event and ignores events after leave",
     expect(callCount()).toEqual([1, 1, 1]);
     expect(seen.mounts).toBe(0);
     expect(screen.queryByRole("radiogroup", { name: "栏位" })).toBeNull();
+    shellStage("before-unmount", startedAt);
     view.unmount();
+    shellStage("after-unmount", startedAt);
     for (const name of viewEvents) {
       const added = add.mock.calls.filter((call) => call[0] === name).length;
       const removed = remove.mock.calls.filter(
@@ -161,6 +181,13 @@ it("changes the open reader once per view event and ignores events after leave",
     remove.mockRestore();
   }
 });
+
+function shellStage(stage: string, startedAt: number): void {
+  writeSync(
+    2,
+    `oi-shell-stage ${stage} ${Math.round(performance.now() - startedAt)}\n`,
+  );
+}
 
 function callCount(): readonly [number, number, number] {
   return [seen.viewOriginal, seen.viewContrast, seen.viewTranslation];
