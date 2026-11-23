@@ -359,3 +359,5 @@ N1：空态句、Windows 链接、mac 链接写在测试文件自己的常量里
 旧次数不重置。E2-0 仍是 0/1。七文件首跑仍是退出码 1。shell 单文件补验仍记在 `8f90c54`。完整 check 仍是退出码 1。`2243996` 的 lint 仍是退出码 1。`352cf89` 的 15 个分项仍不是第二次完整 check。本轮命令见 `docs/evidence/237/s1-s2-n1.md`。方向键、真实界面、高对比、读屏、R-E13 仍未验。E2-2 与 S3 仍不做。保持 Draft。
 
 `170070c7f536b0046e22024f784fad6be4d03a3c` 的远端 `desktop-e2e-windows` 在「Desktop unit tests」失败。失败的是 `shell.test.ts` 超时 5000ms，Playwright 步骤没有启动。同一授权下只改这一份测试：不再替换 `window.addEventListener`，改用 `vi.spyOn` 计数，并把这一条的时限放到 20 秒。调用次数、离开后不重开、卸载后添加次数等于移除次数这些断言还在。本地只补跑了 `apps/desktop/test/shell.test.ts`。没有手动重跑 CI。
+
+上面那句「放到 20 秒」是当时的改动，不改写成已经定位。官方失败日志 [job 137873296797](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45226216313/job/137873296797) 的栈停在 `shell.test.ts:114`，下一行是 `watchViewListeners()`，它在 `import` 之前替换了 `window.addEventListener`。日志没有给出具体 `await`。随后自然 CI [run 45227957478](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45227957478) 的 Windows 桌面单测里，同一用例在 spy 版本上打印 `3354ms` 并通过，31 文件 208 项都过。3354ms 低于默认 5000ms，所以 20 秒时限没有参与这次通过。这一笔把它去掉，观察仍放在 `import` 之后。`170070c` 的失败保留。
