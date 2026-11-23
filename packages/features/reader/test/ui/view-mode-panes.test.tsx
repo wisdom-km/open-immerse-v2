@@ -154,7 +154,7 @@ function checked(): string {
     screen.getByRole("radio", { name: "译文" }),
   ].filter((node) => node instanceof HTMLInputElement && node.checked);
   expect(chosen).toHaveLength(1);
-  return chosen[0]?.parentElement?.textContent?.trim() ?? "";
+  return (chosen[0]?.parentElement?.textContent ?? "").trim();
 }
 
 function pageColumn(): HTMLElement {
