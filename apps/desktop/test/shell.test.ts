@@ -75,7 +75,11 @@ it("changes the open reader once per view event and ignores events after leave",
   expect(marked("对照")).toBe(false);
   window.dispatchEvent(new Event(viewOriginalEvent));
   expect(marked("原文")).toBe(true);
-  fireEvent.click(screen.getByRole("button", { name: "返回文献库" }));
+  const back = document.querySelector(".oi-reader-bar .oi-reader-back");
+  if (!(back instanceof HTMLElement)) {
+    throw new Error("back");
+  }
+  fireEvent.click(back);
   expect(screen.queryByRole("radiogroup", { name: "栏位" })).toBeNull();
   expect(dispatchAll).not.toThrow();
 });
