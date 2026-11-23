@@ -67,7 +67,13 @@ export type OiError<Channel extends string> =
                           | "sender_rejected"
                           | "invalid_payload"
                           | "handler_threw"
-                      : never;
+                      : Channel extends "shell.reportViewMenu"
+                        ?
+                            | "rejected"
+                            | "sender_rejected"
+                            | "invalid_payload"
+                            | "handler_threw"
+                        : never;
 
 declare global {
   interface Window {
@@ -253,6 +259,28 @@ declare global {
             Readonly<{ state: "configured" | "unconfigured" }>,
             | { readonly code: "storage_corrupt"; readonly retryable: false }
             | { readonly code: "secret_unavailable"; readonly retryable: false }
+            | { readonly code: "sender_rejected"; readonly retryable: false }
+            | { readonly code: "invalid_payload"; readonly retryable: false }
+            | { readonly code: "handler_threw"; readonly retryable: true }
+          >
+        >;
+      };
+      readonly shell: {
+        /** idempotent: false */
+        reportViewMenu(
+          input: Readonly<
+            | Readonly<{ op: "read" }>
+            | Readonly<{
+                epoch: number;
+                generation: number;
+                mode: "none" | "original" | "contrast" | "translation";
+                op: "submit";
+              }>
+          >,
+        ): Promise<
+          Result<
+            Readonly<{ epoch: number }>,
+            | { readonly code: "rejected"; readonly retryable: false }
             | { readonly code: "sender_rejected"; readonly retryable: false }
             | { readonly code: "invalid_payload"; readonly retryable: false }
             | { readonly code: "handler_threw"; readonly retryable: true }

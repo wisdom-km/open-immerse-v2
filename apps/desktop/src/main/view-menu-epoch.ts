@@ -32,6 +32,32 @@ export type ViewMenuEpoch = {
   ) => () => void;
 };
 
+export type ViewMenuAcceptance = {
+  readonly mode: "none" | "original" | "contrast" | "translation";
+  readonly epoch: number;
+  readonly generation: number;
+  readonly mark: string;
+};
+
+export type ViewMenuFloorInput = {
+  readonly senderWebContentsId: number;
+  readonly epoch: number;
+  readonly generation: number;
+  readonly mode: ViewMenuAcceptance["mode"];
+  readonly soleWindow: () => number | undefined;
+  readonly seal: () =>
+    | {
+        readonly mode: string;
+        readonly generation: number;
+        readonly mark: string;
+      }
+    | undefined;
+};
+
+export type ViewMenuFloorWriter = {
+  commitFloor(input: ViewMenuFloorInput): ViewMenuAcceptance | undefined;
+};
+
 type ViewMenuEvent =
   | { readonly kind: "navigate"; readonly url: string }
   | { readonly kind: "same-document" }
@@ -57,7 +83,7 @@ type HandshakeHolder = {
   current: Handshake | undefined;
 };
 
-export function createViewMenuEpoch(): ViewMenuEpoch {
+export function createViewMenuEpoch(): ViewMenuEpoch & ViewMenuFloorWriter {
   const entries = new Map<number, Entry>();
   const listeners: NoticeListener[] = [];
   const registered = new Set<number>();
@@ -70,6 +96,9 @@ export function createViewMenuEpoch(): ViewMenuEpoch {
     },
     subscribe(listener) {
       return subscribe(listeners, listener);
+    },
+    commitFloor(input) {
+      return commitViewMenuFloor(entries, input);
     },
   };
 }
@@ -265,6 +294,59 @@ function openNext(slot: ViewMenuSlot): ViewMenuSlot {
 
 function retire(slot: ViewMenuSlot): ViewMenuSlot {
   return { phase: "retired", epoch: slot.epoch, floor: slot.floor };
+}
+
+function commitViewMenuFloor(
+  entries: Map<number, Entry>,
+  input: ViewMenuFloorInput,
+): ViewMenuAcceptance | undefined {
+  const sender = input.senderWebContentsId;
+  let sole: number | undefined;
+  try {
+    sole = input.soleWindow();
+  } catch {
+    return undefined;
+  }
+  if (sole !== sender || !isSafeId(sender)) return undefined;
+  const slot = readSlot(entries, sender);
+  if (slot === undefined || slot.phase !== "open") return undefined;
+  if (input.epoch !== slot.epoch) return undefined;
+  if (!isGeneration(input.generation) || input.generation <= slot.floor) {
+    return undefined;
+  }
+  let seal: ReturnType<ViewMenuFloorInput["seal"]>;
+  try {
+    seal = input.seal();
+  } catch {
+    return undefined;
+  }
+  const mark = `${String(sender)}:open:${String(slot.epoch)}`;
+  if (
+    seal === undefined ||
+    seal.mode !== input.mode ||
+    seal.generation !== input.generation ||
+    seal.mark !== mark
+  ) {
+    return undefined;
+  }
+  entries.set(sender, {
+    kind: "slot",
+    slot: { phase: slot.phase, epoch: slot.epoch, floor: input.generation },
+  });
+  return {
+    mode: input.mode,
+    epoch: slot.epoch,
+    generation: input.generation,
+    mark,
+  };
+}
+
+function isSafeId(value: number): boolean {
+  return Number.isSafeInteger(value) && value >= 0;
+}
+
+function isGeneration(value: number): boolean {
+  return Number.isSafeInteger(value) && value >= 1;
 }
 
 function isOiAppUrl(url: string): boolean {

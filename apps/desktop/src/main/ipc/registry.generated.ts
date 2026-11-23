@@ -544,4 +544,78 @@ export const ipcRegistry: readonly IpcRegistryEntry[] = [
       type: "object",
     },
   },
+  {
+    kind: "command",
+    channel: "shell.reportViewMenu",
+    idempotent: false,
+    transport: "invoke",
+    request: {
+      anyOf: [
+        {
+          additionalProperties: false,
+          properties: {
+            op: {
+              const: "read",
+              type: "string",
+            },
+          },
+          required: ["op"],
+          type: "object",
+        },
+        {
+          additionalProperties: false,
+          properties: {
+            epoch: {
+              maximum: 9007199254740991,
+              minimum: 1,
+              type: "integer",
+            },
+            generation: {
+              maximum: 9007199254740991,
+              minimum: 1,
+              type: "integer",
+            },
+            mode: {
+              anyOf: [
+                {
+                  const: "none",
+                  type: "string",
+                },
+                {
+                  const: "original",
+                  type: "string",
+                },
+                {
+                  const: "contrast",
+                  type: "string",
+                },
+                {
+                  const: "translation",
+                  type: "string",
+                },
+              ],
+            },
+            op: {
+              const: "submit",
+              type: "string",
+            },
+          },
+          required: ["op", "mode", "epoch", "generation"],
+          type: "object",
+        },
+      ],
+    },
+    response: {
+      additionalProperties: false,
+      properties: {
+        epoch: {
+          maximum: 9007199254740991,
+          minimum: 1,
+          type: "integer",
+        },
+      },
+      required: ["epoch"],
+      type: "object",
+    },
+  },
 ];

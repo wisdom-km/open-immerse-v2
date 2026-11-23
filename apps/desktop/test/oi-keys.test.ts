@@ -19,6 +19,7 @@ it("lists the exposed library commands", () => {
     "library.revokeReadingAsset",
     "library.setProgressPage",
     "parsing.getParseCapabilities",
+    "shell.reportViewMenu",
   ]);
   expect("invoke" in oi).toBe(false);
   expect("invokeDropped" in oi).toBe(false);

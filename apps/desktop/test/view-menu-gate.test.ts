@@ -4,7 +4,7 @@ import { viewOriginalEvent } from "../src/main/library-menu.js";
 import {
   createViewMenuGate,
   type StageMark,
-  type ViewMenuGate,
+  type ViewMenuCandidateGate,
 } from "../src/main/view-menu-gate.js";
 import {
   viewSlotDescriptions,
@@ -35,7 +35,7 @@ type ReplaceScript = {
 };
 
 type Opened = {
-  readonly gate: ViewMenuGate;
+  readonly gate: ViewMenuCandidateGate;
   readonly calls: ViewSlotDescription[][];
   readonly dispatches: string[];
 };
@@ -578,4 +578,216 @@ async function leavePending(): Promise<Opened> {
   expect(opened.gate.install).toBe("unknown");
   expect(opened.gate.pendingMark).toBe("s2");
   return opened;
+}
+
+function candidateInput<T>(
+  accept: () => T | undefined,
+  shape: ViewShape = "original",
+  generation = 1,
+  mark = "4:open:1",
+) {
+  return {
+    shape,
+    mark,
+    generation,
+    stillEligible: () => true,
+    accept,
+  };
+}
+
+it("returns the acceptance only from the call that armed the seal", async () => {
+  let release = (): void => undefined;
+  const entered = deferred();
+  const opened = openGate({
+    onReplace: () => {
+      entered.resolve();
+      return new Promise<void>((done) => {
+        release = done;
+      });
+    },
+  });
+  let firstAccepts = 0;
+  const first = opened.gate.submitCandidate(
+    candidateInput(() => {
+      firstAccepts += 1;
+      return { who: "A" };
+    }),
+  );
+  await entered.promise;
+  let secondAccepts = 0;
+  const second = opened.gate.submitCandidate(
+    candidateInput(() => {
+      secondAccepts += 1;
+      return { who: "B" };
+    }),
+  );
+  await expect(second).resolves.toBeUndefined();
+  expect(secondAccepts).toBe(0);
+  expect(opened.calls).toHaveLength(1);
+  release();
+  await expect(first).resolves.toEqual({ who: "A" });
+  expect(firstAccepts).toBe(1);
+  expect(opened.gate.committed).toBe("original");
+  expect(opened.gate.install).toBe("known");
+  expect(opened.calls).toHaveLength(1);
+});
+
+it("does not call accept when postCheck fails and restores the previous shape", async () => {
+  const opened = openGate({
+    postCheck: (descriptions) => !same(descriptions, "contrast"),
+  });
+  await acceptShape(opened, "original", "s");
+  let accepts = 0;
+  const before = opened.calls.length;
+  await expect(
+    opened.gate.submitCandidate({
+      ...candidateInput(() => {
+        accepts += 1;
+        return { ok: true };
+      }, "contrast"),
+      mark: "s",
+    }),
+  ).resolves.toBeUndefined();
+  expect(accepts).toBe(0);
+  expect(opened.calls.length - before).toBe(1);
+  expect(opened.gate.committed).toBe("original");
+  expect(opened.gate.install).toBe("unknown");
+});
+
+it("leaves a winning pending none in place when the submit is superseded", async () => {
+  const opened = openGate({
+    onReplace: async (descriptions) => {
+      if (same(descriptions, "original")) await opened.gate.noteNone("m");
+    },
+  });
+  let accepts = 0;
+  await expect(
+    opened.gate.submitCandidate(
+      candidateInput(
+        () => {
+          accepts += 1;
+          return { ok: true };
+        },
+        "original",
+        2,
+        "m",
+      ),
+    ),
+  ).resolves.toBeUndefined();
+  expect(accepts).toBe(0);
+  expect(opened.gate.committed).toBe("none");
+  expect(opened.gate.install).toBe("known");
+  const later = await opened.gate.submitCandidate(
+    candidateInput(() => ({ ok: true }), "contrast", 3, "later"),
+  );
+  expect(later).toEqual({ ok: true });
+  expect(opened.gate.committed).toBe("contrast");
+  expect(opened.gate.install).toBe("known");
+});
+
+it("does not accept a none submit when the same-mark pending repair wins", async () => {
+  let noted = false;
+  const opened = openGate({
+    onReplace: async (descriptions) => {
+      if (!noted && same(descriptions, "none")) {
+        noted = true;
+        await opened.gate.noteNone("m");
+      }
+    },
+  });
+  let accepts = 0;
+  await expect(
+    opened.gate.submitCandidate(
+      candidateInput(
+        () => {
+          accepts += 1;
+          return { ok: true };
+        },
+        "none",
+        1,
+        "m",
+      ),
+    ),
+  ).resolves.toBeUndefined();
+  expect(accepts).toBe(0);
+  expect(opened.calls).toHaveLength(2);
+  expect(opened.gate.committed).toBe("none");
+  expect(opened.gate.install).toBe("known");
+  expect(opened.gate.pendingMark).toBeNull();
+  const later = await opened.gate.submitCandidate(
+    candidateInput(() => ({ ok: true }), "contrast", 2, "later"),
+  );
+  expect(later).toEqual({ ok: true });
+  expect(accepts).toBe(0);
+  expect(opened.gate.committed).toBe("contrast");
+  expect(opened.gate.install).toBe("known");
+});
+
+it("does not accept a none submit when the pending none repair fails", async () => {
+  let noted = false;
+  const opened = openGate({
+    onReplace: async (descriptions) => {
+      if (!noted && same(descriptions, "none")) {
+        noted = true;
+        await opened.gate.noteNone("m");
+      }
+    },
+    postCheck: (_descriptions, index) => index !== 2,
+  });
+  let accepts = 0;
+  await expect(
+    opened.gate.submitCandidate(
+      candidateInput(
+        () => {
+          accepts += 1;
+          return { ok: true };
+        },
+        "none",
+        1,
+        "m",
+      ),
+    ),
+  ).resolves.toBeUndefined();
+  expect(accepts).toBe(0);
+  expect(opened.calls).toHaveLength(2);
+  expect(opened.gate.committed).toBeNull();
+  expect(opened.gate.install).toBe("unknown");
+});
+
+it("rolls back only the call whose seal is still current when accept fails", async () => {
+  const opened = openGate();
+  await expect(
+    opened.gate.submitCandidate(candidateInput(() => undefined)),
+  ).resolves.toBeUndefined();
+  expect(opened.gate.committed).toBeNull();
+  expect(opened.gate.install).toBe("unknown");
+  const kept = await opened.gate.submitCandidate(
+    candidateInput(() => ({ ok: true }), "translation", 4, "keep"),
+  );
+  expect(kept).toEqual({ ok: true });
+  expect(opened.gate.committed).toBe("translation");
+  await expect(
+    opened.gate.submitCandidate({
+      ...candidateInput(() => {
+        throw new Error("floor");
+      }, "contrast"),
+      mark: "keep",
+      generation: 5,
+    }),
+  ).resolves.toBeUndefined();
+  expect(opened.gate.committed).toBe("translation");
+  expect(opened.gate.install).toBe("unknown");
+});
+
+function deferred(): { promise: Promise<void>; resolve: () => void } {
+  let finish = (): void => undefined;
+  const promise = new Promise<void>((done) => {
+    finish = done;
+  });
+  return {
+    promise,
+    resolve() {
+      finish();
+    },
+  };
 }

@@ -101,7 +101,7 @@ it("accepts only a closed epoch on the response", () => {
 });
 
 it("keeps the command hidden and unique", () => {
-  expect(reportViewMenu.expose).toBe(false);
+  expect(reportViewMenu.expose).toBe(true);
   expect(reportViewMenu.idempotent).toBe(false);
   expect(reportViewMenu.channel).toBe("shell.reportViewMenu");
   expect(reportViewMenu.kind).toBe("command");

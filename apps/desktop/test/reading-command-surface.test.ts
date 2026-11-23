@@ -19,6 +19,7 @@ const exposed = [
   "library.revokeReadingAsset",
   "library.setProgressPage",
   "parsing.getParseCapabilities",
+  "shell.reportViewMenu",
 ] as const;
 
 it("keeps internal commands off the registry and the preload object", () => {
@@ -33,15 +34,17 @@ it("keeps internal commands off the registry and the preload object", () => {
 
 it("types the window and the preload return as the same exposed commands", () => {
   expectTypeOf<keyof Window["oi"]>().toEqualTypeOf<
-    "ingest" | "library" | "parsing"
+    "ingest" | "library" | "parsing" | "shell"
   >();
   expectTypeOf<keyof Window["oi"]["library"]>().toEqualTypeOf<ExposedName>();
   expectTypeOf<keyof Window["oi"]["ingest"]>().toEqualTypeOf<"openDocument">();
   expectTypeOf<
     keyof Window["oi"]["parsing"]
   >().toEqualTypeOf<"getParseCapabilities">();
+  expectTypeOf<keyof Window["oi"]["shell"]>().toEqualTypeOf<"reportViewMenu">();
   expectTypeOf<PreloadName>().toEqualTypeOf<ExposedName>();
   expectTypeOf<PreloadIngest>().toEqualTypeOf<"openDocument">();
+  expectTypeOf<PreloadShell>().toEqualTypeOf<"reportViewMenu">();
 });
 
 type ExposedName =
@@ -57,6 +60,8 @@ type ExposedName =
 type PreloadName = keyof ReturnType<typeof createOi>["library"];
 
 type PreloadIngest = keyof ReturnType<typeof createOi>["ingest"];
+
+type PreloadShell = keyof ReturnType<typeof createOi>["shell"];
 
 function preload(): unknown {
   return createOi({
