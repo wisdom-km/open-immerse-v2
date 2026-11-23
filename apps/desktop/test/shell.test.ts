@@ -178,28 +178,33 @@ function watchViewListeners(): {
   const removed = new Map<string, number>();
   const add = window.addEventListener.bind(window);
   const remove = window.removeEventListener.bind(window);
-  const addPatched: typeof window.addEventListener = (
-    type,
-    listener,
-    options,
-  ) => {
-    if (typeof type === "string" && names.has(type)) {
+  const addPatched = (
+    type: string,
+    listener: EventListenerOrEventListenerObject | null,
+    options?: boolean | AddEventListenerOptions,
+  ): void => {
+    if (names.has(type)) {
       added.set(type, (added.get(type) ?? 0) + 1);
     }
-    add(type, listener, options);
+    if (listener !== null) {
+      add(type, listener, options);
+    }
   };
-  const removePatched: typeof window.removeEventListener = (
-    type,
-    listener,
-    options,
-  ) => {
-    if (typeof type === "string" && names.has(type)) {
+  const removePatched = (
+    type: string,
+    listener: EventListenerOrEventListenerObject | null,
+    options?: boolean | EventListenerOptions,
+  ): void => {
+    if (names.has(type)) {
       removed.set(type, (removed.get(type) ?? 0) + 1);
     }
-    remove(type, listener, options);
+    if (listener !== null) {
+      remove(type, listener, options);
+    }
   };
-  window.addEventListener = addPatched;
-  window.removeEventListener = removePatched;
+  window.addEventListener = addPatched as typeof window.addEventListener;
+  window.removeEventListener =
+    removePatched as typeof window.removeEventListener;
   return {
     added,
     removed,
