@@ -323,3 +323,165 @@ it("attaches before loadURL so the first commit is open", () => {
   expect(epoch.read(7)).toEqual({ phase: "open", epoch: 1, floor: 0 });
   expect(probe.menu).toBe(0);
 });
+
+function openReader(id = 4) {
+  const epoch = createViewMenuEpoch();
+  const page = host(id);
+  const notices: string[] = [];
+  epoch.subscribe((notice) => {
+    notices.push(notice.kind);
+  });
+  epoch.attach(page.win as never);
+  emit(page.map, "did-navigate", {}, appUrl);
+  notices.length = 0;
+  return { epoch, page, notices };
+}
+
+function floorOf(
+  id: number,
+  generation: number,
+  mode: "none" | "original" | "contrast" | "translation" = "original",
+) {
+  return {
+    senderWebContentsId: id,
+    epoch: 1,
+    generation,
+    mode,
+    soleWindow: () => id,
+    seal: () => ({
+      mode,
+      generation,
+      mark: `${String(id)}:open:1`,
+    }),
+  };
+}
+
+it("writes the floor only after the seal matches and does not announce", () => {
+  const reader = openReader();
+  const record = reader.epoch.commitFloor(floorOf(4, 3));
+  expect(record).toEqual({
+    mode: "original",
+    epoch: 1,
+    generation: 3,
+    mark: "4:open:1",
+  });
+  expect(reader.epoch.read(4)).toEqual({ phase: "open", epoch: 1, floor: 3 });
+  expect(reader.notices).toEqual([]);
+  expect(reader.epoch.commitFloor(floorOf(4, 3))).toBeUndefined();
+  expect(reader.epoch.read(4)?.floor).toBe(3);
+});
+
+it("rejects an equal or older generation before writing", () => {
+  const reader = openReader();
+  expect(reader.epoch.commitFloor(floorOf(4, 2))).toMatchObject({
+    generation: 2,
+  });
+  let seals = 0;
+  expect(
+    reader.epoch.commitFloor({
+      ...floorOf(4, 2),
+      seal: () => {
+        seals += 1;
+        return { mode: "original", generation: 2, mark: "4:open:1" };
+      },
+    }),
+  ).toBeUndefined();
+  expect(
+    reader.epoch.commitFloor({
+      ...floorOf(4, 1),
+      seal: () => {
+        seals += 1;
+        return { mode: "original", generation: 1, mark: "4:open:1" };
+      },
+    }),
+  ).toBeUndefined();
+  expect(seals).toBe(0);
+  expect(reader.epoch.read(4)?.floor).toBe(2);
+});
+
+it("rejects the wrong window, a throwing probe, or a seal that does not match", () => {
+  const reader = openReader();
+  let seals = 0;
+  const countSeal = () => {
+    seals += 1;
+    return { mode: "original", generation: 1, mark: "4:open:1" };
+  };
+  expect(
+    reader.epoch.commitFloor({
+      ...floorOf(4, 1),
+      soleWindow: () => 9,
+      seal: countSeal,
+    }),
+  ).toBeUndefined();
+  expect(
+    reader.epoch.commitFloor({
+      ...floorOf(4, 1),
+      soleWindow: () => undefined,
+      seal: countSeal,
+    }),
+  ).toBeUndefined();
+  expect(
+    reader.epoch.commitFloor({
+      ...floorOf(4, 1),
+      soleWindow: () => {
+        throw new Error("windows");
+      },
+      seal: countSeal,
+    }),
+  ).toBeUndefined();
+  expect(seals).toBe(0);
+  expect(
+    reader.epoch.commitFloor({
+      ...floorOf(4, 1),
+      seal: () => undefined,
+    }),
+  ).toBeUndefined();
+  expect(
+    reader.epoch.commitFloor({
+      ...floorOf(4, 1),
+      seal: () => {
+        throw new Error("seal");
+      },
+    }),
+  ).toBeUndefined();
+  expect(
+    reader.epoch.commitFloor({
+      ...floorOf(4, 1),
+      seal: () => ({ mode: "contrast", generation: 1, mark: "4:open:1" }),
+    }),
+  ).toBeUndefined();
+  expect(
+    reader.epoch.commitFloor({
+      ...floorOf(4, 1),
+      epoch: 2,
+      seal: () => ({ mode: "original", generation: 1, mark: "4:open:2" }),
+    }),
+  ).toBeUndefined();
+  expect(reader.epoch.read(4)?.floor).toBe(0);
+  expect(reader.notices).toEqual([]);
+});
+
+it("does not write a retired, closed, or previous generation", () => {
+  const retired = openReader();
+  expect(retired.epoch.commitFloor(floorOf(4, 4))?.generation).toBe(4);
+  emit(retired.page.map, "render-process-gone");
+  expect(retired.epoch.read(4)).toEqual({
+    phase: "retired",
+    epoch: 1,
+    floor: 4,
+  });
+  expect(retired.epoch.commitFloor(floorOf(4, 5))).toBeUndefined();
+  expect(retired.epoch.read(4)?.floor).toBe(4);
+
+  const closed = openReader();
+  emit(closed.page.map, "closed");
+  expect(closed.epoch.read(4)).toBeUndefined();
+  expect(closed.epoch.commitFloor(floorOf(4, 1))).toBeUndefined();
+
+  const next = openReader();
+  expect(next.epoch.commitFloor(floorOf(4, 6))?.generation).toBe(6);
+  emit(next.page.map, "did-navigate", {}, appUrl);
+  expect(next.epoch.read(4)).toEqual({ phase: "open", epoch: 2, floor: 0 });
+  expect(next.epoch.commitFloor(floorOf(4, 7))).toBeUndefined();
+  expect(next.epoch.read(4)?.floor).toBe(0);
+});

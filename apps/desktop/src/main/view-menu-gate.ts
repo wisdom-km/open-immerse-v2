@@ -16,11 +16,26 @@ export type ViewMenuGatePorts = {
   readonly dispatch: (event: string) => void | Promise<void>;
 };
 
+export type SealProbe = {
+  readonly mode: ViewShape;
+  readonly generation: number;
+  readonly mark: string;
+};
+
+export type SubmitCandidateInput<T> = {
+  readonly shape: ViewShape;
+  readonly mark: StageMark;
+  readonly generation: number;
+  readonly stillEligible: () => boolean;
+  readonly accept: (probe: () => SealProbe | undefined) => T | undefined;
+};
+
 export type ViewMenuGate = {
   readonly committed: ViewShape | null;
   readonly install: InstallStatus;
   readonly pendingMark: StageMark | null;
   submit(shape: ViewShape, mark: StageMark): Promise<void>;
+  submitCandidate<T>(input: SubmitCandidateInput<T>): Promise<T | undefined>;
   noteNone(mark: StageMark): Promise<void>;
   click(requestedEvent: string): Promise<number>;
   setDestroyed(destroyed: boolean): void;
@@ -32,11 +47,19 @@ type PendingNone = {
   readonly mark: StageMark;
 };
 
+type CandidateSeal = {
+  readonly token: object;
+  readonly mode: ViewShape;
+  readonly generation: number;
+  readonly mark: string;
+};
+
 type GateState = {
   committed: ViewShape | null;
   install: InstallStatus;
   pending: PendingNone | null;
   currentMark: StageMark | null;
+  seal: CandidateSeal | undefined;
   destroyed: boolean;
   /** In-flight public operation. Zero means idle. Not a lifecycle owner. */
   busyAttempt: number;
@@ -65,6 +88,7 @@ export function createViewMenuGate(ports: ViewMenuGatePorts): ViewMenuGate {
     install: "unknown",
     pending: null,
     currentMark: null,
+    seal: undefined,
     destroyed: false,
     busyAttempt: 0,
     attempts: new AttemptCounter(),
@@ -86,10 +110,12 @@ export function createViewMenuGate(ports: ViewMenuGatePorts): ViewMenuGate {
       return state.published.pendingMark;
     },
     submit: (shape, mark) => submit(state, gate, ports, shape, mark),
+    submitCandidate: (input) => runSubmitCandidate(state, gate, ports, input),
     noteNone: (mark) => noteNone(state, gate, ports, mark),
     click: (requestedEvent) => click(state, gate, ports, requestedEvent),
     setDestroyed: (destroyed) => {
       state.destroyed = destroyed;
+      clearSeal(state);
     },
   };
   return sync(state, gate);
@@ -101,6 +127,7 @@ async function noteNone(
   ports: ViewMenuGatePorts,
   mark: StageMark,
 ): Promise<void> {
+  clearSeal(state);
   if (state.destroyed) return;
   state.currentMark = mark;
   rememberPending(state, mark);
@@ -120,6 +147,7 @@ async function submit(
   mark: StageMark,
 ): Promise<void> {
   if (state.destroyed || state.busyAttempt !== 0) return;
+  clearSeal(state);
   if (state.pending?.mark === mark) state.pending = null;
   state.currentMark = mark;
   sync(state, gate);
@@ -145,6 +173,7 @@ async function click(
   requestedEvent: string,
 ): Promise<number> {
   if (state.destroyed || state.busyAttempt !== 0) return 0;
+  clearSeal(state);
   const budget = repairBudget();
   if (matchingPending(state)) {
     await operate(state, gate, async (committedBeforeOperation) => {
@@ -269,6 +298,7 @@ async function settle(
     return;
   }
   if (outcome === "ok") {
+    clearSeal(state);
     state.committed = "none";
     state.install = "known";
     sync(state, gate);
@@ -302,9 +332,139 @@ function keepUnknown(
   gate: ViewMenuGate,
   committedBeforeOperation: ViewShape | null,
 ): void {
+  clearSeal(state);
   state.committed = committedBeforeOperation;
   state.install = "unknown";
   sync(state, gate);
+}
+
+async function runSubmitCandidate<T>(
+  state: GateState,
+  gate: ViewMenuGate,
+  ports: ViewMenuGatePorts,
+  input: SubmitCandidateInput<T>,
+): Promise<T | undefined> {
+  if (state.destroyed || state.busyAttempt !== 0) return undefined;
+  const token: object = {};
+  if (state.pending?.mark === input.mark) state.pending = null;
+  state.currentMark = input.mark;
+  sync(state, gate);
+  const budget = repairBudget();
+  const box: { result: T | undefined } = { result: undefined };
+  await operate(state, gate, async (committedBeforeOperation) => {
+    const outcome = await replaceShape(state, ports, input.shape);
+    const eligible = readEligibility(input);
+    const candidate = eligible
+      ? snapshotCandidate(state, input.shape, input.mark, outcome)
+      : null;
+    await settle(
+      state,
+      gate,
+      ports,
+      candidate,
+      committedBeforeOperation,
+      budget,
+    );
+    box.result = acceptOwned(
+      state,
+      gate,
+      input,
+      token,
+      candidate,
+      committedBeforeOperation,
+    );
+  });
+  return box.result;
+}
+
+function readEligibility<T>(input: SubmitCandidateInput<T>): boolean {
+  try {
+    return input.stillEligible();
+  } catch {
+    return false;
+  }
+}
+
+function acceptOwned<T>(
+  state: GateState,
+  gate: ViewMenuGate,
+  input: SubmitCandidateInput<T>,
+  token: object,
+  candidate: ViewShape | null,
+  committedBeforeOperation: ViewShape | null,
+): T | undefined {
+  if (!candidateArmed(state, input, candidate)) return undefined;
+  state.seal = {
+    token,
+    mode: input.shape,
+    generation: input.generation,
+    mark: input.mark,
+  };
+  const record = readAcceptance(state, input, token);
+  if (ownsSeal(state, token) && record !== undefined) {
+    clearSeal(state);
+    sync(state, gate);
+    return record;
+  }
+  if (ownsSeal(state, token)) {
+    state.committed = committedBeforeOperation;
+    state.install = "unknown";
+    clearSeal(state);
+    sync(state, gate);
+  }
+  return undefined;
+}
+
+function candidateArmed<T>(
+  state: GateState,
+  input: SubmitCandidateInput<T>,
+  candidate: ViewShape | null,
+): boolean {
+  return (
+    candidate !== null &&
+    state.committed === input.shape &&
+    state.install === "known" &&
+    state.currentMark === input.mark &&
+    !state.destroyed &&
+    !matchingPending(state)
+  );
+}
+
+function readAcceptance<T>(
+  state: GateState,
+  input: SubmitCandidateInput<T>,
+  token: object,
+): T | undefined {
+  try {
+    const record = input.accept(() => probeSeal(state, token));
+    if (isThenable(record)) return undefined;
+    return record;
+  } catch {
+    return undefined;
+  }
+}
+
+function probeSeal(state: GateState, token: object): SealProbe | undefined {
+  const seal = state.seal;
+  if (seal === undefined || !Object.is(seal.token, token)) return undefined;
+  return { mode: seal.mode, generation: seal.generation, mark: seal.mark };
+}
+
+function ownsSeal(state: GateState, token: object): boolean {
+  return state.seal !== undefined && Object.is(state.seal.token, token);
+}
+
+function isThenable(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "then" in value &&
+    typeof value.then === "function"
+  );
+}
+
+function clearSeal(state: GateState): void {
+  state.seal = undefined;
 }
 
 async function replaceShape(
