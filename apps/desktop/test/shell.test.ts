@@ -113,6 +113,7 @@ afterEach(() => {
 
 it("changes the open reader once per view event and ignores events after leave", async () => {
   const { Shell } = await import("../src/renderer/shell.js");
+  // Count after import. Replacing addEventListener first left this test pending on Windows.
   const add = vi.spyOn(window, "addEventListener");
   const remove = vi.spyOn(window, "removeEventListener");
   try {
@@ -159,7 +160,7 @@ it("changes the open reader once per view event and ignores events after leave",
     add.mockRestore();
     remove.mockRestore();
   }
-}, 20_000);
+});
 
 function callCount(): readonly [number, number, number] {
   return [seen.viewOriginal, seen.viewContrast, seen.viewTranslation];
