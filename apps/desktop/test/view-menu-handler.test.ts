@@ -233,6 +233,78 @@ it("does not treat a known none repair as this submit", async () => {
   expect(replaces).toEqual(["original", "none"]);
 });
 
+it("accepts a none submit only when that call committed it", async () => {
+  const box = harness();
+  await expect(box.handler(submit("none", 1, 1), context())).resolves.toEqual({
+    ok: true,
+    value: { epoch: 1 },
+  });
+  expect(box.epoch.read(4)).toEqual({ phase: "open", epoch: 1, floor: 1 });
+  expect(box.gate.committed).toBe("none");
+  expect(box.gate.install).toBe("known");
+  expect(box.replaces).toEqual(["none"]);
+});
+
+it("does not let a same-mark pending none repair claim this none submit", async () => {
+  const box = harness();
+  const replaces: ViewShape[] = [];
+  const racing = createViewMenuGate({
+    replace: async (descriptions) => {
+      const shape = shapeOf(descriptions);
+      replaces.push(shape);
+      if (replaces.length === 1) await racing.noteNone("4:open:1");
+    },
+    postCheck: () => true,
+    dispatch: () => undefined,
+  });
+  const handler = createViewMenuHandler({
+    epoch: box.epoch,
+    gate: racing,
+    soleWindow: () => 4,
+  });
+  await expect(handler(submit("none", 1, 1), context())).resolves.toEqual({
+    ok: false,
+    error: { code: "rejected", retryable: false },
+  });
+  expect(box.epoch.read(4)).toEqual({ phase: "open", epoch: 1, floor: 0 });
+  expect(racing.committed).toBe("none");
+  expect(racing.install).toBe("known");
+  expect(racing.pendingMark).toBeNull();
+  expect(replaces).toEqual(["none", "none"]);
+  await expect(handler(submit("original", 1, 1), context())).resolves.toEqual({
+    ok: true,
+    value: { epoch: 1 },
+  });
+  expect(box.epoch.read(4)?.floor).toBe(1);
+  expect(racing.committed).toBe("original");
+});
+
+it("does not write the floor when the pending none repair fails", async () => {
+  const box = harness();
+  const replaces: ViewShape[] = [];
+  const racing = createViewMenuGate({
+    replace: async (descriptions) => {
+      replaces.push(shapeOf(descriptions));
+      if (replaces.length === 1) await racing.noteNone("4:open:1");
+    },
+    postCheck: () => replaces.length < 2,
+    dispatch: () => undefined,
+  });
+  const handler = createViewMenuHandler({
+    epoch: box.epoch,
+    gate: racing,
+    soleWindow: () => 4,
+  });
+  await expect(handler(submit("none", 1, 1), context())).resolves.toEqual({
+    ok: false,
+    error: { code: "rejected", retryable: false },
+  });
+  expect(box.epoch.read(4)).toEqual({ phase: "open", epoch: 1, floor: 0 });
+  expect(racing.committed).toBeNull();
+  expect(racing.install).toBe("unknown");
+  expect(replaces).toEqual(["none", "none"]);
+});
+
 function submit(mode: string, epoch: number, generation: number) {
   return { op: "submit", mode, epoch, generation };
 }

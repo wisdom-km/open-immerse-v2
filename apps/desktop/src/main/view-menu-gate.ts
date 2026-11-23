@@ -283,10 +283,12 @@ async function settle(
   candidate: ViewShape | null,
   committedBeforeOperation: ViewShape | null,
   budget: RepairBudget,
+  onThisCommit?: () => void,
 ): Promise<void> {
   if (destroyedNow(state)) return;
   if (!matchingPending(state)) {
     commitCandidate(state, gate, candidate, committedBeforeOperation);
+    onThisCommit?.();
     return;
   }
   if (budget.used) {
@@ -370,14 +372,16 @@ async function runSubmitCandidate<T>(
       candidate,
       committedBeforeOperation,
       budget,
-    );
-    box.result = acceptOwned(
-      state,
-      gate,
-      input,
-      token,
-      candidate,
-      committedBeforeOperation,
+      () => {
+        box.result = acceptOwned(
+          state,
+          gate,
+          input,
+          token,
+          candidate,
+          committedBeforeOperation,
+        );
+      },
     );
   });
   return box.result;

@@ -685,6 +685,75 @@ it("leaves a winning pending none in place when the submit is superseded", async
   expect(opened.gate.install).toBe("known");
 });
 
+it("does not accept a none submit when the same-mark pending repair wins", async () => {
+  let noted = false;
+  const opened = openGate({
+    onReplace: async (descriptions) => {
+      if (!noted && same(descriptions, "none")) {
+        noted = true;
+        await opened.gate.noteNone("m");
+      }
+    },
+  });
+  let accepts = 0;
+  await expect(
+    opened.gate.submitCandidate(
+      candidateInput(
+        () => {
+          accepts += 1;
+          return { ok: true };
+        },
+        "none",
+        1,
+        "m",
+      ),
+    ),
+  ).resolves.toBeUndefined();
+  expect(accepts).toBe(0);
+  expect(opened.calls).toHaveLength(2);
+  expect(opened.gate.committed).toBe("none");
+  expect(opened.gate.install).toBe("known");
+  expect(opened.gate.pendingMark).toBeNull();
+  const later = await opened.gate.submitCandidate(
+    candidateInput(() => ({ ok: true }), "contrast", 2, "later"),
+  );
+  expect(later).toEqual({ ok: true });
+  expect(accepts).toBe(0);
+  expect(opened.gate.committed).toBe("contrast");
+  expect(opened.gate.install).toBe("known");
+});
+
+it("does not accept a none submit when the pending none repair fails", async () => {
+  let noted = false;
+  const opened = openGate({
+    onReplace: async (descriptions) => {
+      if (!noted && same(descriptions, "none")) {
+        noted = true;
+        await opened.gate.noteNone("m");
+      }
+    },
+    postCheck: (_descriptions, index) => index !== 2,
+  });
+  let accepts = 0;
+  await expect(
+    opened.gate.submitCandidate(
+      candidateInput(
+        () => {
+          accepts += 1;
+          return { ok: true };
+        },
+        "none",
+        1,
+        "m",
+      ),
+    ),
+  ).resolves.toBeUndefined();
+  expect(accepts).toBe(0);
+  expect(opened.calls).toHaveLength(2);
+  expect(opened.gate.committed).toBeNull();
+  expect(opened.gate.install).toBe("unknown");
+});
+
 it("rolls back only the call whose seal is still current when accept fails", async () => {
   const opened = openGate();
   await expect(
