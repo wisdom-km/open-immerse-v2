@@ -569,3 +569,23 @@ E2 的三视图、标题栏分段、空态句、翻译、配置 chip、Aa、侧�
 - `apps/desktop/test/ipc-router.test.ts`
 
 Forge 对 `b314e4291cfd82daa8fbcae9be240d91c5983ff6` 的代码复审是 PASS，必要代码 BLOCK 0。那只关闭同形 none 冒领，不是完整 check，也不是独立 QA 通过。`1d0607a` 的代码 FAIL、该 tip 的 typecheck 退出码 2、三份表面测试失败，以及 run 45137091192 的失败，都留在原处。
+
+### 19:27 已核实事件与因果边界
+
+本段只追加。不改上面的实施步骤，不改产品、测试、生成物或 `apps/desktop/e2e/isolation.spec.ts`。事实来自仓外只读对账 `FORGE-QA-RECONCILE`（不入库）。本提交没有重跑命令，没有重读那些仓外日志的字节，也没有重算其中的哈希。下面的跑次、行号和计数都引自该报告；本工作树能静态重读的，另行标明。
+
+对账时 PR #236 仍是 OPEN、Draft、未合入。head `9fb5b8d65fbf724d05ccb5dcad8e9d98ca969272`，tree `a996cd0c26c0e8abae14d5979b0b51656050a905`，base `c1265a1a15ab8b4825a121179153285c923fbea3`。19 个文件，+1694 / −60。两次快照都是 run [45151792217](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45151792217)：docs-report、node、worker-health-windows、python-worker、worker-health-macos 为 success，desktop-e2e-windows 为 failure。job 关联这个 head，实际 checkout 是把该 head 合入该 base 的 merge ref `12e002748fb991b1b2b72c5f28e08547b61cf23d`，不是 detached head。对账结论是验收 FAIL，必要 BLOCK 是这条官方 Windows e2e。不重开已经关闭的产品代码 B1。Anvil 原稿标题仍是「PASS但有风险（高）」。原稿 SHA256 `7470be1efb2158e7f1dab60d97630d028a21c2de5d15099f8e4c5275b96ce253`。原稿自己已经写下不可豁免的 CI 失败。该 PASS 标题不能当本批退出凭证。父侧的 FAIL 是验收结论纠正，不是声称原稿已经写成 FAIL。
+
+- 独立 QA 的 Node 是 v24.22.1，记在对账所引的 check 开始、Node 测试开始和末次身份里。本 tip 的 `.nvmrc` 是 `22.23.4`。这些结果不是 Node 22.23.4 钉版环境的结果，也不由此推断产品在 22.23.4 上必然失败。对账当时没有另查 `engines`。本工作树 `package.json` 的 `engines.node` 现为 `>=22.23.4`，最低版本不等于钉版等价。
+- check 开始时的 PATH 记到 uv 0.13.8。其后 pytest 证据绑定 uv 0.13.6 与 Python 3.11.18。本工作树 `workers/parser/.uv-version` 现为 `0.13.6`。「全程从未偏版」和「所有 Python 测试都用 0.13.8」都不成立。忘记 `--extra dev` 后补装是准备遗漏，不洗成从一开始就装齐。
+- 官方完整 check 整链一次，退出码 1，停在 npm license 的环境启动：`corepack.js was not found next to node`。第一次补该项仍是退出码 1，第二次补该项退出码 0。后面的 license-pip、license-models、codegen、G7 各为退出码 0；四个 git-range 检查先是退出码 128，补上已核 base 引用后再跑四项，退出码 0。没有第二次完整 check 整链。不能写成整链退出码 0。
+- Node 首轮退出码 1：200 个文件里 23 失败 / 177 通过；1009 条里 36 失败 / 973 通过，0 跳过。stderr 有 ENOSPC 与 checkout/commit 写入失败，支持资源耗尽，不能据此保证每一条失败都已逐条归因。所谓「23 文件补跑」的 argv 是 `vitest run -- <23个文件>`，报告却是 200 个文件、1009 条通过、0 跳过、退出码 0。这是第二次全库，不是 23 个文件的定向通过，不能追认成「只补失败项」。私有临时目录改善资源，与这次误全库是两件事。
+- Python 首轮退出码 1：179 通过 / 1 失败 / 1 错误，输出里有 ENOSPC、临时目录和 import-linter。定向补跑两个精确 selector，2 通过、退出码 0。179 加这 2 条是跨跑次覆盖，不是第二次全库 181 一次全绿。
+- 官方 e2e 仍 FAIL。本工作树 `apps/desktop/e2e/isolation.spec.ts` 第 5–20 行静态重读：期望 JSON 在第 17–18 行，根 keys 仍是 `ingest`、`library`、`parsing`。生产暴露已经包含 `shell`。对账所引作业日志是 1 失败 / 31 通过，e2e 退出码 1；其余 parsingKeys、library、import、getParseCapabilities 与期望一致。截图 artifact 为 32 个文件且上传成功，不能套用 PR #234「无 png」解释这一次。该文件仍在白名单外。19:26 与 19:27 都没有批准改它，也没有批准新增补验次数。本提交不动它，不跑它。
+- G9：浅扫描 `shallow=true`、9 个提交、detect 与包装都是退出码 0，只说明这 9 个提交没有泄漏报告。这不是全历史通过。恢复后 git 计数 169，首提交是 Initial commit；随后实扫 stderr 写明扫描了 166 个提交、无泄漏，detect 与包装都是退出码 0。169 与 166 相差 3，现有输出没有解释。不能写成恰好三个 merge、不能写成三个提交被漏掉，也不能写成 169 个提交都已覆盖。两个计数不等也不等于发现泄漏。浅扫描不能当全历史证据。该项仍是覆盖解释缺口。本提交不新扫。
+- 「并发 Node 测试写了 `.git/shallow`」是 Anvil 的因果解释。对账看到浅标记和计数变化，以及后来的恢复记录，没有写入者追踪。不是已证明的并发写入者。不臆断写入者。
+- 仓外七份 Cloud 日志，对账写明 7/7 与既有 `LOG-SHA256.json` 相符。Anvil 原稿「本执行未找到」只是那次执行的视野，不能写成这些文件全局缺失。本提交没有重算哈希。Cloud 的 3 条 G9 相关 skip 不被后来的扫描擦掉。Cloud 的结果不是 Anvil 的独立执行。
+- 首末 tracked porcelain 为 0、锁的 blob 与 SHA256 未变，只支持那两次身份记录之间的已跟踪树和锁。不是连续监控，也不是证明整个文件系统从未写入。对账没有逐包重算全部闭包哈希，没有完整动态加载跟踪。不能写成从未加载 native，也不能把「包里带 native」写成已经运行。真实 Electron、本地浏览器 e2e、用户机仍未验。
+- `7e12983` 的 FAIL、PR #234 的执行偏差与完整性限制、PR #232 的下载历史都保留。不用它们证明本批环境合规或违规。
+
+19:26 只批准准备仓外检查和最小修复或补验提案，当时不改根规格。19:27 才批准把执行防错要求写入 RULES §4.1，并在本文件与台账登记。两句原话各计一次。仓外 guard 仍是准备，本提交没有脚本、没有实证拦截。执行者仍不得绕过 §4.1。不把现有偏差追认成等价验收。PR #236 在上述 head 仍是验收 FAIL，保持 Draft。不含 Ready、合入或发版。`docs/spec-changelog.md` 与 `tools/compare-spec-bytes/manifest.json` 不在这次文件名单里，未改。§4.1 不改动变更记录里那段 Q1–Q12 对照原文。
