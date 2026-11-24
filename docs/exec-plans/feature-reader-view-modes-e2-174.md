@@ -400,3 +400,16 @@ import 移到观察之前发生在 `0e3eb2a`，同一笔还加了 20 秒。不�
 | 读屏 | 没有读屏走查。译文的 `inert` 只在测试和样式里 |
 | R-E13 | 32GB 机器上的阅读不在这次云端 CI 里 |
 | 菜单勾选 | S3，不调用 `reportViewMenu`。菜单项仍不会显示当前栏位 |
+
+## 2026-11-24 因果纠正
+
+上面「3669ms 是模块求值」和把这段直接写成 `pdfjs` 的句子收回。父复核纠正四点，不另计新的 Wisdom 原话，仍用评论 7120449178：
+
+- `findBy` 的 1000ms 不能排除事件循环或进程调度把拒绝推迟到测试时限之后。
+- `beforeAll` 返回只说明钩子返回了，不说明 fixture 内容还在。
+- 源码里没有顶层 `await`，不能排除异步 mock 或转换通信还在等。
+- `3669` 和 `3621` 是整段 `await import` 的区间，不是纯求值，也不能直接归因 `pdfjs`。
+
+`170070c` 与 `1ff89e5` 的超时仍不能倒推。20 秒偏差仍不追认。不修产品。不把 import 挪进 hook。
+
+这一笔只在 `shell.test.ts` 加诊断，不是修复。mock 工厂进入、`importOriginal` 返回后、工厂返回，和用例里的 Shell import 共用 `diag.state.startedAt`。状态放在 `vi.hoisted`，避免工厂提升时读到未初始化绑定。fixture 在安装后、import 前、render 前各打一行布尔和键个数，不调用这些方法。另外用 50ms 的 `setInterval` 累计 tick 和最大间隔，阶段行带上这两个数。不新增 `await`，不等新的 timer。`finally` 和 `afterEach` 都 `clearInterval`。断言、时限、mock 返回的真实 `ReaderScreen` 不变。只成功也不宣布根因或低风险。未进入工厂是加载或转换边界。停在 `importOriginal` 只说明卡在入口导入。长区间里 tick 还在增加，支持异步等待；tick 停住，支持事件循环或调度停顿。不能单凭 tick 断言 CPU 或 `pdfjs`。
