@@ -373,3 +373,30 @@ import 移到观察之前发生在 `0e3eb2a`，同一笔还加了 20 秒。不�
 `1ff89e5` 的自然 CI [run 45229208678](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45229208678)，失败 job [137883857395](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45229208678/job/137883857395)。checkout 是 merge `66efb7bdbc966f8a2ac920d3a52670f778027271`，合入的是这个 tip。`shell.test.ts` 再次 Test timed out in 5000ms。31 文件 30 过 1 败，208 项 207 过 1 败。展示的下一行是 `await import`。png 缺失在超时之后。旧 `9591169` 六绿不继承。
 
 这一轮只在 `apps/desktop/test/shell.test.ts` 加阶段行：`oi-shell-stage` 加上阶段名和毫秒。阶段是 import 前后、渲染前后、文献库等待前后、进入 Reader 前后、三个事件前后、leave 前后、unmount 前后。断言、真实 Reader 接线和默认时限不动。产品代码不动。`node:fs` 的 `writeSync` 在这份测试的类型项目里报 `no-unsafe-call`，两次 lint 失败保留。推上去的行改用 `console.error`。Windows 上最后到达哪一阶段，等这次推送的自然 CI。在那份日志出现之前，不再改测试行为。
+
+## 2026-11-24 10:44 定位结果
+
+上面的句子保留。Wisdom 原话是「OK，按照你的建议推进就行。」登记在 [评论 7120449178](https://github.com/wisdom-km/open-immerse-v2/pull/237#issuecomment-7120449178)。范围是继续定位，有证据才做最小修复，并整理真实界面待验项。不放宽时限，不 skip，不以再跑一次绿代替修复。不建议在低风险前合入。
+
+`eea7916e9d869aeb4d23582f26eee716d8efbe75` 的自然 CI [run 45232026715](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45232026715) 六项 success。Windows job [137893806056](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45232026715/job/137893806056) 的 checkout 是 merge `4c9ee04`。`shell.test.ts` 打印 3747ms，用例 3744ms，31 文件 208 项都过。阶段最后一行是 `oi-shell-stage after-unmount 3742`。`before-import 0` 到 `after-import 3669` 是唯一的长间隔，墙钟 17:51:43.083Z 到 17:51:46.780Z。其后渲染、文献库、进入 Reader、三个事件、离开和卸载合计大约 73ms。
+
+这个间隔就是 `await import("../src/renderer/shell.js")`。`shell.tsx` 在模块顶层静态引入 `ReaderScreen` 和 `desktopReaderClient`。后者引入 `loadAssetPdf`，而 `asset-pdf.ts` 静态引入 `pdfjs-dist/legacy/build/pdf.mjs`。`getDocument` 不在 import 时调用。测试把 `fetch` 做成 `ok: false`，打开 PDF 时不会走到它。这 3669ms 是这次通过运行里的模块求值时间。
+
+`170070c` 和 `1ff89e5` 没有阶段行。它们的报告时长大约 11s 和 10s，符合 5 秒超时后 worker 才被停掉，不能据此改写成同一次 import 已证明超过 5 秒或永远不返回。那两次失败保留。这次六绿不继承到那两个 tip，也不把风险降成已修复。
+
+这一笔不改测试、不改产品。不把 import 挪进 `beforeAll`：那会改用 Vitest 默认 hook 时限 10 秒，等于放宽这 5 秒。不把 `pdfjs` 改成打开时再加载，那会改变产品何时加载它，而且没有视图模式上的缺陷证据。不 mock `pdfjs`。阶段行留着，以便下一次若再超时，日志仍能看出停在 import 前还是后。
+
+### 真实界面待验，仍是 HOLD
+
+下面各项没有这次 CI 能代替的证据。E2-2 与 S3 仍不在本 PR。
+
+| 项 | 还缺的证据 |
+| --- | --- |
+| 上手走查 | 在可运行的桌面窗口里打开一份 PDF，切换原文、对照、译文，再从标题栏返回。验收人、时间都还没有 |
+| 空态句与链接 | 对照和译文里看见已批句子，以及当前平台的「切到原文」链接。测试钉了字面，没有人在窗口里核对 |
+| 方向键 | happy-dom 没有 radio 的方向键默认行为。没有自造键盘，也没有真机按键记录 |
+| 物理加速键 | Ctrl+1 与 ⌘1 没有在真实窗口里按过 |
+| 高对比 | `forced-colors` 属于 E2-2，本 PR 没做 |
+| 读屏 | 没有读屏走查。译文的 `inert` 只在测试和样式里 |
+| R-E13 | 32GB 机器上的阅读不在这次云端 CI 里 |
+| 菜单勾选 | S3，不调用 `reportViewMenu`。菜单项仍不会显示当前栏位 |
