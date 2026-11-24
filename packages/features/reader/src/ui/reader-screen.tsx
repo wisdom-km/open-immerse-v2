@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type ReactElement,
@@ -20,8 +19,13 @@ import { PageColumn } from "./page-column.js";
 import type { PdfPaint, ReaderClient } from "./reader-client.js";
 import { navCommands, useBoundNav, type ReaderNav } from "./use-bound-nav.js";
 import { usePositionHistory } from "./use-position-history.js";
+import { useReaderLeave } from "./use-reader-leave.js";
 import { useReaderSession } from "./use-reader-session.js";
+import { useViewMode, type ReaderViewMode } from "./use-view-mode.js";
 import { useZoom } from "./use-zoom.js";
+import { ViewModeEmpty } from "./view-mode-empty.js";
+import { selectViewMode, ViewModePanes } from "./view-mode-panes.js";
+import { ViewModeSwitch } from "./view-mode-switch.js";
 import { ZoomControls } from "./zoom-controls.js";
 
 const SKELETON_MS = 200;
@@ -36,14 +40,14 @@ export function ReaderScreen(props: {
   readonly onBindNav?: ((nav: ReaderNav | undefined) => void) | undefined;
 }): ReactElement {
   const session = useReaderSession(props.client, props.id, props.onLeave);
-  const releasePixels = useRef(true);
-  const leave = useCallback(() => {
-    releasePixels.current = false;
-    session.leave();
-    queueMicrotask(() => {
-      releasePixels.current = true;
-    });
-  }, [session.leave]);
+  const leaving = useReaderLeave(session.leave, props.onBindLeave);
+  const view = useViewMode(props.id);
+  const chooseView = useCallback(
+    (mode: ReaderViewMode) => {
+      selectViewMode(mode, view.select);
+    },
+    [view.select],
+  );
   const reading =
     session.phase.kind === "view" ? session.phase.reading : undefined;
   const viewing =
@@ -61,19 +65,23 @@ export function ReaderScreen(props: {
   }, []);
   useBoundNav(
     props.onBindNav,
-    navCommands(nav, leave, openGoTo, zoom.commands),
+    navCommands(nav, leaving.leave, openGoTo, zoom.commands, {
+      viewOriginal() {
+        chooseView("original");
+      },
+      viewContrast() {
+        chooseView("contrast");
+      },
+      viewTranslation() {
+        chooseView("translation");
+      },
+    }),
   );
-  useLayoutEffect(() => {
-    props.onBindLeave?.(leave);
-    return () => {
-      props.onBindLeave?.(undefined);
-    };
-  }, [props.onBindLeave, leave]);
   return (
     <section className="oi-reader" aria-label={props.title}>
       <ReaderBar
         title={props.title}
-        leave={leave}
+        leave={leaving.leave}
         viewing={viewing}
         pageCount={reading?.pageCount}
         lostPlace={session.lostPlace}
@@ -81,8 +89,12 @@ export function ReaderScreen(props: {
         nav={nav}
         onBindOpen={bindOpen}
         zoom={zoom}
+        mode={view.mode}
+        onView={chooseView}
       />
       <ReaderBody
+        mode={view.mode}
+        onView={chooseView}
         loading={session.phase.kind === "loading"}
         sentence={reading?.sentence}
         page={session.shownPage}
@@ -97,8 +109,8 @@ export function ReaderScreen(props: {
         cancel={reading?.cancel}
         boxes={reading?.boxes}
         zoom={zoom.ratio}
-        releasePixels={releasePixels}
-        onLeave={leave}
+        releasePixels={leaving.releasePixels}
+        onLeave={leaving.leave}
       />
     </section>
   );
@@ -114,6 +126,8 @@ function ReaderBar(props: {
   readonly nav: ReturnType<typeof usePositionHistory>;
   readonly onBindOpen: (handle: GoToHandle | undefined) => void;
   readonly zoom: ReturnType<typeof useZoom>;
+  readonly mode: ReaderViewMode;
+  readonly onView: (mode: ReaderViewMode) => void;
 }): ReactElement {
   const page =
     props.viewing &&
@@ -167,11 +181,14 @@ function ReaderBar(props: {
       <span className="oi-reader-gap" />
       <ZoomControls active={props.viewing} zoom={props.zoom} status={false} />
       <span className="oi-reader-chip" />
+      <ViewModeSwitch mode={props.mode} onSelect={props.onView} />
     </header>
   );
 }
 
 function ReaderBody(props: {
+  readonly mode: ReaderViewMode;
+  readonly onView: (mode: ReaderViewMode) => void;
   readonly loading: boolean;
   readonly sentence: string | undefined;
   readonly page: number | undefined;
@@ -197,17 +214,29 @@ function ReaderBody(props: {
     return <ErrorPane sentence={props.sentence} onLeave={props.onLeave} />;
   }
   return (
-    <PageColumn
-      page={props.page}
-      pageCount={props.pageCount}
-      columnRef={props.columnRef}
-      onScroll={props.onScroll}
-      onScrollEnd={props.onScrollEnd}
-      paint={props.paint}
-      cancel={props.cancel}
-      boxes={props.boxes}
-      zoom={props.zoom}
-      releasePixels={props.releasePixels}
+    <ViewModePanes
+      mode={props.mode}
+      column={
+        <PageColumn
+          page={props.page}
+          pageCount={props.pageCount}
+          columnRef={props.columnRef}
+          onScroll={props.onScroll}
+          onScrollEnd={props.onScrollEnd}
+          paint={props.paint}
+          cancel={props.cancel}
+          boxes={props.boxes}
+          zoom={props.zoom}
+          releasePixels={props.releasePixels}
+        />
+      }
+      empty={
+        <ViewModeEmpty
+          onOriginal={() => {
+            props.onView("original");
+          }}
+        />
+      }
     />
   );
 }

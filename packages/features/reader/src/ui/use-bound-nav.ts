@@ -14,6 +14,27 @@ export type ReaderNav = ZoomNav & {
   readonly back: () => void;
   readonly forward: () => void;
   readonly openGoTo: () => void;
+  readonly viewOriginal: () => void;
+  readonly viewContrast: () => void;
+  readonly viewTranslation: () => void;
+};
+
+type ViewNav = {
+  readonly viewOriginal: () => void;
+  readonly viewContrast: () => void;
+  readonly viewTranslation: () => void;
+};
+
+const idleView: ViewNav = {
+  viewOriginal() {
+    return undefined;
+  },
+  viewContrast() {
+    return undefined;
+  },
+  viewTranslation() {
+    return undefined;
+  },
 };
 
 type History = {
@@ -27,6 +48,7 @@ export function navCommands(
   leave: () => void,
   openGoTo: { readonly current: GoToHandle | undefined },
   zoom: ZoomNav,
+  view: ViewNav = idleView,
 ): ReaderNav {
   return {
     back() {
@@ -39,6 +61,15 @@ export function navCommands(
     },
     openGoTo() {
       openGoTo.current?.open();
+    },
+    viewOriginal() {
+      view.viewOriginal();
+    },
+    viewContrast() {
+      view.viewContrast();
+    },
+    viewTranslation() {
+      view.viewTranslation();
     },
     ...zoom,
   };

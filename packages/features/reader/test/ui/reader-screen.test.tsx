@@ -61,7 +61,7 @@ it("does not show the lost-place line after a successful read", async () => {
   expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
   expect(screen.queryByText(LOST_PLACE)).toBeNull();
   expect(document.querySelector(".oi-reader-chip")?.textContent).toBe("");
-  expect(barSlots()).toBe("gap zoom-controls chip");
+  expect(barSlots()).toBe("gap zoom-controls chip view-mode");
   expect(document.body.textContent).not.toMatch(/解析|已保存|原文件没有被修改/);
 });
 
@@ -607,7 +607,7 @@ function press(name: string): void {
 function barSlots(): string {
   return [
     ...document.querySelectorAll(
-      ".oi-reader-gap, .oi-reader-zoom-controls, .oi-reader-chip",
+      ".oi-reader-gap, .oi-reader-zoom-controls, .oi-reader-chip, .oi-reader-view-mode",
     ),
   ]
     .map((node) => node.className.replace("oi-reader-", ""))

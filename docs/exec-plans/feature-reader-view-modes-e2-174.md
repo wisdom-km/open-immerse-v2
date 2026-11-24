@@ -280,3 +280,136 @@ E2-2，合计 109。只在 E2-1 合入之后另开。`forced-colors` 只给新�
 任务类型：UI 改动。涉及切片：reader 的 `src/ui`，desktop 的 renderer。本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
 
 从当时的 main 开工，不从本计划分支写产品代码。先读本文件的 H1–H12。临时默认原文来自 1A / 6658666956。6-1 A 只定空态文案。6-3 A 是文献库里不置灰，置灰缺口本批不修。E2-0 只移离开接线。E2-1 的组容器用 `getByRole('radiogroup', { name: '栏位' })` 能够找到，可访问名称是「栏位」。`<fieldset>` 的默认角色是 `group`，不能只靠 fieldset 充数。放在空 chip 右边。三个栏位共用同一 `ReaderScreen`、同一 session、同一历史、同一 zoom。对照只缩容器，不调用适合宽度。译文用 `inert` 隐藏这一份 `PageColumn`，不卸载、不复制、不重新打开文档。回到原文保留页码、历史和缩放。加载和错误页不被空态替换。焦点在即将消失的节点上时落到对应 radio。组内方向键用浏览器自己的 radio 行为，不复制 `keepClosed` 的 8 键拦截，不另写全局 `keydown`。Ctrl / ⌘+1/2/3 只订阅已有菜单事件。估算超过 346 就重算；实际非生成行超过 600 才是 `check-pr-size` 的停点。两种情况都不删测试，也不把 346 写成 G12。路径甲不改 main，并在验收里把菜单勾选写成未完成。路径乙不进入 E2-1。顺序是 S1、S2a、S2b、S2c-prep、S2c-on、然后这三笔、最后 S3。R-E13 按 13:41 在 DESKTOP-0GI64S8（32GB）上测，标明硬件，不称 8GB 验证，不限制启动内存。第 4 点的显示缩放已由 13:55 批准，尚未实跑，测完恢复 100%。这不是 PRD §8 的 M2 整体豁免。原则通过不等于实现通过。
+
+## 2026-11-23 23:25 实施更正
+
+上面的历史原句保留。本段取代文首基线 `dc35b82`、停止点里的 346 / 600 / 250 / 函数 80 硬停，以及交接里「不要开工 E2-0」那句。不改写更早的段落。
+
+Wisdom 原话是「OK，那就按照你的建议推进吧。」登记在 [评论 7105575675](https://github.com/wisdom-km/open-immerse-v2/pull/236#issuecomment-7105575675)。范围是已交付的 E2 提案：E2-0 与 E2-1 同一分支、同一 Draft。E2-2 等 E2-1 获批合入后另开。S3 不在本次。
+
+开工基线是官方 main `6f23e38da65d10f0a54d144c7cdff06e769f355d`，tree `64b69361b63fe08fc18db31b8d8f85fd7cd18caf`。S2c 已随 PR #236 合入。`shell.reportViewMenu` 已经 expose。这次不调用它，不上报勾选。路径甲只订阅已有 `oi-view-original`、`oi-view-bilingual`、`oi-view-translation`。菜单仍是普通项。勾选仍未完成。
+
+`check-pr-size` 与 `check-file-size` 只打印，不因行数退出 1，也不读 `G12:`。这次不把 600、函数 80、估算 346 或单文件 250 当硬停，不为此拆 PR，也不写豁免行。一文件一职责仍然有效。取消机械行数否决，不是把无关逻辑堆进同一个文件。
+
+分支是 `feature/reader-view-modes-e2-174`。E2-0 是离开接线的行为保持抽出，是这一支上的提交，不是单独的计划 PR。E2-1 是最小完整栏位。E2-2 本次不写 `forced-colors`，不改 `reader-nav.spec.ts`。
+
+### 这次的文件
+
+E2-0：新建 `packages/features/reader/src/ui/use-reader-leave.ts`。`reader-screen.tsx` 改为调用它。
+
+E2-1：新建 `use-view-mode.ts`、`view-mode-switch.tsx`、`view-mode-empty.tsx`、`view-mode-panes.tsx`，以及 `view-mode-switch.test.tsx`、`view-mode-empty.test.tsx`、`view-mode-panes.test.tsx`。改 `copy.ts`、`use-bound-nav.ts`、`reader-screen.tsx`、`reader-screen.test.tsx`、`apps/desktop/src/renderer/shell.tsx`、`apps/desktop/src/renderer/reader.css`。`apps/desktop/test/shell.test.ts` 归 E2-1。两平台空态句都在 `view-mode-empty.test.tsx`。
+
+文档只追加本文件和 `docs/approvals.md`。有 PR 号之后，证据写入 `docs/evidence/<PR号>/`。那一笔在 check 之后，不因此再跑整链。
+
+不改 `shell-events.ts`、`library-menu.ts`、`library-wiring.ts`、`view-menu-*`、preload、生成物、contracts、core、CI、锁、DESIGN、PRD、ARCHITECTURE、RULES。reader UI 不 import desktop，不订阅全局 `window`。shell 把已有事件接到现有 `onBindNav`。系统原生 radio，不另写 `keydown`。
+
+### 这次的命令与额度
+
+额度属于这一次分配，不随每个 tip 重置，也不借用 PR #236 的额度。源码和文档完成并做完静态审查之后才跑。不在每次提交时跑。
+
+| 命令 | 次数 |
+| --- | --- |
+| E2-0 三文件：`corepack pnpm exec vitest run packages/features/reader/test/ui/reader-screen.test.tsx packages/features/reader/test/ui/failed-read-leave.test.tsx packages/features/reader/test/ui/page-column.test.tsx` | 最多 1。七文件那次已经包含这三份时，这一次可以不另跑 |
+| E2-1 七文件：上面三份，加上 `view-mode-switch.test.tsx`、`view-mode-empty.test.tsx`、`view-mode-panes.test.tsx`、`apps/desktop/test/shell.test.ts` | 最多 1 |
+| `corepack pnpm run check` | 整链最多 1。本地基线 ref 若仍停在更早的 main，用 `GATE_BASE` 指向 `6f23e38da65d10f0a54d144c7cdff06e769f355d`，与 CI 的 `origin/main` 对齐 |
+| 真实失败的原子项，或真实失败的文件集合 | 总共再最多 1。不补整链。没有失败文件的环境问题不算失败子集 |
+
+不跑全库 `pnpm test`。不另跑 lint 或 typecheck。不跑 G9、Python suite、Electron、e2e、浏览器、用户机或 native 构建。check 里原有的 codegen 与 license pip 可以随整链走。不新装、不下载。uv 若要拉依赖就停。PATH 把 Node 22.23.4 的目录放在前面。不用 `pnpm test --`。
+
+happy-dom 的 `HTMLInputElement` 没有 radio 方向键默认行为。不自造键盘实现。E2-04 的方向键保持未验证，交给合入前的真实 UI。其余能在这七个文件里钉住的行为，以那一次运行的退出码为准。没有通过证据的条目仍写未验证。原则通过和 CI 都不代替上手验收。
+
+## 2026-11-24 00:18 测试登记
+
+上面的句子保留。Wisdom 原话是「OK，按照你的建议推进吧。」登记在 [评论 7106946089](https://github.com/wisdom-km/open-immerse-v2/pull/236#issuecomment-7106946089)。只补一处精确文件，沿 `apps/desktop/test/reading-command-surface.test.ts` 的现有写法，不加通配，不放宽检查，不改其他配置语义：
+
+- `tsconfig.json` 的 `exclude` 追加 `apps/desktop/test/shell.test.ts`
+- `tsconfig.ui.json` 的 `include` 追加同一路径
+- `eslint.config.js` 的 `allowDefaultProject` 追加同一路径
+
+这次额度不新增、不重置。E2-0 三文件仍是最多 1，而且这次保持未跑：工作树里已经有 E2-1 的未提交改动，不能为了单独回到 `13964cacd790d24597e839be822f6b2df6911721` 去破坏工作树。后面那一次七文件跑的是最终源码，不写成 E2-0 的独立验证。方向键未验保留，不加第二套 `keydown`。E2-2 与 S3 仍不在本次。
+
+## 2026-11-24 00:35 数量上限
+
+上面的句子保留。Wisdom 原话是「按照你的建议推进。」登记在 [评论 7107433987](https://github.com/wisdom-km/open-immerse-v2/pull/236#issuecomment-7107433987)。只把 `eslint.config.js` 的 `maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING` 从 64 改成 70。不是更高的任意上限。不加通配，不关规则，不改其余语义。
+
+原完整 check 在 `8f90c540c2614e5af192a0b4674e53fbaf278bd9` 上退出码 1。G1 格式已打印通过。G2 失败，原因是默认项目匹配超过 64。从 typecheck 起的 14 个原子项当时没有启动。七文件 vitest 仍是 1/1 且退出码 1。shell 失败文件补验仍是 1/1 且退出码 0。这些次数不重置。新的许可只是：在含 70 的提交上用 `corepack pnpm run lint` 补 G2 一次；成功后再按脚本顺序把未启动的 14 项各跑最多一次。不重跑整链 check，不重跑 G1，不再跑 Vitest。某一项失败或要下载就停，没有新的失败补验。
+
+## 2026-11-24 00:44 夜间连续推进
+
+上面的句子保留。00:35 的「G2 再失败即停」不改写成已经允许。本段是后一次直接批准。
+
+Wisdom 原话一是「OK，按照你的建议推进就行。」对应只改 `view-mode-panes.test.tsx` 里 `checked()` 的返回表达式，去掉 `textContent` 上多余的可选链，改成 `(chosen[0]?.parentElement?.textContent ?? "").trim()`。长度断言和「返回这一项父节点文本」不变。不关规则。
+
+Wisdom 原话二是「我记得昨天跟你说了，我晚上休息的时候，你就按照你的建议去推进就行。只有需要合并的，等我醒了之后我再合。」登记在 [评论 7107620601](https://github.com/wisdom-km/open-immerse-v2/pull/236#issuecomment-7107620601)。
+
+执行边界：已批 E2-0 / E2-1 目标和白名单里的普通实现或测试修正，以及只针对失败原子项的补验，可以连续做。范围外缺口、环境不足、要下载、codegen 白名单外 diff，仍然停下，不提交生成物。不重跑完整 `pnpm run check`，不重跑已通过的无关项，不跑无差别全库测试。分项结果不写成第二次完整 check 退出码 0。旧次数和失败不重置，不追认历史。合入留给 Wisdom 醒后决定。保持 Draft。
+
+`2243996ffbae0527eda86edd769e6eb188608a6b` 上那一次 `corepack pnpm run lint` 仍是退出码 1，报 `no-unnecessary-condition`。那次不改记成通过。本段之后的 lint 是这一条新开的一次原子补验。通过后再按原顺序跑此前从未启动的 14 项。
+
+## 2026-11-24 测试证明补强
+
+上面的句子保留。这一轮没有新的 Wisdom 原话。授权仍是已记录的 [评论 7107620601](https://github.com/wisdom-km/open-immerse-v2/pull/236#issuecomment-7107620601)。Forge 在 `97343064878b799a223031d8d01984c00e4923f6` 的只读审查不是新授权。产品实现没有改。只改三份已在白名单里的测试：`view-mode-panes.test.tsx`、`apps/desktop/test/shell.test.ts`、`view-mode-empty.test.tsx`。
+
+S1：先点「放大」，选中项文本从默认变成 `110%`，并且这个文本不是 `select.textContent`。再跳到第 3 页，使后退可动、前进不可动。对照、译文、原文各点一次，同一 `PageColumn`、同一个 `.oi-reader-main`、页码、选中缩放、历史可动性和 `writePage` 次数都保持。随后后退到第 2 页、前进回第 3 页，`writePage` 仍不增加。
+
+S2：三个事件各使对应导航方法加一，计数是 `[1, 1, 1]`。点标题栏返回后栏位消失、Reader 挂载数回到 0，再派发三次计数仍是 `[1, 1, 1]`，阅读屏不重开。`view.unmount()` 之后，三个事件名的移除次数各自等于添加次数。不用 `not.toThrow`，不读源码文本，不另写 `keydown`。
+
+N1：空态句、Windows 链接、mac 链接写在测试文件自己的常量里。不断言从 `copy.ts` 导入的同一常量。
+
+旧次数不重置。E2-0 仍是 0/1。七文件首跑仍是退出码 1。shell 单文件补验仍记在 `8f90c54`。完整 check 仍是退出码 1。`2243996` 的 lint 仍是退出码 1。`352cf89` 的 15 个分项仍不是第二次完整 check。本轮命令见 `docs/evidence/237/s1-s2-n1.md`。方向键、真实界面、高对比、读屏、R-E13 仍未验。E2-2 与 S3 仍不做。保持 Draft。
+
+`170070c7f536b0046e22024f784fad6be4d03a3c` 的远端 `desktop-e2e-windows` 在「Desktop unit tests」失败。失败的是 `shell.test.ts` 超时 5000ms，Playwright 步骤没有启动。同一授权下只改这一份测试：不再替换 `window.addEventListener`，改用 `vi.spyOn` 计数，并把这一条的时限放到 20 秒。调用次数、离开后不重开、卸载后添加次数等于移除次数这些断言还在。本地只补跑了 `apps/desktop/test/shell.test.ts`。没有手动重跑 CI。
+
+上面那句「放到 20 秒」是当时的改动，不改写成已经定位。官方失败日志 [job 137873296797](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45226216313/job/137873296797) 的栈停在 `shell.test.ts:114`，下一行是 `watchViewListeners()`，它在 `import` 之前替换了 `window.addEventListener`。日志没有给出具体 `await`。随后自然 CI [run 45227957478](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45227957478) 的 Windows 桌面单测里，同一用例在 spy 版本上打印 `3354ms` 并通过，31 文件 208 项都过。3354ms 低于默认 5000ms，所以 20 秒时限没有参与这次通过。这一笔把它去掉，观察仍放在 `import` 之后。`170070c` 的失败保留。
+
+## 2026-11-24 阶段诊断
+
+上面两段保留。把「下一行就是挂起点」或「改观察器即已解决」读成已证实原因，是错的。栈不是执行跟踪。`1ff89e5` 仍用导入后的 `vi.spyOn` 和默认时限，Windows 再次超时，所以那次观察器改动没有被证明为原因。
+
+偏差：`0e3eb2a` 把这条用例的时限写成 20 秒。这和当时「不得直接加 timeout」不符。`53d1628` 撤掉了它。不追认这 20 秒，不把它写成批准的修复。`9591169` 的六项 success 只属于那个 tip，不继承到后面的 tip。`170070c` 与 `1ff89e5` 的 Windows 失败都保留，不倒改。
+
+import 移到观察之前发生在 `0e3eb2a`，同一笔还加了 20 秒。不是 `53d1628` 才移动 import。`53d1628` 只删时限并加了一句后来已删的注释。
+
+`1ff89e5` 的自然 CI [run 45229208678](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45229208678)，失败 job [137883857395](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45229208678/job/137883857395)。checkout 是 merge `66efb7bdbc966f8a2ac920d3a52670f778027271`，合入的是这个 tip。`shell.test.ts` 再次 Test timed out in 5000ms。31 文件 30 过 1 败，208 项 207 过 1 败。展示的下一行是 `await import`。png 缺失在超时之后。旧 `9591169` 六绿不继承。
+
+这一轮只在 `apps/desktop/test/shell.test.ts` 加阶段行：`oi-shell-stage` 加上阶段名和毫秒。阶段是 import 前后、渲染前后、文献库等待前后、进入 Reader 前后、三个事件前后、leave 前后、unmount 前后。断言、真实 Reader 接线和默认时限不动。产品代码不动。`node:fs` 的 `writeSync` 在这份测试的类型项目里报 `no-unsafe-call`，两次 lint 失败保留。推上去的行改用 `console.error`。Windows 上最后到达哪一阶段，等这次推送的自然 CI。在那份日志出现之前，不再改测试行为。
+
+## 2026-11-24 10:44 定位结果
+
+上面的句子保留。Wisdom 原话是「OK，按照你的建议推进就行。」登记在 [评论 7120449178](https://github.com/wisdom-km/open-immerse-v2/pull/237#issuecomment-7120449178)。范围是继续定位，有证据才做最小修复，并整理真实界面待验项。不放宽时限，不 skip，不以再跑一次绿代替修复。不建议在低风险前合入。
+
+`eea7916e9d869aeb4d23582f26eee716d8efbe75` 的自然 CI [run 45232026715](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45232026715) 六项 success。Windows job [137893806056](https://github.com/wisdom-km/open-immerse-v2/actions/runs/45232026715/job/137893806056) 的 checkout 是 merge `4c9ee04`。`shell.test.ts` 打印 3747ms，用例 3744ms，31 文件 208 项都过。阶段最后一行是 `oi-shell-stage after-unmount 3742`。`before-import 0` 到 `after-import 3669` 是唯一的长间隔，墙钟 17:51:43.083Z 到 17:51:46.780Z。其后渲染、文献库、进入 Reader、三个事件、离开和卸载合计大约 73ms。
+
+这个间隔就是 `await import("../src/renderer/shell.js")`。`shell.tsx` 在模块顶层静态引入 `ReaderScreen` 和 `desktopReaderClient`。后者引入 `loadAssetPdf`，而 `asset-pdf.ts` 静态引入 `pdfjs-dist/legacy/build/pdf.mjs`。`getDocument` 不在 import 时调用。测试把 `fetch` 做成 `ok: false`，打开 PDF 时不会走到它。这 3669ms 是这次通过运行里的模块求值时间。
+
+`170070c` 和 `1ff89e5` 没有阶段行。它们的报告时长大约 11s 和 10s，符合 5 秒超时后 worker 才被停掉，不能据此改写成同一次 import 已证明超过 5 秒或永远不返回。那两次失败保留。这次六绿不继承到那两个 tip，也不把风险降成已修复。
+
+这一笔不改测试、不改产品。不把 import 挪进 `beforeAll`：那会改用 Vitest 默认 hook 时限 10 秒，等于放宽这 5 秒。不把 `pdfjs` 改成打开时再加载，那会改变产品何时加载它，而且没有视图模式上的缺陷证据。不 mock `pdfjs`。阶段行留着，以便下一次若再超时，日志仍能看出停在 import 前还是后。
+
+### 真实界面待验，仍是 HOLD
+
+下面各项没有这次 CI 能代替的证据。E2-2 与 S3 仍不在本 PR。
+
+| 项 | 还缺的证据 |
+| --- | --- |
+| 上手走查 | 在可运行的桌面窗口里打开一份 PDF，切换原文、对照、译文，再从标题栏返回。验收人、时间都还没有 |
+| 空态句与链接 | 对照和译文里看见已批句子，以及当前平台的「切到原文」链接。测试钉了字面，没有人在窗口里核对 |
+| 方向键 | happy-dom 没有 radio 的方向键默认行为。没有自造键盘，也没有真机按键记录 |
+| 物理加速键 | Ctrl+1 与 ⌘1 没有在真实窗口里按过 |
+| 高对比 | `forced-colors` 属于 E2-2，本 PR 没做 |
+| 读屏 | 没有读屏走查。译文的 `inert` 只在测试和样式里 |
+| R-E13 | 32GB 机器上的阅读不在这次云端 CI 里 |
+| 菜单勾选 | S3，不调用 `reportViewMenu`。菜单项仍不会显示当前栏位 |
+
+## 2026-11-24 因果纠正
+
+上面「3669ms 是模块求值」和把这段直接写成 `pdfjs` 的句子收回。父复核纠正四点，不另计新的 Wisdom 原话，仍用评论 7120449178：
+
+- `findBy` 的 1000ms 不能排除事件循环或进程调度把拒绝推迟到测试时限之后。
+- `beforeAll` 返回只说明钩子返回了，不说明 fixture 内容还在。
+- 源码里没有顶层 `await`，不能排除异步 mock 或转换通信还在等。
+- `3669` 和 `3621` 是整段 `await import` 的区间，不是纯求值，也不能直接归因 `pdfjs`。
+
+`170070c` 与 `1ff89e5` 的超时仍不能倒推。20 秒偏差仍不追认。不修产品。不把 import 挪进 hook。
+
+这一笔只在 `shell.test.ts` 加诊断，不是修复。mock 工厂进入、`importOriginal` 返回后、工厂返回，和用例里的 Shell import 共用 `diag.state.startedAt`。状态放在 `vi.hoisted`，避免工厂提升时读到未初始化绑定。fixture 在安装后、import 前、render 前各打一行布尔和键个数，不调用这些方法。另外用 50ms 的 `setInterval` 累计 tick 和最大间隔，阶段行带上这两个数。不新增 `await`，不等新的 timer。`finally` 和 `afterEach` 都 `clearInterval`。断言、时限、mock 返回的真实 `ReaderScreen` 不变。只成功也不宣布根因或低风险。未进入工厂是加载或转换边界。停在 `importOriginal` 只说明卡在入口导入。长区间里 tick 还在增加，支持异步等待；tick 停住，支持事件循环或调度停顿。不能单凭 tick 断言 CPU 或 `pdfjs`。
