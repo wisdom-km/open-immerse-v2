@@ -39,6 +39,10 @@ import {
   type ViewMenuGate,
 } from "./view-menu-gate.js";
 import { bindViewMenuLifecycle } from "./view-menu-lifecycle.js";
+import {
+  createViewShortcutTrace,
+  type ViewShortcutTrace,
+} from "./view-shortcut-trace.js";
 import { createViewMenuHandler } from "./view-menu-handler.js";
 import type { ViewMenuEpoch, ViewMenuFloorWriter } from "./view-menu-epoch.js";
 import {
@@ -157,11 +161,12 @@ function installApplicationMenu(epoch?: ViewMenuEpoch): {
     gate: null,
     current: null,
   };
+  const trace = viewShortcutTraceFromEnv();
   const gate = createViewMenuGate({
     replace(descriptions) {
       const owner = held.gate;
       if (owner === null) return;
-      const menu = buildMenu(descriptions, owner);
+      const menu = buildMenu(descriptions, owner, trace);
       held.current = { menu, descriptions };
       Menu.setApplicationMenu(menu);
     },
@@ -173,10 +178,31 @@ function installApplicationMenu(epoch?: ViewMenuEpoch): {
     dispatch(event) {
       return dispatchMenu(event);
     },
+    ...(trace === undefined ? {} : { trace }),
   });
+  trace?.arm();
   held.gate = gate;
   if (epoch !== undefined) bindViewMenuLifecycle(epoch, gate);
+  if (epoch !== undefined && trace !== undefined) {
+    subscribeViewShortcutClosed(epoch, trace);
+  }
   return { ready: gate.submit("none", startupViewMark), gate };
+}
+
+function viewShortcutTraceFromEnv(): ViewShortcutTrace | undefined {
+  if (process.env.OI_VIEW_SHORTCUT_TRACE !== "1") return undefined;
+  return createViewShortcutTrace();
+}
+
+function subscribeViewShortcutClosed(
+  epoch: ViewMenuEpoch,
+  trace: ViewShortcutTrace,
+): void {
+  let unsubscribe = (): void => undefined;
+  unsubscribe = epoch.subscribe((notice) => {
+    if (notice.kind !== "closed") return;
+    if (trace.markClosed()) unsubscribe();
+  });
 }
 
 function withViewMenu(
@@ -242,10 +268,11 @@ function windowIsLive(win: BrowserWindow): boolean {
 function buildMenu(
   descriptions: readonly ViewSlotDescription[],
   gate: ViewMenuGate,
+  trace: ViewShortcutTrace | undefined,
 ): Menu {
   return Menu.buildFromTemplate(
     applicationMenuTemplate(platform).map((entry) =>
-      toMenuItem(entry, descriptions, gate),
+      toMenuItem(entry, descriptions, gate, trace),
     ),
   );
 }
@@ -254,11 +281,14 @@ function toMenuItem(
   entry: ShellMenuEntry,
   descriptions: readonly ViewSlotDescription[],
   gate: ViewMenuGate,
+  trace: ViewShortcutTrace | undefined,
 ): MenuItemConstructorOptions {
   if ("role" in entry) return { role: entry.role };
   return {
     label: entry.label,
-    submenu: entry.items.map((item) => menuEntry(item, descriptions, gate)),
+    submenu: entry.items.map((item) =>
+      menuEntry(item, descriptions, gate, trace),
+    ),
   };
 }
 
@@ -266,12 +296,13 @@ function menuEntry(
   item: MenuItemSpec,
   descriptions: readonly ViewSlotDescription[],
   gate: ViewMenuGate,
+  trace: ViewShortcutTrace | undefined,
 ): MenuItemConstructorOptions {
   const slot = descriptions.find(
     (description) => description.event === item.event,
   );
   if (slot === undefined) return commandEntry(item);
-  return viewEntry(item, slot, gate);
+  return viewEntry(item, slot, gate, trace);
 }
 
 function commandEntry(item: MenuItemSpec): MenuItemConstructorOptions {
@@ -286,9 +317,22 @@ function viewEntry(
   item: MenuItemSpec,
   slot: ViewSlotDescription,
   gate: ViewMenuGate,
+  trace: ViewShortcutTrace | undefined,
 ): MenuItemConstructorOptions {
   const click = (): void => {
-    void gate.click(item.event).catch(() => undefined);
+    try {
+      trace?.click(item.event);
+    } catch {
+      // 记录失败仍进入原来的 gate.click。
+    }
+    void gate.click(item.event).catch(() => {
+      try {
+        trace?.gate(item.event, 0, "click-rejected");
+      } catch {
+        return undefined;
+      }
+      return undefined;
+    });
   };
   const entry = slotEntry({ id: slot.event, label: slot.label, click }, slot);
   if (item.accelerator === undefined) return entry;

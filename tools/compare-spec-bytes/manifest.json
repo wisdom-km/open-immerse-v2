@@ -639,6 +639,11 @@
       "source": "ARCHITECTURE.md",
       "old": "（如 `ids.ts`、`errors.ts`；清单由脚本按 import 图算出，不手写）",
       "new": "（如 `ids.ts`、`errors.ts`）。机器目前只认前两个文件名，不按 import 图计算"
+    },
+    {
+      "source": "ARCHITECTURE.md",
+      "old": "- **用量**：每次付费调用记录 provider、模型、token / 次数、估算费用（未知则为 `unknown`）、`jobId`，写入 `budget` 切片的账本（§7.8）并供界面显示。费用记录不写论文正文。\n",
+      "new": "- **用量**：每次付费调用记录 provider、模型、token / 次数、估算费用（未知则为 `unknown`）、`jobId`，写入 `budget` 切片的账本（§7.8）并供界面显示。费用记录不写论文正文。\n- **视图快捷键临时记录**（Wisdom 2026-11-25 12:24）：主进程仅当环境变量 `OI_VIEW_SHORTCUT_TRACE` 恰好为 `1` 时，向本进程 stdout 写临时行。这不是 `DiagEvent`，不加入诊断白名单，不写 `<应用数据目录>/diagnostics/` 或 `debug/`。变量不是 `1` 时不写，菜单 click 的返回值与未加记录时相同。写入失败或记录函数抛错都不改变该返回值。每行只有 `n`、`step`，以及按步骤才出现的 `slot`、`result`、`reason`、`dropped`。`slot` 只许 `original`、`contrast`、`translation`。`reason` 只许 `destroyed`、`busy`、`pending`、`uncommitted`、`event-absent`、`replace-threw`、`replace-stale`、`post-check-threw`、`post-check-false`、`committed-mismatch`、`install-unknown`、`mark-changed`、`dispatch-threw`、`destroyed-after-dispatch`、`pending-budget`、`pending-after`、`accepted`、`click-rejected`。不记正文、译文、提示词、密钥、绝对路径、文献、窗口标识或焦点。destroyed 与 busy 同时成立时先看 destroyed，为真则不再读 busy。形状为 null 时不调用槽位包含判断。记录插在这些判断之后、原返回之前，中间不加 await。pending 仍先完成原有 settle 再记。缺 `click` 行一律不能推出没有进入菜单回调。`armed`、`closed`、连续的 `n` 和 `dropped` 为 0 不能证明已经收全，也不能把缺行收成负向结论；没有同步抛错同样不能。本批只采用已经写下的 `click` 行和紧随其后的 `gate` 行：`result` 为 0 表示进入后拒绝，`result` 为 1 表示两支都不成立。缺这成对的行、只有 `click` 没有 `gate`，都是观测不足。菜单「原文」和 Ctrl+1 的槽位都是 `original`。记录没有动作来源。槽位序列 `original`、`contrast`、`translation` 同时符合「菜单有而 Ctrl+1 无」和「菜单无而 Ctrl+1 有」，两种都不能写成某一个没有进入回调，也不能用另外两步来补。操作者每步看见的栏位来自操作者，不是这些行；它不能把这两种分法收成一种。可改文件以 `docs/exec-plans/feature-view-shortcut-trace.md` 的白名单为准。产品切换仍走系统菜单加速键和现有 `gate.click`，不新增渲染进程 keydown，不把视图项改成直接分发。拆除时删掉本小节。\n"
     }
   ]
 }

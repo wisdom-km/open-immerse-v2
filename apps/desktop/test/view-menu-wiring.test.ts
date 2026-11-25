@@ -46,6 +46,8 @@ const control = vi.hoisted(() => ({
   destroyed: 0,
   postChecks: 0,
   rejectWith: null as Error | null,
+  hadTrace: false,
+  rejectClick: null as Error | null,
 }));
 
 const shell = vi.hoisted(
@@ -78,6 +80,7 @@ vi.mock("../src/main/view-menu-gate.js", async (importOriginal) => {
   return {
     ...actual,
     createViewMenuGate(ports: Parameters<typeof actual.createViewMenuGate>[0]) {
+      control.hadTrace = ports.trace !== undefined;
       const gate = actual.createViewMenuGate({
         ...ports,
         postCheck: () =>
@@ -112,6 +115,12 @@ vi.mock("../src/main/view-menu-gate.js", async (importOriginal) => {
           return gate.noteNone(mark);
         },
         click(event: string) {
+          if (control.rejectClick !== null) {
+            const task = Promise.reject(control.rejectClick);
+            control.clickTask = task;
+            control.clicks += 1;
+            return task;
+          }
           const task = gate.click(event);
           control.clickTask = task;
           control.clicks += 1;
@@ -170,6 +179,9 @@ beforeEach(() => {
   control.destroyed = 0;
   control.postChecks = 0;
   control.rejectWith = null;
+  control.hadTrace = false;
+  control.rejectClick = null;
+  delete process.env.OI_VIEW_SHORTCUT_TRACE;
   shell.mode = "live";
   shell.template = { items: [] };
   shell.built = { items: [] };
@@ -420,6 +432,106 @@ it("rejects a legal none shape when the submit asked for an active mode", async 
   }
 });
 
+it("leaves the gate without a trace when the flag is not 1", async () => {
+  process.env.OI_VIEW_SHORTCUT_TRACE = "true";
+  const heard = listenTrace();
+  const started = boot();
+  try {
+    await control.task;
+    expect(control.hadTrace).toBe(false);
+    expect(await pressView("原文")).toBe(1);
+    expect(heard.lines).toEqual([]);
+  } finally {
+    started.close();
+    heard.stop();
+    delete process.env.OI_VIEW_SHORTCUT_TRACE;
+  }
+});
+
+it("writes click before gate and skips non-view items", async () => {
+  process.env.OI_VIEW_SHORTCUT_TRACE = "1";
+  const heard = listenTrace();
+  const started = boot();
+  try {
+    await control.task;
+    expect(control.hadTrace).toBe(true);
+    expect(await pressView("原文")).toBe(1);
+    pressCommand("打开…");
+    pressCommand("后退");
+    expect(heard.lines).toEqual([
+      { n: 1, step: "armed" },
+      { n: 2, step: "click", slot: "original" },
+      {
+        n: 3,
+        step: "gate",
+        slot: "original",
+        result: 1,
+        reason: "accepted",
+      },
+    ]);
+  } finally {
+    started.close();
+    heard.stop();
+    delete process.env.OI_VIEW_SHORTCUT_TRACE;
+  }
+});
+
+it("writes one closed line and ignores a later close", async () => {
+  process.env.OI_VIEW_SHORTCUT_TRACE = "1";
+  const heard = listenTrace();
+  const epoch = createViewMenuEpoch();
+  let closes = 0;
+  epoch.subscribe((notice) => {
+    if (notice.kind === "closed") closes += 1;
+  });
+  const started = boot(epoch);
+  try {
+    await control.task;
+    const first = manualWindow(4);
+    const second = manualWindow(5);
+    epoch.attach(first.win as never);
+    first.emit("closed");
+    epoch.attach(second.win as never);
+    second.emit("closed");
+    expect(closes).toBe(2);
+    expect(heard.lines.filter((line) => line.step === "closed")).toEqual([
+      { n: 2, step: "closed", dropped: 0 },
+    ]);
+  } finally {
+    started.close();
+    heard.stop();
+    delete process.env.OI_VIEW_SHORTCUT_TRACE;
+  }
+});
+
+it("writes click-rejected when the gate promise rejects", async () => {
+  process.env.OI_VIEW_SHORTCUT_TRACE = "1";
+  const heard = listenTrace();
+  const started = boot();
+  try {
+    await control.task;
+    control.rejectClick = new Error("click rejected");
+    const click = menuClick("对照");
+    const pending = click();
+    if (pending instanceof Promise) await pending;
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(heard.lines.map((line) => line.step)).toEqual([
+      "armed",
+      "click",
+      "gate",
+    ]);
+    expect(heard.lines.at(-1)).toMatchObject({
+      slot: "contrast",
+      result: 0,
+      reason: "click-rejected",
+    });
+  } finally {
+    started.close();
+    heard.stop();
+    delete process.env.OI_VIEW_SHORTCUT_TRACE;
+  }
+});
+
 it("N5 destroys after a leading listener closes during attached", async () => {
   const hold = deferred();
   control.wait = hold.promise;
@@ -446,6 +558,39 @@ it("N5 destroys after a leading listener closes during attached", async () => {
     started.close();
   }
 });
+
+type TraceLine = {
+  readonly n?: number;
+  readonly step?: string;
+  readonly slot?: string;
+  readonly result?: number;
+  readonly reason?: string;
+  readonly dropped?: number;
+};
+
+function listenTrace(): { readonly lines: TraceLine[]; stop: () => void } {
+  const spy = vi.spyOn(process.stdout, "write");
+  return {
+    get lines(): TraceLine[] {
+      const lines: TraceLine[] = [];
+      for (const call of spy.mock.calls) {
+        const chunk = call[0];
+        const text =
+          typeof chunk === "string"
+            ? chunk
+            : Buffer.from(chunk).toString("utf8");
+        for (const row of text.split("\n")) {
+          if (!row.includes('"step"')) continue;
+          lines.push(JSON.parse(row) as TraceLine);
+        }
+      }
+      return lines;
+    },
+    stop() {
+      spy.mockRestore();
+    },
+  };
+}
 
 function boot(epoch?: ReturnType<typeof createViewMenuEpoch>): {
   handlers: ReturnType<typeof startLibrary>;

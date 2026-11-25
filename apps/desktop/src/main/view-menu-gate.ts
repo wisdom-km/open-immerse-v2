@@ -1,3 +1,7 @@
+import type {
+  ViewShortcutReason,
+  ViewShortcutTrace,
+} from "./view-shortcut-trace.js";
 import {
   viewSlotDescriptions,
   type ViewShape,
@@ -14,6 +18,7 @@ export type ViewMenuGatePorts = {
   ) => void | Promise<void>;
   readonly postCheck: () => boolean | Promise<boolean>;
   readonly dispatch: (event: string) => void | Promise<void>;
+  readonly trace?: ViewShortcutTrace;
 };
 
 export type SealProbe = {
@@ -46,6 +51,15 @@ export type ViewMenuCandidateGate = ViewMenuGate & {
 };
 
 type Outcome = "ok" | "failed";
+
+type ShapeReplacement =
+  | { readonly outcome: "ok" }
+  | { readonly outcome: "failed"; readonly failure: ViewShortcutReason };
+
+type ClickFinish = {
+  readonly result: 0 | 1;
+  readonly reason: ViewShortcutReason;
+};
 
 type PendingNone = {
   readonly mark: StageMark;
@@ -159,8 +173,8 @@ async function submit(
   sync(state, gate);
   const budget = repairBudget();
   await operate(state, gate, async (committedBeforeOperation) => {
-    const outcome = await replaceShape(state, ports, shape);
-    const candidate = snapshotCandidate(state, shape, mark, outcome);
+    const replaced = await replaceShape(state, ports, shape);
+    const candidate = snapshotCandidate(state, shape, mark, replaced.outcome);
     await settle(
       state,
       gate,
@@ -178,23 +192,35 @@ async function click(
   ports: ViewMenuGatePorts,
   requestedEvent: string,
 ): Promise<number> {
-  if (state.destroyed || state.busyAttempt !== 0) return 0;
+  // destroyed 为真时不再读 busy。两条判断之间没有 await。
+  if (state.destroyed) {
+    return tracedClick(ports, requestedEvent, 0, "destroyed");
+  }
+  if (state.busyAttempt !== 0) {
+    return tracedClick(ports, requestedEvent, 0, "busy");
+  }
   clearSeal(state);
   const budget = repairBudget();
   if (matchingPending(state)) {
     await operate(state, gate, async (committedBeforeOperation) => {
       await settle(state, gate, ports, null, committedBeforeOperation, budget);
     });
-    return 0;
+    return tracedClick(ports, requestedEvent, 0, "pending");
   }
   const shapeAtStart = state.committed;
   const markAtStart = state.currentMark;
-  if (shapeAtStart === null || !slotHasEvent(shapeAtStart, requestedEvent)) {
-    return 0;
+  // 形状为 null 时不调用槽位包含判断。两条判断之间没有 await。
+  if (shapeAtStart === null) {
+    return tracedClick(ports, requestedEvent, 0, "uncommitted");
   }
-  let dispatched = 0;
+  if (!slotHasEvent(shapeAtStart, requestedEvent)) {
+    return tracedClick(ports, requestedEvent, 0, "event-absent");
+  }
+  const box: { done: ClickFinish } = {
+    done: { result: 0, reason: "destroyed" },
+  };
   await operate(state, gate, async (committedBeforeOperation) => {
-    dispatched = await rebuildAndDispatch(
+    box.done = await rebuildAndDispatch(
       state,
       gate,
       ports,
@@ -205,7 +231,7 @@ async function click(
       budget,
     );
   });
-  return dispatched;
+  return tracedClick(ports, requestedEvent, box.done.result, box.done.reason);
 }
 
 async function rebuildAndDispatch(
@@ -217,9 +243,14 @@ async function rebuildAndDispatch(
   requestedEvent: string,
   committedBeforeOperation: ViewShape | null,
   budget: RepairBudget,
-): Promise<number> {
-  const outcome = await replaceShape(state, ports, shapeAtStart);
-  const candidate = clickCandidate(state, shapeAtStart, markAtStart, outcome);
+): Promise<ClickFinish> {
+  const replaced = await replaceShape(state, ports, shapeAtStart);
+  const candidate = clickCandidate(
+    state,
+    shapeAtStart,
+    markAtStart,
+    replaced.outcome,
+  );
   await settle(state, gate, ports, candidate, committedBeforeOperation, budget);
   const dispatched = await dispatchRequested(
     state,
@@ -227,7 +258,7 @@ async function rebuildAndDispatch(
     shapeAtStart,
     markAtStart,
     requestedEvent,
-    outcome,
+    replaced,
   );
   return closePendingAfterDispatch(
     state,
@@ -299,13 +330,13 @@ async function settle(
   const pendingWrite = state.pendingWrites.current();
   state.pending = null;
   sync(state, gate);
-  const outcome = await replaceShape(state, ports, "none");
+  const replaced = await replaceShape(state, ports, "none");
   if (destroyedNow(state)) return;
   if (state.pendingWrites.current() !== pendingWrite || pendingNow(state)) {
     keepUnknown(state, gate, committedBeforeOperation);
     return;
   }
-  if (outcome === "ok") {
+  if (replaced.outcome === "ok") {
     clearSeal(state);
     state.committed = "none";
     state.install = "known";
@@ -360,10 +391,10 @@ async function runSubmitCandidate<T>(
   const budget = repairBudget();
   const box: { result: T | undefined } = { result: undefined };
   await operate(state, gate, async (committedBeforeOperation) => {
-    const outcome = await replaceShape(state, ports, input.shape);
+    const replaced = await replaceShape(state, ports, input.shape);
     const eligible = readEligibility(input);
     const candidate = eligible
-      ? snapshotCandidate(state, input.shape, input.mark, outcome)
+      ? snapshotCandidate(state, input.shape, input.mark, replaced.outcome)
       : null;
     await settle(
       state,
@@ -481,22 +512,31 @@ async function replaceShape(
   state: GateState,
   ports: ViewMenuGatePorts,
   shape: ViewShape,
-): Promise<Outcome> {
-  if (destroyedNow(state)) return "failed";
+): Promise<ShapeReplacement> {
+  if (destroyedNow(state)) return failedReplacement("destroyed");
   const attempt = state.attempts.next();
   try {
     await ports.replace(viewSlotDescriptions(shape));
   } catch {
-    return "failed";
+    return failedReplacement("replace-threw");
   }
-  if (!attemptCurrent(state, attempt)) return "failed";
+  if (!attemptCurrent(state, attempt)) {
+    return failedReplacement("replace-stale");
+  }
   try {
     const passed = await ports.postCheck();
-    if (!attemptCurrent(state, attempt)) return "failed";
-    return passed ? "ok" : "failed";
+    if (!attemptCurrent(state, attempt)) {
+      return failedReplacement("replace-stale");
+    }
+    if (!passed) return failedReplacement("post-check-false");
+    return { outcome: "ok" };
   } catch {
-    return "failed";
+    return failedReplacement("post-check-threw");
   }
+}
+
+function failedReplacement(failure: ViewShortcutReason): ShapeReplacement {
+  return { outcome: "failed", failure };
 }
 
 async function dispatchRequested(
@@ -505,17 +545,22 @@ async function dispatchRequested(
   shapeAtStart: ViewShape,
   markAtStart: StageMark | null,
   requestedEvent: string,
-  outcome: Outcome,
-): Promise<number> {
-  if (!dispatchAllowed(state, shapeAtStart, requestedEvent, outcome)) return 0;
-  if (state.currentMark !== markAtStart) return 0;
+  replaced: ShapeReplacement,
+): Promise<ClickFinish> {
+  const blocked = dispatchBlock(state, shapeAtStart, requestedEvent, replaced);
+  if (blocked !== undefined) return { result: 0, reason: blocked };
+  if (state.currentMark !== markAtStart) {
+    return { result: 0, reason: "mark-changed" };
+  }
   try {
     await ports.dispatch(requestedEvent);
   } catch {
-    return 0;
+    return { result: 0, reason: "dispatch-threw" };
   }
-  if (destroyedNow(state)) return 0;
-  return 1;
+  if (destroyedNow(state)) {
+    return { result: 0, reason: "destroyed-after-dispatch" };
+  }
+  return { result: 1, reason: "accepted" };
 }
 
 async function closePendingAfterDispatch(
@@ -524,31 +569,58 @@ async function closePendingAfterDispatch(
   ports: ViewMenuGatePorts,
   committedBeforeOperation: ViewShape | null,
   budget: RepairBudget,
-  dispatched: number,
-): Promise<number> {
+  dispatched: ClickFinish,
+): Promise<ClickFinish> {
   if (!matchingPending(state)) return dispatched;
-  if (destroyedNow(state)) return 0;
+  if (destroyedNow(state)) return keepZero(dispatched, "destroyed");
   if (budget.used) {
     keepUnknown(state, gate, committedBeforeOperation);
-    return 0;
+    return keepZero(dispatched, "pending-budget");
   }
   await settle(state, gate, ports, null, committedBeforeOperation, budget);
-  if (destroyedNow(state)) return 0;
-  if (matchingPending(state) || state.install !== "known") return 0;
-  return dispatched;
+  if (destroyedNow(state)) return keepZero(dispatched, "destroyed");
+  if (matchingPending(state) || state.install !== "known") {
+    return keepZero(dispatched, "pending-after");
+  }
+  if (dispatched.result === 0) return dispatched;
+  return { result: 1, reason: "accepted" };
 }
 
-function dispatchAllowed(
+function keepZero(
+  dispatched: ClickFinish,
+  reason: ViewShortcutReason,
+): ClickFinish {
+  if (dispatched.result === 0) return dispatched;
+  return { result: 0, reason };
+}
+
+function dispatchBlock(
   state: GateState,
   shapeAtStart: ViewShape,
   requestedEvent: string,
-  outcome: Outcome,
-): boolean {
-  if (destroyedNow(state) || outcome !== "ok") return false;
-  if (state.committed !== shapeAtStart || state.install !== "known")
-    return false;
-  if (pendingNow(state)) return false;
-  return slotHasEvent(shapeAtStart, requestedEvent);
+  replaced: ShapeReplacement,
+): ViewShortcutReason | undefined {
+  if (destroyedNow(state)) return "destroyed";
+  if (replaced.outcome !== "ok") return replaced.failure;
+  if (state.committed !== shapeAtStart) return "committed-mismatch";
+  if (state.install !== "known") return "install-unknown";
+  if (pendingNow(state)) return "pending";
+  if (!slotHasEvent(shapeAtStart, requestedEvent)) return "event-absent";
+  return undefined;
+}
+
+function tracedClick(
+  ports: ViewMenuGatePorts,
+  event: string,
+  result: 0 | 1,
+  reason: ViewShortcutReason,
+): number {
+  try {
+    ports.trace?.gate(event, result, reason);
+  } catch {
+    return result;
+  }
+  return result;
 }
 
 function slotHasEvent(shape: ViewShape, event: string): boolean {
