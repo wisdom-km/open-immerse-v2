@@ -170,7 +170,8 @@ G1 全库、G2、G3、G14、以及 `pnpm run check` 的其余项，本阶段和�
 
 ## 证据链接
 
-- `docs/evidence/<本 PR 号>/`：本阶段无。没有命令。
+- `docs/evidence/<本 PR 号>/`：本阶段无。没有把日志写入仓库。
+- 2026-11-25：PR #238 的 node 检查里，Unit tests 失败。`docs/arch/11.md` 少了这一节原来就有的末尾空行，拼接结果比基线少一个换行。补上之后只跑了 `corepack pnpm exec vitest run tools/compare-spec-bytes/compare.test.ts`，14 通过，退出码 0。没有重跑全库 1015 项。
 
 ## 自检
 
