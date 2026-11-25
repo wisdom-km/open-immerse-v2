@@ -8,7 +8,7 @@
 
 - 现在已有的行为：Windows 菜单把原文、对照、译文登记成 `Ctrl+1`、`Ctrl+2`、`Ctrl+3`。这三项的 `MenuItem.click` 调用 `gate.click`，不直接 `dispatchMenu`。`gate.click` 在多条已有分支返回 0 时不调用 `ports.dispatch`。阅读屏只听自定义窗口事件，没有 `keydown`。工具栏走 `chooseView`，不经过这个 click。
 - 相关的节：[DESIGN.md](../../DESIGN.md) §4.10 的 11.1（2026-11-04 03:21 已批的系统菜单快捷键）、[docs/design-principles.md](../design-principles.md) P4、[ARCHITECTURE.md](../../ARCHITECTURE.md) §11（正文在 [docs/arch/11.md](../arch/11.md)）、[RULES.md](../../RULES.md) §4 调试模式与 §5 第 8 条、[docs/exec-plans/feature-reader-view-modes-e2-174.md](feature-reader-view-modes-e2-174.md) 的 H7。PRD 没有为这三键单列 AC，本计划不改 PRD。
-- 还没做的部分：没有记录能分开「物理按键没有进入 `MenuItem.click`」和「进入后 `gate.click` 返回 0」。session02 的 stdout 只有 CRLF，stderr 为空，不能当这种记录。
+- 还没做的部分：session02 的 stdout 只有 CRLF，stderr 为空，没有 click 或 gate 记录。缺行不能写成没有进入回调。
 
 ## 身份与分支
 
@@ -20,16 +20,17 @@ Draft PR 是 #238。基线是 `feature/reader-view-modes-e2-174`，并叠在 PR 
 
 ## 目标
 
-在默认关闭的主进程记录里，区分下面两支，或者明确写成观测不足。不把结果写成根因已定，也不写成快捷键 PASS。
+在默认关闭的主进程记录里，只对已经写下的成对 `click` 与 `gate` 作判定。缺 `click` 行写成观测不足，不写成没有进入回调。不把结果写成根因已定，也不写成快捷键 PASS。
 
-- 真实的 Ctrl+1、Ctrl+2 或 Ctrl+3 没有进入对应的 `MenuItem.click`。
-- 进入了该 click，并且 `gate.click` 返回 0。返回 1 时两支都不成立，停止，不改分发。
+- 有成对记录且 `result` 为 0：进入了该 click，gate 拒绝。`reason` 是已有分支。
+- 有成对记录且 `result` 为 1：两支都不成立，停止，不改分发。
+- 没有这对记录，或槽位不能唯一对应到某一步：观测不足。
 
 不改切换逻辑，不绕过 gate，不新增 renderer `keydown`，不把视图项改成直接 `dispatchMenu`。无可见界面变化。快捷键仍只走系统菜单加速键。
 
 ## 白名单
 
-本阶段只改下面四份。不改产品代码和测试。
+本阶段只改下面五份。不改产品代码和测试。
 
 | 阶段 | 路径 | 动作 |
 | --- | --- | --- |
@@ -94,26 +95,23 @@ Draft PR 是 #238。基线是 `feature/reader-view-modes-e2-174`，并叠在 PR 
 7. 非视图菜单项的 click 不写 `step:"click"`。
 8. 视图 click 的顺序是先 `click` 行，再 `gate` 行。`n` 从 1 起每次加 1。
 
-## 怎样读缺行
+## 怎样读记录
 
-缺 `click` 行不能单独写成「没有进入回调」。四条要同时成立，才能把某一次脚本动作判成没有进入 `MenuItem.click`：
+行为以 [docs/arch/11.md](../arch/11.md) 为准。这里只把判定写开。
 
-- stdout 里有且只有一行 `armed`，并且它在任何 `click` 行之前。
-- 有且只有一行 `closed`，并且它是最后一行。`dropped` 是 0。
-- `n` 从 1 连续加到最后一行，中间没有空号。
-- 操作笔记按顺序写了菜单「原文」、Ctrl+1、Ctrl+2、Ctrl+3。`click` 行的槽位序列能按这个顺序对齐。进程是用户正常关闭的，收走的是从启动到退出的整段 stdout。
+缺 `click` 行一律不能推出没有进入 `MenuItem.click`。`armed`、`closed`、连续的 `n`、`dropped` 为 0，以及写入时没有同步抛错，都不能证明 stdout 已经收全，也不能证明关闭之后没有还没写完的记录。这些行可以留下，但不把缺行收成负向结论。不另做 flush 或传输。
 
-少一条，这次就是观测不足。不解释成系统抢走了键，也不解释成焦点在页码框。
+本批只用已经写下的成对记录：
 
-对齐之后：
-
-| 记录 | 判定 |
+| 已有记录 | 判定 |
 | --- | --- |
-| 菜单动作对上 `click` 加 `gate`，某个 Ctrl 对不上任何 `click` | 该键没有进入 `MenuItem.click` |
-| 某个 Ctrl 对上 `click`，且 `gate.result` 为 0 | 进了回调，gate 拒绝。`reason` 是已有分支 |
-| 某个 Ctrl 对上 `click`，且 `result` 为 1 | 两支都不成立。停止，不改分发 |
-| 菜单动作也对不上 `click` | 这次鼠标也没进回调。不能单判快捷键。不改写 session02 的 UNCONFIRMED |
-| 没有 `armed`，或没有位于末尾的 `closed`，或 `dropped` 不是 0，或序号断了 | 观测不足 |
+| 某一步对上唯一的 `click` 加紧随的 `gate`，且 `result` 为 0 | 这一步进入了回调，gate 拒绝。`reason` 是已有分支 |
+| 同上面，且 `result` 为 1 | 两支都不成立。停止，不改分发 |
+| 没有 `click`，或只有 `click` 没有 `gate`，或同一步能对上多于一行 | 这一步观测不足 |
+
+四步的槽位依次是 `original`、`original`、`contrast`、`translation`。前两步是菜单「原文」和 Ctrl+1，记录里没有动作来源。收齐的槽位若是 `original`、`contrast`、`translation`，同时符合「菜单有、Ctrl+1 无」和「菜单无、Ctrl+1 有」。这两种都成立时，菜单和 Ctrl+1 都是观测不足。不能用 Ctrl+2 或 Ctrl+3 的记录去决定缺的是哪一个 `original`。
+
+操作者在每步之后写下当时看见的栏位，来源是操作者本人，不是 stdout。它只保留这一步结束时人看见什么。它不能把上面两种分法收成一种，也不能把缺的 `click` 行写成没有进入回调。不解释成系统抢走了键，也不解释成焦点在页码框。session02 的菜单仍是 UNCONFIRMED。
 
 ## 规格依据
 
@@ -133,9 +131,9 @@ PRD、RULES、DESIGN、`docs/design-principles.md` 不改。
 | --- | --- | --- | --- |
 | 1 | 第一笔只提交本文件 | 本阶段提交 | 提交说明 `docs: 写下视图快捷键诊断计划` |
 | 2 | 第二笔写入 §11、一条 manifest 替换、changelog、12:24 台账 | 本阶段提交 | 提交说明 `docs: 写明视图快捷键临时记录的边界` |
-| 3 | Forge 审本计划。通过前不写 main 与测试 | 未发生 | 无 |
+| 3 | Forge 审本计划。通过前不写 main 与测试 | 已审。两项必要闭合在本提交。复审未发生 | 无 |
 | 4 | 通过后只改白名单里的六份代码和测试 | 未发生 | 无 |
-| 5 | 按下面的命令各跑一次。失败只补失败的那一个文件或那一次构建，不整链重跑 | 未发生 | 无 |
+| 5 | 按下面的命令表。构建只有一次，失败不补第二次 | 未发生 | 无 |
 | 6 | 真机另由 Forge 安排。本仓库的 Cloud 不启动 Electron，不连接用户机 | 未发生 | 无 |
 
 ## 实现阶段的命令
@@ -144,9 +142,13 @@ PRD、RULES、DESIGN、`docs/design-principles.md` 不改。
 
 工作目录是仓库根，除非某条写了目录。每条的 stdout 和 stderr 原样留在 `docs/evidence/<本 PR 号>/commands.md`。退出码照写。
 
-1. G1 的限定范围，一次：`corepack pnpm exec prettier --check apps/desktop/src/main/view-shortcut-trace.ts apps/desktop/src/main/view-menu-gate.ts apps/desktop/src/main/library-wiring.ts apps/desktop/test/view-shortcut-trace.test.ts apps/desktop/test/view-menu-gate.test.ts apps/desktop/test/view-menu-wiring.test.ts`。G1 在 [docs/arch/13.md](../arch/13.md) 是 Prettier 与 ruff format。本改动没有 Python，不跑 ruff。全库 `pnpm exec prettier --check .` 与 `pnpm run check` 不在这次额度里。
-2. 三份测试，一次：`corepack pnpm exec vitest run apps/desktop/test/view-shortcut-trace.test.ts apps/desktop/test/view-menu-gate.test.ts apps/desktop/test/view-menu-wiring.test.ts`。失败时只把失败的那一个文件再跑一次。不跑 `pnpm test`。
-3. 构建，一次，并且只在前两条退出码为 0 之后：在 `apps/desktop` 执行 `corepack pnpm run build`。这是该包的 `tsc` 与 `scripts/bundle-renderer.mjs`。它不启动 Electron。不用 `pnpm start`，因为 start 会再构建并启动。这次构建验证主进程类型能编过。它不是用户 Windows 上的 Electron 45.2.1 包，也不拷到用户机。
+下表是全部本地命令额度。失败补跑不能把构建加成第二次。G1 在 [docs/arch/13.md](../arch/13.md) 是 Prettier 与 ruff format。本改动没有 Python，不跑 ruff。
+
+| 项 | 命令 | 最多次数 |
+| --- | --- | --- |
+| G1 限定 | `corepack pnpm exec prettier --check apps/desktop/src/main/view-shortcut-trace.ts apps/desktop/src/main/view-menu-gate.ts apps/desktop/src/main/library-wiring.ts apps/desktop/test/view-shortcut-trace.test.ts apps/desktop/test/view-menu-gate.test.ts apps/desktop/test/view-menu-wiring.test.ts` | 1。失败即停。不跑全库 Prettier，不跑 `pnpm run check` |
+| 测试 | `corepack pnpm exec vitest run apps/desktop/test/view-shortcut-trace.test.ts apps/desktop/test/view-menu-gate.test.ts apps/desktop/test/view-menu-wiring.test.ts` | 这三条一起 1 次。若有文件失败，只把该文件再跑 1 次；已通过的文件不跑。不跑 `pnpm test` |
+| 构建 | 在 `apps/desktop` 执行 `corepack pnpm run build` | 1。只在前两项都是退出码 0 之后。失败不补第二次。不用 `pnpm start`。这不是用户 Windows 上的 Electron 包，也不启动 Electron |
 
 G1 全库、G2、G3、G14、以及 `pnpm run check` 的其余项，本阶段和上述限定命令都尚未运行。推送之后仓库自己的 CI 若启动，与这些本地未跑分账，不写成诊断通过。
 
@@ -154,7 +156,7 @@ G1 全库、G2、G3、G14、以及 `pnpm run check` 的其余项，本阶段和�
 
 没有在本机打开。旧两次启动的 1/1 不重置。新的一次要由 Forge 另安排，使用新的 userdata，环境变量恰好为 `1`，用已经构建好的 Windows 包，不用会再次构建的 start。
 
-用户操作：打开合成两页 PDF。每步前用工具栏回到对照，再点 PDF 页面，笔记写「焦点动作：点 PDF 页」。不点页码框。然后依次点「视图 › 原文」、按 Ctrl+1、按 Ctrl+2、按 Ctrl+3。用户正常关闭。之后只收整段 stdout。判定用上面的表。本计划不执行这些步骤。
+用户操作：打开合成两页 PDF。每步前用工具栏回到对照，再点 PDF 页面，笔记写「焦点动作：点 PDF 页」以及这一步结束时看见的栏位。不点页码框。然后依次点「视图 › 原文」、按 Ctrl+1、按 Ctrl+2、按 Ctrl+3。用户正常关闭。之后只收整段 stdout。判定用「怎样读记录」。看见的栏位来自操作者，不写入 trace。本计划不执行这些步骤。
 
 ## 拆除
 
@@ -166,7 +168,7 @@ G1 全库、G2、G3、G14、以及 `pnpm run check` 的其余项，本阶段和�
 | --- | --- | --- | --- |
 | 「OK，按照你的建议推进就行。」范围是加两处临时记录、限定验证和构建，以及以后一次人工对照。不修切换逻辑 | 实施许可。12:05 的静态设计许可不代替本行 | 2026-11-25 12:24 | Wisdom，[docs/approvals.md](../approvals.md) 对应行，评论 7152823577 |
 | 不记 postCheck 的命中个数和 checked | 避免一块会串到下一次 click 的暂存。原因 `post-check-false` 仍保留 | 2026-11-25 | 本任务对错误归因的限制，不是新的产品决定 |
-| 缺 `click` 行要同时有 `armed`、末尾 `closed`、连续序号和 `dropped` 为 0 | 写入失败或没收全 stdout 时，不能把缺行写成没进回调 | 2026-11-25 | 本任务要求的正控制 |
+| 缺 `click` 行一律不作「没进回调」。`armed`、`closed`、连续序号和 `dropped` 为 0 不证明收全。重复的 `original` 不能唯一对应时，菜单和 Ctrl+1 都是观测不足 | Forge 审查 PR #238 计划后的必要闭合。不是新的产品决定，也不增加字段 | 2026-11-25 | Forge 审查，非业主决定 |
 
 ## 证据链接
 
@@ -185,9 +187,9 @@ Forge 审查通过后，接手的人先完整读 `PRD.md`、`ARCHITECTURE.md`、
 本任务受 UI 与业务核心解耦约束：ARCHITECTURE.md §2.1 与 RULES.md §8。改 UI 不得改变核心行为，也不得让核心测试失败；seam 不够用时先停下来说明缺什么。
 
 任务类型：不适用（主进程临时观测，无可见 UI，不改 core / seam 契约）。
-目标：区分 Ctrl+1/2/3 未进入 MenuItem.click，或进入后 gate.click 返回 0。缺行而正控制不齐时写成观测不足。不改切换，不判根因已定，不写成快捷键 PASS。
-验收：本文件「不变量」八条和「怎样读缺行」。行为以 docs/arch/11.md 新增小节为准。
+目标：有成对的 click 与 gate 记录时，区分进入后 gate.click 返回 0，或返回 1。缺 click 行只写观测不足，不写成没进回调。不改切换，不判根因已定，不写成快捷键 PASS。
+验收：本文件「不变量」八条和「怎样读记录」。行为以 docs/arch/11.md 新增小节为准。
 分支：feature/view-shortcut-trace。基线是 feature/reader-view-modes-e2-174 的 75c17c773ef70fef64c63c078f1b4e97aa2b537f，tree bde902c43048919aec882414d2f18ab02fa0a47b。Draft，叠 PR #237。不 Ready，不合入，不发版。
-只改本文件白名单的六份代码和测试。先有本计划这两笔文档。不改 PRD、RULES、DESIGN、design-principles、contracts、renderer、preload、core、shell.tsx。
-命令只跑本文件「实现阶段的命令」三条，各一次。失败只补失败项。不启动 Electron，不连接用户机，不重置旧的 1/1。
+只改本文件白名单的六份代码和测试。不改 PRD、RULES、DESIGN、design-principles、contracts、renderer、preload、core、shell.tsx。
+命令只跑本文件「实现阶段的命令」那张表。构建最多一次，失败不补。测试只对失败文件再跑一次，已通过的不跑。不启动 Electron，不连接用户机，不重置旧的 1/1。
 ```
