@@ -512,7 +512,8 @@ it("writes click-rejected when the gate promise rejects", async () => {
     await control.task;
     control.rejectClick = new Error("click rejected");
     const click = menuClick("对照");
-    click();
+    const pending = click();
+    if (pending instanceof Promise) await pending;
     await new Promise((resolve) => setImmediate(resolve));
     expect(heard.lines.map((line) => line.step)).toEqual([
       "armed",
@@ -568,22 +569,25 @@ type TraceLine = {
 };
 
 function listenTrace(): { readonly lines: TraceLine[]; stop: () => void } {
-  const lines: TraceLine[] = [];
-  const original = process.stdout.write;
-  process.stdout.write = ((chunk: string | Uint8Array) => {
-    const text =
-      typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
-    for (const row of text.split("\n")) {
-      if (!row.includes('"step"')) continue;
-      lines.push(JSON.parse(row) as TraceLine);
-    }
-    if (typeof chunk === "string") return original.call(process.stdout, chunk);
-    return original.call(process.stdout, chunk);
-  }) as typeof process.stdout.write;
+  const spy = vi.spyOn(process.stdout, "write");
   return {
-    lines,
+    get lines(): TraceLine[] {
+      const lines: TraceLine[] = [];
+      for (const call of spy.mock.calls) {
+        const chunk = call[0];
+        const text =
+          typeof chunk === "string"
+            ? chunk
+            : Buffer.from(chunk).toString("utf8");
+        for (const row of text.split("\n")) {
+          if (!row.includes('"step"')) continue;
+          lines.push(JSON.parse(row) as TraceLine);
+        }
+      }
+      return lines;
+    },
     stop() {
-      process.stdout.write = original;
+      spy.mockRestore();
     },
   };
 }

@@ -56,9 +56,9 @@ export function createViewShortcutTrace(
   } => {
     const n = next;
     next += 1;
-    let ok = false;
+    let ok: boolean;
     try {
-      ok = write(`${JSON.stringify({ n, ...fields })}\n`) === true;
+      ok = wroteExactlyTrue(write(`${JSON.stringify({ n, ...fields })}\n`));
     } catch {
       ok = false;
     }
@@ -80,7 +80,7 @@ export function createViewShortcutTrace(
     gate(event, result, reason) {
       const slot = slotOf(event);
       if (slot === undefined || !reasonSet.has(reason)) return undefined;
-      if (result !== 0 && result !== 1) return undefined;
+      if (!isRecordedResult(result)) return undefined;
       return emit({ step: "gate", slot, result, reason }).n;
     },
     markClosed() {
@@ -102,4 +102,12 @@ function slotOf(event: string): ViewShortcutSlot | undefined {
 
 function writeStdout(line: string): boolean {
   return process.stdout.write(line);
+}
+
+function wroteExactlyTrue(value: unknown): value is true {
+  return value === true;
+}
+
+function isRecordedResult(result: unknown): result is 0 | 1 {
+  return result === 0 || result === 1;
 }
