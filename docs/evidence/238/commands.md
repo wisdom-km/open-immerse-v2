@@ -87,3 +87,106 @@ Breaking changes might not follow SemVer, please pin Vitest's version when using
 ## 未跑
 
 全库 Prettier、ruff、`pnpm test`、`pnpm run check`、G2、G3、G14，以及 Electron 启动。没有连接用户机。
+
+## 13:14 格式补验
+
+这一节追加在原记录之后。上面的 Prettier 退出码 1、随后仍跑的 Vitest、以及当时没有构建，都不改写。
+
+授权是 Wisdom 2026-11-25 13:14 原话，评论 https://github.com/wisdom-km/open-immerse-v2/pull/238#issuecomment-7153639180 。这不是旧额度重置。Forge 后来只读确认 diff，不另计用户许可。
+
+### 单文件格式化尝试
+
+命令：
+
+```
+corepack pnpm exec prettier --write apps/desktop/src/main/view-shortcut-trace.ts
+```
+
+- 开始：2026-11-25T05:20:52Z
+- 结束：2026-11-25T05:20:54Z
+- 退出码：0
+- stdout SHA256：`1e2e9b1bcb3929d7095a2823fb054f5779449eaf22f9c7c2bc239315d3b36221`
+- stderr SHA256：`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
+
+stdout：
+
+```
+apps/desktop/src/main/view-shortcut-trace.ts 60ms
+```
+
+stderr 为空。
+
+这次 `--write` 不是六文件 `--check`，也不占那 1 次核查。写出的 diff 只有 `emit` 参数列表换行，以及该参数后的一个尾逗号。当时用 token 完全相等自行停住，并把文件还原。该判据不是 13:14 原话。六文件核查和构建都没有因此开始。
+
+### 套用已审 hunk
+
+没有再跑 formatter。对已还原的 `40b03b99e80df360b6c2ed8301fb2539d932828b` 执行 `git apply` 保存的那份 diff。`git apply --check` 退出码 0，`git apply` 退出码 0。随后的 `git diff` hunk 与那份已审 diff 逐字相同。`git status` 只有 `apps/desktop/src/main/view-shortcut-trace.ts`。另外五份源文件和测试没有改动。
+
+### 六文件 Prettier --check
+
+本批准下这一次是 1/1。旧的 1/1 退出码 1 仍保留。
+
+命令：
+
+```
+corepack pnpm exec prettier --check apps/desktop/src/main/view-shortcut-trace.ts apps/desktop/src/main/view-menu-gate.ts apps/desktop/src/main/library-wiring.ts apps/desktop/test/view-shortcut-trace.test.ts apps/desktop/test/view-menu-gate.test.ts apps/desktop/test/view-menu-wiring.test.ts
+```
+
+- 开始：2026-11-25T05:24:05Z
+- 结束：2026-11-25T05:24:06Z
+- 退出码：0
+- stdout SHA256：`17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20`
+- stderr SHA256：`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
+
+stdout：
+
+```
+Checking formatting...
+All matched files use Prettier code style!
+```
+
+stderr 为空。
+
+### 构建
+
+只在上一节退出码确认为 0 之后开始。工作目录是 `apps/desktop`。原计划这一项从 0/1 用成 1/1。
+
+命令：
+
+```
+corepack pnpm run build
+```
+
+- 开始：2026-11-25T05:24:26Z
+- 结束：2026-11-25T05:24:34Z
+- 退出码：0
+- stdout SHA256：`170792ac62c4690c7937b5044bea0166a74c071cfe2db15843e3a95672db3ea7`
+- stderr SHA256：`a2de5c102b6a91ba3cb9cbc0b7d7bab489c570d0e5f743daf5fec7ba6bee0e31`
+
+stdout：
+
+```
+
+> desktop@ build /agent/repos/open-immerse-v2/apps/desktop
+> tsc -p ../../packages/kernel/tsconfig.build.json && tsc -p ../../packages/contracts/tsconfig.build.json && tsc -p ../../packages/platform-node/tsconfig.build.json && tsc -p ../../packages/features/library/tsconfig.build.json && tsc -p ../../packages/features/settings/tsconfig.build.json && tsc -p ../../packages/features/ingest/tsconfig.build.json && tsc -p tsconfig.main.json && tsc -p tsconfig.preload.json && node scripts/use-cjs-preload.mjs && node scripts/bundle-renderer.mjs
+
+```
+
+stderr：
+
+```
+
+  src/renderer/main.js  2.3mb ⚠️
+
+⚡ Done in 102ms
+```
+
+没有 `pnpm start`，没有启动 Electron。构建没有改已跟踪文件。
+
+### Vitest stdout 不能独核
+
+上面 Vitest 一节登记的 stdout SHA256 是 `64555d04458c183b1874d2c1fe6c7720670c1b95750a827670c8233d184fbea0`。该节代码块里的转写对不上：不含末尾换行是 `3a4f1ffa76b1dde3829c9a68ac9a8abf47679d1437063dfbfa3c79c92faba35c`，补一个换行是 `21bf9df440386822b6a104fbcd26dc21961d178ed65db821ef90fab97dd8d285`。那是转写，不是原始字节流。没有重跑测试去恢复。59 项通过的观察和原哈希登记都保留。Prettier 的 stdout、stderr，以及 Vitest 的 stderr，与各自登记的 SHA256 一致。
+
+### 本轮未跑
+
+三文件 59 项测试、全库 Prettier、`pnpm test`、`pnpm run check`、lint、typecheck、G2、G3、G14、Electron。没有安装或下载。没有连接用户机。

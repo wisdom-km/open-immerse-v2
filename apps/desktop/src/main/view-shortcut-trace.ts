@@ -48,7 +48,9 @@ export function createViewShortcutTrace(
   let armed = false;
   let closed = false;
 
-  const emit = (fields: Readonly<Record<string, string | number>>): {
+  const emit = (
+    fields: Readonly<Record<string, string | number>>,
+  ): {
     readonly n: number;
     readonly ok: boolean;
   } => {
