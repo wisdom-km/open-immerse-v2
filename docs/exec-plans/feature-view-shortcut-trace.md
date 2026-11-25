@@ -14,7 +14,7 @@
 
 父提交必须是 `75c17c773ef70fef64c63c078f1b4e97aa2b537f`，tree `bde902c43048919aec882414d2f18ab02fa0a47b`。这是 PR #237 的冻结候选，分支 `feature/reader-view-modes-e2-174`。本分支 `feature/view-shortcut-trace` 从该提交拉出。不把提交加到那条分支上，不从缺少这份实现的 `main` 开工。
 
-Draft PR 的基线是 `feature/reader-view-modes-e2-174`，并叠在 PR #237 上。diff 只应含本分支的诊断增量。PR #237 仍是 Draft。本 PR 也保持 Draft。不 Ready，不合入，不发版。
+Draft PR 是 #238。基线是 `feature/reader-view-modes-e2-174`，并叠在 PR #237 上。diff 只应含本分支的诊断增量。PR #237 仍是 Draft。本 PR 也保持 Draft。不 Ready，不合入，不发版。
 
 2026-11-25 12:05 的 [评论 7152527730](https://github.com/wisdom-km/open-immerse-v2/pull/237#issuecomment-7152527730) 只批准静态诊断设计。它不是写代码、测试或构建的许可。实施许可是 12:24 的 [评论 7152823577](https://github.com/wisdom-km/open-immerse-v2/pull/237#issuecomment-7152823577)。本文件先交 Forge 审。审查通过之后，按 12:24 已批范围直接写实现，不再向用户要一次重复批准。
 
