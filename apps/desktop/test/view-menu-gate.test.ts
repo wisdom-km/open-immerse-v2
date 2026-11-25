@@ -1,11 +1,19 @@
 import { expect, it } from "vitest";
 
-import { viewOriginalEvent } from "../src/main/library-menu.js";
+import {
+  viewBilingualEvent,
+  viewOriginalEvent,
+} from "../src/main/library-menu.js";
 import {
   createViewMenuGate,
   type StageMark,
   type ViewMenuCandidateGate,
+  type ViewMenuGatePorts,
 } from "../src/main/view-menu-gate.js";
+import {
+  createViewShortcutTrace,
+  type ViewShortcutTrace,
+} from "../src/main/view-shortcut-trace.js";
 import {
   viewSlotDescriptions,
   type ViewShape,
@@ -777,6 +785,207 @@ it("rolls back only the call whose seal is still current when accept fails", asy
   ).resolves.toBeUndefined();
   expect(opened.gate.committed).toBe("translation");
   expect(opened.gate.install).toBe("unknown");
+});
+
+type TraceLine = {
+  readonly n: number;
+  readonly step: string;
+  readonly slot?: string;
+  readonly result?: number;
+  readonly reason?: string;
+};
+
+function openTraced(
+  script: ReplaceScript = {},
+): Opened & { readonly lines: TraceLine[] } {
+  const lines: TraceLine[] = [];
+  const recorder = createViewShortcutTrace((line) => {
+    lines.push(JSON.parse(line) as TraceLine);
+    return true;
+  });
+  const calls: ViewSlotDescription[][] = [];
+  const dispatches: string[] = [];
+  const gate = createViewMenuGate(
+    tracedPorts(script, calls, dispatches, recorder),
+  );
+  return { gate, calls, dispatches, lines };
+}
+
+function tracedPorts(
+  script: ReplaceScript,
+  calls: ViewSlotDescription[][],
+  dispatches: string[],
+  trace: ViewShortcutTrace,
+): ViewMenuGatePorts {
+  return {
+    replace: async (descriptions) => {
+      const copy = descriptions.map((slot) => ({ ...slot }));
+      calls.push(copy);
+      const index = calls.length;
+      if (script.onReplace) await script.onReplace(copy, index);
+      const mode = script.fail?.(copy, index);
+      if (mode === "throw") throw new Error("replace failed");
+      if (mode === "reject") {
+        await Promise.reject(new Error("replace rejected"));
+      }
+    },
+    postCheck: async () => {
+      const last = calls.at(-1);
+      const index = calls.length;
+      if (last && script.onPostCheck) await script.onPostCheck(last, index);
+      if (!last || !script.postCheck) return true;
+      return script.postCheck(last, index);
+    },
+    dispatch: async (event) => {
+      dispatches.push(event);
+      if (script.onDispatch) await script.onDispatch(event);
+    },
+    trace,
+  };
+}
+
+it("returns 0 for an uncommitted view click without calling replace", async () => {
+  const opened = openTraced();
+  let ran = false;
+  queueMicrotask(() => {
+    ran = true;
+  });
+  const pending = opened.gate.click(viewOriginalEvent);
+  expect(opened.lines).toEqual([
+    {
+      n: 1,
+      step: "gate",
+      slot: "original",
+      result: 0,
+      reason: "uncommitted",
+    },
+  ]);
+  expect(ran).toBe(false);
+  await expect(pending).resolves.toBe(0);
+  expect(opened.calls).toEqual([]);
+});
+
+it("reports destroyed and does not report busy when both are true", async () => {
+  let watch = false;
+  let nested: Promise<number> = Promise.resolve(1);
+  const opened = openTraced({
+    onReplace: () => {
+      if (!watch) return Promise.resolve();
+      opened.gate.setDestroyed(true);
+      nested = opened.gate.click(viewOriginalEvent);
+      return Promise.resolve();
+    },
+  });
+  await acceptShape(opened, "original", "s");
+  watch = true;
+  await expect(opened.gate.click(viewOriginalEvent)).resolves.toBe(0);
+  await expect(nested).resolves.toBe(0);
+  expect(opened.lines.at(-2)).toMatchObject({
+    step: "gate",
+    reason: "destroyed",
+    result: 0,
+  });
+});
+
+it("reports busy when a second click starts during replace", async () => {
+  let watch = false;
+  let nested: Promise<number> = Promise.resolve(1);
+  const opened = openTraced({
+    onReplace: () => {
+      if (!watch) return Promise.resolve();
+      nested = opened.gate.click(viewBilingualEvent);
+      return Promise.resolve();
+    },
+  });
+  await acceptShape(opened, "original", "s");
+  watch = true;
+  await expect(opened.gate.click(viewOriginalEvent)).resolves.toBe(1);
+  await expect(nested).resolves.toBe(0);
+  expect(opened.lines.some((line) => line.reason === "busy")).toBe(true);
+  expect(opened.lines.at(-1)).toMatchObject({
+    reason: "accepted",
+    result: 1,
+    slot: "original",
+  });
+});
+
+it("records pending only after settle finishes", async () => {
+  const hold = deferred();
+  const entered = deferred();
+  let phase = "setup";
+  let sawExtra = false;
+  const opened = openTraced({
+    onReplace: async (descriptions) => {
+      if (phase !== "click") {
+        if (same(descriptions, "translation")) await opened.gate.noteNone("s");
+        if (same(descriptions, "none") && !sawExtra) {
+          sawExtra = true;
+          await opened.gate.noteNone("s2");
+        }
+        return;
+      }
+      entered.resolve();
+      await hold.promise;
+    },
+  });
+  await acceptShape(opened, "original", "s");
+  await opened.gate.submit("translation", "s");
+  expect(opened.gate.pendingMark).toBe("s2");
+  phase = "click";
+  const pending = opened.gate.click(viewOriginalEvent);
+  await entered.promise;
+  expect(opened.lines.filter((line) => line.step === "gate")).toEqual([]);
+  hold.resolve();
+  await expect(pending).resolves.toBe(0);
+  expect(opened.lines.at(-1)).toMatchObject({
+    step: "gate",
+    slot: "original",
+    result: 0,
+    reason: "pending",
+  });
+});
+
+it("does not keep a replace failure for the next click", async () => {
+  let mode: "ok" | "throw" = "ok";
+  const opened = openTraced({
+    fail: () => (mode === "throw" ? "throw" : undefined),
+  });
+  await acceptShape(opened, "contrast", "s");
+  mode = "throw";
+  await expect(opened.gate.click(viewBilingualEvent)).resolves.toBe(0);
+  expect(opened.lines.at(-1)).toMatchObject({
+    reason: "replace-threw",
+    result: 0,
+    slot: "contrast",
+  });
+  mode = "ok";
+  await expect(opened.gate.click(viewBilingualEvent)).resolves.toBe(1);
+  expect(opened.lines.at(-1)).toMatchObject({
+    reason: "accepted",
+    result: 1,
+  });
+});
+
+it("keeps the click result when the trace function throws", async () => {
+  const calls: ViewSlotDescription[][] = [];
+  const dispatches: string[] = [];
+  const gate = createViewMenuGate(
+    tracedPorts({}, calls, dispatches, {
+      arm() {
+        return undefined;
+      },
+      click() {
+        return undefined;
+      },
+      gate(): number | undefined {
+        throw new Error("trace failed");
+      },
+      markClosed: () => true,
+    }),
+  );
+  await gate.submit("original", "s");
+  await expect(gate.click(viewOriginalEvent)).resolves.toBe(1);
+  expect(dispatches).toEqual([viewOriginalEvent]);
 });
 
 function deferred(): { promise: Promise<void>; resolve: () => void } {
