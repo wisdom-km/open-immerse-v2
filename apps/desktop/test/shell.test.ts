@@ -232,6 +232,58 @@ it("changes the open reader once per view event and ignores events after leave",
   }
 });
 
+it("submits the read epoch and the next generation for each reported slot", async () => {
+  const { createReaderViewReporter } = await import("../src/renderer/shell.js");
+  const calls: unknown[] = [];
+  const report = createReaderViewReporter(() => ({
+    reportViewMenu(input: {
+      readonly op: string;
+      readonly generation?: number;
+    }) {
+      calls.push(input);
+      if (input.op === "read") {
+        return Promise.resolve({ ok: true as const, value: { epoch: 7 } });
+      }
+      if (input.generation === 1) {
+        return Promise.resolve({
+          ok: false as const,
+          error: { code: "rejected" },
+        });
+      }
+      return Promise.resolve({ ok: true as const, value: { epoch: 7 } });
+    },
+  }));
+  report("original");
+  report("contrast");
+  createReaderViewReporter(() => undefined)("translation");
+  await settled();
+  expect(calls).toEqual([
+    { op: "read" },
+    { op: "submit", mode: "original", epoch: 7, generation: 1 },
+    { op: "read" },
+    { op: "submit", mode: "contrast", epoch: 7, generation: 2 },
+  ]);
+  const failed: unknown[] = [];
+  const rejected = createReaderViewReporter(() => ({
+    reportViewMenu(input: unknown) {
+      failed.push(input);
+      return Promise.resolve({
+        ok: false as const,
+        error: { code: "rejected" },
+      });
+    },
+  }));
+  rejected("translation");
+  await settled();
+  expect(failed).toEqual([{ op: "read" }]);
+});
+
+async function settled(): Promise<void> {
+  for (let turn = 0; turn < 12; turn += 1) {
+    await Promise.resolve();
+  }
+}
+
 function fixtureBits(place: string): void {
   const host = window as unknown as {
     oi?: { library?: object; ingest?: object };

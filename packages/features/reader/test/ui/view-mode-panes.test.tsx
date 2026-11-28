@@ -129,6 +129,52 @@ it("keeps one page column, page, history, and zoom across modes", async () => {
   expect(seen.opens).toBe(2);
 });
 
+it("reports the slot when the reader opens and when the slot changes", async () => {
+  const reported: string[] = [];
+  const onReportView = (mode: string): void => {
+    reported.push(mode);
+  };
+  let nav: ReaderNav | undefined;
+  const seen = { opens: 0, writes: 0 };
+  const view = render(
+    <ReaderScreen
+      id="paper"
+      title="Paper"
+      client={client(seen)}
+      onLeave={() => undefined}
+      onReportView={onReportView}
+      onBindNav={(next) => {
+        nav = next;
+      }}
+    />,
+  );
+  expect(reported).toEqual(["original"]);
+  expect(await screen.findByText("第 1 / 3 页")).toBeTruthy();
+  fireEvent.click(screen.getByRole("radio", { name: "对照" }));
+  fireEvent.click(screen.getByRole("radio", { name: "译文" }));
+  fireEvent.click(screen.getByRole("link", { name: "切到原文（Ctrl+1）" }));
+  if (nav === undefined) throw new Error("nav");
+  nav.viewContrast();
+  expect(reported).toEqual([
+    "original",
+    "contrast",
+    "translation",
+    "original",
+    "contrast",
+  ]);
+  view.rerender(
+    <ReaderScreen
+      id="next"
+      title="Next"
+      client={client(seen)}
+      onLeave={() => undefined}
+      onReportView={onReportView}
+    />,
+  );
+  expect(reported.at(-1)).toBe("original");
+  expect(await screen.findByRole("radio", { name: "原文" })).toBeTruthy();
+});
+
 it("does not replace loading or an error with the empty state", async () => {
   let release: ((value: { ok: true }) => void) | undefined;
   const pending = new Promise<{ ok: true }>((resolve) => {

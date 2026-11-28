@@ -42,6 +42,9 @@ type MenuNav = {
 
 export function Shell(): ReactElement {
   const [openId, setOpenId] = useState<string | undefined>(undefined);
+  const [reportView] = useState(() =>
+    createReaderViewReporter(readViewMenuShell),
+  );
   const [title, setTitle] = useState("");
   const leaveRef = useRef<(() => void) | undefined>(undefined);
   const navRef = useRef<MenuNav | undefined>(undefined);
@@ -93,6 +96,7 @@ export function Shell(): ReactElement {
           client={client}
           onBindLeave={bindLeave}
           onBindNav={bindNav}
+          onReportView={reportView}
           onLeave={() => {
             leaveRef.current = undefined;
             navRef.current = undefined;
@@ -143,6 +147,61 @@ function zoomCommand(
 ): (() => void) | undefined {
   if (!Object.hasOwn(zoomActions, type)) return undefined;
   return nav?.[zoomActions[type as keyof typeof zoomActions]];
+}
+
+function readViewMenuShell(): ViewMenuShell | undefined {
+  const host: { oi?: { readonly shell?: ViewMenuShell } } = window;
+  return host.oi?.shell;
+}
+
+export type ReaderViewSlot = "original" | "contrast" | "translation";
+
+type ViewMenuRead = { readonly op: "read" };
+
+type ViewMenuSubmit = {
+  readonly op: "submit";
+  readonly mode: ReaderViewSlot;
+  readonly epoch: number;
+  readonly generation: number;
+};
+
+type ViewMenuResult =
+  | { readonly ok: true; readonly value: { readonly epoch: number } }
+  | { readonly ok: false; readonly error: { readonly code: string } };
+
+type ViewMenuShell = {
+  reportViewMenu(input: ViewMenuRead | ViewMenuSubmit): Promise<ViewMenuResult>;
+};
+
+export function createReaderViewReporter(
+  readShell: () => ViewMenuShell | undefined,
+): (mode: ReaderViewSlot) => void {
+  let generation = 0;
+  let tail: Promise<void> = Promise.resolve();
+  return (mode) => {
+    generation += 1;
+    const issued = generation;
+    tail = tail
+      .then(() => deliverView(readShell, mode, issued))
+      .catch(() => undefined);
+  };
+}
+
+async function deliverView(
+  readShell: () => ViewMenuShell | undefined,
+  mode: ReaderViewSlot,
+  generation: number,
+): Promise<void> {
+  const shell = readShell();
+  if (shell === undefined) return;
+  const read = await shell.reportViewMenu({ op: "read" });
+  if (!read.ok) return;
+  await shell.reportViewMenu({
+    op: "submit",
+    mode,
+    epoch: read.value.epoch,
+    generation,
+  });
 }
 
 function selectedTitle(): string {

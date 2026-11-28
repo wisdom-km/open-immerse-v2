@@ -343,14 +343,38 @@ function sameChecked(actual: unknown, expected: unknown): boolean {
   return actual === expected;
 }
 
-function collectItems(menu: Menu): readonly MenuItem[] {
+function collectItems(menu: {
+  readonly items: readonly MenuItem[];
+}): readonly MenuItem[] {
   const found: MenuItem[] = [];
   for (const item of menu.items) {
     found.push(item);
-    if (item.submenu === undefined) continue;
-    found.push(...collectItems(item.submenu));
+    const nested = childMenu(item);
+    if (nested === undefined) continue;
+    found.push(...collectItems(nested));
   }
   return found;
+}
+
+// Electron 45 在没有子菜单时把 submenu 做成 null，类型却是 Menu | undefined。
+// 按对象展开会抛错，postCheck 失败，submit 履行后仍不留下已提交形状。
+function childMenu(
+  item: MenuItem,
+): { readonly items: readonly MenuItem[] } | undefined {
+  const nested: unknown = item.submenu;
+  if (!hasMenuItems(nested)) return undefined;
+  return nested;
+}
+
+function hasMenuItems(
+  value: unknown,
+): value is { readonly items: readonly MenuItem[] } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "items" in value &&
+    Array.isArray(value.items)
+  );
 }
 
 function dispatchMenu(eventName: string): Promise<void> {
