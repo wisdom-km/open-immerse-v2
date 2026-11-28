@@ -19,7 +19,7 @@ type FakeItem = {
   type?: string;
   checked?: boolean;
   click?: () => void | Promise<void>;
-  submenu?: { items: FakeItem[] };
+  submenu?: { items: FakeItem[] } | null;
   role?: string;
 };
 
@@ -197,6 +197,20 @@ it("returns the command map before postCheck and installs plain none", async () 
     expect(control.postChecks).toBe(1);
     expect(control.noteNone).toBe(0);
     expect(control.destroyed).toBe(0);
+  } finally {
+    started.close();
+  }
+});
+
+it("commits startup none when a leaf submenu is null and a later view click dispatches", async () => {
+  const started = boot();
+  try {
+    await control.task;
+    expect(
+      plainSlots(shell.current).every((item) => item.submenu === null),
+    ).toBe(true);
+    expect(await pressView("原文")).toBe(1);
+    expect(shell.scripts).toEqual([scriptFor(viewOriginalEvent)]);
   } finally {
     started.close();
   }
@@ -511,7 +525,9 @@ function walk(menu: FakeMenu): FakeItem[] {
   const found: FakeItem[] = [];
   for (const item of menu.items) {
     found.push(item);
-    if (item.submenu !== undefined) found.push(...walk(item.submenu));
+    const nested = item.submenu;
+    if (nested === undefined || nested === null) continue;
+    found.push(...walk(nested));
   }
   return found;
 }
@@ -625,6 +641,7 @@ function shapeItem(item: TemplateItem): FakeItem {
     type:
       shell.mode === "checkbox" && view ? "checkbox" : (item.type ?? "normal"),
     checked: shell.mode === "checked" && view ? true : (item.checked ?? false),
+    submenu: null,
   };
   if (item.id !== undefined) shaped.id = item.id;
   if (item.label !== undefined) shaped.label = item.label;
