@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactElement,
@@ -38,16 +39,24 @@ export function ReaderScreen(props: {
     | ((leave: (() => void) | undefined) => void)
     | undefined;
   readonly onBindNav?: ((nav: ReaderNav | undefined) => void) | undefined;
+  readonly onReportView?: (mode: ReaderViewMode) => void;
 }): ReactElement {
   const session = useReaderSession(props.client, props.id, props.onLeave);
   const leaving = useReaderLeave(session.leave, props.onBindLeave);
   const view = useViewMode(props.id);
+  const reportView = props.onReportView;
   const chooseView = useCallback(
     (mode: ReaderViewMode) => {
       selectViewMode(mode, view.select);
+      reportView?.(mode);
     },
-    [view.select],
+    [view.select, reportView],
   );
+  const modeRef = useRef(view.mode);
+  modeRef.current = view.mode;
+  useLayoutEffect(() => {
+    reportView?.(modeRef.current);
+  }, [props.id, reportView]);
   const reading =
     session.phase.kind === "view" ? session.phase.reading : undefined;
   const viewing =
